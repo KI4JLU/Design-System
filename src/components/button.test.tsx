@@ -16,6 +16,17 @@ describe("Button", () => {
     expect(screen.getByRole("button")).toHaveClass("bg-error");
   });
 
+  it("renders icon-sm as a fixed square without the round icon shape", () => {
+    render(
+      <Button size="icon-sm" aria-label="Als gelesen markieren">
+        <svg aria-hidden />
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: "Als gelesen markieren" });
+    expect(button).toHaveClass("size-8", "p-0", "rounded-action");
+    expect(button).not.toHaveClass("rounded-full");
+  });
+
   it("renders the child element when asChild is set", () => {
     render(
       <Button asChild>

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { ListFilter, Trash2 } from "lucide-react";
+import { CheckCheck, ExternalLink, ListFilter, Trash2 } from "lucide-react";
 import { expect, fn } from "storybook/test";
 import { Button } from "./button";
 
@@ -25,7 +25,7 @@ const meta = {
     },
     size: {
       control: "select",
-      options: ["default", "sm", "lg", "icon"],
+      options: ["default", "sm", "lg", "icon", "icon-sm"],
     },
     asChild: { control: false },
   },
@@ -104,17 +104,45 @@ export const SemanticOutlines: Story = {
   ),
 };
 
+/**
+ * Größen. `icon-sm` ist ein quadratischer Icon-Button in der Höhe von `sm`
+ * (32 px) — etwa für die Aktionen im Kopf einer Dashboard-Kachel
+ * („Als gelesen markieren", Website öffnen).
+ */
 export const Sizes: Story = {
   render: () => (
-    <div className="flex flex-wrap items-center gap-3">
-      <Button size="sm">Small</Button>
-      <Button size="default">Default</Button>
-      <Button size="lg">Large</Button>
-      <Button size="icon" aria-label="Icon">
-        <span aria-hidden>★</span>
-      </Button>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm">Small</Button>
+        <Button size="default">Default</Button>
+        <Button size="lg">Large</Button>
+        <Button size="icon" aria-label="Icon">
+          <span aria-hidden>★</span>
+        </Button>
+        <Button size="icon-sm" variant="outline" aria-label="Icon klein">
+          <span aria-hidden>★</span>
+        </Button>
+      </div>
+      <div className="flex max-w-xs items-center gap-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2">
+        <p className="m-0 min-w-0 flex-1 text-sm font-semibold text-on-surface">Uni-News</p>
+        <Button size="icon-sm" variant="ghost" aria-label="Uni-News als gelesen markieren">
+          <CheckCheck aria-hidden />
+        </Button>
+        <Button size="icon-sm" variant="ghost" aria-label="Website von Uni-News öffnen" asChild>
+          <a href="https://www.uni-giessen.de" target="_blank" rel="noreferrer">
+            <ExternalLink aria-hidden />
+          </a>
+        </Button>
+      </div>
     </div>
   ),
+  play: async ({ canvas }) => {
+    const iconSm = canvas.getByRole("button", { name: "Icon klein" });
+    const sm = canvas.getByRole("button", { name: "Small" });
+    const box = iconSm.getBoundingClientRect();
+    await expect(box.height).toBe(sm.getBoundingClientRect().height);
+    await expect(box.width).toBe(box.height);
+  },
 };
 
 /** Interaktionstest: Klick löst onClick aus, Tastatur (Enter) ebenso. */
