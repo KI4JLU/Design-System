@@ -13,8 +13,10 @@ interface FieldsetContextValue {
   descriptionId: string;
   messageId: string;
   error: boolean;
-  register: (part: "description" | "message") => () => void;
+  register: (part: FieldsetPart, partId: string) => () => void;
 }
+
+type FieldsetPart = "description" | "message";
 
 const FieldsetContext = React.createContext<FieldsetContextValue | null>(null);
 
@@ -24,10 +26,14 @@ function useFieldset(component: string) {
   return ctx;
 }
 
-/** Registers a mounted description/message so the fieldset only points at ids that exist. */
-function useRegisterPart(ctx: FieldsetContextValue, part: "description" | "message") {
+/**
+ * Registers a mounted description/message under the id it actually renders
+ * (a custom `id` wins over the generated one), so the fieldset's
+ * `aria-describedby` only points at ids that exist.
+ */
+function useRegisterPart(ctx: FieldsetContextValue, part: FieldsetPart, partId: string) {
   const { register } = ctx;
-  React.useLayoutEffect(() => register(part), [register, part]);
+  React.useLayoutEffect(() => register(part, partId), [register, part, partId]);
 }
 
 export interface FieldsetProps extends React.ComponentPropsWithoutRef<"fieldset"> {
@@ -38,10 +44,19 @@ export interface FieldsetProps extends React.ComponentPropsWithoutRef<"fieldset"
 const Fieldset = React.forwardRef<HTMLFieldSetElement, FieldsetProps>(
   ({ className, error = false, "aria-describedby": describedBy, ...props }, ref) => {
     const id = React.useId();
-    const [parts, setParts] = React.useState({ description: 0, message: 0 });
-    const register = React.useCallback((part: "description" | "message") => {
-      setParts((p) => ({ ...p, [part]: p[part] + 1 }));
-      return () => setParts((p) => ({ ...p, [part]: p[part] - 1 }));
+    const [parts, setParts] = React.useState<Record<FieldsetPart, string[]>>({
+      description: [],
+      message: [],
+    });
+    const register = React.useCallback((part: FieldsetPart, partId: string) => {
+      setParts((p) => ({ ...p, [part]: [...p[part], partId] }));
+      return () =>
+        setParts((p) => {
+          const ids = [...p[part]];
+          const index = ids.indexOf(partId);
+          if (index !== -1) ids.splice(index, 1);
+          return { ...p, [part]: ids };
+        });
     }, []);
     const value = React.useMemo<FieldsetContextValue>(
       () => ({
@@ -54,13 +69,9 @@ const Fieldset = React.forwardRef<HTMLFieldSetElement, FieldsetProps>(
       [id, error, register],
     );
     const ariaDescribedBy =
-      [
-        describedBy,
-        parts.description > 0 && value.descriptionId,
-        parts.message > 0 && value.messageId,
-      ]
-        .filter(Boolean)
-        .join(" ") || undefined;
+      [...new Set([describedBy, ...parts.description, ...parts.message].filter(Boolean))].join(
+        " ",
+      ) || undefined;
 
     return (
       <FieldsetContext.Provider value={value}>
@@ -102,13 +113,14 @@ FieldsetLegend.displayName = "FieldsetLegend";
 const FieldsetDescription = React.forwardRef<
   HTMLParagraphElement,
   React.ComponentPropsWithoutRef<"p">
->(({ className, ...props }, ref) => {
+>(({ className, id, ...props }, ref) => {
   const ctx = useFieldset("FieldsetDescription");
-  useRegisterPart(ctx, "description");
+  const partId = id ?? ctx.descriptionId;
+  useRegisterPart(ctx, "description", partId);
   return (
     <p
       ref={ref}
-      id={ctx.descriptionId}
+      id={partId}
       className={cn("m-0 text-sm text-on-surface-variant", className)}
       {...props}
     />
@@ -133,13 +145,14 @@ FieldsetMessage.displayName = "FieldsetMessage";
 const FieldsetMessageText = React.forwardRef<
   HTMLParagraphElement,
   React.ComponentPropsWithoutRef<"p">
->(({ className, ...props }, ref) => {
+>(({ className, id, ...props }, ref) => {
   const ctx = useFieldset("FieldsetMessage");
-  useRegisterPart(ctx, "message");
+  const partId = id ?? ctx.messageId;
+  useRegisterPart(ctx, "message", partId);
   return (
     <p
       ref={ref}
-      id={ctx.messageId}
+      id={partId}
       role="alert"
       className={cn("m-0 text-sm text-error", className)}
       {...props}

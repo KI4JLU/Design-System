@@ -64,6 +64,28 @@ describe("Fieldset", () => {
     expect(group.getAttribute("aria-describedby")).toBe(`extern ${message.id}`);
   });
 
+  it("points aria-describedby at custom description and message ids", () => {
+    const { rerender } = render(
+      <Fieldset error>
+        <FieldsetLegend>Modelle</FieldsetLegend>
+        <FieldsetDescription id="models-hint">Eines pro Zeile.</FieldsetDescription>
+        <FieldsetMessage id="models-error">Mindestens ein Modell angeben.</FieldsetMessage>
+      </Fieldset>,
+    );
+    const group = screen.getByRole("group", { name: "Modelle" });
+    expect(group).toHaveAttribute("aria-describedby", "models-hint models-error");
+    expect(group).toHaveAccessibleDescription("Eines pro Zeile. Mindestens ein Modell angeben.");
+
+    rerender(
+      <Fieldset error>
+        <FieldsetLegend>Modelle</FieldsetLegend>
+        <FieldsetDescription id="models-hint-2">Eines pro Zeile.</FieldsetDescription>
+        <FieldsetMessage />
+      </Fieldset>,
+    );
+    expect(group).toHaveAttribute("aria-describedby", "models-hint-2");
+  });
+
   it("keeps the legend's default id unless one is passed", () => {
     render(
       <>
