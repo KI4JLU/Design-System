@@ -164,6 +164,9 @@ export const LongScrollingBody: Story = {
     const dialog = await screen.findByRole("dialog");
     const body = screen.getByTestId("body");
     const footer = screen.getByTestId("footer");
+    // With a DialogBody the frame is a flex column with pinned header/footer.
+    await expect(getComputedStyle(dialog).display).toBe("flex");
+    await expect(getComputedStyle(dialog).flexDirection).toBe("column");
     // The body scrolls, the frame does not, and the whole dialog fits the window.
     await expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
     await expect(dialog.scrollHeight).toBeLessThanOrEqual(dialog.clientHeight);
@@ -197,6 +200,10 @@ export const LongTitle: Story = {
   ),
   play: async () => {
     const title = await screen.findByRole("heading", { name: /Musterfrau/ });
+    // Without a DialogBody the frame keeps the original grid.
+    const dialog = screen.getByRole("dialog");
+    await expect(getComputedStyle(dialog).display).toBe("grid");
+    await expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth);
     const close = screen.getByRole("button", { name: "Schließen" });
     await expect(title.getBoundingClientRect().right).toBeLessThanOrEqual(
       close.getBoundingClientRect().left,

@@ -2,17 +2,18 @@ import { cva } from "class-variance-authority";
 
 /**
  * DialogContent frame (cva). `size` picks the max width; `default` is the
- * original `max-w-lg`. The frame is a flex column capped at the viewport
- * height: a dialog that fits looks as before, a taller one scrolls as a whole
- * — or, with a `DialogBody`, only the body scrolls while header and footer
- * stay in view (the body is the one part allowed to shrink, `min-h-0`).
+ * original `max-w-lg`. The frame is capped at the viewport height; a taller
+ * dialog scrolls as a whole.
  *
- * Flex rather than the former grid also keeps an unbreakable child (a long
- * name) inside the dialog: a grid's implicit column grew to fit it.
+ * Without a `DialogBody` the frame is the original grid, so existing layouts
+ * (`grid-cols-2`, `self-*` on children) render as before. With a `DialogBody`
+ * it becomes a flex column: only the body scrolls (it is the one part allowed
+ * to shrink, `min-h-0`) while header and footer stay in view.
  */
 export const dialogContentVariants = cva(
   [
-    "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto",
+    "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto",
+    "has-[[data-slot=dialog-body]]:flex has-[[data-slot=dialog-body]]:flex-col",
     "rounded-xl border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",
     "focus:outline-none",
   ],

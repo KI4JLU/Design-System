@@ -66,10 +66,21 @@ describe("DialogContent size", () => {
     renderSized();
     expect(screen.getByRole("dialog")).toHaveClass(
       "max-h-[calc(100dvh-2rem)]",
-      "flex",
-      "flex-col",
       "overflow-y-auto",
     );
+  });
+
+  it("keeps the original grid without a DialogBody, so grid classes still apply", () => {
+    render(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined} className="grid-cols-2">
+          <DialogTitle>Titel</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveClass("grid", "grid-cols-2");
+    expect(dialog).not.toHaveClass("flex", "flex-col");
   });
 
   it("lets a className override win (layout exception)", () => {
@@ -103,6 +114,24 @@ describe("DialogBody", () => {
     expect(body).toHaveAttribute("data-slot", "dialog-body");
     expect(body).toHaveClass("min-h-0", "overflow-y-auto", "-mx-6", "px-6");
     expect(screen.getByRole("dialog")).toContainElement(body);
+  });
+
+  it("switches the frame to a flex column only when a DialogBody is inside", () => {
+    render(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined}>
+          <DialogTitle>Glossar bearbeiten</DialogTitle>
+          <DialogBody>Inhalt</DialogBody>
+        </DialogContent>
+      </Dialog>,
+    );
+    // jsdom cannot evaluate :has(); the computed layout is asserted in the
+    // Chromium story tests (LongScrollingBody, LongTitle).
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "grid",
+      "has-[[data-slot=dialog-body]]:flex",
+      "has-[[data-slot=dialog-body]]:flex-col",
+    );
   });
 });
 
