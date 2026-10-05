@@ -69,9 +69,18 @@ function FormLabel({
 }: React.ComponentPropsWithoutRef<typeof Label>) {
   const { id, error, registerLabel } = useFormField();
   const labelId = idProp ?? `${id}-label`;
-  React.useLayoutEffect(() => registerLabel(labelId), [registerLabel, labelId]);
+  const ref = React.useRef<React.ComponentRef<typeof Label>>(null);
+  // With `asChild` the child's own id wins over `labelId`; register the id that
+  // is actually in the DOM so FormControl never points at a missing label.
+  const [renderedId, setRenderedId] = React.useState(labelId);
+  React.useLayoutEffect(() => {
+    const domId = ref.current?.id || labelId;
+    if (domId !== renderedId) setRenderedId(domId);
+  }, [labelId, renderedId, props.children]);
+  React.useLayoutEffect(() => registerLabel(renderedId), [registerLabel, renderedId]);
   return (
     <Label
+      ref={ref}
       id={labelId}
       htmlFor={id}
       className={cn(error && "text-error", className)}
@@ -87,10 +96,16 @@ function FormLabel({
  */
 function FormControl({ ...props }: React.ComponentPropsWithoutRef<typeof Slot>) {
   const { id, labelId, descriptionId, messageId, error } = useFormField();
+  // A name the consumer gave (aria-label / aria-labelledby on FormControl or
+  // its child) wins: `aria-labelledby` would otherwise override `aria-label`.
+  const child = React.isValidElement<Record<string, unknown>>(props.children)
+    ? props.children.props
+    : undefined;
+  const named = [props, child].some((p) => p?.["aria-label"] || p?.["aria-labelledby"]);
   return (
     <Slot
       id={id}
-      aria-labelledby={labelId}
+      aria-labelledby={named ? undefined : labelId}
       aria-invalid={!!error}
       aria-describedby={error ? messageId : descriptionId}
       {...props}

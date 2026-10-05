@@ -78,4 +78,33 @@ describe("Form field primitives", () => {
       "aria-labelledby",
     );
   });
+  it("registers the id of an asChild label", () => {
+    render(
+      <FormItem>
+        <FormLabel asChild>
+          <span id="custom-label">Tempo</span>
+        </FormLabel>
+        <FormControl>
+          <div role="slider" aria-valuenow={1} tabIndex={0} />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("slider", { name: "Tempo" })).toHaveAttribute(
+      "aria-labelledby",
+      "custom-label",
+    );
+  });
+
+  it("keeps a consumer aria-label instead of pointing at the FormLabel", () => {
+    render(
+      <FormItem>
+        <FormLabel>Name</FormLabel>
+        <FormControl>
+          <Input aria-label="Name der Inhaberin" />
+        </FormControl>
+      </FormItem>,
+    );
+    const input = screen.getByRole("textbox", { name: "Name der Inhaberin" });
+    expect(input).not.toHaveAttribute("aria-labelledby");
+  });
 });
