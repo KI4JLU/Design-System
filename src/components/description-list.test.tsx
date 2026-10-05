@@ -46,6 +46,19 @@ describe("DescriptionList", () => {
     expect(screen.getByText("maria@uni-giessen.de")).toHaveClass("text-body-base", "text-on-surface");
   });
 
+  it("lets a long term wrap anywhere so the inline term column keeps its cap", () => {
+    render(
+      <DescriptionList layout="inline">
+        <DescriptionTerm>Datenschutzgrundverordnungskonformitätsprüfung</DescriptionTerm>
+        <DescriptionDetails>Bestanden</DescriptionDetails>
+      </DescriptionList>,
+    );
+    expect(screen.getByText("Datenschutzgrundverordnungskonformitätsprüfung")).toHaveClass(
+      "min-w-0",
+      "wrap-anywhere",
+    );
+  });
+
   it("stacks by default", () => {
     const { container } = renderList();
     expect(container.querySelector("dl")).toHaveClass("flex-col");

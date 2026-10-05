@@ -3,7 +3,8 @@ import { cva } from "class-variance-authority";
 /**
  * DescriptionList layouts (cva). `stacked`: term above its value, items in a
  * column. `inline`: a two-column grid, terms left, values right; the term
- * column takes the widest term up to 40% of the width. Each `DescriptionItem`
+ * column takes the widest term up to 40% of the width (terms wrap anywhere,
+ * so a long compound cannot widen it past the cap). Each `DescriptionItem`
  * joins that grid through `subgrid`, so its `dt`/`dd` line up with every other
  * item's; a second `dd` for the same term stays in the value column.
  */

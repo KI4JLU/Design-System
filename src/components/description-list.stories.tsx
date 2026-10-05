@@ -128,3 +128,37 @@ export const MultipleValues: Story = {
     expect(Math.abs(third.left - first.left)).toBeLessThan(1);
   },
 };
+
+/**
+ * Schmales Panel mit einem langen zusammengesetzten Begriff: die
+ * Begriffsspalte bleibt bei höchstens 40 % und bricht den Begriff um, statt
+ * die Wertspalte wegzudrücken.
+ */
+export const InlineNarrow: Story = {
+  render: () => (
+    <Card className="w-72 p-4">
+      <DescriptionList layout="inline">
+        <DescriptionItem>
+          <DescriptionTerm>Datenschutzgrundverordnungskonformitätsprüfung</DescriptionTerm>
+          <DescriptionDetails>Bestanden am 02.10.2026</DescriptionDetails>
+        </DescriptionItem>
+        <DescriptionItem>
+          <DescriptionTerm>Rolle</DescriptionTerm>
+          <DescriptionDetails>Admin</DescriptionDetails>
+        </DescriptionItem>
+      </DescriptionList>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector("dl")!;
+    const listBox = list.getBoundingClientRect();
+    const [term] = canvasElement.querySelectorAll("dt");
+    const termBox = term.getBoundingClientRect();
+    const valueBox = canvasElement.querySelector("dd")!.getBoundingClientRect();
+    expect(termBox.width).toBeLessThanOrEqual(listBox.width * 0.4 + 1);
+    expect(term.scrollWidth).toBeLessThanOrEqual(term.clientWidth);
+    expect(termBox.right).toBeLessThanOrEqual(valueBox.left);
+    expect(valueBox.width).toBeGreaterThan(listBox.width * 0.5);
+    expect(valueBox.right).toBeLessThanOrEqual(listBox.right + 1);
+  },
+};

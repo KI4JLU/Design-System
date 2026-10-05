@@ -50,13 +50,17 @@ const DescriptionItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
 );
 DescriptionItem.displayName = "DescriptionItem";
 
-/** The term: muted label type (the same as `Label`). */
+/**
+ * The term: muted label type (the same as `Label`). A long unbroken term
+ * (German compounds) wraps anywhere, so the `inline` term column keeps its
+ * 40% cap instead of pushing the values out.
+ */
 const DescriptionTerm = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
   ({ className, ...props }, ref) => (
     <dt
       ref={ref}
       className={cn(
-        "m-0 font-label-sm text-label-sm leading-normal text-on-surface-variant",
+        "m-0 min-w-0 wrap-anywhere font-label-sm text-label-sm leading-normal text-on-surface-variant",
         className,
       )}
       {...props}
