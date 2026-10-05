@@ -402,6 +402,23 @@
   --shadow-card-hover: var(--elevation-2);
   --shadow-overlay: var(--elevation-3);
   --shadow-modal: var(--elevation-4);
+
+  /* --------------------------------------------------------------------------
+   * ANIMATION
+   * animate-progress-indeterminate: ein 2/5 breites Segment läuft einmal durch
+   * die Spur (unbestimmte Progress). Deckkraft bleibt bei 100 %, damit die
+   * Füllung den 3:1-Kontrast zur Spur hält (WCAG 1.4.11).
+   * ------------------------------------------------------------------------ */
+  --animate-progress-indeterminate: progress-indeterminate 1.5s ease-in-out infinite;
+
+  @keyframes progress-indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
 }
 
 /*

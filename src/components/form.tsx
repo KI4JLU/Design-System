@@ -20,6 +20,9 @@ interface FormFieldContextValue {
   descriptionId: string;
   messageId: string;
   error?: string;
+  /** Rendered id of the mounted FormLabel, so FormControl only references a label that exists. */
+  labelId?: string;
+  registerLabel: (labelId: string) => () => void;
 }
 
 const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);
@@ -36,14 +39,21 @@ interface FormItemProps extends React.ComponentProps<"div"> {
 
 function FormItem({ className, error, ...props }: FormItemProps) {
   const id = React.useId();
+  const [labelId, setLabelId] = React.useState<string>();
+  const registerLabel = React.useCallback((next: string) => {
+    setLabelId(next);
+    return () => setLabelId((current) => (current === next ? undefined : current));
+  }, []);
   const value = React.useMemo<FormFieldContextValue>(
     () => ({
       id,
       descriptionId: `${id}-description`,
       messageId: `${id}-message`,
       error,
+      labelId,
+      registerLabel,
     }),
-    [id, error],
+    [id, error, labelId, registerLabel],
   );
   return (
     <FormFieldContext.Provider value={value}>
@@ -54,11 +64,24 @@ function FormItem({ className, error, ...props }: FormItemProps) {
 
 function FormLabel({
   className,
+  id: idProp,
   ...props
 }: React.ComponentPropsWithoutRef<typeof Label>) {
-  const { id, error } = useFormField();
+  const { id, error, registerLabel } = useFormField();
+  const labelId = idProp ?? `${id}-label`;
+  const ref = React.useRef<React.ComponentRef<typeof Label>>(null);
+  // With `asChild` the child's own id wins over `labelId`; register the id that
+  // is actually in the DOM so FormControl never points at a missing label.
+  const [renderedId, setRenderedId] = React.useState(labelId);
+  React.useLayoutEffect(() => {
+    const domId = ref.current?.id || labelId;
+    if (domId !== renderedId) setRenderedId(domId);
+  }, [labelId, renderedId, props.children]);
+  React.useLayoutEffect(() => registerLabel(renderedId), [registerLabel, renderedId]);
   return (
     <Label
+      ref={ref}
+      id={labelId}
       htmlFor={id}
       className={cn(error && "text-error", className)}
       {...props}
@@ -66,12 +89,23 @@ function FormLabel({
   );
 }
 
-/** Injects id + aria-* onto its single child control (e.g. <Input>). */
+/**
+ * Injects id + aria-* onto its single child control (e.g. <Input>).
+ * `aria-labelledby` points at the FormLabel too, which names controls that a
+ * `<label for>` cannot (a Slider thumb, any `role`-based widget).
+ */
 function FormControl({ ...props }: React.ComponentPropsWithoutRef<typeof Slot>) {
-  const { id, descriptionId, messageId, error } = useFormField();
+  const { id, labelId, descriptionId, messageId, error } = useFormField();
+  // A name the consumer gave (aria-label / aria-labelledby on FormControl or
+  // its child) wins: `aria-labelledby` would otherwise override `aria-label`.
+  const child = React.isValidElement<Record<string, unknown>>(props.children)
+    ? props.children.props
+    : undefined;
+  const named = [props, child].some((p) => p?.["aria-label"] || p?.["aria-labelledby"]);
   return (
     <Slot
       id={id}
+      aria-labelledby={named ? undefined : labelId}
       aria-invalid={!!error}
       aria-describedby={error ? messageId : descriptionId}
       {...props}

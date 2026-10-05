@@ -146,4 +146,148 @@ describe("NavItem", () => {
     expect(expanded).not.toHaveAttribute("aria-label");
     expect(expanded).not.toHaveClass("justify-center");
   });
+
+  describe("disabled", () => {
+    it("styles the native disabled state and keeps the button disabled", () => {
+      render(
+        <NavItem disabled>
+          <svg aria-hidden />
+          <span>Glossar</span>
+        </NavItem>,
+      );
+      const item = screen.getByRole("button", { name: "Glossar" });
+      expect(item).toBeDisabled();
+      expect(item).toHaveClass(
+        "disabled:cursor-not-allowed",
+        "disabled:text-on-disabled",
+        "disabled:hover:bg-transparent",
+      );
+    });
+
+    it("styles aria-disabled on an asChild link", () => {
+      render(
+        <NavItem asChild aria-disabled="true">
+          <a href="/glossar">Glossar</a>
+        </NavItem>,
+      );
+      const link = screen.getByRole("link", { name: "Glossar" });
+      expect(link).toHaveAttribute("aria-disabled", "true");
+      expect(link).toHaveClass("aria-disabled:cursor-not-allowed", "aria-disabled:text-on-disabled");
+    });
+  });
+
+  describe("description", () => {
+    it("renders a second line that describes the row without joining its name", () => {
+      render(
+        <NavItem description="Untertitel mit Zeitstempeln">
+          <svg aria-hidden />
+          <span>SRT</span>
+        </NavItem>,
+      );
+      const item = screen.getByRole("button", { name: "SRT" });
+      expect(item).toHaveAccessibleDescription("Untertitel mit Zeitstempeln");
+      expect(item).toHaveClass("grid");
+      const line = screen.getByText("Untertitel mit Zeitstempeln");
+      expect(line).toHaveAttribute("data-slot", "nav-item-description");
+      expect(line).toHaveClass("row-start-2", "text-sm");
+    });
+
+    it("uses the smaller size on sub rows", () => {
+      render(
+        <NavItem level="sub" description="Nur Text">
+          <span>TXT</span>
+        </NavItem>,
+      );
+      expect(screen.getByText("Nur Text")).toHaveClass("text-xs");
+    });
+
+    it("keeps a consumer aria-describedby", () => {
+      render(
+        <>
+          <p id="hint">Kein Backend konfiguriert</p>
+          <NavItem description="Untertitel" aria-describedby="hint">
+            <span>SRT</span>
+          </NavItem>
+        </>,
+      );
+      expect(screen.getByRole("button", { name: "SRT" })).toHaveAccessibleDescription(
+        "Untertitel Kein Backend konfiguriert",
+      );
+    });
+
+    it("goes inside the link with asChild", () => {
+      render(
+        <NavItem asChild description="Untertitel mit Zeitstempeln">
+          <a href="/srt">
+            <svg aria-hidden />
+            <span>SRT</span>
+          </a>
+        </NavItem>,
+      );
+      const link = screen.getByRole("link", { name: "SRT" });
+      expect(link).toContainElement(screen.getByText("Untertitel mit Zeitstempeln"));
+      expect(link).toHaveAccessibleDescription("Untertitel mit Zeitstempeln");
+      expect(link).toHaveClass("grid");
+    });
+
+    it("wraps a bare-text label so it joins the icon's first row", () => {
+      render(
+        <NavItem description="Sprache, Design">
+          <svg aria-hidden data-testid="icon" />
+          Einstellungen
+          <svg aria-hidden data-testid="chevron" />
+        </NavItem>,
+      );
+      const item = screen.getByRole("button", { name: "Einstellungen" });
+      const label = screen.getByText("Einstellungen");
+      expect(label.tagName).toBe("SPAN");
+      expect(label.parentElement).toBe(item);
+      expect([...item.children].map((c) => c.getAttribute("data-testid") ?? c.textContent)).toEqual([
+        "icon",
+        "Einstellungen",
+        "chevron",
+        "Sprache, Design",
+      ]);
+    });
+
+    it("wraps a bare-text label inside the link with asChild", () => {
+      render(
+        <NavItem asChild description="Sprache, Design">
+          <a href="/einstellungen">
+            <svg aria-hidden />
+            Einstellungen
+          </a>
+        </NavItem>,
+      );
+      const label = screen.getByText("Einstellungen");
+      expect(label.tagName).toBe("SPAN");
+      expect(label.parentElement).toBe(screen.getByRole("link", { name: "Einstellungen" }));
+    });
+
+    it("renders no line and stays a flex row without description", () => {
+      render(<NavItem>Agenten</NavItem>);
+      const item = screen.getByRole("button", { name: "Agenten" });
+      expect(item).toHaveClass("flex");
+      expect(item).not.toHaveClass("grid");
+      expect(item).not.toHaveAttribute("aria-describedby");
+    });
+
+    it("is hidden with the other text in a collapsed SidePanel, and the tooltip still describes the row", async () => {
+      inSidePanel(
+        true,
+        <NavItem label="SRT" description="Untertitel mit Zeitstempeln">
+          <svg aria-hidden />
+          <span>SRT</span>
+        </NavItem>,
+      );
+      const item = screen.getByRole("button", { name: "SRT" });
+      expect(item).not.toHaveClass("grid");
+      expect(item).toHaveClass("[&>*:not(svg)]:hidden");
+      expect(item).not.toHaveAttribute("aria-describedby");
+      await userEvent.hover(item);
+      await waitFor(() => expect(item).toHaveAttribute("aria-describedby"));
+      const tip = document.getElementById(item.getAttribute("aria-describedby")!);
+      expect(tip).toHaveAttribute("role", "tooltip");
+    });
+  });
 });

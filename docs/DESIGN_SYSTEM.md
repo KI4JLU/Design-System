@@ -170,7 +170,7 @@ consuming repo** — new exceptions get the same scrutiny there.
 | Component | File | Notes |
 |-----------|------|-------|
 | `Badge` (+ `badgeVariants`) | `badge.tsx` / `badge-variants.ts` | status chip: `tone` = neutral/primary/secondary/success/warning/error/info; `appearance` = filled pill or inline text |
-| `Button` (+ `buttonVariants`) | `button.tsx` / `button-variants.ts` | variants: default/secondary/outline/ghost/destructive/destructive-outline/link; sizes: default/sm/lg/icon; `asChild` via Radix Slot |
+| `Button` (+ `buttonVariants`) | `button.tsx` / `button-variants.ts` | variants: default/secondary/outline/ghost/destructive/destructive-outline/link; sizes: default/sm/lg/icon/icon-sm (**Unreleased:** `icon-sm`, a square 32px icon button for compact tile headers); `asChild` via Radix Slot |
 | `Card` (+ Header/Title/Description/Content/Footer) | `card.tsx` | surface + border + `shadow-card` |
 | `PromptInput` (+ `PromptInputTextarea`, `PromptInputAdaptiveTextarea`, `PromptInputButton`, `PromptInputSubmit`, `PromptInputActionMenu*`, `PromptInputAttachments`/`PromptInputAttachment`, `promptInputFrameVariants`, `promptInputControlShape`) | `prompt-input.tsx` / `prompt-input-adaptive-textarea.tsx` / `prompt-input-variants.ts` | **0.42.0.** The chat composer: form + `InputGroup` frame, controls the consumer places (absolute, bottom corners), attachments (dialog, paste, drop) with hover preview. `shape` = `rounded` \| `pill` decides frame **and** control radius in one place (pill expanded → `rounded-2xl`). `PromptInputSubmit`: `status` (AI SDK `ChatStatus`) swaps the glyph, opt-in `voice` + `idle` for speech input. Vendored file — re-vendor rather than hand-fix upstream patterns |
 | `InputGroup` (+ Addon/Button/Text/Input/Textarea) | `input-group.tsx` | **0.42.0.** shadcn input-group on JLU tokens; `InputGroupButton` follows the enclosing `PromptInput`'s `shape` |
@@ -199,10 +199,10 @@ consuming repo** — new exceptions get the same scrutiny there.
 | `Input` (+ shared `fieldVariants`) | `input.tsx` / `field-variants.ts` | honors `aria-invalid` styling; `variant`: default (framed) / inline (borderless in-flow field for in-row editing) |
 | `Label` | `label.tsx` | Radix Label |
 | `Logo` (+ `logoVariants`) | `logo.tsx` / `logo-variants.ts` | platform wordmark „JLU [Produkt]" (CampusAgents/API/RAG): prefix + badge on the brand tokens (`brand`/`on-brand` theme-invariant, `brand-wordmark` inverts in dark), sizes sm/default/lg; real text (no aria needed) |
-| `Dialog` (+ parts) | `dialog.tsx` | Radix — focus trap, Esc-to-close, ARIA, scroll lock; built-in close button label overridable via `closeLabel` (default „Schließen") |
+| `Dialog` (+ parts) | `dialog.tsx` | Radix — focus trap, Esc-to-close, ARIA, scroll lock; built-in close button label overridable via `closeLabel` (default „Schließen"). **Unreleased:** `DialogContent` `size` sm/default/lg/xl and a height cap at the viewport; `DialogBody` scrolls on its own while header and footer stay visible; `DialogHeader` leaves room for the close button |
 | Form field primitives | `form.tsx` | `FormItem/FormLabel/FormControl/FormDescription/FormMessage`; a11y label + `aria-describedby`/`aria-invalid` wiring; **no** react-hook-form (add later if forms need schema validation) |
 | `MenuItem` (+ `menuItemVariants`) | `menu-item.tsx` / `menu-item-variants.ts` | dropdown/listbox/popover row: `selected`, `highlighted` (keyboard), `destructive`; ARIA roles stay at call sites |
-| `NavItem` (+ `navItemVariants`) | `nav-item.tsx` / `nav-item-variants.ts` | sidebar/menu row: `level` top/sub, `active` sets `aria-current="page"`; `asChild` for router links. `label` (a plain string mirroring the visible text) is what lets a row collapse: inside a collapsed `SidePanel` (the rail) it becomes the row's `aria-label` **and** a `Tooltip`, and the non-`<svg>` children are hidden. Without `label` a row does not collapse at all — the row cannot invent a name it was not told. The collapsed state comes from the `SidePanel` (context), never from a prop, so one column cannot end up half collapsed |
+| `NavItem` (+ `navItemVariants`) | `nav-item.tsx` / `nav-item-variants.ts` | sidebar/menu row: `level` top/sub, `active` sets `aria-current="page"`; `asChild` for router links. `label` (a plain string mirroring the visible text) is what lets a row collapse: inside a collapsed `SidePanel` (the rail) it becomes the row's `aria-label` **and** a `Tooltip`, and the non-`<svg>` children are hidden. Without `label` a row does not collapse at all — the row cannot invent a name it was not told. The collapsed state comes from the `SidePanel` (context), never from a prop, so one column cannot end up half collapsed. **Unreleased:** disabled look for `disabled`/`aria-disabled`; `description` adds a smaller second line (`aria-describedby`), hidden in the collapsed rail |
 | `SegmentedControl` | `segmented-control.tsx` | single-select segment row (e.g. Tag/Woche/Monat chart-range switch, or an icon-only card/list view toggle): controlled `value`/`onValueChange`, `role="group"`, active segment via `aria-pressed`. **`icon` per option (0.33.0)** makes that segment icon-only — the icon is shown, `label` goes `sr-only` and stays the accessible name. `label` is required either way, so an unnamed segment is not expressible; the segment also becomes square (`h-9 w-9`), since the text padding has no icon width to balance |
 | `FilterChips` | `filter-chips.tsx` / `filter-chips-variants.ts` | single-select filter strip above a list — a row of pill chips, exactly one active, plus an optional trailing icon-only action chip (`onAdd` + `addLabel`, the „+“). Controlled `value`/`onValueChange`; a `value` matching no option renders every chip inactive rather than throwing, which is the readable failure when a stored filter outlives its category. Same ARIA as `SegmentedControl` (`role="group"` + `aria-pressed`) and deliberately NOT `tablist` (no panels to switch) or `radiogroup` (roving focus would make Tab skip the strip). Scrolls horizontally in ONE row rather than wrapping — wrapping would change the chrome's height as categories are added and move the list under the reader. Distinct from `FilterMenu`, which hides its options in a dropdown, and from `SegmentedControl`, whose joined border suits a fixed axis rather than a set the user extends at runtime |
 | `Switch` | `switch.tsx` | Radix Switch — role="switch", keyboard toggle; pair with `Label`/`FormControl` |
@@ -211,6 +211,20 @@ consuming repo** — new exceptions get the same scrutiny there.
 | `Tabs` (+ List/Trigger/Content) | `tabs.tsx` | Radix — APG „Tabs": `tablist` / `tab` + `aria-selected` + `aria-controls` / `tabpanel` + `aria-labelledby`, ein Tabstopp für die ganze Leiste, Pfeiltasten + Home/End, `orientation` horizontal/vertical, `activationMode` automatic (Default) / manual. Abgrenzung: Tabs benennen einen Inhaltsbereich (ein Panel je Reiter), `SegmentedControl` setzt nur einen Wert (`role="group"` + `aria-pressed`), `BottomTabBar` ist Chrome-Navigation (`aria-current="page"`). Aktiv = Unterstrich + `text-primary`, damit Tabs auch optisch nicht wie ein SegmentedControl aussehen. Zwei geprüfte Radix-Eigenheiten stehen in der MDX: inaktive Panels sind **ausgehängt** (Panel-Zustand überlebt den Wechsel nicht, `forceMount` ist kein Ersatz), und der Roving-Tabindex sitzt vor dem ersten Fokus auf dem `tablist`-Container statt auf dem aktiven Reiter |
 | `Toast` (+ Provider/Viewport/Title/Description/Action/Close, `TOAST_DURATIONS`) | `toast.tsx` / `toast-variants.ts` | Radix (`@radix-ui/react-toast`) — flüchtige Statusmeldung in der festen Bildschirmecke; ersetzt JustRAGs `ToastContainer.tsx`/`Toast.css`. `variant` = neutral/success/error/warning/info steuert Akzentkante, Icon (WCAG 1.4.1 — Status nicht nur über Farbe), Standarddauer (`TOAST_DURATIONS`, JustRAGs Werte: Erfolg 4 s, Fehler 6 s) **und** die Dringlichkeit der Ansage: `error` → `assertive`, sonst `polite`, per `type` übersteuerbar. Kein handgeschriebenes `role="alert"` — Radix sagt über ein verborgenes `role="status"` an, dessen explizites `aria-live="assertive"` zusammen mit dem impliziten `aria-atomic` der Rolle genau das ergibt, was `role="alert"` definiert; der sichtbare Toast ist selbst keine Live-Region (genau eine Ansage). Kein Fokusdiebstahl; WCAG 2.2.1 ist über Radix' Pause bei Hover **und** Fokus (F8 in den Viewport) plus `ToastClose`/`duration={Infinity}` erfüllt, nicht über einen eigenen Schalter. Keine Ein-/Ausblend-Animation wie bei allen schwebenden Flächen, damit ist `prefers-reduced-motion` gegenstandslos. **Die Warteschlange bleibt in der App** (JustRAGs `MAX_TOASTS = 5`): das Paket liefert Darstellung + Timer, keinen `toast()`-Singleton. Bewusst gegen `sonner` entschieden (eigene Toast-Maschine mit eigenem State/Markup/CSS — Bruch mit dem „dünne Radix-Hülle"-Muster). `z-100` liegt über `Dialog`/`BottomTabBar` (`z-50`); ein `Toast` ohne gemounteten `ToastViewport` rendert still gar nichts |
 | `Tooltip` (+ Trigger/Content/Provider) | `tooltip.tsx` | Radix — APG tooltip: `role="tooltip"` + `aria-describedby` on the trigger, opens on hover **and** focus, Escape dismisses, never focusable; replaces `title=` hints. Each `Tooltip` mounts its own provider (shadcn shape, no app setup); style is the re-pointed shadcn look (`bg-primary`/`text-on-primary`, `shadow-overlay`, no animation/arrow like all floating surfaces) |
+| `Alert` (+ `AlertTitle`/`AlertDescription`/`AlertAction`, `alertVariants`) | `alert.tsx` / `alert-variants.ts` | **Unreleased.** Inline, persistent status message in the page flow (the transient one is `Toast`). `tone` = neutral/info/success/warning/error on the `*-container`/`on-*-container` pairs; each status tone brings a lucide icon (WCAG 1.4.1), `icon` replaces it, `icon={null}` drops it; `neutral` has none, like Toast. `live` = `off` (default, no role) / `polite` (`role="status"`) / `assertive` (`role="alert"`). `onDismiss` + `dismissLabel` („Schließen") adds a close button; the call site unmounts the alert and moves focus. `AlertAction` is a row of DS Buttons under the text. `AlertTitle` is a `div` with `asChild` for a heading; title/description carry `m-0` |
+| `Progress` (+ `progressTrackVariants`/`progressIndicatorVariants`/`progressValueVariants`) | `progress.tsx` / `progress-variants.ts` | **Unreleased.** Native progress bar, no Radix: `role="progressbar"`, `aria-valuemin/max/now`, name from `label` or `aria-labelledby` (the type requires one), `aria-valuetext` passed through. `value` is clamped to `0`–`max`; omitted, `null` or NaN means indeterminate (no `aria-valuenow`, a 2/5-wide segment sliding through the track via `animate-progress-indeterminate`, standing still in the middle under `motion-reduce`, always full opacity). A non-finite or non-positive `max` falls back to 100. `tone` primary/success/error, `size` sm (4px) / default (8px), `showValue` = percentage beside the bar (`tabular-nums`, `aria-hidden`, „42 %", `formatValue` overrides). Not a live region |
+| `Skeleton` (+ `skeletonVariants`) | `skeleton.tsx` / `skeleton-variants.ts` | **Unreleased.** Loading placeholder, always `aria-hidden`. `variant` = `text` (one line box tall via `h-lh`, so stacked lines take the height of the text that replaces them) / `block` (`rounded-xl`) / `circle`; size via `className`. Pulse stops under `motion-reduce`. `skeletonVariants` serves HTML built as strings. Pattern in the JSDoc: the region carries `aria-busy`, one Spinner/`role="status"` sits outside it |
+| `Separator` | `separator.tsx` | **Unreleased.** Standalone hairline in `outline-variant`, no Radix. `orientation` horizontal/vertical (vertical is `self-stretch` in a flex row); `decorative` (default `true` → `role="none"`; `false` → `role="separator"` + `aria-orientation`). The menu separators stay bound to their primitives |
+| `EmptyState` (+ `emptyState*Variants`) | `empty-state.tsx` / `empty-state-variants.ts` | **Unreleased.** "Nothing here yet" / "no hits" / "not found" block: `icon` in a muted round tile (aria-hidden), `title`, `description`, `actions`; `size` default (page, in a Card) / compact (table empty row with `colSpan`, popover, tile). The title is a `<p>` unless `headingLevel` is set. No live region: the call site announces search counts in its own `role="status"` |
+| `DescriptionList` (+ Item/Term/Details, `descriptionListVariants`) | `description-list.tsx` / `description-list-variants.ts` | **Unreleased.** Real `<dl>`; `DescriptionItem` is the `<div>` around one dt + dd(s). `layout` stacked (default) / inline (two-column grid via `subgrid`, term column `fit-content(40%)`). Term = `Label` type, muted; value = body type; `m-0` on dl/dt/dd |
+| `Prose` (+ `proseVariants`) | `prose.tsx` / `prose-variants.ts` | **Unreleased.** Typography for rendered rich text (Markdown, Tiptap, CMS HTML) via descendant selectors: h1–h4, p, a, strong/em, ul/ol + markers, blockquote, inline code, pre (CodeBlock look, wraps), hr, table (Table look), img. `size` default/compact; `asChild`; editors use `proseVariants()` (Tiptap `editorProps.attributes.class`). Sets no width |
+| `Highlight` (+ `highlightVariants`) | `highlight.tsx` / `highlight-variants.ts` | **Unreleased.** Inline mark that stays in the line flow (`box-decoration-clone`): `kind` mark/insert/delete → `<mark>`/`<ins>`/`<del>`; insert underlined, delete struck through; `active` = solid tone; `label` = visually hidden prefix (default „eingefügt:"/„gelöscht:", none for mark). `highlightVariants` for HTML strings and Tiptap decorations |
+| `Slider` | `slider.tsx` | **Unreleased.** Radix slider (`@radix-ui/react-slider`), one thumb per entry in `value`/`defaultValue`: one value for seek or volume, two for a range. `thumbLabels` sets `aria-label` per thumb, `getValueText(value, index)` sets `aria-valuetext` ("1:23 von 4:10"). Keyboard and drag come from Radix. Track `surface-container-high`, range `primary`, thumb with focus ring |
+| `Fieldset` (+ Legend/Description/Message) | `fieldset.tsx` | **Unreleased.** A group of fields under one legend, the group counterpart of `FormItem`. Native `<fieldset>` (`m-0 p-0 border-0 min-w-0`): the legend names the group and `disabled` disables every native control inside. `error` sets `aria-invalid` and colours the legend `text-error`; `aria-describedby` lists the rendered description and message. `FieldsetMessage` is `role="alert"` like `FormMessage` |
+| `ColorSwatch` (+ `colorSwatchVariants`) | `color-swatch.tsx` / `color-swatch-variants.ts` | **Unreleased.** Round dot in a data colour (`color`, usually `categoryColor(key)`) beside a name: speaker legend, category list. `size` sm 12px / default 20px. `aria-hidden` by default; `label` makes it `role="img"`. Not `AccentSwatch`, which only shows the theme accents in the appearance picker |
+| `Avatar` | `avatar.tsx` | **Unreleased.** `src` shows the user's picture; the initials stay until it loads and come back if it fails or `src` changes. `alt` works like `aria-label`. `color` paints the circle (e.g. `categoryColor`) with `on-secondary-fixed` initials, ≥ 4.77:1 on all nine hues in both themes |
+| `NavGroup` | `nav-group.tsx` | **Unreleased.** Titled group of sidebar `NavItem`s ("Verwaltung", "Module"): `role="group"` named by its heading (`aria-labelledby`). Heading in label type, muted, `m-0 px-4 pt-2`, starting where a top-level row's icon starts. `headingLevel` defaults to `2`; use `3` under a `SidebarPanel` title. In a collapsed `SidePanel` rail the heading turns `sr-only` and still names the group, and a short `outline-variant` rule marks the boundary (none on a first-child group) |
+| `FormActionBar` (+ `formActionBarVariants`) | `form-action-bar.tsx` / `form-action-bar-variants.ts` | **Unreleased.** Action row of a long form: raised card bar, `sticky bottom-stack-md z-10 shadow-overlay` by default; `sticky={false}` gives a static row. `children` = actions on the right; `message` = slot on the left for an `Alert`, `Badge` or status text. Below 28rem of its own width (container query) the message goes on top and the actions stack full width. Place it as the last child of the form's scroll container; set `scroll-padding-bottom` so focused fields are not hidden behind it (`FormLayout stickyActions` does this) |
 
 *(Inventory above predates v0.9.0; Avatar, Badge dot, ChatBubble, Checkbox,
 DropdownMenu, Popover, Select, Spinner are documented in Storybook and the
@@ -507,6 +521,62 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **Unreleased** — **Components the justCampus app had to build by hand.**
+  An audit of justCampus (`DS gap:` comments and hand-styled markup in the
+  translator, transcription, admin and dashboard views) found these missing.
+  All additive; defaults of existing components are unchanged.
+
+  - **Feature: `Alert`.** Inline status message with five tones, a status
+    icon per tone, opt-in live region (`live`), optional dismiss button and
+    an action row.
+  - **Feature: `Progress`.** Native progress bar, determinate and
+    indeterminate, three tones, two sizes, optional visible percentage.
+  - **Feature: `Skeleton`.** Loading placeholder in text, block or circle
+    shape; a text line is exactly one line tall. `skeletonVariants` serves
+    views that build HTML strings.
+  - **Feature: `Separator`.** A standalone divider for lists, card sections
+    and toolbars, outside any menu.
+  - **Feature: `EmptyState`.** Empty lists, searches with no hits and
+    not-found pages, in two sizes, with an optional heading level.
+  - **Feature: `DescriptionList`.** Term/value pairs in a real `<dl>`,
+    stacked or in two columns.
+  - **Feature: `Prose` / `proseVariants`.** Token-based typography for
+    Markdown and Tiptap content.
+  - **Feature: `Highlight` / `highlightVariants`.** Inline search, insert and
+    delete marks with non-colour cues and screen-reader prefixes.
+  - **Feature: `Slider`.** Seek, volume and two-thumb range slider on
+    `@radix-ui/react-slider` (new dependency), with `thumbLabels` and
+    `getValueText`.
+  - **Feature: `Fieldset`.** Native fieldset with `FieldsetLegend` /
+    `FieldsetDescription` / `FieldsetMessage`, wired to `aria-invalid` /
+    `aria-describedby`.
+  - **Feature: `ColorSwatch`.** Decorative dot in a category colour for
+    speaker legends and category lists.
+  - **Feature: `NavGroup`.** Titled group of sidebar nav rows, named by its
+    heading; in the collapsed rail the heading is screen-reader only and a
+    short rule marks the group.
+  - **Feature: `FormActionBar`; `FormLayout` `stickyActions` / `size`.**
+    Cancel/Save stay visible while a long form scrolls, with a message slot.
+    `FormLayout` can put its actions into that bar and widen past the reading
+    width (`size` = `reading` default / `content` / `page`); with no new
+    props its DOM is identical.
+  - **Feature: `Avatar` `src`/`alt` and `color`.** Profile picture with an
+    initials fallback; category-coloured circles with readable initials.
+  - **Feature: `Dialog` sizes and `DialogBody`.** `DialogContent` `size`
+    sm/default/lg/xl and a viewport height cap; `DialogBody` scrolls while
+    header and footer stay; `DialogHeader` leaves room for the close button.
+    Without `DialogBody` the content stays the grid it was; the flex column
+    with pinned header and footer applies only around a `DialogBody`.
+  - **Feature: `NavItem` disabled look and `description`.**
+  - **Feature: `FormControl` names role-based controls.** `FormLabel` always
+    renders an id and `FormControl` adds `aria-labelledby` to it while a
+    label is mounted, so a `Slider` thumb (or any `role=` control) in a form
+    field is named. Native inputs keep the same accessible name.
+  - **Token: `--animate-progress-indeterminate`** (+ `@keyframes`) for the
+    indeterminate `Progress` segment.
+  - **Feature: `SelectTrigger size="sm"`** (same height and type as
+    `Button size="sm"`) and **`Button size="icon-sm"`** (square 32px).
+
 - **0.45.0** — **One `AppShellLayout` for every app view; theme and Style
   move into the settings dialog. BREAKING** (four exports removed, see the
   KI-846 entry below). The 0.45.0 entries:

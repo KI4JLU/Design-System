@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import {
   Select,
   SelectContent,
@@ -9,6 +10,8 @@ import {
   SelectValue,
 } from "./select";
 import { FormControl, FormDescription, FormItem, FormLabel } from "./form";
+import { Button } from "./button";
+import { Label } from "./label";
 
 const meta = {
   title: "Components/Select",
@@ -100,4 +103,44 @@ export const Disabled: Story = {
       </Select>
     </div>
   ),
+};
+
+/**
+ * `size="sm"`: kompakter Trigger mit Höhe und Schrift von `Button size="sm"`,
+ * damit beide in einer Kachel (Übersetzer: Zielsprache + „Übersetzen")
+ * auf einer Linie stehen.
+ */
+export const Small: Story = {
+  parameters: { a11y: { test: "error" } },
+  render: () => (
+    <div className="flex max-w-sm items-center gap-2">
+      <Label htmlFor="target-language" className="sr-only">
+        Zielsprache
+      </Label>
+      <Select defaultValue="en">
+        <SelectTrigger id="target-language" size="sm" className="min-w-0 flex-1">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="de">Deutsch</SelectItem>
+          <SelectItem value="en">Englisch</SelectItem>
+          <SelectItem value="fr">Französisch</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button size="sm">Übersetzen</Button>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const trigger = canvas.getByRole("combobox", { name: "Zielsprache" });
+    const button = canvas.getByRole("button", { name: "Übersetzen" });
+    const t = getComputedStyle(trigger);
+    const b = getComputedStyle(button);
+    await expect(trigger.getBoundingClientRect().height).toBe(
+      button.getBoundingClientRect().height,
+    );
+    await expect(t.fontSize).toBe(b.fontSize);
+    await expect(t.lineHeight).toBe(b.lineHeight);
+    await expect(t.fontFamily).toBe(b.fontFamily);
+    await expect(t.fontWeight).toBe(b.fontWeight);
+  },
 };

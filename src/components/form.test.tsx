@@ -40,4 +40,71 @@ describe("Form field primitives", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Ungültige E-Mail.");
     expect(input).toHaveAccessibleDescription("Ungültige E-Mail.");
   });
+
+  it("points aria-labelledby at the rendered label id, custom or generated", () => {
+    const { rerender } = render(
+      <FormItem>
+        <FormLabel id="mail-label">E-Mail</FormLabel>
+        <FormControl>
+          <Input type="email" />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("textbox", { name: "E-Mail" })).toHaveAttribute(
+      "aria-labelledby",
+      "mail-label",
+    );
+    rerender(
+      <FormItem>
+        <FormLabel>E-Mail</FormLabel>
+        <FormControl>
+          <Input type="email" />
+        </FormControl>
+      </FormItem>,
+    );
+    const input = screen.getByRole("textbox", { name: "E-Mail" });
+    expect(input.getAttribute("aria-labelledby")).toBe(screen.getByText("E-Mail").id);
+  });
+
+  it("adds no aria-labelledby without a FormLabel", () => {
+    render(
+      <FormItem>
+        <FormControl>
+          <Input type="email" aria-label="E-Mail" />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("textbox", { name: "E-Mail" })).not.toHaveAttribute(
+      "aria-labelledby",
+    );
+  });
+  it("registers the id of an asChild label", () => {
+    render(
+      <FormItem>
+        <FormLabel asChild>
+          <span id="custom-label">Tempo</span>
+        </FormLabel>
+        <FormControl>
+          <div role="slider" aria-valuenow={1} tabIndex={0} />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("slider", { name: "Tempo" })).toHaveAttribute(
+      "aria-labelledby",
+      "custom-label",
+    );
+  });
+
+  it("keeps a consumer aria-label instead of pointing at the FormLabel", () => {
+    render(
+      <FormItem>
+        <FormLabel>Name</FormLabel>
+        <FormControl>
+          <Input aria-label="Name der Inhaberin" />
+        </FormControl>
+      </FormItem>,
+    );
+    const input = screen.getByRole("textbox", { name: "Name der Inhaberin" });
+    expect(input).not.toHaveAttribute("aria-labelledby");
+  });
 });
