@@ -22,20 +22,34 @@ funktionieren.
 | `description` | `ReactNode` | — | Gedämpfte Zeile unter dem Titel. |
 | `children` | `ReactNode` | ✅ | Formular-Abschnitte — je Abschnitt eine `Card` mit `FormItem`s. |
 | `actions` | `ReactNode` | — | Fußzeilen-Aktionen (Speichern/Abbrechen als `Button`s). |
+| `stickyActions` | `boolean` | — | Aktionen in einer `FormActionBar`, die beim Scrollen am unteren Rand des Scroll-Containers stehen bleibt. Standard `false` (statische Zeile unter einer Linie). Die Felder bekommen dann einen unteren `scroll-margin`, damit ein per Tab erreichtes Feld nicht hinter der Leiste liegt (WCAG 2.4.11). |
+| `size` | `"reading"` · `"content"` · `"page"` | — | Spaltenbreite als `Container`-Größe. Standard `reading` (672px) — unverändert für jede bestehende Aufrufstelle. `content` (1000px) für Einstellungsseiten aus vielen Cards. |
 
 <Controls />
 
 ## Responsives Verhalten
 
-- Schmale Spalte (`Container size="reading"`), Seitenränder über Token.
+- Schmale Spalte (`Container size="reading"`), Seitenränder über Token;
+  `size` wählt eine breitere `Container`-Größe.
 - Die Aktionszeile ist ab `sm` rechtsbündig nebeneinander; auf Mobil stapelt
   sie umgekehrt (`flex-col-reverse`), sodass die Primäraktion oben steht.
+- Mit `stickyActions` bleibt die Aktionsleiste 16px über dem unteren Rand des
+  Scroll-Containers stehen und liegt am Ende des Scrollens unter der letzten
+  Card — sie verdeckt dort nichts. Unter 28rem Leistenbreite stapelt sie die
+  Aktionen in voller Breite, Primäraktion oben.
+
+<Canvas of={FormLayoutStories.StickyActionsWide} />
 
 ## Do's & Don'ts
 
 - ✅ Felder ausschließlich mit den Form-Primitives bauen — Label-, Fehler- und
   `aria`-Verdrahtung sind dort gelöst.
 - ✅ Zusammengehörende Felder je `Card` gruppieren; Abstände mit `Stack`.
+- ✅ Lange Formulare (viele Cards) mit `stickyActions`, damit Speichern und
+  Abbrechen erreichbar bleiben. Braucht die Leiste eine Fehler- oder
+  Statusmeldung, statt `actions` eine `FormActionBar` mit `message` als letztes
+  Kind übergeben.
+- ❌ Keine Breite per `className` (`max-w-*`) — `size` wählen.
 - ❌ No second `<h1>` on the page: the rule and the `headingLevel` it calls for are in `docs/COMPONENT_GUIDELINES.md` → "Page headings: who owns them".
 - ❌ Kein `<form>` im Template erwarten — das eigene `<form>` umschließt das
   Template, nicht umgekehrt.
