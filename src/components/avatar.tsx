@@ -62,6 +62,31 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   color?: string;
 }
 
+/**
+ * Picture with the initials as fallback. Owns the load state of one URL; the
+ * parent keys it by `src`, so the state never outlives its URL.
+ */
+function AvatarPicture({ src, initials }: { src: string; initials: string }) {
+  const [state, setState] = React.useState<ImageState>();
+  if (state === "error") return <>{initials}</>;
+  return (
+    <>
+      {state !== "loaded" && initials}
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        onLoad={() => setState("loaded")}
+        onError={() => setState("error")}
+        className={cn(
+          "absolute inset-0 size-full object-cover",
+          state !== "loaded" && "opacity-0",
+        )}
+      />
+    </>
+  );
+}
+
 const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
   (
     {
@@ -77,12 +102,6 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
     },
     ref,
   ) => {
-    // Keyed by URL, so a new `src` starts over as "loading" without an effect.
-    const [image, setImage] = React.useState<{ src: string; state: ImageState }>();
-    const imageState = src && image?.src === src ? image.state : undefined;
-    const showImage = Boolean(src) && imageState !== "error";
-    const showInitials = !showImage || imageState !== "loaded";
-
     const ariaLabel = props["aria-label"] ?? alt;
     const named = Boolean(ariaLabel || props["aria-labelledby"]);
 
@@ -106,19 +125,12 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
           )}
           style={color ? { backgroundColor: color } : undefined}
         >
-          {showInitials && initials}
-          {showImage && src && (
-            <img
-              src={src}
-              alt=""
-              draggable={false}
-              onLoad={() => setImage({ src, state: "loaded" })}
-              onError={() => setImage({ src, state: "error" })}
-              className={cn(
-                "absolute inset-0 size-full object-cover",
-                imageState !== "loaded" && "opacity-0",
-              )}
-            />
+          {src ? (
+            // Keyed by URL: every `src` transition starts over as "loading",
+            // so a URL that failed earlier is retried when it comes back.
+            <AvatarPicture key={src} src={src} initials={initials} />
+          ) : (
+            initials
           )}
         </span>
         {online && (

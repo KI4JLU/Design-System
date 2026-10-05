@@ -61,6 +61,18 @@ describe("Avatar picture", () => {
     expect(img()).toHaveAttribute("src", "/b.png");
   });
 
+  it("retries a failed URL when src goes A → B → A before B settles", () => {
+    const { rerender } = render(<Avatar initials="SK" src="/a.png" data-testid="avatar" />);
+    fireEvent.error(img()!);
+    expect(img()).toBeNull();
+    rerender(<Avatar initials="SK" src="/b.png" data-testid="avatar" />);
+    expect(img()).toHaveAttribute("src", "/b.png");
+    rerender(<Avatar initials="SK" src="/a.png" data-testid="avatar" />);
+    expect(img()).toHaveAttribute("src", "/a.png");
+    expect(img()).toHaveClass("opacity-0");
+    expect(circle()).toHaveTextContent("SK");
+  });
+
   it("keeps the picture out of the accessibility tree; the name stays the avatar's", () => {
     render(<Avatar initials="SK" src="/a.png" aria-label="Steffen Karcher" data-testid="avatar" />);
     expect(screen.getByRole("img", { name: "Steffen Karcher" })).toBe(screen.getByTestId("avatar"));
