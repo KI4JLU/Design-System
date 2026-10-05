@@ -13,6 +13,15 @@ export {
   type AppShellPanel,
   type AppShellPanelResize,
 } from "./components/app-shell";
+export {
+  Alert,
+  type AlertProps,
+  AlertTitle,
+  type AlertTitleProps,
+  AlertDescription,
+  AlertAction,
+} from "./components/alert";
+export { alertVariants, type AlertTone } from "./components/alert-variants";
 export { Avatar, type AvatarProps } from "./components/avatar";
 export { Badge, type BadgeProps } from "./components/badge";
 export { badgeVariants } from "./components/badge-variants";
@@ -42,8 +51,18 @@ export { ChatBubble, type ChatBubbleProps } from "./components/chat-bubble";
 export { chatBubbleVariants } from "./components/chat-bubble-variants";
 export { Checkbox } from "./components/checkbox";
 export { CodeBlock, type CodeBlockProps } from "./components/code-block";
+export { ColorSwatch, type ColorSwatchProps } from "./components/color-swatch";
+export { colorSwatchVariants } from "./components/color-swatch-variants";
 export { Container, type ContainerProps } from "./components/container";
 export { containerVariants } from "./components/container-variants";
+export {
+  DescriptionList,
+  DescriptionItem,
+  DescriptionTerm,
+  DescriptionDetails,
+  type DescriptionListProps,
+} from "./components/description-list";
+export { descriptionListVariants, descriptionItemVariants } from "./components/description-list-variants";
 export {
   Dialog,
   DialogPortal,
@@ -52,11 +71,13 @@ export {
   DialogClose,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogFooter,
   DialogTitle,
   DialogDescription,
   type DialogContentProps,
 } from "./components/dialog";
+export { dialogContentVariants } from "./components/dialog-variants";
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -68,7 +89,21 @@ export {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "./components/dropdown-menu";
+export { EmptyState, type EmptyStateProps } from "./components/empty-state";
+export {
+  emptyStateVariants,
+  emptyStateIconVariants,
+  emptyStateTitleVariants,
+  emptyStateDescriptionVariants,
+} from "./components/empty-state-variants";
 export { fieldVariants } from "./components/field-variants";
+export {
+  Fieldset,
+  type FieldsetProps,
+  FieldsetLegend,
+  FieldsetDescription,
+  FieldsetMessage,
+} from "./components/fieldset";
 export { FilterChips, type FilterChipsProps, type FilterChipsOption } from "./components/filter-chips";
 export { filterChipVariants } from "./components/filter-chips-variants";
 export { FilterMenu, type FilterMenuProps, type FilterMenuOption } from "./components/filter-menu";
@@ -81,6 +116,10 @@ export {
   FormDescription,
   FormMessage,
 } from "./components/form";
+export { FormActionBar, type FormActionBarProps } from "./components/form-action-bar";
+export { formActionBarVariants } from "./components/form-action-bar-variants";
+export { Highlight, type HighlightProps } from "./components/highlight";
+export { highlightVariants } from "./components/highlight-variants";
 export { Input, type InputProps } from "./components/input";
 export { Label } from "./components/label";
 export { ListToolbar, type ListToolbarProps } from "./components/list-toolbar";
@@ -89,7 +128,8 @@ export { logoVariants } from "./components/logo-variants";
 export { MenuItem, type MenuItemProps } from "./components/menu-item";
 export { menuItemVariants } from "./components/menu-item-variants";
 export { NavItem, type NavItemProps } from "./components/nav-item";
-export { navItemVariants } from "./components/nav-item-variants";
+export { navItemVariants, navItemDescriptionVariants } from "./components/nav-item-variants";
+export { NavGroup, type NavGroupProps } from "./components/nav-group";
 export { PageHeader, type PageHeaderProps } from "./components/page-header";
 export {
   Popover,
@@ -98,6 +138,14 @@ export {
   PopoverClose,
   PopoverContent,
 } from "./components/popover";
+export { Progress, type ProgressProps } from "./components/progress";
+export {
+  progressTrackVariants,
+  progressIndicatorVariants,
+  progressValueVariants,
+} from "./components/progress-variants";
+export { Prose, type ProseProps } from "./components/prose";
+export { proseVariants } from "./components/prose-variants";
 export { ResizeHandle, type ResizeHandleProps } from "./components/resize-handle";
 export { resizeHandleVariants } from "./components/resize-handle-variants";
 export {
@@ -105,16 +153,19 @@ export {
   SelectGroup,
   SelectValue,
   SelectTrigger,
+  type SelectTriggerProps,
   SelectContent,
   SelectLabel,
   SelectItem,
   SelectSeparator,
 } from "./components/select";
+export { selectTriggerVariants } from "./components/select-variants";
 export {
   SegmentedControl,
   type SegmentedControlOption,
   type SegmentedControlProps,
 } from "./components/segmented-control";
+export { Separator, type SeparatorProps } from "./components/separator";
 // The read side of the collapsed state `SidePanel` publishes, for a consumer's
 // own header/footer node. The context object itself stays internal: writing
 // it would let an app claim a column is collapsed while its width says
@@ -130,6 +181,9 @@ export {
   sidePanelVariants,
 } from "./components/side-panel-variants";
 export { Spinner, type SpinnerProps } from "./components/spinner";
+export { Skeleton, type SkeletonProps } from "./components/skeleton";
+export { skeletonVariants } from "./components/skeleton-variants";
+export { Slider, type SliderProps } from "./components/slider";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";
 export { Switch } from "./components/switch";

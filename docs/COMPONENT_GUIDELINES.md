@@ -186,7 +186,7 @@ import { Button } from "@ki4jlu/design-system";
 </Button>
 ```
 - Variants: `default` (primary) · `secondary` · `outline` · `ghost` · `destructive` · `link`.
-- Sizes: `default` · `sm` · `lg` · `icon`.
+- Sizes: `default` · `sm` · `lg` · `icon` · `icon-sm` (square 32px, compact tile headers).
 - Icon-only buttons **must** have an `aria-label`.
 - To style variants elsewhere, import `buttonVariants` from
   `@ki4jlu/design-system-variants` (not from `button.tsx`).
