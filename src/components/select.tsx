@@ -1,9 +1,10 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown } from "lucide-react";
+import { type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
-import { fieldVariants } from "./field-variants";
 import { menuItemVariants } from "./menu-item-variants";
+import { selectTriggerVariants } from "./select-variants";
 
 /**
  * Accessible single-select built on Radix — replaces the hand-built
@@ -17,20 +18,21 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
+export interface SelectTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
+    VariantProps<typeof selectTriggerVariants> {}
+
+/**
+ * `size="sm"` matches `Button size="sm"` in height and type, for a select
+ * beside a small button on one line (e.g. in a dashboard tile).
+ */
 const SelectTrigger = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  SelectTriggerProps
+>(({ className, children, size, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(
-      fieldVariants(),
-      // Follows the app-wide Style like a button (one line, like Input).
-      "rounded-[var(--ui-radius-control,var(--radius-field))]",
-      "flex items-center justify-between gap-2 text-left",
-      "data-[placeholder]:text-on-surface-variant [&>span]:line-clamp-1",
-      className,
-    )}
+    className={cn(selectTriggerVariants({ size }), className)}
     {...props}
   >
     {children}

@@ -73,4 +73,29 @@ describe("Select", () => {
     const disabled = await screen.findByRole("option", { name: "Claude Opus" });
     expect(disabled).toHaveAttribute("aria-disabled", "true");
   });
+
+  it("keeps the default trigger size and applies size=\"sm\"", () => {
+    render(
+      <>
+        <Select>
+          <SelectTrigger aria-label="Standard">
+            <SelectValue />
+          </SelectTrigger>
+        </Select>
+        <Select>
+          <SelectTrigger aria-label="Kompakt" size="sm">
+            <SelectValue />
+          </SelectTrigger>
+        </Select>
+      </>,
+    );
+    const standard = screen.getByRole("combobox", { name: "Standard" });
+    expect(standard).toHaveClass("px-4", "py-3");
+    expect(standard).not.toHaveClass("h-8");
+
+    const compact = screen.getByRole("combobox", { name: "Kompakt" });
+    expect(compact).toHaveClass("h-8", "px-3", "py-0", "text-xs");
+    expect(compact).not.toHaveClass("px-4");
+    expect(compact).not.toHaveClass("py-3");
+  });
 });
