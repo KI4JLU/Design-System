@@ -5,6 +5,7 @@ import { expect } from "storybook/test";
 import { Slider } from "./slider";
 import { Button } from "./button";
 import { Label } from "./label";
+import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "./form";
 
 const formatTime = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -173,6 +174,47 @@ export const WithLabel: Story = {
       />
     </div>
   ),
+};
+
+const InFormExample = () => {
+  const [speed, setSpeed] = useState([1.75]);
+  const error = speed[0] > 1.5 ? "Höchstens 1,5-fach, sonst wird die Sprache unverständlich." : undefined;
+  return (
+    <FormItem error={error}>
+      <FormLabel>Wiedergabegeschwindigkeit</FormLabel>
+      <FormControl>
+        <Slider
+          value={speed}
+          onValueChange={setSpeed}
+          min={0.5}
+          max={2}
+          step={0.25}
+          getValueText={(v) => `${v.toLocaleString("de-DE")}-fach`}
+        />
+      </FormControl>
+      <FormDescription>Gilt für alle Aufnahmen der Transkription.</FormDescription>
+      <FormMessage />
+    </FormItem>
+  );
+};
+
+/**
+ * Im Formular: `FormControl` legt Name (`FormLabel`), Beschreibung bzw.
+ * Fehler und `aria-invalid` auf den Daumen, denn dort liegt der Fokus.
+ */
+export const InForm: Story = {
+  render: () => <InFormExample />,
+  play: async ({ canvas, userEvent }) => {
+    const thumb = canvas.getByRole("slider", { name: "Wiedergabegeschwindigkeit" });
+    await expect(thumb).toHaveAttribute("aria-invalid", "true");
+    await expect(thumb).toHaveAccessibleDescription(
+      "Höchstens 1,5-fach, sonst wird die Sprache unverständlich.",
+    );
+    thumb.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    await expect(thumb).toHaveAttribute("aria-invalid", "false");
+    await expect(thumb).toHaveAccessibleDescription("Gilt für alle Aufnahmen der Transkription.");
+  },
 };
 
 /** Senkrecht: die Höhe kommt vom Elternelement (mindestens 10 rem). */

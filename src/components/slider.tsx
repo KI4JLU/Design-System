@@ -27,6 +27,11 @@ export interface SliderProps
  * on the slider name the thumbs that have no own label; when every thumb is
  * named by `thumbLabels`, they name the whole slider instead (`role="group"`),
  * so a range reads as "Probefenster, Start" and "Probefenster, Ende".
+ *
+ * Focus lands on the thumbs, so they carry the field wiring: `aria-describedby`
+ * and `aria-invalid` go to every thumb, `id` to the first one. Inside
+ * `FormItem` + `FormControl` the `FormLabel` names the slider and the
+ * description or error describes it.
  */
 const Slider = React.forwardRef<
   React.ComponentRef<typeof SliderPrimitive.Root>,
@@ -41,8 +46,11 @@ const Slider = React.forwardRef<
       defaultValue,
       onValueChange,
       min = 0,
+      id,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
+      "aria-describedby": ariaDescribedBy,
+      "aria-invalid": ariaInvalid,
       ...props
     },
     ref,
@@ -95,11 +103,14 @@ const Slider = React.forwardRef<
           return (
             <SliderPrimitive.Thumb
               key={index}
+              id={index === 0 ? id : undefined}
               aria-label={thumbLabel ?? (nameGroup ? undefined : ariaLabel)}
               aria-labelledby={thumbLabel || nameGroup ? undefined : ariaLabelledBy}
               aria-valuetext={getValueText?.(thumbValue, index)}
+              aria-describedby={ariaDescribedBy}
+              aria-invalid={ariaInvalid}
               className={cn(
-                "block size-5 rounded-full border-2 border-primary bg-surface-container-lowest shadow-sm",
+                "block size-5 rounded-full border-2 border-primary bg-surface-container-lowest shadow-card",
                 "transition-[box-shadow] motion-reduce:transition-none",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                 "data-[disabled]:pointer-events-none",

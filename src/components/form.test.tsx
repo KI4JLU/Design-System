@@ -40,4 +40,42 @@ describe("Form field primitives", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Ungültige E-Mail.");
     expect(input).toHaveAccessibleDescription("Ungültige E-Mail.");
   });
+
+  it("points aria-labelledby at the rendered label id, custom or generated", () => {
+    const { rerender } = render(
+      <FormItem>
+        <FormLabel id="mail-label">E-Mail</FormLabel>
+        <FormControl>
+          <Input type="email" />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("textbox", { name: "E-Mail" })).toHaveAttribute(
+      "aria-labelledby",
+      "mail-label",
+    );
+    rerender(
+      <FormItem>
+        <FormLabel>E-Mail</FormLabel>
+        <FormControl>
+          <Input type="email" />
+        </FormControl>
+      </FormItem>,
+    );
+    const input = screen.getByRole("textbox", { name: "E-Mail" });
+    expect(input.getAttribute("aria-labelledby")).toBe(screen.getByText("E-Mail").id);
+  });
+
+  it("adds no aria-labelledby without a FormLabel", () => {
+    render(
+      <FormItem>
+        <FormControl>
+          <Input type="email" aria-label="E-Mail" />
+        </FormControl>
+      </FormItem>,
+    );
+    expect(screen.getByRole("textbox", { name: "E-Mail" })).not.toHaveAttribute(
+      "aria-labelledby",
+    );
+  });
 });

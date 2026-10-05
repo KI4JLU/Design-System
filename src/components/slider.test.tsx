@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Slider } from "./slider";
 import { Label } from "./label";
+import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "./form";
 
 const formatTime = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -102,5 +103,53 @@ describe("Slider", () => {
     thumb.focus();
     await user.keyboard("{ArrowRight}");
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("is named, described and marked invalid on the thumb inside FormControl", () => {
+    const { rerender } = render(
+      <FormItem>
+        <FormLabel>Wiedergabegeschwindigkeit</FormLabel>
+        <FormControl>
+          <Slider defaultValue={[1]} min={0.5} max={2} step={0.25} />
+        </FormControl>
+        <FormDescription>Gilt für alle Aufnahmen.</FormDescription>
+      </FormItem>,
+    );
+    const thumb = screen.getByRole("slider", { name: "Wiedergabegeschwindigkeit" });
+    expect(thumb).toHaveAccessibleDescription("Gilt für alle Aufnahmen.");
+    expect(thumb).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByText("Wiedergabegeschwindigkeit")).toHaveAttribute("for", thumb.id);
+
+    rerender(
+      <FormItem error="Höchstens 1,5-fach.">
+        <FormLabel>Wiedergabegeschwindigkeit</FormLabel>
+        <FormControl>
+          <Slider defaultValue={[2]} min={0.5} max={2} step={0.25} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>,
+    );
+    const invalid = screen.getByRole("slider", { name: "Wiedergabegeschwindigkeit" });
+    expect(invalid).toHaveAttribute("aria-invalid", "true");
+    expect(invalid).toHaveAccessibleDescription("Höchstens 1,5-fach.");
+  });
+
+  it("describes every thumb of a range and puts the id on the first", () => {
+    render(
+      <Slider
+        id="window"
+        defaultValue={[10, 40]}
+        thumbLabels={["Start", "Ende"]}
+        aria-describedby="hint"
+        aria-invalid
+      />,
+    );
+    const [start, end] = screen.getAllByRole("slider");
+    expect(start).toHaveAttribute("id", "window");
+    expect(end).not.toHaveAttribute("id");
+    for (const thumb of [start, end]) {
+      expect(thumb).toHaveAttribute("aria-describedby", "hint");
+      expect(thumb).toHaveAttribute("aria-invalid", "true");
+    }
   });
 });
