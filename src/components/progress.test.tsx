@@ -25,12 +25,19 @@ describe("Progress", () => {
     expect(screen.getByRole("progressbar", { name: "vorlesung.mp3" })).toBeInTheDocument();
   });
 
-  it("is indeterminate without a value: no aria-valuenow, pulsing bar", () => {
+  it("is indeterminate without a value: no aria-valuenow, sliding segment", () => {
     render(<Progress label="Wird übersetzt" />);
     const bar = screen.getByRole("progressbar");
     expect(bar).not.toHaveAttribute("aria-valuenow");
     const indicator = indicatorOf(bar);
-    expect(indicator).toHaveClass("w-full", "animate-pulse", "motion-reduce:animate-none");
+    expect(indicator).toHaveClass(
+      "w-2/5",
+      "animate-progress-indeterminate",
+      "motion-reduce:animate-none",
+      "motion-reduce:translate-x-3/4",
+    );
+    // Full opacity in every motion setting: a faded fill falls below 3:1 on the track.
+    expect(indicator.className).not.toMatch(/opacity|animate-pulse/);
     expect(indicator.style.width).toBe("");
   });
 
@@ -50,6 +57,17 @@ describe("Progress", () => {
     const bar = screen.getByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuemax", "12");
     expect(indicatorOf(bar).style.width).toBe("25%");
+  });
+
+  it("falls back to max 100 for a non-finite or non-positive max", () => {
+    for (const max of [Infinity, -Infinity, Number.NaN, 0, -3]) {
+      const { unmount } = render(<Progress value={50} max={max} label="x" />);
+      const bar = screen.getByRole("progressbar");
+      expect(bar).toHaveAttribute("aria-valuemax", "100");
+      expect(bar).toHaveAttribute("aria-valuenow", "50");
+      expect(indicatorOf(bar).style.width).toBe("50%");
+      unmount();
+    }
   });
 
   it("passes aria-valuetext through", () => {

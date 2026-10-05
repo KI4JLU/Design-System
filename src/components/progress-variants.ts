@@ -26,9 +26,10 @@ export const progressTrackVariants = cva(
  * work — `primary` while it runs, `success` when done, `error` when it failed.
  * Every tone has at least 3:1 against the track (WCAG 1.4.11).
  *
- * `indeterminate` fills the whole track and pulses; under
- * `prefers-reduced-motion` it stands still at half strength, which keeps it
- * apart from a full, finished bar.
+ * `indeterminate` is a 2/5-wide segment that slides through the track
+ * (`animate-progress-indeterminate`); under `prefers-reduced-motion` it stands
+ * still in the middle, which no determinate bar does (they start at the left
+ * edge). Opacity stays at 100%, so the 3:1 contrast holds.
  */
 export const progressIndicatorVariants = cva(
   "h-full rounded-full forced-colors:bg-[Highlight]",
@@ -40,7 +41,7 @@ export const progressIndicatorVariants = cva(
         error: "bg-error",
       },
       indeterminate: {
-        true: "w-full animate-pulse motion-reduce:animate-none motion-reduce:opacity-50",
+        true: "w-2/5 animate-progress-indeterminate motion-reduce:animate-none motion-reduce:translate-x-3/4",
         false: "transition-[width] duration-300 ease-out motion-reduce:transition-none",
       },
     },

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { Badge } from "./badge";
 import { Progress } from "./progress";
 
@@ -34,11 +35,27 @@ export const Determinate: Story = {
 
 /**
  * Unbestimmt: ohne `value` — die Datei liegt in der Warteschlange, der Dienst
- * nennt keinen Fortschritt. `aria-valuenow` entfällt, der Balken pulsiert und
- * steht bei reduzierter Bewegung still (halbe Deckkraft).
+ * nennt keinen Fortschritt. `aria-valuenow` entfällt, ein Segment läuft durch
+ * die Spur und steht bei reduzierter Bewegung in der Mitte still — immer in
+ * voller Deckkraft, damit der Kontrast zur Spur 3:1 hält.
  */
 export const Indeterminate: Story = {
-  render: (args) => <Progress {...args} value={undefined} label="Dokument wird übersetzt" />,
+  render: (args) => (
+    <div className="flex max-w-md flex-col gap-stack-md">
+      <Progress {...args} value={undefined} label="Dokument wird übersetzt" />
+      <Progress value={undefined} tone="success" label="Wird abgeschlossen" />
+      <Progress value={undefined} tone="error" label="Wird abgebrochen" />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    for (const bar of canvas.getAllByRole("progressbar")) {
+      await expect(bar).not.toHaveAttribute("aria-valuenow");
+      const segment = bar.firstElementChild!.firstElementChild!;
+      const style = getComputedStyle(segment);
+      await expect(style.animationName).toBe("progress-indeterminate");
+      await expect(style.opacity).toBe("1");
+    }
+  },
 };
 
 /** Ton nach Stand der Arbeit: läuft (`primary`), fertig (`success`), fehlgeschlagen (`error`). */

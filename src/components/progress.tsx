@@ -33,7 +33,7 @@ export type ProgressProps = Omit<
   ProgressName & {
     /** Current value, `0`–`max`; clamped. Omit (or `null`) for indeterminate. */
     value?: number | null;
-    /** Value that means „done". Default: 100 */
+    /** Value that means „done"; a non-finite or non-positive value falls back to 100. Default: 100 */
     max?: number;
     /** State of the work: running (`primary`), done (`success`), failed (`error`). */
     tone?: "primary" | "success" | "error";
@@ -54,8 +54,8 @@ export type ProgressProps = Omit<
  *
  * **Indeterminate.** Omit `value` while the amount is unknown (queued,
  * waiting for the server): `aria-valuenow` is left out, which is how assistive
- * technology recognises an indeterminate bar, and the bar pulses — standing
- * still under `prefers-reduced-motion`.
+ * technology recognises an indeterminate bar, and a segment slides through
+ * the track — standing still in the middle under `prefers-reduced-motion`.
  *
  * **Not a live region.** A screen reader reads the value when it reaches the
  * bar; it does not announce every step. Announce the milestones (started,
@@ -79,7 +79,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     },
     ref,
   ) => {
-    const safeMax = max > 0 ? max : 100;
+    const safeMax = Number.isFinite(max) && max > 0 ? max : 100;
     const indeterminate = typeof value !== "number" || !Number.isFinite(value);
     const current = indeterminate ? undefined : Math.min(Math.max(value, 0), safeMax);
     const percent = current === undefined ? 0 : (current / safeMax) * 100;
