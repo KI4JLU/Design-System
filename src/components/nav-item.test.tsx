@@ -230,6 +230,40 @@ describe("NavItem", () => {
       expect(link).toHaveClass("grid");
     });
 
+    it("wraps a bare-text label so it joins the icon's first row", () => {
+      render(
+        <NavItem description="Sprache, Design">
+          <svg aria-hidden data-testid="icon" />
+          Einstellungen
+          <svg aria-hidden data-testid="chevron" />
+        </NavItem>,
+      );
+      const item = screen.getByRole("button", { name: "Einstellungen" });
+      const label = screen.getByText("Einstellungen");
+      expect(label.tagName).toBe("SPAN");
+      expect(label.parentElement).toBe(item);
+      expect([...item.children].map((c) => c.getAttribute("data-testid") ?? c.textContent)).toEqual([
+        "icon",
+        "Einstellungen",
+        "chevron",
+        "Sprache, Design",
+      ]);
+    });
+
+    it("wraps a bare-text label inside the link with asChild", () => {
+      render(
+        <NavItem asChild description="Sprache, Design">
+          <a href="/einstellungen">
+            <svg aria-hidden />
+            Einstellungen
+          </a>
+        </NavItem>,
+      );
+      const label = screen.getByText("Einstellungen");
+      expect(label.tagName).toBe("SPAN");
+      expect(label.parentElement).toBe(screen.getByRole("link", { name: "Einstellungen" }));
+    });
+
     it("renders no line and stays a flex row without description", () => {
       render(<NavItem>Agenten</NavItem>);
       const item = screen.getByRole("button", { name: "Agenten" });

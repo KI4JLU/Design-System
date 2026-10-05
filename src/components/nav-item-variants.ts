@@ -29,8 +29,10 @@ import { cva } from "class-variance-authority";
  * lands on a second line under the label: every other child stays in the first
  * row, one column each; the label column (the second when the row starts with
  * an `<svg>`, else the first) takes the free width, and the description sits
- * under it. NavItem only sets it while not collapsed — collapsed, the row is
- * the flex icon tile and the description is one more hidden child.
+ * under it. Bare text cannot be placed by a child selector, so NavItem wraps
+ * text runs in a `<span>` while this is on. NavItem only sets it while not
+ * collapsed — collapsed, the row is the flex icon tile and the description is
+ * one more hidden child.
  */
 export const navItemVariants = cva(
   [

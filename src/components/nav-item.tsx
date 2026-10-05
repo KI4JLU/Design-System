@@ -24,7 +24,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
  * (export formats: "SRT" over "Untertitel mit Zeitstempeln"). It describes the
  * row (`aria-describedby`) rather than joining its name. The leading icon must
  * be the row's first child and an `<svg>` for the line to align under the
- * label. Collapsed, it is hidden with the rest of the text.
+ * label; a bare-text label is wrapped in a `<span>` so it stays beside the
+ * icon. Collapsed, it is hidden with the rest of the text.
  *
  * **Disabled.** Pass `disabled` on a button row; on an `asChild` link pass
  * `aria-disabled="true"` and stop the navigation yourself (a link cannot be
@@ -48,6 +49,30 @@ export interface NavItemProps
   label?: string;
   /** A second, smaller line under the label. Exposed as the row's description, not its name. */
   description?: React.ReactNode;
+}
+
+/**
+ * Wraps each run of bare text (strings, numbers) in a `<span>`, so it becomes
+ * an element the two-line grid can pin to the first row. Whitespace-only runs
+ * are dropped: a grid or flex row would not render them anyway.
+ */
+function wrapTextRuns(nodes: React.ReactNode): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let run: Array<string | number> = [];
+  const flush = () => {
+    if (run.join("").trim() !== "") out.push(<span key={`text-${out.length}`}>{run}</span>);
+    run = [];
+  };
+  for (const node of React.Children.toArray(nodes)) {
+    if (typeof node === "string" || typeof node === "number") {
+      run.push(node);
+    } else {
+      flush();
+      out.push(node);
+    }
+  }
+  flush();
+  return out;
 }
 
 const NavItem = React.forwardRef<HTMLButtonElement, NavItemProps>(
@@ -93,17 +118,22 @@ const NavItem = React.forwardRef<HTMLButtonElement, NavItemProps>(
       </span>
     ) : null;
 
+    // In the two-line grid, bare text would be an anonymous grid item that
+    // the first-row rule cannot reach; wrapped, it joins the icon's row.
+    const rowChildren = (nodes: React.ReactNode) =>
+      hasDescription && !collapsed ? wrapTextRuns(nodes) : nodes;
+
     // With asChild the line goes inside the child element (Slottable), so it
     // lands in the <a>, next to the link's own icon and label.
     const content = asChild ? (
       hasDescription && React.isValidElement<{ children?: React.ReactNode }>(children) ? (
-        React.cloneElement(children, undefined, children.props.children, descriptionLine)
+        React.cloneElement(children, undefined, rowChildren(children.props.children), descriptionLine)
       ) : (
         children
       )
     ) : (
       <>
-        {children}
+        {rowChildren(children)}
         {descriptionLine}
       </>
     );

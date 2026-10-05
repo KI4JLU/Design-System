@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import {
   BookOpen,
   ChevronDown,
@@ -226,9 +226,26 @@ export const WithDescription: Story = {
         <FileText {...ICON} />
         <span>PDF</span>
       </NavItem>
+      <NavItem description="Sprache, Design und Konto" data-testid="bare-text">
+        <Settings {...ICON} />
+        Einstellungen
+        <ChevronRight {...ICON} className="ml-auto" />
+      </NavItem>
     </nav>
   ),
   play: async ({ canvasElement }) => {
+    // A bare-text label stays in the icon's row, the line goes under it.
+    const bare = canvasElement.querySelector("[data-testid='bare-text']") as HTMLElement;
+    const [bareIcon, chevron] = [...bare.querySelectorAll("svg")].map((svg) => svg.getBoundingClientRect());
+    const bareLabel = within(bare).getByText("Einstellungen").getBoundingClientRect();
+    const bareLine = bare.querySelector("[data-slot='nav-item-description']")!.getBoundingClientRect();
+    await expect(bareLabel.top).toBeLessThan(bareIcon.bottom);
+    await expect(bareLabel.bottom).toBeGreaterThan(bareIcon.top);
+    await expect(bareLabel.left).toBeGreaterThanOrEqual(bareIcon.right);
+    await expect(chevron.left).toBeGreaterThanOrEqual(bareLabel.right);
+    await expect(Math.abs(chevron.top - bareIcon.top)).toBeLessThanOrEqual(0.5);
+    await expect(Math.abs(bareLine.left - bareLabel.left)).toBeLessThanOrEqual(0.5);
+    await expect(bareLine.top).toBeGreaterThanOrEqual(bareLabel.bottom - 0.5);
     // The line sits under the label, not under the icon.
     const row = canvasElement.querySelector("[data-testid='format-VTT']") as HTMLElement;
     const label = row.querySelector("span:not([data-slot])")!.getBoundingClientRect();
