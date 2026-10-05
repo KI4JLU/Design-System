@@ -20,9 +20,24 @@ import { cva } from "class-variance-authority";
  *    sets `aria-label`: the accessible name is then guaranteed regardless, and
  *    the visual contract ("put the row's text in an element") is stated on the
  *    prop.
+ *
+ * **Disabled.** The native `disabled` (a `<button>` row) and `aria-disabled`
+ * (an `asChild` link, which has no `disabled`) both turn the text and icon to
+ * `on-disabled`, show `cursor-not-allowed` and drop the hover fill.
+ *
+ * `withDescription` lays the row out as a grid so `NavItem`'s `description`
+ * lands on a second line under the label: every other child stays in the first
+ * row, one column each; the label column (the second when the row starts with
+ * an `<svg>`, else the first) takes the free width, and the description sits
+ * under it. NavItem only sets it while not collapsed — collapsed, the row is
+ * the flex icon tile and the description is one more hidden child.
  */
 export const navItemVariants = cva(
-  "flex w-full items-center rounded-[var(--ui-radius-control,var(--radius-action))] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
+  [
+    "flex w-full items-center rounded-[var(--ui-radius-control,var(--radius-action))] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
+    "disabled:cursor-not-allowed disabled:text-on-disabled disabled:hover:bg-transparent",
+    "aria-disabled:cursor-not-allowed aria-disabled:text-on-disabled aria-disabled:hover:bg-transparent",
+  ],
   {
     variants: {
       level: {
@@ -35,6 +50,15 @@ export const navItemVariants = cva(
       },
       collapsed: {
         true: "justify-center [&>*:not(svg)]:hidden",
+        false: "",
+      },
+      withDescription: {
+        true: [
+          "grid grid-cols-[minmax(0,1fr)] gap-y-0.5 text-start",
+          "has-[>svg:first-child]:grid-cols-[auto_minmax(0,1fr)]",
+          "[&>*:not([data-slot=nav-item-description])]:row-start-1",
+          "[&:has(>svg:first-child)>[data-slot=nav-item-description]]:col-start-2",
+        ],
         false: "",
       },
     },
@@ -54,6 +78,24 @@ export const navItemVariants = cva(
       level: "top",
       active: false,
       collapsed: false,
+      withDescription: false,
     },
   },
 );
+
+/**
+ * NavItem's second line: smaller than the label, in the row's own (already
+ * muted, or on-primary when active) text colour, so it follows active and
+ * disabled without colours of its own.
+ */
+export const navItemDescriptionVariants = cva("col-start-1 row-start-2 font-body-base font-normal", {
+  variants: {
+    level: {
+      top: "text-sm",
+      sub: "text-xs",
+    },
+  },
+  defaultVariants: {
+    level: "top",
+  },
+});
