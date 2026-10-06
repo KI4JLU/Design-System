@@ -129,6 +129,20 @@ export {
   SIDE_PANEL_RAIL_WIDTH,
   sidePanelVariants,
 } from "./components/side-panel-variants";
+export {
+  MessageScrollerProvider,
+  MessageScroller,
+  MessageScrollerViewport,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerButton,
+  type MessageScrollerButtonProps,
+} from "./components/message-scroller";
+export {
+  useMessageScroller,
+  useMessageScrollerScrollable,
+  useMessageScrollerVisibility,
+} from "@shadcn/react/message-scroller";
 export { Shimmer, type ShimmerProps } from "./components/shimmer";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
