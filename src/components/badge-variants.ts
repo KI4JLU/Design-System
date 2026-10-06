@@ -6,7 +6,7 @@ import { cva } from "class-variance-authority";
  * KPI deltas); `text` — inline icon+text in the tone color, no background
  * (health checks, meta lines). Tones map 1:1 onto the semantic status tokens.
  */
-export const badgeVariants = cva("inline-flex items-center [&_svg]:shrink-0", {
+export const badgeVariants = cva("inline-flex items-center whitespace-nowrap [&_svg]:shrink-0", {
   variants: {
     appearance: {
       filled: "gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
