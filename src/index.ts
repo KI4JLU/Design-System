@@ -129,6 +129,7 @@ export {
   SIDE_PANEL_RAIL_WIDTH,
   sidePanelVariants,
 } from "./components/side-panel-variants";
+export { Shimmer, type ShimmerProps } from "./components/shimmer";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";
