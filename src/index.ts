@@ -82,6 +82,7 @@ export {
   FormMessage,
 } from "./components/form";
 export { Input, type InputProps } from "./components/input";
+export { Kbd, KbdGroup } from "./components/kbd";
 export { Label } from "./components/label";
 export { ListToolbar, type ListToolbarProps } from "./components/list-toolbar";
 export { Logo, type LogoProps } from "./components/logo";
