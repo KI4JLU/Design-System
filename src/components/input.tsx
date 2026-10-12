@@ -41,7 +41,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           fieldVariants({ variant }),
           // A one-line field follows the app-wide Style like a button
           // (Textarea keeps the field radius — a capsule does not fit a box).
-          variant !== "inline" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
+          variant !== "inline" && variant !== "title" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
           leadingIcon && "pl-10",
           shortcutHint && "pr-16",
           className,

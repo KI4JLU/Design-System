@@ -10,6 +10,9 @@ import { cva } from "class-variance-authority";
  * `inline` — borderless in-flow field for composers inside Cards and in-row
  * editing (the surrounding row/Card provides the frame, so the field itself
  * carries no border, padding, or focus ring).
+ * `title` — `inline` at heading size: an editable title in a header row
+ * (e.g. a dialog's 56px header), typeset like the `DialogTitle` it stands in
+ * for — `text-base font-semibold`, one line, truncated.
  */
 export const fieldVariants = cva(
   [
@@ -27,6 +30,8 @@ export const fieldVariants = cva(
         ],
         inline:
           "rounded-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0",
+        title:
+          "truncate rounded-none border-0 bg-transparent p-0 text-base font-semibold focus-visible:ring-0",
       },
     },
     defaultVariants: {

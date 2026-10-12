@@ -29,6 +29,14 @@ describe("Input", () => {
     expect(hint).toHaveTextContent("K");
   });
 
+  it("typesets the title variant like a dialog heading, without a frame", () => {
+    render(<Input variant="title" aria-label="Titel" />);
+    const input = screen.getByRole("textbox", { name: "Titel" });
+    expect(input).toHaveClass("text-base", "font-semibold", "truncate", "border-0", "p-0");
+    // A one-line field's capsule radius is for framed fields only.
+    expect(input.className).not.toMatch(/ui-radius-control/);
+  });
+
   it("stays wired to FormControl (id/aria go to the input, not the wrapper)", () => {
     render(
       <FormItem error="Pflichtfeld">
