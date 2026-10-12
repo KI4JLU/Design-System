@@ -179,6 +179,19 @@ describe("RichTextEditor", () => {
     await waitFor(() => expect(onChange.mock.lastCall?.[0]).toMatch(/- \[ \] eins\n\s+- \[ \] zwei/));
   });
 
+  // ORACLE: CommonMark link-around-image syntax, and an ordinary link next to it.
+  it("keeps the link around a linked image through a round trip", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderEditor({ value: "Siehe [![Logo](https://example.org/logo.png)](https://example.org) und [Text](https://a.org)." });
+    const doc = screen.getByRole("textbox", { name: "Inhalt" });
+    expect(doc.querySelector("img[src]")).toHaveAttribute("data-href", "https://example.org");
+    await userEvent.click(screen.getByRole("button", { name: "Als Markdown kopieren" }));
+    const md = writeText.mock.lastCall?.[0] as string;
+    expect(md).toContain("[![Logo](https://example.org/logo.png)](https://example.org)");
+    expect(md).toContain("[Text](https://a.org)");
+  });
+
   it("remounts cleanly when the format changes", () => {
     const { rerender } = renderEditor({ value: "a", format: "text" });
     rerender(

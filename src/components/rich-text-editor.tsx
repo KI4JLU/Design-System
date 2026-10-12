@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { TableKit } from "@tiptap/extension-table";
 import { CharacterCount, Placeholder, UndoRedo } from "@tiptap/extensions";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
@@ -175,6 +176,44 @@ const MarkdownParagraph = Paragraph.extend({
   },
 });
 
+/*
+ * Linked images, `[![alt](src)](href)`. Tiptap's markdown parser puts no link
+ * mark on an image node, so the link would be dropped on load and lost on the
+ * next save. Instead the image carries the link as an `href` attribute: a link
+ * whose only content is an image parses into that image, and the image writes
+ * itself back wrapped in the link. In the editor it stays a plain image
+ * (`data-href`), not a clickable anchor.
+ */
+const LinkedImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute("data-href"),
+        renderHTML: (attrs: { href?: string | null }) => (attrs.href ? { "data-href": attrs.href } : {}),
+      },
+    };
+  },
+  renderMarkdown(node, h, ctx) {
+    const image = this.parent!(node, h, ctx);
+    const href = node.attrs?.href as string | null | undefined;
+    return href ? `[${image}](${href})` : image;
+  },
+});
+
+const ImageAwareLink = Link.extend({
+  parseMarkdown(token, helpers) {
+    const tokens = token.tokens ?? [];
+    if (tokens.length === 1 && tokens[0].type === "image") {
+      return helpers
+        .parseChildren(tokens)
+        .map((n) => (n.type === "image" ? { ...n, attrs: { ...n.attrs, href: token.href } } : n));
+    }
+    return this.parent!(token, helpers);
+  },
+});
+
 /** Plain text → a slice of one paragraph per line, the text mode's own representation. */
 function textToSlice(text: string, schema: Schema): Slice {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
@@ -302,15 +341,14 @@ function RichTextEditorInner({
         ? [Document, Paragraph, Text, UndoRedo]
         : [
             // Underline's `++…++` is not markdown: off, or `C++ and C++` loses its pluses.
-            StarterKit.configure({ underline: false, paragraph: false }),
+            StarterKit.configure({ underline: false, paragraph: false, link: false }),
             MarkdownParagraph,
+            ImageAwareLink,
             TableKit.configure({ table: { resizable: false } }),
             TaskList,
             TaskItem.configure({ nested: true }),
             // Inline, so `text ![alt](src) text` is a valid paragraph and stays editable.
-            // TODO: a linked image `[![a](src)](href)` loses its link — Tiptap's
-            // markdown parser puts no link mark on image nodes. Not yet handled.
-            Image.configure({ inline: true }),
+            LinkedImage.configure({ inline: true }),
             MarkdownSuperscript,
             MarkdownSubscript,
             Markdown,
