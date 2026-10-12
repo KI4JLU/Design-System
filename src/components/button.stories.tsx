@@ -3,6 +3,8 @@ import { useState } from "react";
 import { ListFilter, Trash2 } from "lucide-react";
 import { expect, fn } from "storybook/test";
 import { Button } from "./button";
+import { Input } from "./input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
 const meta = {
   title: "Components/Button",
@@ -25,7 +27,7 @@ const meta = {
     },
     size: {
       control: "select",
-      options: ["default", "sm", "lg", "icon"],
+      options: ["default", "sm", "lg", "field", "icon"],
     },
     asChild: { control: false },
   },
@@ -140,4 +142,35 @@ export const Disabled: Story = {
       </Button>
     </div>
   ),
+};
+
+/**
+ * `size="field"`: a button in the same row as framed fields (e.g. "Titel",
+ * "Rolle", "Erstellen") takes their height and body text, so the row reads
+ * as one control group. Pair it with `items-end` when the fields have labels.
+ */
+export const FieldRow: Story = {
+  render: () => (
+    <div className="flex max-w-xl items-end gap-2">
+      <Input aria-label="Titel" placeholder="z. B. Kurs oder Gruppe" />
+      <Select defaultValue="read">
+        <SelectTrigger aria-label="Rolle" className="w-36 shrink-0"><SelectValue /></SelectTrigger>
+        <SelectContent><SelectItem value="read">Lesen</SelectItem></SelectContent>
+      </Select>
+      <Button size="field">Erstellen</Button>
+      <Button size="field" variant="outline">Abbrechen</Button>
+    </div>
+  ),
+  // ORACLE: the browser's layout — the framed Input's rendered height and
+  // font size, measured, not the class string.
+  play: async ({ canvas }) => {
+    const input = canvas.getByRole("textbox", { name: "Titel" }).getBoundingClientRect().height;
+    const inputFont = getComputedStyle(canvas.getByRole("textbox", { name: "Titel" })).fontSize;
+    for (const name of ["Erstellen", "Abbrechen"]) {
+      const button = canvas.getByRole("button", { name });
+      await expect(Math.round(button.getBoundingClientRect().height)).toBe(Math.round(input));
+      await expect(getComputedStyle(button).fontSize).toBe(inputFont);
+    }
+    await expect(Math.round(canvas.getByRole("combobox", { name: "Rolle" }).getBoundingClientRect().height)).toBe(Math.round(input));
+  },
 };

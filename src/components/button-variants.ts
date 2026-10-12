@@ -42,6 +42,10 @@ export const buttonVariants = cva(
         default: "px-6 py-3",
         sm: "px-4 py-2 text-xs",
         lg: "px-8 py-4",
+        // Lines up with a framed Input / Select in one form row: their height
+        // (py-3 + 24px line + 1px border top and bottom = 50px) and body text.
+        // A fixed height, so a bordered variant (outline) does not grow.
+        field: "h-12.5 px-5 text-base font-medium leading-6",
         icon: "p-2 rounded-full",
       },
     },
