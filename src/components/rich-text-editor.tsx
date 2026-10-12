@@ -198,19 +198,40 @@ const LinkedImage = Image.extend({
   renderMarkdown(node, h, ctx) {
     const image = this.parent!(node, h, ctx);
     const href = node.attrs?.href as string | null | undefined;
-    return href ? `[${image}](${href})` : image;
+    return href ? `[${image}](${markdownDestination(href)})` : image;
   },
 });
 
+/*
+ * A link destination as CommonMark accepts it back. The bare form takes no
+ * whitespace, `<`/`>`, parentheses or backslashes (balanced parentheses would
+ * be legal, but checking costs more than it saves); anything else goes in
+ * angle brackets, where only `<`, `>` and `\` need escaping. Tiptap's own Link
+ * writes `href` raw, so `[a](<x y>)` lost its link on the next load.
+ */
+function markdownDestination(href: string): string {
+  return /[\s<>()\\]/.test(href) ? `<${href.replace(/[<>\\]/g, "\\$&")}>` : href;
+}
+
+/*
+ * A link around an image moves onto the image's `href` (see LinkedImage) —
+ * also when the link holds text besides the image: the text keeps the link
+ * mark, and the next save writes image and text as two adjacent links.
+ */
 const ImageAwareLink = Link.extend({
   parseMarkdown(token, helpers) {
     const tokens = token.tokens ?? [];
-    if (tokens.length === 1 && tokens[0].type === "image") {
-      return helpers
-        .parseChildren(tokens)
-        .map((n) => (n.type === "image" ? { ...n, attrs: { ...n.attrs, href: token.href } } : n));
-    }
-    return this.parent!(token, helpers);
+    if (!tokens.some((t) => t.type === "image")) return this.parent!(token, helpers);
+    // `applyMark` puts the mark on text nodes only, so the images need their `href` first.
+    const content = helpers
+      .parseInline(tokens)
+      .map((n) => (n.type === "image" ? { ...n, attrs: { ...n.attrs, href: token.href } } : n));
+    return helpers.applyMark("link", content, { href: token.href, title: token.title || null });
+  },
+  renderMarkdown(node, h) {
+    const title = node.attrs?.title as string | null | undefined;
+    const destination = markdownDestination((node.attrs?.href as string | null | undefined) ?? "");
+    return `[${h.renderChildren(node)}](${destination}${title ? ` "${title.replace(/["\\]/g, "\\$&")}"` : ""})`;
   },
 });
 

@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { marked, type Token, type Tokens } from "marked";
 import { RichTextEditor } from "./rich-text-editor";
 import { TooltipProvider } from "./tooltip";
 
@@ -190,6 +191,51 @@ describe("RichTextEditor", () => {
     const md = writeText.mock.lastCall?.[0] as string;
     expect(md).toContain("[![Logo](https://example.org/logo.png)](https://example.org)");
     expect(md).toContain("[Text](https://a.org)");
+  });
+
+  /*
+   * ORACLE for the next three: `marked`, the CommonMark lexer Tiptap's markdown
+   * manager loads with — i.e. what the next load of the saved text will see.
+   * It reads our output; nothing of ours produces its verdict.
+   */
+  async function copiedLinks(value: string) {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderEditor({ value });
+    await userEvent.click(screen.getByRole("button", { name: "Als Markdown kopieren" }));
+    const links: { href: string; kids: string[] }[] = [];
+    const walk = (tokens: Token[]) => {
+      for (const t of tokens) {
+        if (t.type === "link") links.push({ href: (t as Tokens.Link).href, kids: (t as Tokens.Link).tokens.map((k) => k.type) });
+        if ("tokens" in t && t.tokens) walk(t.tokens);
+      }
+    };
+    walk(marked.lexer(writeText.mock.lastCall?.[0] as string));
+    return links;
+  }
+
+  it("keeps the link on an image that shares its link with text", async () => {
+    const links = await copiedLinks("[![Logo](https://example.org/logo.png) Startseite](https://example.org)");
+    expect(screen.getByRole("textbox", { name: "Inhalt" }).querySelector("img[src]")).toHaveAttribute("data-href", "https://example.org");
+    expect(links).toContainEqual({ href: "https://example.org", kids: ["image"] });
+    expect(links.some((l) => l.href === "https://example.org" && l.kids.includes("text"))).toBe(true);
+  });
+
+  it("writes a linked image's destination so it parses back (spaces, parentheses)", async () => {
+    const links = await copiedLinks("[![a](https://example.org/i.png)](<https://example.org/a b>) [![c](https://example.org/j.png)](<https://example.org/x(1>)");
+    expect(links).toEqual([
+      { href: "https://example.org/a b", kids: ["image"] },
+      { href: "https://example.org/x(1", kids: ["image"] },
+    ]);
+  });
+
+  it("writes a text link's destination so it parses back (spaces, parentheses)", async () => {
+    const links = await copiedLinks("[eins](<https://example.org/a b>) und [zwei](<https://example.org/x(1>) und [drei](https://example.org/ok)");
+    expect(links).toEqual([
+      { href: "https://example.org/a b", kids: ["text"] },
+      { href: "https://example.org/x(1", kids: ["text"] },
+      { href: "https://example.org/ok", kids: ["text"] },
+    ]);
   });
 
   it("remounts cleanly when the format changes", () => {
