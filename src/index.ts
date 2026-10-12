@@ -82,6 +82,7 @@ export {
   FormMessage,
 } from "./components/form";
 export { Input, type InputProps } from "./components/input";
+export { Kbd, KbdGroup } from "./components/kbd";
 export { Label } from "./components/label";
 export { ListToolbar, type ListToolbarProps } from "./components/list-toolbar";
 export { Logo, type LogoProps } from "./components/logo";
@@ -129,6 +130,26 @@ export {
   SIDE_PANEL_RAIL_WIDTH,
   sidePanelVariants,
 } from "./components/side-panel-variants";
+export {
+  MessageScrollerProvider,
+  MessageScroller,
+  MessageScrollerViewport,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerButton,
+  type MessageScrollerButtonProps,
+} from "./components/message-scroller";
+export {
+  useMessageScroller,
+  useMessageScrollerScrollable,
+  useMessageScrollerVisibility,
+} from "@shadcn/react/message-scroller";
+export {
+  RichTextEditor,
+  type RichTextEditorProps,
+  type RichTextEditorLabels,
+} from "./components/rich-text-editor";
+export { Shimmer, type ShimmerProps } from "./components/shimmer";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";

@@ -326,6 +326,14 @@
   --text-body-base--line-height: 1.5;
   --text-body-base--font-weight: 400;
 
+  /* Shimmer sweep for `Shimmer` (AI status text). The duration comes from the
+   * element's `--shimmer-duration`, which the component sets from its prop. */
+  --animate-shimmer: shimmer var(--shimmer-duration, 2s) linear infinite;
+  @keyframes shimmer {
+    from { background-position: 100% center; }
+    to { background-position: 0% center; }
+  }
+
   /* --------------------------------------------------------------------------
    * SEMANTISCHE STATUS-/FEEDBACK-TOKENS
    * Ersetzen die verstreuten `green-*` / `teal-*` / `amber-*` Utilities.

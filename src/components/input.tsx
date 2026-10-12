@@ -20,10 +20,19 @@ export interface InputProps
     VariantProps<typeof fieldVariants> {
   /** Decorative icon inside the field, leading edge (e.g. `<Search />`). */
   leadingIcon?: React.ReactNode;
+  /**
+   * Keyboard-shortcut hint inside the field, trailing edge (e.g. a `KbdGroup`
+   * with ⌘ K). Decorative: hidden from assistive tech — announce the shortcut
+   * with `aria-keyshortcuts` on the field. Shown only while the pointer is
+   * over the field and the field does not have focus (the shortcut has
+   * nothing left to do then), and dimmed, so it never competes with the
+   * placeholder.
+   */
+  shortcutHint?: React.ReactNode;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, variant, leadingIcon, ...props }, ref) => {
+  ({ className, type, variant, leadingIcon, shortcutHint, ...props }, ref) => {
     const input = (
       <input
         type={type}
@@ -32,23 +41,35 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           fieldVariants({ variant }),
           // A one-line field follows the app-wide Style like a button
           // (Textarea keeps the field radius — a capsule does not fit a box).
-          variant !== "inline" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
+          variant !== "inline" && variant !== "title" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
           leadingIcon && "pl-10",
+          shortcutHint && "pr-16",
           className,
         )}
         {...props}
       />
     );
-    if (!leadingIcon) return input;
+    if (!leadingIcon && !shortcutHint) return input;
     return (
-      <span className="relative block w-full">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-on-surface-variant [&_svg]:h-4 [&_svg]:w-4"
-        >
-          {leadingIcon}
-        </span>
+      <span className="group/input relative block w-full">
+        {leadingIcon && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-on-surface-variant [&_svg]:h-4 [&_svg]:w-4"
+          >
+            {leadingIcon}
+          </span>
+        )}
         {input}
+        {shortcutHint && (
+          <span
+            aria-hidden="true"
+            data-slot="input-shortcut-hint"
+            className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 opacity-0 transition-opacity motion-reduce:transition-none group-[:hover:not(:focus-within)]/input:opacity-60"
+          >
+            {shortcutHint}
+          </span>
+        )}
       </span>
     );
   },

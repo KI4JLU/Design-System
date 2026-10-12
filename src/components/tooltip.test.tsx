@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 import { Button } from "./button";
 
 /**
@@ -84,5 +84,20 @@ describe("Tooltip", () => {
     await waitFor(() => expect(trigger).toHaveAttribute("aria-describedby"));
     // Name still the aria-label, not the hint text.
     expect(screen.getByRole("button", { name: "Aktualisieren" })).toBe(trigger);
+  });
+
+  it("portals into a given container (e.g. a fullscreen element)", () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    render(
+      <TooltipProvider>
+        <Tooltip open>
+          <TooltipTrigger>Ziel</TooltipTrigger>
+          <TooltipContent container={host}>Im Container</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    expect(host.querySelector('[data-slot="tooltip-content"]')).toHaveTextContent("Im Container");
+    host.remove();
   });
 });

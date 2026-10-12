@@ -32,13 +32,24 @@ const Tooltip = (props: React.ComponentProps<typeof TooltipPrimitive.Root>) => (
 
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
+export interface TooltipContentProps
+  extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
+  /**
+   * Where the tooltip is portalled. Default: `document.body`. Pass the
+   * fullscreen element while one is active — the browser paints only the
+   * fullscreen subtree, so a tooltip portalled to the body is invisible.
+   */
+  container?: HTMLElement | null;
+}
+
 const TooltipContent = React.forwardRef<
   React.ComponentRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 6, ...props }, ref) => (
-  <TooltipPrimitive.Portal>
+  TooltipContentProps
+>(({ className, sideOffset = 6, container, ...props }, ref) => (
+  <TooltipPrimitive.Portal container={container ?? undefined}>
     <TooltipPrimitive.Content
       ref={ref}
+      data-slot="tooltip-content"
       sideOffset={sideOffset}
       className={cn(
         "z-50 max-w-72 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-balance text-on-primary shadow-overlay",
