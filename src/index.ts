@@ -144,6 +144,11 @@ export {
   useMessageScrollerScrollable,
   useMessageScrollerVisibility,
 } from "@shadcn/react/message-scroller";
+export {
+  RichTextEditor,
+  type RichTextEditorProps,
+  type RichTextEditorLabels,
+} from "./components/rich-text-editor";
 export { Shimmer, type ShimmerProps } from "./components/shimmer";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
