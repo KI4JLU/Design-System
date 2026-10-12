@@ -112,7 +112,10 @@ export interface RichTextEditorProps {
   placeholder?: string;
   /** Accessible name of the editing area. */
   "aria-label"?: string;
+  /** Marks the content invalid: red frame (or, when `bare`, a red placeholder). */
   "aria-invalid"?: boolean;
+  /** Id(s) of the element(s) describing the field, e.g. its error message. */
+  "aria-describedby"?: string;
   autoFocus?: boolean;
   /** Overrides for the German default labels. */
   labels?: Partial<RichTextEditorLabels>;
@@ -143,6 +146,8 @@ const proseClass = cn(
   "[&_pre.plain-text]:whitespace-pre-wrap",
   // Placeholder (Tiptap's Placeholder extension marks the empty first paragraph).
   "[&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-on-surface-variant [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
+  // Invalid: the placeholder turns red — the only cue a `bare` editor can show.
+  "aria-[invalid=true]:[&_p.is-editor-empty:first-child]:before:text-error",
 );
 
 /*
@@ -332,6 +337,7 @@ function RichTextEditorInner({
   placeholder,
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
   autoFocus,
   labels: labelOverrides,
   format = "markdown",
@@ -407,6 +413,7 @@ function RichTextEditorInner({
         ...(readOnly ? { "aria-readonly": "true" } : {}),
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
         ...(ariaInvalid ? { "aria-invalid": "true" } : {}),
+        ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
       },
     },
     onUpdate: ({ editor: e }) => onChangeRef.current?.(serialize(e)),
@@ -459,7 +466,7 @@ function RichTextEditorInner({
       data-slot="rich-text-editor"
       className={cn(
         "flex min-h-0 flex-col overflow-hidden bg-surface-container-low text-on-surface",
-        !bare && !fullscreen && "rounded-xl border border-outline-variant",
+        !bare && !fullscreen && "rounded-xl border border-outline-variant has-[[role=textbox][aria-invalid=true]]:border-error",
         className,
       )}
     >

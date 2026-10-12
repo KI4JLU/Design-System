@@ -261,6 +261,38 @@ describe("RichTextEditor", () => {
     expect(para()).toHaveAttribute("data-placeholder", "Dann");
   });
 
+  // ORACLE: WAI-ARIA — an invalid field carries aria-invalid="true" and names
+  // its error message via aria-describedby, on the element with the textbox role.
+  it("points the textbox at its error message", () => {
+    render(
+      <TooltipProvider>
+        <RichTextEditor aria-label="Inhalt" aria-invalid aria-describedby="err" />
+        <span id="err">Inhalt ist erforderlich</span>
+      </TooltipProvider>,
+    );
+    const doc = screen.getByRole("textbox", { name: "Inhalt" });
+    expect(doc).toHaveAttribute("aria-invalid", "true");
+    expect(doc).toHaveAccessibleDescription("Inhalt ist erforderlich");
+  });
+
+  it("follows a changed invalid state without remounting", () => {
+    const view = (invalid: boolean) => (
+      <TooltipProvider>
+        <RichTextEditor aria-label="Inhalt" aria-invalid={invalid} aria-describedby={invalid ? "err" : undefined} />
+        <span id="err">Inhalt ist erforderlich</span>
+      </TooltipProvider>
+    );
+    const { rerender } = render(view(false));
+    const doc = () => screen.getByRole("textbox", { name: "Inhalt" });
+    expect(doc()).not.toHaveAttribute("aria-invalid");
+    rerender(view(true));
+    expect(doc()).toHaveAttribute("aria-invalid", "true");
+    expect(doc()).toHaveAccessibleDescription("Inhalt ist erforderlich");
+    rerender(view(false));
+    expect(doc()).not.toHaveAttribute("aria-invalid");
+    expect(doc()).not.toHaveAttribute("aria-describedby");
+  });
+
   it("takes label overrides", () => {
     renderEditor({ labels: { bold: "Bold" } });
     expect(screen.getByRole("button", { name: "Bold" })).toBeInTheDocument();
