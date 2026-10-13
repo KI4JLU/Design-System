@@ -1,6 +1,7 @@
 import * as React from "react";
 import { MoreVertical } from "lucide-react";
 import { cn } from "../lib/utils";
+import { Badge } from "./badge";
 import { Button } from "./button";
 import {
   DropdownMenu,
@@ -18,6 +19,11 @@ export interface ActionMenuItem {
   disabled?: boolean;
   /** Draw a separator above this item. */
   separatorBefore?: boolean;
+  /**
+   * A short neutral pill at the end of the row, e.g. "Admin" on an action only
+   * administrators see. Part of the item's accessible name.
+   */
+  badge?: string;
 }
 
 export interface ActionMenuProps {
@@ -54,9 +60,15 @@ export function ActionMenu({ actions, label, triggerClassName, align = "end" }: 
               variant={a.destructive ? "destructive" : undefined}
               disabled={a.disabled}
               onSelect={a.onSelect}
+              // With a badge the name is set explicitly: from the content, the
+              // two inline fragments would join without a space. Typeahead
+              // still matches the label alone.
+              aria-label={a.badge ? `${a.label} (${a.badge})` : undefined}
+              textValue={a.label}
             >
               {a.icon}
               {a.label}
+              {a.badge && <Badge className="ml-auto">{a.badge}</Badge>}
             </DropdownMenuItem>
           </React.Fragment>
         ))}

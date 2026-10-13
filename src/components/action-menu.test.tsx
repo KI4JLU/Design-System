@@ -32,4 +32,11 @@ describe("ActionMenu", () => {
     await userEvent.click(await screen.findByRole("menuitem", { name: "Löschen" }));
     expect(onDelete).not.toHaveBeenCalled();
   });
+
+  it("shows an item's badge at the end of its row, as part of its name", async () => {
+    render(<ActionMenu label="Aktionen" actions={[{ label: "Einstellungen", badge: "Admin", onSelect: vi.fn() }]} />);
+    await userEvent.click(screen.getByRole("button", { name: "Aktionen" }));
+    const item = await screen.findByRole("menuitem", { name: "Einstellungen (Admin)" });
+    expect(item.lastElementChild).toHaveTextContent("Admin");
+  });
 });
