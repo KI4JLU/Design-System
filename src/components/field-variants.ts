@@ -1,5 +1,11 @@
 import { cva } from "class-variance-authority";
 
+/** The framed field's resting surface — `fieldVariants` default and `fieldFrameClassName` share it. */
+const framedFieldSurface = "rounded-field border border-outline-variant bg-surface-container-lowest";
+
+/** Box and text of every field — `fieldVariants` and `fieldFrameClassName` share it. */
+const fieldBox = "w-full text-on-surface";
+
 /**
  * Field style variants (cva), shared by Input and Textarea so both fields
  * speak the same vocabulary. Kept in its own module (see button-variants.ts)
@@ -20,7 +26,7 @@ import { cva } from "class-variance-authority";
  */
 export const fieldVariants = cva(
   [
-    "w-full text-on-surface outline-none transition-all",
+    `${fieldBox} outline-none transition-all`,
     "placeholder:text-on-surface-variant",
     "disabled:cursor-not-allowed disabled:opacity-60",
     "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error",
@@ -29,7 +35,7 @@ export const fieldVariants = cva(
     variants: {
       variant: {
         default: [
-          "rounded-field border border-outline-variant bg-surface-container-lowest px-4 py-3",
+          `${framedFieldSurface} px-4 py-3`,
           "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-focus-ring",
         ],
         inline:
@@ -43,3 +49,25 @@ export const fieldVariants = cva(
     },
   },
 );
+
+/**
+ * The `default` (framed) field drawn on a FRAME that holds a borderless
+ * `<input>` among other content — `ComboboxChipsInput`'s chips + text input.
+ * Same surface (`framedFieldSurface`), same tokens per state; only the state
+ * source differs: the input inside the frame (`has-[input:…]`) instead of the
+ * element itself (`focus-visible:`, `aria-[invalid=true]:`, `disabled:`).
+ *
+ * The state classes are written out in full rather than derived from the
+ * element-level ones on purpose: Tailwind generates CSS only for class names
+ * that appear literally in source — here, and in every consumer, which
+ * compiles these strings from `dist`. A prefixed name built at runtime would
+ * ship without CSS. Change a state token here and in `fieldVariants` together.
+ * Padding is the frame's own (it lays out chips), so it is not included.
+ */
+export const fieldFrameClassName = [
+  `${fieldBox} transition-all`,
+  framedFieldSurface,
+  "has-[input:focus-visible]:border-primary has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus-ring",
+  "has-[input[aria-invalid=true]]:border-error has-[input[aria-invalid=true]:focus-visible]:ring-error",
+  "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60",
+].join(" ");

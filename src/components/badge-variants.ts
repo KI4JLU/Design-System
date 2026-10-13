@@ -1,6 +1,21 @@
 import { cva } from "class-variance-authority";
 
 /**
+ * The `filled` appearance's tone colours: each status tone on its container
+ * token pair. Exported for other status-tinted pills (`ComboboxChip`'s
+ * `warning` / `error` tones) so the mapping exists once.
+ */
+export const badgeFilledTones = {
+  neutral: "bg-surface-container-high text-on-surface-variant",
+  primary: "bg-primary-container text-on-primary-container",
+  secondary: "bg-secondary-container text-on-secondary-container",
+  success: "bg-success-container text-on-success-container",
+  warning: "bg-warning-container text-on-warning-container",
+  error: "bg-error-container text-on-error-container",
+  info: "bg-info-container text-on-info-container",
+} as const;
+
+/**
  * Badge style variants (cva). Two appearances of the same status vocabulary:
  * `filled` — pill with the tone's *-container background (status labels,
  * KPI deltas); `text` — inline icon+text in the tone color, no background
@@ -23,13 +38,13 @@ export const badgeVariants = cva("inline-flex items-center whitespace-nowrap [&_
     },
   },
   compoundVariants: [
-    { appearance: "filled", tone: "neutral", className: "bg-surface-container-high text-on-surface-variant" },
-    { appearance: "filled", tone: "primary", className: "bg-primary-container text-on-primary-container" },
-    { appearance: "filled", tone: "secondary", className: "bg-secondary-container text-on-secondary-container" },
-    { appearance: "filled", tone: "success", className: "bg-success-container text-on-success-container" },
-    { appearance: "filled", tone: "warning", className: "bg-warning-container text-on-warning-container" },
-    { appearance: "filled", tone: "error", className: "bg-error-container text-on-error-container" },
-    { appearance: "filled", tone: "info", className: "bg-info-container text-on-info-container" },
+    { appearance: "filled", tone: "neutral", className: badgeFilledTones.neutral },
+    { appearance: "filled", tone: "primary", className: badgeFilledTones.primary },
+    { appearance: "filled", tone: "secondary", className: badgeFilledTones.secondary },
+    { appearance: "filled", tone: "success", className: badgeFilledTones.success },
+    { appearance: "filled", tone: "warning", className: badgeFilledTones.warning },
+    { appearance: "filled", tone: "error", className: badgeFilledTones.error },
+    { appearance: "filled", tone: "info", className: badgeFilledTones.info },
     { appearance: "text", tone: "neutral", className: "text-on-surface-variant" },
     { appearance: "text", tone: "primary", className: "text-primary" },
     { appearance: "text", tone: "secondary", className: "text-secondary" },
