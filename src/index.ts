@@ -173,6 +173,18 @@ export {
   type TabsListProps,
   type TabsListVariant,
 } from "./components/tabs";
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+  BreadcrumbBack,
+  type BreadcrumbBackProps,
+  type BreadcrumbBackLabels,
+} from "./components/breadcrumb";
 export { Textarea, type TextareaProps } from "./components/textarea";
 /** App-wide appearance: Style (rounded / pill), contrast, accent colour. */
 export {

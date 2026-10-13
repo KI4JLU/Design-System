@@ -256,6 +256,30 @@ Radix gives focus trap, Escape-to-close, scroll lock, and ARIA roles for free �
 **always** use this instead of a hand-rolled modal. Every dialog needs a
 `DialogTitle` (screen-reader requirement); a close "X" is included automatically.
 
+## Back navigation
+
+A view that has a parent level — a dialog's second view, a sub-page — goes back
+with **`BreadcrumbBack`**, never a bare ← icon button:
+
+```tsx
+<DialogHeader>
+  <BreadcrumbBack trail={["Tetris", "Mitglieder"]} onClick={backToMembers} />
+  <DialogTitle>Mitglieder hinzufügen</DialogTitle>
+</DialogHeader>
+```
+
+- It sits **above the title**, left-aligned with it: "‹ Tetris · Mitglieder",
+  the path to the parent level, as one link back one level.
+- In a dialog, every other exit agrees with it: **"Abbrechen" and a tab's
+  "Fertig" return to the parent view**, they do not close the dialog — only the
+  ✕ does. Otherwise "Abbrechen" duplicates the ✕, and a tab without
+  "Abbrechen" has no way back.
+- The view's actions stay in the `DialogFooter` (see Dialog).
+
+For a page inside a deeper hierarchy, use the full trail (`Breadcrumb` >
+`BreadcrumbList` > `BreadcrumbItem` / `BreadcrumbSeparator`, the current page
+as `BreadcrumbPage`).
+
 ## Tooltip
 
 ```tsx
