@@ -344,10 +344,13 @@ export {
  * A text field with a filterable, grouped listbox anchored under it (WAI-ARIA
  * APG combobox, list autocomplete) — cmdk for the list and keyboard model,
  * Radix Popover for anchoring and dismissal. Client- or server-filtered.
+ * `ComboboxChipsInput` + `ComboboxChip` are its multi-value (chips) mode.
  */
 export {
   Combobox,
   ComboboxInput,
+  ComboboxChipsInput,
+  ComboboxChip,
   ComboboxContent,
   ComboboxList,
   ComboboxGroup,
@@ -357,6 +360,10 @@ export {
   ComboboxSeparator,
   type ComboboxProps,
   type ComboboxInputProps,
+  type ComboboxChipsInputProps,
+  type ComboboxChipProps,
+  type ComboboxChipLabels,
+  type ComboboxChipTone,
   type ComboboxContentProps,
   type ComboboxListProps,
   type ComboboxLoadingProps,
