@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Bot, FlaskConical, SlidersHorizontal, Workflow } from "lucide-react";
+import { Bot, FlaskConical, Link2, SlidersHorizontal, User, Users, Workflow } from "lucide-react";
+import { expect } from "storybook/test";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { Card } from "./card";
@@ -304,5 +305,65 @@ export const ManyTabs: Story = {
         </Tabs>
       </Card>
     );
+  },
+};
+
+/**
+ * `variant="segmented"`: the triggers share one tinted track and split its
+ * width; the active one is a raised surface pill. For a few modes of one task
+ * inside a dialog. The same APG tablist as the default strip.
+ */
+export const Segmented: Story = {
+  render: () => (
+    <Card className="max-w-xl p-6">
+      <Tabs defaultValue="single">
+        <TabsList variant="segmented" aria-label="Einladen">
+          <TabsTrigger value="single"><User aria-hidden className="h-4 w-4" />Einzeln</TabsTrigger>
+          <TabsTrigger value="bulk"><Users aria-hidden className="h-4 w-4" />Sammeleinladung</TabsTrigger>
+          <TabsTrigger value="link"><Link2 aria-hidden className="h-4 w-4" />Einladungslinks</TabsTrigger>
+        </TabsList>
+        <TabsContent value="single"><p className="text-sm text-on-surface-variant">Eine Person einladen.</p></TabsContent>
+        <TabsContent value="bulk"><p className="text-sm text-on-surface-variant">Viele Benutzernamen auf einmal.</p></TabsContent>
+        <TabsContent value="link"><p className="text-sm text-on-surface-variant">Links zum Beitreten.</p></TabsContent>
+      </Tabs>
+    </Card>
+  ),
+  // ORACLE: the browser's layout — equal shares of the track, and the active
+  // segment painted in a different surface than an inactive one.
+  play: async ({ canvas }) => {
+    const tabs = canvas.getAllByRole("tab");
+    const widths = tabs.map((t) => Math.round(t.getBoundingClientRect().width));
+    await expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+    await expect(getComputedStyle(tabs[0]).backgroundColor).not.toBe(getComputedStyle(tabs[1]).backgroundColor);
+  },
+};
+
+/**
+ * The segmented strip in a narrow container: labels keep their width (rule 5,
+ * never shrunk to fit) and the strip scrolls sideways instead — the same
+ * call-site recipe as the underline strip ("ManyTabs").
+ */
+export const SegmentedNarrow: Story = {
+  render: () => (
+    <div className="w-[280px]">
+      <Tabs defaultValue="single">
+        <TabsList variant="segmented" aria-label="Einladen" className="overflow-x-auto overflow-y-hidden">
+          <TabsTrigger value="single"><User aria-hidden className="h-4 w-4" />Einzeln</TabsTrigger>
+          <TabsTrigger value="bulk"><Users aria-hidden className="h-4 w-4" />Sammeleinladung</TabsTrigger>
+          <TabsTrigger value="link"><Link2 aria-hidden className="h-4 w-4" />Einladungslinks</TabsTrigger>
+        </TabsList>
+        <TabsContent value="single"><p className="text-sm text-on-surface-variant">Eine Person einladen.</p></TabsContent>
+        <TabsContent value="bulk"><p className="text-sm text-on-surface-variant">Viele auf einmal.</p></TabsContent>
+        <TabsContent value="link"><p className="text-sm text-on-surface-variant">Links.</p></TabsContent>
+      </Tabs>
+    </div>
+  ),
+  // ORACLE: the browser's layout — every label fits inside its own segment,
+  // and no two segments overlap.
+  play: async ({ canvas }) => {
+    const tabs = canvas.getAllByRole("tab");
+    for (const tab of tabs) await expect(tab.scrollWidth).toBeLessThanOrEqual(tab.clientWidth);
+    const rects = tabs.map((t) => t.getBoundingClientRect());
+    for (let i = 1; i < rects.length; i++) await expect(rects[i].left).toBeGreaterThanOrEqual(rects[i - 1].right - 0.5);
   },
 };

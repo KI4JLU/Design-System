@@ -44,6 +44,18 @@ const Tabs = React.forwardRef<
 Tabs.displayName = "Tabs";
 
 /**
+ * The strip's look. `underline` (default): triggers on a divider, the active
+ * one underlined. `segmented`: the triggers share one tinted track and split
+ * its width equally; the active one is a raised surface pill — for a few
+ * modes of one task inside a dialog (e.g. invite one / many / by link).
+ * Only the look differs: both are the same APG tablist. Set on `TabsList`;
+ * its triggers read it from context. Horizontal only.
+ */
+export type TabsListVariant = "underline" | "segmented";
+
+const TabsVariantContext = React.createContext<TabsListVariant>("underline");
+
+/**
  * The `role="tablist"`. Carries the divider that separates the strip from the
  * panel below (`border-outline-variant`, like every other divider in this
  * system — a bare `border-b` would render in `currentColor`, there is no global
@@ -55,19 +67,32 @@ Tabs.displayName = "Tabs";
  * `className="overflow-x-auto overflow-y-hidden"` is the (layout-only) call-site
  * recipe — see the „ManyTabs" story.
  */
+export interface TabsListProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
+  /** See `TabsListVariant`. Default `underline`. */
+  variant?: TabsListVariant;
+}
+
 const TabsList = React.forwardRef<
   React.ComponentRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      "flex items-center gap-1 border-b border-outline-variant",
-      "data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:border-r",
-      className,
-    )}
-    {...props}
-  />
+  TabsListProps
+>(({ className, variant = "underline", ...props }, ref) => (
+  <TabsVariantContext.Provider value={variant}>
+    <TabsPrimitive.List
+      ref={ref}
+      data-variant={variant}
+      className={cn(
+        variant === "segmented"
+          ? "flex items-center gap-1 rounded-[var(--ui-radius-control)] bg-surface-container-high p-1"
+          : [
+              "flex items-center gap-1 border-b border-outline-variant",
+              "data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:border-r",
+            ],
+        className,
+      )}
+      {...props}
+    />
+  </TabsVariantContext.Provider>
 ));
 TabsList.displayName = "TabsList";
 
@@ -85,23 +110,40 @@ TabsList.displayName = "TabsList";
 const TabsTrigger = React.forwardRef<
   React.ComponentRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "-mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 py-2",
-      "font-label-sm text-label-sm text-on-surface-variant transition-colors",
-      "hover:text-on-surface",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
-      "disabled:pointer-events-none disabled:opacity-60",
-      "data-[state=active]:border-primary data-[state=active]:text-primary",
-      "data-[orientation=vertical]:-mr-px data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0",
-      "[&_svg]:shrink-0",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const variant = React.useContext(TabsVariantContext);
+  return (
+    <TabsPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "flex items-center gap-2 whitespace-nowrap px-3 py-2",
+        "font-label-sm text-label-sm text-on-surface-variant transition-colors",
+        "hover:text-on-surface",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
+        "disabled:pointer-events-none disabled:opacity-60",
+        "[&_svg]:shrink-0",
+        variant === "segmented"
+          ? [
+              // Equal shares of the track where it has room, never below the
+              // label's own width (min-width stays auto — controls are never
+              // shrunk to fit, guidelines rule 5): a strip too narrow for its
+              // labels overflows, like the underline strip (call-site recipe
+              // `overflow-x-auto`, see the "SegmentedNarrow" story). The active
+              // segment is a raised surface pill, recoloured, never resized.
+              "flex-1 justify-center rounded-[calc(var(--ui-radius-control)-4px)]",
+              "data-[state=active]:bg-surface-container-lowest data-[state=active]:text-primary data-[state=active]:shadow-card",
+            ]
+          : [
+              "-mb-px shrink-0 border-b-2 border-transparent",
+              "data-[state=active]:border-primary data-[state=active]:text-primary",
+              "data-[orientation=vertical]:-mr-px data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0",
+            ],
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 TabsTrigger.displayName = "TabsTrigger";
 
 /**

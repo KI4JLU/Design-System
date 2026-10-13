@@ -406,3 +406,55 @@ describe("Tabs — call-site overrides", () => {
     expect(screen.getByRole("tablist")).toHaveClass("border-outline-variant");
   });
 });
+
+// ORACLE: the APG tablist contract above, re-checked for the segmented look —
+// a variant may change classes, never roles, selection or keyboard.
+describe("Tabs — segmented variant", () => {
+  function renderSegmented() {
+    return render(
+      <Tabs defaultValue="one">
+        <TabsList variant="segmented" aria-label="Modus">
+          <TabsTrigger value="one">Einzeln</TabsTrigger>
+          <TabsTrigger value="many">Sammeleinladung</TabsTrigger>
+          <TabsTrigger value="link">Einladungslinks</TabsTrigger>
+        </TabsList>
+        <TabsContent value="one">Panel eins</TabsContent>
+        <TabsContent value="many">Panel zwei</TabsContent>
+        <TabsContent value="link">Panel drei</TabsContent>
+      </Tabs>,
+    );
+  }
+
+  it("is still one tablist with tabs and one named panel", () => {
+    renderSegmented();
+    expect(screen.getByRole("tablist", { name: "Modus" })).toHaveAttribute("data-variant", "segmented");
+    expect(screen.getAllByRole("tab")).toHaveLength(3);
+    expect(screen.getByRole("tabpanel", { name: "Einzeln" })).toHaveTextContent("Panel eins");
+  });
+
+  it("moves selection with the arrow keys like the default strip", async () => {
+    renderSegmented();
+    await userEvent.click(screen.getByRole("tab", { name: "Einzeln" }));
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Sammeleinladung" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel", { name: "Sammeleinladung" })).toHaveTextContent("Panel zwei");
+  });
+
+  it("gives triggers equal shares of the track instead of the underline", () => {
+    renderSegmented();
+    const tab = screen.getByRole("tab", { name: "Einzeln" });
+    expect(tab.className).toContain("flex-1");
+    expect(tab.className).not.toContain("border-b-2");
+  });
+
+  it("leaves the default strip on the underline", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList aria-label="Standard"><TabsTrigger value="a">A</TabsTrigger></TabsList>
+        <TabsContent value="a">x</TabsContent>
+      </Tabs>,
+    );
+    expect(screen.getByRole("tablist")).toHaveAttribute("data-variant", "underline");
+    expect(screen.getByRole("tab", { name: "A" }).className).toContain("border-b-2");
+  });
+});

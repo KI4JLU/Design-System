@@ -170,6 +170,8 @@ export {
   TabsList,
   TabsTrigger,
   TabsContent,
+  type TabsListProps,
+  type TabsListVariant,
 } from "./components/tabs";
 export { Textarea, type TextareaProps } from "./components/textarea";
 /** App-wide appearance: Style (rounded / pill), contrast, accent colour. */
