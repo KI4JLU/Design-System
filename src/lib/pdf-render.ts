@@ -3,19 +3,36 @@
  * that want a first-page bitmap ahead of time (`renderPdfFirstPage`).
  *
  * pdf.js is loaded lazily on first use, so consumers that never touch a PDF
- * do not pay for it. The worker is referenced by URL (`?url`), which Vite
- * resolves in dev and emits as an asset in the library build.
+ * do not pay for it. `pdfjs-dist` is a peer dependency and its worker is the
+ * consuming app's job: the app passes the worker URL from its own build to
+ * `setPdfWorkerSrc`, so the worker is a same-origin file a strict CSP allows.
+ * Bundling it here does not work — library mode inlines it as a data: URL.
  */
-let workerConfigured = false;
+let workerSrc: string | null = null;
+
+/**
+ * Sets the pdf.js worker URL, once at app start:
+ * `setPdfWorkerSrc(workerUrl)` with
+ * `import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url"`.
+ * Takes a string so the app's entry chunk does not import pdf.js itself.
+ */
+export function setPdfWorkerSrc(src: string): void {
+  workerSrc = src;
+}
 
 export async function loadPdfjs() {
   const pdfjs = await import("pdfjs-dist");
-  if (!workerConfigured) {
-    const { default: workerUrl } = await import(
-      "pdfjs-dist/build/pdf.worker.min.mjs?url"
+  if (workerSrc) pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    const error = new Error(
+      "@ki4jlu/design-system: pdf.js worker not configured. Call " +
+        "setPdfWorkerSrc(workerUrl) once at app start, with " +
+        "`import workerUrl from \"pdfjs-dist/build/pdf.worker.min.mjs?url\"` (see README).",
     );
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-    workerConfigured = true;
+    // Logged here because the components and hooks catch it (onError is
+    // optional, thumbnails fall back to a glyph) — a setup bug must not be silent.
+    console.error(error);
+    throw error;
   }
   return pdfjs;
 }

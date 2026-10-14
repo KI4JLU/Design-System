@@ -10,6 +10,12 @@ import {
 } from '../src/components/appearance-context';
 import { useUiShape, type UiShape } from '../src/components/ui-shape-context';
 import './preview.css';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { setPdfWorkerSrc } from '../src/lib/pdf-render';
+
+// The DS leaves the pdf.js worker to the app (pdfjs-dist is a peer); Storybook
+// is the app here.
+setPdfWorkerSrc(pdfWorkerUrl);
 
 /** Bridges the Storybook toolbar selection into the real ThemeProvider, so
  * stories exercise the same runtime (data-theme on <html>) as the apps. */

@@ -9,6 +9,11 @@ import dts from "vite-plugin-dts";
  * cva/clsx/tailwind-merge, lucide) stay external — consumers install them via
  * the package's dependencies/peerDependencies. Tailwind classes ship as plain
  * strings; consumers compile them with their own Tailwind 4 setup (see README).
+ *
+ * pdfjs-dist is external too (a peer dependency): library mode inlines every
+ * `?url` asset as a data: URL, and pdf.js turns a data: worker into a blob:
+ * worker, both of which a strict script-src CSP blocks. The consuming app sets
+ * `GlobalWorkerOptions.workerSrc` from its own build instead (see README).
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +37,7 @@ export default defineConfig({
       fileName: "index"
     },
     rollupOptions: {
-      external: [/^react($|\/)/, /^react-dom($|\/)/, /^@radix-ui\//, /^radix-ui($|\/)/, "class-variance-authority", "clsx", "tailwind-merge", /^lucide-react($|\/)/, /^@shadcn\/react($|\/)/, /^@tiptap\//]
+      external: [/^react($|\/)/, /^react-dom($|\/)/, /^@radix-ui\//, /^radix-ui($|\/)/, "class-variance-authority", "clsx", "tailwind-merge", /^lucide-react($|\/)/, /^@shadcn\/react($|\/)/, /^@tiptap\//, /^pdfjs-dist($|\/)/]
     }
   },
   test: {

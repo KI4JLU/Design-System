@@ -382,7 +382,7 @@ export {
 } from "./components/combobox";
 export { HoverCard, HoverCardTrigger, HoverCardContent } from "./components/hover-card";
 export { PdfThumbnail, type PdfThumbnailProps } from "./components/pdf-thumbnail";
-export { preloadPdfjs, renderPdfFirstPage, type RenderPdfFirstPageOptions } from "./lib/pdf-render";
+export { preloadPdfjs, renderPdfFirstPage, setPdfWorkerSrc, type RenderPdfFirstPageOptions } from "./lib/pdf-render";
 export { usePdfPreviewImage } from "./lib/use-pdf-preview";
 export { FilePreview, type FilePreviewProps } from "./components/file-preview";
 export { PdfViewer, type PdfViewerProps, type PdfViewerLabels } from "./components/pdf-viewer";
