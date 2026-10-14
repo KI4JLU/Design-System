@@ -79,6 +79,32 @@ App-Wurzel + `index.html`:
 import { ThemeProvider, Button, Card } from "@ki4jlu/design-system";
 ```
 
+### PDF components: the pdf.js worker
+
+`PdfViewer`, `PdfThumbnail`, `FilePreview` and `renderPdfFirstPage` use pdf.js.
+`pdfjs-dist` is a **peer dependency**: install it next to the design system, and
+hand the design system its worker URL once at app start:
+
+```bash
+npm install pdfjs-dist@^6.3.289
+```
+
+```ts
+// e.g. src/main.tsx
+import { setPdfWorkerSrc } from "@ki4jlu/design-system";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+setPdfWorkerSrc(pdfWorkerUrl);
+```
+
+Your app's Vite build emits the worker as a same-origin `/assets` file, so a CSP
+with `script-src 'self'` allows it — no `blob:` or `data:` needed. The `?url`
+import is only a string, so pdf.js itself still loads lazily on the first PDF.
+Without this setup PDFs do not render (`PdfViewer` shows its load error,
+thumbnails stay blank) and the console names the missing call. With linked
+workspaces or duplicate installs, keep a single copy via Vite's
+`resolve.dedupe: ["pdfjs-dist"]`.
+
 ## Entwicklung
 
 ```bash
