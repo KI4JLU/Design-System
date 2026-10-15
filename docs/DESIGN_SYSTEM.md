@@ -517,6 +517,9 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **Unreleased — set the version at release.** Additive; nothing removed or renamed.
+
+  - **Feature: `TabsList variant="enclosed"`** (`TabsListVariant` gains `enclosed`): separated tabs like a workbook's sheet tabs, on the panel's own surface. Inactive tabs are light grey boxes (`surface-container-low`, the tone of footers and table headers) on the strip's divider; the active one is the light selection blue (`primary-fixed`, which follows the accent). The divider is an inset line, not a border, so no negative margins are needed and the strip also works inside a clipping or scrolling container. The same APG tablist as the other variants.
 - **0.51.0** — Breaking for consumers that render PDFs: one setup line.
 
   - **Fix: PDF preview blocked by a strict CSP.** Library mode inlined the pdf.js worker as a `data:` URL; pdf.js then started it as a `blob:` worker and, once that failed, imported the `data:` URL on the main thread — both blocked under `script-src 'self'`, so `PdfViewer`, `PdfThumbnail` and `renderPdfFirstPage` failed in production while working in a dev server without CSP. `pdfjs-dist` is now a **peer dependency** and external to the build, and the app passes the worker URL from its own build to the new **`setPdfWorkerSrc`** (README, "PDF components: the pdf.js worker"). It takes a string, so the app's entry chunk still does not import pdf.js. One installed copy serves the API and the worker, so their versions cannot drift. Unconfigured, `loadPdfjs` throws an error naming the missing call.
