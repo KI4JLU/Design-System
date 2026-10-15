@@ -481,6 +481,10 @@ Minimum bar for every shared component:
    suite in §4 exists, that manual pass is the only thing standing between a
    layout regression and a release. Both-theme visual QA (§3) applies.
 
+**Adding a pattern or design rule** (how components are combined)
+- Follow [PATTERN_GOVERNANCE.md](./PATTERN_GOVERNANCE.md): rule record, owner decision,
+  enforcement level. Not yet implemented — the page marks what exists today.
+
 **Docs language** (developer decision, 2026-09-30)
 - **English for new and rewritten pages**: MDX, `docs/`, and story or source
   JSDoc prose. German pages are migrated opportunistically: a page or
