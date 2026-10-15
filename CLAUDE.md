@@ -8,6 +8,12 @@ makes itself, batched on a `dev/<topic>` branch and reviewed once by Codex (`/co
 worktrees, with an independent `code-reviewer`. See `.claude/README.md` (architecture, guard, deviations from upstream) and
 `.claude/skills/project-manager/` (both lanes and the PM loop).
 
+## Design patterns and rules
+
+How patterns and design rules are proposed, decided and enforced — and what an agent may and may
+not do with them — is in [docs/PATTERN_GOVERNANCE.md](docs/PATTERN_GOVERNANCE.md). It is a guide;
+the registry it describes is not built yet. Agents propose rules, only the owner accepts them.
+
 ## Parallel work runs in a temporary worktree — always
 
 Any work that runs alongside other activity in this repo — subagent workers, parallel tasks,
