@@ -141,6 +141,9 @@ const TabsTrigger = React.forwardRef<
               "h-8 shrink-0 rounded-t-md py-0 bg-surface-container-low",
               "hover:bg-surface-container hover:text-on-surface",
               "data-[state=active]:bg-primary-fixed data-[state=active]:text-on-primary-fixed data-[state=active]:hover:bg-primary-fixed",
+              // The shared focus-ring tone is too close to primary-fixed
+              // (~1.3:1); on the active tab the ring takes the text tone.
+              "data-[state=active]:focus-visible:ring-on-primary-fixed",
             ]
           : variant === "segmented"
           ? [

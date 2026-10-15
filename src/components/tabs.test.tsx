@@ -497,4 +497,10 @@ describe("Tabs — enclosed variant", () => {
     expect(tab.className).not.toContain("border-b-2");
     expect(screen.getByRole("tablist").className).not.toContain("border-b");
   });
+
+  it("keeps a contrasting focus ring on the active (primary-fixed) tab", () => {
+    renderEnclosed();
+    // Codex review of #71: the shared ring tone nearly vanishes on primary-fixed.
+    expect(screen.getByRole("tab", { name: "Erhebung" }).className).toContain("data-[state=active]:focus-visible:ring-on-primary-fixed");
+  });
 });
