@@ -517,7 +517,7 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
-- **Unreleased — set the version at release.** Additive; nothing removed or renamed.
+- **0.52.0** — Additive; nothing removed or renamed. The 0.52.0 entries:
 
   - **Feature: `TabsList variant="enclosed"`** (`TabsListVariant` gains `enclosed`): separated tabs like a workbook's sheet tabs, on the panel's own surface. Inactive tabs are light grey boxes (`surface-container-low`, the tone of footers and table headers) on the strip's divider; the active one is the light selection blue (`primary-fixed`, which follows the accent). The divider is an inset line, not a border, so no negative margins are needed and the strip also works inside a clipping or scrolling container. The same APG tablist as the other variants.
 - **0.51.0** — Breaking for consumers that render PDFs: one setup line.
