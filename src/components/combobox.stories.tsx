@@ -1,7 +1,14 @@
 import { useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { FileText, MessageSquare, Search } from "lucide-react";
+import {
+  FileText,
+  LogOut,
+  MessageSquare,
+  MessageSquarePlus,
+  Search,
+  Settings,
+} from "lucide-react";
 import {
   Combobox,
   ComboboxChip,
@@ -18,6 +25,7 @@ import {
 import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { Input } from "./input";
+import { Kbd, KbdGroup } from "./kbd";
 import { Label } from "./label";
 import { AppShellFixture } from "../test/fixtures/app-shell";
 
@@ -699,5 +707,534 @@ export const ChipsInvalid: Story = {
     await expect(getComputedStyle(chipsFrame(input)).borderTopColor).toBe(
       resolvedColor(canvasElement, "var(--color-error)"),
     );
+  },
+};
+
+/* ------------------------------------------------------------------------ */
+/* layout="panel": field and list as one surface                            */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Oracle for the panel stories: the browser's layout boxes and computed
+ * styles, compared with values taken from outside the component —
+ * `tokens.css` literals (rounded Style: `--radius-action` 0.5rem = 8px; pill
+ * Style: `--radius-2xl` 1.5rem = 24px; `--radius-field` 0.5rem = 8px), and
+ * token colours / shadows resolved by the browser on a probe element. Nothing
+ * is read back from the component's own class strings or state.
+ */
+
+const RECENT_CHATS = [
+  { title: "Semesterplanung WS 26/27", when: "Heute" },
+  { title: "Fragen zur Prüfungsordnung", when: "Gestern" },
+  { title: "Modulwahl Informatik", when: "12. Okt." },
+];
+
+/**
+ * JustRAG's workspace search (`WorkspaceSearch` → `GlobalSearch`) with the
+ * list in the same panel as the field: focusing the empty field opens the
+ * command-palette defaults — Chat / Letzte Unterhaltungen / Konto — and
+ * typing filters them. Palette rows: a muted `description`, a right-aligned
+ * `shortcutHint`.
+ */
+function PaletteSearch() {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("—");
+  // As JustRAG: the empty field opens on focus and on a click (after Escape).
+  const openDefaults = () => {
+    if (!open) setOpen(true);
+  };
+  return (
+    <>
+      <Combobox layout="panel" open={open} onOpenChange={setOpen}>
+        <ComboboxInput
+          aria-label="In „Prüfungsordnung“ suchen"
+          aria-keyshortcuts="Meta+K"
+          placeholder="In „Prüfungsordnung“ suchen …"
+          leadingIcon={<Search />}
+          shortcutHint={
+            <KbdGroup>
+              <Kbd>⌘</Kbd>
+              <Kbd>K</Kbd>
+            </KbdGroup>
+          }
+          value={query}
+          onValueChange={setQuery}
+          onFocus={openDefaults}
+          onClick={openDefaults}
+        />
+        <ComboboxContent>
+          <ComboboxEmpty>Keine Treffer für „{query.trim()}“</ComboboxEmpty>
+          <ComboboxList label="Suchergebnisse">
+            <ComboboxGroup heading="Chat">
+              <ComboboxItem
+                onSelect={setSelected}
+                shortcutHint={
+                  <KbdGroup>
+                    <Kbd>⌘</Kbd>
+                    <Kbd>⇧</Kbd>
+                    <Kbd>O</Kbd>
+                  </KbdGroup>
+                }
+              >
+                <MessageSquarePlus aria-hidden="true" />
+                Neuer Chat
+              </ComboboxItem>
+            </ComboboxGroup>
+            <ComboboxGroup heading="Letzte Unterhaltungen">
+              {RECENT_CHATS.map((chat) => (
+                <ComboboxItem key={chat.title} onSelect={setSelected} description={chat.when}>
+                  <MessageSquare aria-hidden="true" />
+                  {chat.title}
+                </ComboboxItem>
+              ))}
+            </ComboboxGroup>
+            <ComboboxGroup heading="Konto">
+              <ComboboxItem
+                onSelect={setSelected}
+                shortcutHint={
+                  <KbdGroup>
+                    <Kbd>⌘</Kbd>
+                    <Kbd>,</Kbd>
+                  </KbdGroup>
+                }
+              >
+                <Settings aria-hidden="true" />
+                Einstellungen
+              </ComboboxItem>
+              <ComboboxItem onSelect={setSelected}>
+                <LogOut aria-hidden="true" />
+                Abmelden
+              </ComboboxItem>
+            </ComboboxGroup>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      <span className="sr-only" data-testid="selected">
+        {selected}
+      </span>
+    </>
+  );
+}
+
+/** `background` / `box-shadow` of a probe styled with `value` — the token, resolved by the browser. */
+const resolvedStyle = (host: HTMLElement, property: "backgroundColor" | "boxShadow", value: string) => {
+  const probe = host.ownerDocument.createElement("div");
+  probe.style[property] = value;
+  host.ownerDocument.body.append(probe);
+  const resolved = getComputedStyle(probe)[property];
+  probe.remove();
+  return resolved;
+};
+
+/**
+ * The layers of a computed `box-shadow` that paint anything: a layer is
+ * invisible when its colour is fully transparent or all four lengths are 0
+ * (Tailwind's empty `0 0 #0000` ring/shadow slots).
+ */
+const visibleShadowLayers = (boxShadow: string) =>
+  [
+    ...boxShadow.matchAll(
+      /((?:rgba?|oklch|oklab|color)\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px/g,
+    ),
+  ]
+    .filter(([, color, ...lengths]) => {
+      const transparent = /^rgba\(.*,\s*0\)$/.test(color);
+      return !transparent && lengths.some((n) => parseFloat(n) !== 0);
+    })
+    .map(([layer]) => layer);
+
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
+
+/** Waits for running CSS transitions on `el` (the field animates its border and radius back on close). */
+const settled = async (el: Element) => {
+  await Promise.all(el.getAnimations().map((animation) => animation.finished));
+};
+
+const corners = (style: CSSStyleDeclaration) => [
+  style.borderTopLeftRadius,
+  style.borderTopRightRadius,
+  style.borderBottomRightRadius,
+  style.borderBottomLeftRadius,
+];
+
+/**
+ * The joined geometry, read from the open panel: one portalled `z-50`
+ * element whose box starts on the field's top edge, exactly the field's
+ * width; the field has no border, ring or shadow of its own, square bottom
+ * corners and the panel's top radius; one divider on the field's bottom
+ * border row; one outer radius; one shadow (`--shadow-overlay`) plus the focus
+ * ring; and the field under the panel's top still gets the pointer.
+ */
+async function expectJoinedPanel(
+  canvasElement: HTMLElement,
+  field: HTMLElement,
+  listbox: HTMLElement,
+  { radius, frame = field }: { radius: string; frame?: HTMLElement },
+) {
+  const panel = listbox.closest<HTMLElement>('[data-layout="panel"]');
+  await expect(panel).not.toBeNull();
+  if (!panel) return;
+  const body = panel.querySelector<HTMLElement>('[data-slot="combobox-panel-body"]');
+  if (!body) throw new Error("panel body missing");
+
+  // Portalled and on top, as in popover layout.
+  await expect(canvasElement.contains(panel)).toBe(false);
+  await expect(getComputedStyle(panel).zIndex).toBe("50");
+
+  // One box: the panel starts on the field's top edge, exactly as wide.
+  const fieldBox = frame.getBoundingClientRect();
+  const panelBox = panel.getBoundingClientRect();
+  await expect(Math.abs(panelBox.top - fieldBox.top)).toBeLessThan(0.5);
+  await expect(Math.abs(panelBox.left - fieldBox.left)).toBeLessThan(0.5);
+  await expect(Math.abs(panelBox.width - fieldBox.width)).toBeLessThan(0.5);
+  await expect(panelBox.bottom).toBeGreaterThan(fieldBox.bottom);
+  // No gap: the divider (the list's 1px top border) is the field's bottom
+  // border row — its last pixel row — and the list starts right under it.
+  const bodyBox = body.getBoundingClientRect();
+  await expect(Math.abs(bodyBox.top + 1 - fieldBox.bottom)).toBeLessThan(0.5);
+  const bodyStyle = getComputedStyle(body);
+  await expect(bodyStyle.borderTopWidth).toBe("1px");
+  await expect(bodyStyle.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-outline-variant)"));
+  await expect(bodyStyle.backgroundColor).toBe(
+    resolvedStyle(canvasElement, "backgroundColor", "var(--color-surface-container-lowest)"),
+  );
+
+  // One border: the panel's, in the focused field's colour; the field's own is gone.
+  const panelStyle = getComputedStyle(panel);
+  const frameStyle = getComputedStyle(frame);
+  for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
+    await expect(panelStyle[`border${side}Width`]).toBe("1px");
+    await expect(panelStyle[`border${side}Color`]).toBe(resolvedColor(canvasElement, "var(--color-primary)"));
+    await expect(frameStyle[`border${side}Color`]).toBe(TRANSPARENT);
+  }
+
+  // One outer radius on the panel; the field's top corners follow it, its bottom ones are square.
+  await expect(corners(panelStyle)).toEqual([radius, radius, radius, radius]);
+  await expect(corners(frameStyle)).toEqual([radius, radius, "0px", "0px"]);
+
+  // One shadow: the overlay elevation and the focus ring on the panel, nothing on the field.
+  await expect(visibleShadowLayers(frameStyle.boxShadow)).toEqual([]);
+  const panelLayers = visibleShadowLayers(panelStyle.boxShadow);
+  for (const layer of visibleShadowLayers(
+    resolvedStyle(canvasElement, "boxShadow", "var(--shadow-overlay)"),
+  )) {
+    await expect(panelLayers).toContain(layer);
+  }
+  const ring = resolvedColor(canvasElement, "var(--color-focus-ring)");
+  await expect(panelLayers.some((layer) => layer.startsWith(ring) && layer.endsWith("0px 0px 0px 2px"))).toBe(true);
+
+  // The panel's top is a window: the pointer reaches the field, and the options.
+  const hit = document.elementFromPoint(fieldBox.left + fieldBox.width / 2, fieldBox.top + fieldBox.height / 2);
+  await expect(frame.contains(hit)).toBe(true);
+  const firstOption = within(listbox).getAllByRole("option")[0].getBoundingClientRect();
+  const optionHit = document.elementFromPoint(
+    firstOption.left + firstOption.width / 2,
+    firstOption.top + firstOption.height / 2,
+  );
+  await expect(within(listbox).getAllByRole("option")[0].contains(optionHit)).toBe(true);
+
+  // Radix's role="dialog" stays removed.
+  await expect(within(canvasElement.ownerDocument.body).queryByRole("dialog")).toBeNull();
+}
+
+/** The JustRAG case end to end, for one Style: geometry, palette rows, keyboard contract. */
+async function playPaletteSearch({
+  canvas,
+  canvasElement,
+  userEvent,
+  radius,
+}: {
+  canvas: ReturnType<typeof within>;
+  canvasElement: HTMLElement;
+  userEvent: { click: (el: Element) => Promise<void>; keyboard: (text: string) => Promise<void>; type: (el: Element, text: string) => Promise<void>; clear: (el: Element) => Promise<void> };
+  radius: string;
+}) {
+  const body = page(canvasElement);
+  const input = canvas.getByRole("combobox", { name: "In „Prüfungsordnung“ suchen" });
+  await expect(input).toHaveAttribute("aria-expanded", "false");
+
+  // Focus opens the defaults (the consumer's onFocus still runs).
+  await userEvent.click(input);
+  const listbox = await body.findByRole("listbox", { name: "Suchergebnisse" });
+  await expect(input).toHaveAttribute("aria-expanded", "true");
+  await expect(input).toHaveAttribute("aria-controls", listbox.id);
+  await expect(body.getByRole("group", { name: "Chat" })).toBeVisible();
+  await expect(body.getByRole("group", { name: "Letzte Unterhaltungen" })).toBeVisible();
+  await expect(body.getByRole("group", { name: "Konto" })).toBeVisible();
+  await expectJoinedPanel(canvasElement, input, listbox, { radius });
+
+  // Palette rows: the description is muted text next to the label, part of
+  // the name; the shortcut sits at the trailing edge, hidden from AT; a Kbd
+  // on the highlighted row steps up one surface.
+  const options = within(listbox).getAllByRole("option");
+  const newChat = options[0];
+  await waitFor(() => expect(activeOption(input)).toBe(newChat));
+  await expect(newChat).toHaveAccessibleName("Neuer Chat");
+  const recent = within(listbox).getByRole("option", { name: /Semesterplanung WS 26\/27/ });
+  await expect(recent).toHaveAccessibleName("Semesterplanung WS 26/27 Heute");
+  const description = recent.querySelector<HTMLElement>('[data-slot="combobox-item-description"]');
+  await expect(getComputedStyle(description as HTMLElement).color).toBe(
+    resolvedColor(canvasElement, "var(--color-on-surface-variant)"),
+  );
+  const shortcut = newChat.querySelector<HTMLElement>('[data-slot="combobox-item-shortcut"]');
+  await expect(shortcut).toHaveAttribute("aria-hidden", "true");
+  const rowBox = newChat.getBoundingClientRect();
+  const rowPaddingRight = parseFloat(getComputedStyle(newChat).paddingRight);
+  await expect(Math.abs((shortcut as HTMLElement).getBoundingClientRect().right - (rowBox.right - rowPaddingRight))).toBeLessThan(0.5);
+  const kbdOf = (row: HTMLElement) => row.querySelector('[data-slot="kbd"]') as HTMLElement;
+  await expect(getComputedStyle(kbdOf(newChat)).backgroundColor).toBe(
+    resolvedStyle(canvasElement, "backgroundColor", "var(--color-surface-container-highest)"),
+  );
+  const settings = within(listbox).getByRole("option", { name: "Einstellungen" });
+  await expect(getComputedStyle(kbdOf(settings)).backgroundColor).toBe(
+    resolvedStyle(canvasElement, "backgroundColor", "var(--color-surface-container-high)"),
+  );
+
+  // Keyboard contract, unchanged: ↓/↑ move the highlight as aria-activedescendant, focus stays.
+  await userEvent.keyboard("{ArrowDown}");
+  await expect(activeOption(input)).toBe(options[1]);
+  await userEvent.keyboard("{ArrowUp}{ArrowUp}");
+  await expect(activeOption(input)).toBe(options[options.length - 1]); // wrapped
+  await expect(document.activeElement).toBe(input);
+
+  // Typing filters; Enter selects — the value is the label, not label + description.
+  await userEvent.type(input, "modul");
+  await waitFor(() => expect(within(listbox).getAllByRole("option")).toHaveLength(1));
+  await waitFor(() => expect(activeOption(input)).toHaveAccessibleName(/Modulwahl Informatik/));
+  await expectJoinedPanel(canvasElement, input, listbox, { radius });
+  await userEvent.keyboard("{Enter}");
+  await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+  await expect(canvas.getByTestId("selected")).toHaveTextContent("Modulwahl Informatik");
+  await expect(canvas.getByTestId("selected")).not.toHaveTextContent("Okt");
+  await expect(document.activeElement).toBe(input);
+
+  // Closed again: the field's own focused frame is back.
+  await settled(input);
+  await expect(getComputedStyle(input).borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-primary)"));
+  await expect(getComputedStyle(input).borderBottomLeftRadius).not.toBe("0px");
+
+  // Escape closes and keeps focus and text; a click into the field reopens.
+  await userEvent.clear(input);
+  await body.findByRole("listbox");
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+  await expect(input).toHaveAttribute("aria-expanded", "false");
+  await expect(document.activeElement).toBe(input);
+  await userEvent.click(input);
+  await body.findByRole("listbox");
+
+  // An outside click closes it.
+  await userEvent.click(canvas.getByText("Seiteninhalt"));
+  await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+  await expect(input).toHaveAttribute("aria-expanded", "false");
+}
+
+/**
+ * **`layout="panel"`** — the JustRAG workspace search as a command palette
+ * that grows out of the field: one border, one outer radius, one shadow, no
+ * gap, a single divider between field and list. Closed it is the ordinary
+ * search field. Still portalled (the 64px bar cannot clip it) and `z-50`.
+ * Rows: leading icon, label, a muted `description`, a `Kbd` `shortcutHint`.
+ */
+export const SinglePanelSearch: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <AppShellFixture context="overview" search={<PaletteSearch />}>
+      <div className="p-gutter text-on-surface-variant">Seiteninhalt</div>
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await expect(document.documentElement.dataset.uiShape ?? "rounded").toBe("rounded");
+    // Rounded Style: the field's radius, `--radius-action` 0.5rem.
+    await playPaletteSearch({ canvas, canvasElement, userEvent, radius: "8px" });
+  },
+};
+
+/**
+ * The same panel in the pill Style and the dark theme: the capsule field's
+ * panel takes the Style's box radius (24px), colours come from the dark
+ * tokens.
+ */
+export const SinglePanelSearchPillDark: Story = {
+  ...SinglePanelSearch,
+  globals: { shape: "pill", theme: "dark" },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // The story really runs pill + dark (the providers are the only writers).
+    await waitFor(() => expect(document.documentElement.dataset.uiShape).toBe("pill"));
+    await expect(document.documentElement.dataset.theme).toBe("dark");
+    // Pill Style: `--radius-2xl` 1.5rem.
+    await playPaletteSearch({ canvas, canvasElement, userEvent, radius: "24px" });
+  },
+};
+
+const fieldLook = (el: HTMLElement) => {
+  const style = getComputedStyle(el);
+  const box = el.getBoundingClientRect();
+  return {
+    height: box.height,
+    width: box.width,
+    radius: corners(style),
+    borderColor: [style.borderTopColor, style.borderRightColor, style.borderBottomColor, style.borderLeftColor],
+    borderWidth: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
+    background: style.backgroundColor,
+    boxShadow: style.boxShadow,
+    padding: style.padding,
+  };
+};
+
+/**
+ * Closed, a `layout="panel"` field is the `layout="popover"` field: same
+ * box, radius, border, surface and shadow — at rest, focused, and again after
+ * the panel was open and closed.
+ */
+export const SinglePanelClosedMatchesField: Story = {
+  render: () => (
+    <div className="flex max-w-md flex-col gap-4">
+      {(["panel", "popover"] as const).map((layout) => (
+        <Combobox key={layout} layout={layout}>
+          <ComboboxInput aria-label={`Suchen (${layout})`} placeholder="Suchen …" leadingIcon={<Search />} />
+          <ComboboxContent>
+            <ComboboxList>
+              <ComboboxItem>Semesterplanung</ComboboxItem>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      ))}
+    </div>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const panelField = canvas.getByRole("combobox", { name: "Suchen (panel)" });
+    const reference = canvas.getByRole("combobox", { name: "Suchen (popover)" });
+    await expect(fieldLook(panelField)).toEqual(fieldLook(reference));
+
+    await userEvent.click(reference);
+    await settled(reference);
+    const referenceFocused = fieldLook(reference);
+    await userEvent.click(panelField);
+    await settled(panelField);
+    await expect(fieldLook(panelField)).toEqual(referenceFocused);
+
+    await userEvent.keyboard("{ArrowDown}");
+    await page(canvasElement).findByRole("listbox");
+    await expect(panelField).toHaveAttribute("data-panel", "open");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(page(canvasElement).queryByRole("listbox")).toBeNull());
+    await expect(panelField).not.toHaveAttribute("data-panel");
+    await settled(panelField);
+    await expect(fieldLook(panelField)).toEqual(referenceFocused);
+  },
+};
+
+/** Chips mode with `layout="panel"` — people with a username description per row. */
+function PanelChips() {
+  const [people, setPeople] = useState<Person[]>([DIRECTORY[0]]);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const suggestions = DIRECTORY.filter(
+    (p) => !people.includes(p) && (q === "" || p.name.toLowerCase().includes(q)),
+  );
+  return (
+    <div className="max-w-md">
+      <Combobox layout="panel" shouldFilter={false}>
+        <ComboboxChipsInput
+          aria-label="Benutzernamen"
+          chipsLabel="Ausgewählte Personen"
+          value={query}
+          onValueChange={setQuery}
+          onRemoveLast={() => setPeople((current) => current.slice(0, -1))}
+        >
+          {people.map((p) => (
+            <ComboboxChip
+              key={p.username}
+              label={p.name}
+              leading={<Avatar size="xs" initials={p.initials} />}
+              onRemove={() => setPeople((current) => current.filter((c) => c !== p))}
+            />
+          ))}
+        </ComboboxChipsInput>
+        <ComboboxContent>
+          <ComboboxList label="Personen">
+            {suggestions.map((p) => (
+              <ComboboxItem
+                key={p.username}
+                value={p.username}
+                description={p.username}
+                onSelect={() => setPeople((current) => [...current, p])}
+              >
+                <Avatar size="xs" initials={p.initials} />
+                {p.name}
+              </ComboboxItem>
+            ))}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  );
+}
+
+/**
+ * Chips mode in `layout="panel"`: the same joined panel around the chips
+ * frame, which keeps the field radius in every Style — here the pill Style,
+ * where a `ComboboxInput` panel would take 24px.
+ */
+export const SinglePanelChips: Story = {
+  globals: { shape: "pill" },
+  render: () => <PanelChips />,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await waitFor(() => expect(document.documentElement.dataset.uiShape).toBe("pill"));
+    const input = canvas.getByRole("combobox", { name: "Benutzernamen" });
+    await userEvent.click(input);
+    await userEvent.keyboard("{ArrowDown}");
+    const listbox = await page(canvasElement).findByRole("listbox", { name: "Personen" });
+    // `--radius-field` 0.5rem, also in the pill Style.
+    await expectJoinedPanel(canvasElement, input, listbox, { radius: "8px", frame: chipsFrame(input) });
+    await expect(document.activeElement).toBe(input);
+  },
+};
+
+/**
+ * The field's other states move to the panel too: with `aria-invalid` the
+ * open panel's border is the error token (and its focus ring the error
+ * ring), as on the closed field. And a panel with nothing to show — no
+ * option, no `ComboboxEmpty` — has no list part and no divider: it is just
+ * the framed field.
+ */
+export const SinglePanelInvalid: Story = {
+  render: () => (
+    <div className="max-w-md">
+      <Combobox layout="panel">
+        <ComboboxInput aria-label="Kürzel" aria-invalid leadingIcon={<Search />} />
+        <ComboboxContent>
+          <ComboboxList>
+            {FACULTIES.map((name) => (
+              <ComboboxItem key={name}>{name}</ComboboxItem>
+            ))}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const input = canvas.getByRole("combobox", { name: "Kürzel" });
+    await userEvent.type(input, "recht");
+    const listbox = await page(canvasElement).findByRole("listbox");
+    const panel = listbox.closest<HTMLElement>('[data-layout="panel"]') as HTMLElement;
+    const error = resolvedColor(canvasElement, "var(--color-error)");
+    await expect(getComputedStyle(panel).borderTopColor).toBe(error);
+    await expect(getComputedStyle(panel).borderBottomColor).toBe(error);
+    await expect(
+      visibleShadowLayers(getComputedStyle(panel).boxShadow).some(
+        (layer) => layer.startsWith(error) && layer.endsWith("0px 0px 0px 2px"),
+      ),
+    ).toBe(true);
+
+    // Nothing matches and there is no ComboboxEmpty: no list part, no divider.
+    await userEvent.type(input, "zzz");
+    const body = panel.querySelector('[data-slot="combobox-panel-body"]') as HTMLElement;
+    await waitFor(() => expect(getComputedStyle(body).display).toBe("none"));
+    await expect(
+      Math.abs(panel.getBoundingClientRect().height - input.getBoundingClientRect().height),
+    ).toBeLessThan(0.5);
   },
 };
