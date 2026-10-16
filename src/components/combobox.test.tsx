@@ -812,9 +812,10 @@ describe("ComboboxItem description and shortcutHint", () => {
     expect(onSelect).toHaveBeenLastCalledWith("explicit");
   });
 
-  it("keeps the label as the value through a row unmounted and remounted by cmdk", async () => {
-    // The reviewer's sequence: "P" filters, Backspace restores every row,
-    // so cmdk mounts this row again before ArrowDown / Enter reach it.
+  it("keeps the label as the value for a row cmdk filters out and then shows", async () => {
+    // "Sem" opens the list with this row filtered out (cmdk renders nothing
+    // for it); clearing the query makes cmdk mount it before ArrowDown /
+    // Enter reach it — the filtered-then-visible path.
     const onSelect = vi.fn();
     render(
       <Combobox>
@@ -829,11 +830,16 @@ describe("ComboboxItem description and shortcutHint", () => {
         </ComboboxContent>
       </Combobox>,
     );
-    await userEvent.type(field(), "P");
-    await screen.findByRole("listbox");
-    await userEvent.keyboard("{Backspace}");
+    // jsdom joins label and description without a space (see above).
+    const row = () => screen.queryByRole("option", { name: /^Prüfungsordnung\s?Gestern$/ });
+    await userEvent.type(field(), "Sem");
+    await screen.findByRole("option", { name: "Semesterplanung" });
+    expect(row()).toBeNull();
+    await userEvent.clear(field());
     await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(2));
-    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await userEvent.keyboard("{ArrowDown}");
+    expect(row()).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Enter}");
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith("Prüfungsordnung");
   });
@@ -877,9 +883,15 @@ describe("ComboboxItem ref", () => {
         </ComboboxContent>
       </Combobox>,
     );
+    // Open on an empty query first, so the row is mounted before the filter
+    // removes it — the state in which a stale ref would hold a detached node.
+    await userEvent.type(field(), "{ArrowDown}");
+    expect(itemRef.current).toBe(await screen.findByRole("option", { name: "Semesterplanung" }));
     await userEvent.type(field(), "modul");
-    await screen.findByRole("listbox");
     await waitFor(() => expect(screen.queryByRole("option", { name: "Semesterplanung" })).toBeNull());
+    // While cmdk renders nothing for the row, the ref holds no node — not a
+    // detached one left over from the earlier mount.
+    expect(itemRef.current).toBeNull();
     await userEvent.clear(field());
     const visible = await screen.findByRole("option", { name: "Semesterplanung" });
     expect(itemRef.current).toBe(visible);
