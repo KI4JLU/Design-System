@@ -62,6 +62,16 @@ import { Popover, PopoverAnchor, PopoverContent } from "./popover";
  * **Chips mode** (several values in one field): use `ComboboxChipsInput` with
  * `ComboboxChip` children in place of `ComboboxInput` — see there.
  *
+ * **Layout** (`layout`, default `"popover"`): where the open list goes.
+ * - `"popover"`: a separate floating panel under the field, with its own
+ *   border, radius and shadow and a 4px gap — the look of every release
+ *   before this prop existed.
+ * - `"panel"`: the field and the open list read as ONE surface, as in a
+ *   command palette — one border, one outer radius, one shadow, no gap, a
+ *   single `outline-variant` divider between field and list. Closed, the
+ *   field looks exactly as in `"popover"`. See `ComboboxContent` for how
+ *   the joined geometry is drawn and what it changes (width, side).
+ *
  * `Command*`'s own props pass through (`shouldFilter`, `filter`, `loop`, …).
  * Two defaults differ from cmdk's, both because the list hangs off a text
  * field: `loop` is on (↓ on the last option wraps to the first), and
@@ -85,7 +95,50 @@ interface ComboboxContextValue {
    * chip, so the query that found it is spent.
    */
   afterSelectRef: React.RefObject<(() => void) | null>;
+  /** `Combobox`'s `layout`. */
+  layout: ComboboxLayout;
+  /** What `ComboboxContent` needs to know about the field in `"panel"` layout. */
+  field: PanelField;
+  setField: (patch: Partial<PanelField>) => void;
 }
+
+/**
+ * Where the open list goes — see `Combobox`. `"popover"` (default): a
+ * separate floating panel under the field. `"panel"`: field and list are one
+ * surface.
+ */
+export type ComboboxLayout = "popover" | "panel";
+
+/**
+ * The field as `ComboboxContent` draws around it in `"panel"` layout — the
+ * panel, not the field, carries the border, radius and focus ring while the
+ * list is open. Reported by the text field part.
+ * - `shape`: `"control"` — `ComboboxInput`, whose radius follows the Style
+ *   like a button; `"field"` — `ComboboxChipsInput`, field radius in every
+ *   Style.
+ * - `focused`: the text input has focus (the panel then shows the focus
+ *   border and ring the closed field shows).
+ * - `invalid`: `aria-invalid` on the field (the panel's border turns red).
+ */
+interface PanelField {
+  shape: "control" | "field";
+  focused: boolean;
+  invalid: boolean;
+}
+
+/*
+ * The open panel's outer radius for a `ComboboxInput`:
+ *   min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))
+ * — the field's own radius (`--ui-radius-control`, the Style's button
+ * radius), capped at the Style's multi-line box radius (`--ui-radius-box`).
+ * Rounded Style: min(8px, 12px) = 8px, the closed field's corner. Pill Style:
+ * min(9999px, 24px) = 24px — a capsule cannot frame a multi-line box, and
+ * 24px is within a pixel of the 50px field's capsule corner (25px). A
+ * `ComboboxChipsInput` keeps the field radius (`--radius-field`) in every
+ * Style, open or closed. The expression is written out in every class that
+ * uses it: Tailwind only generates CSS for class names that appear literally
+ * in source (here, and in every consumer compiling these strings from `dist`).
+ */
 
 const ComboboxContext = React.createContext<ComboboxContextValue | null>(null);
 
@@ -105,6 +158,15 @@ export interface ComboboxProps
   defaultOpen?: boolean;
   /** Called whenever the combobox asks to open or close the list. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Where the open list goes. `"popover"` (default): a separate floating
+   * panel under the field. `"panel"`: field and list read as one surface —
+   * one border, one outer radius, one shadow, no gap (a command palette that
+   * grows out of the search field). Closed, both look the same. Works with
+   * `ComboboxInput` and `ComboboxChipsInput` (framed field only — not with
+   * `ComboboxInput`'s `variant="inline"` / `"title"`). See `ComboboxContent`.
+   */
+  layout?: ComboboxLayout;
 }
 
 const Combobox = React.forwardRef<React.ComponentRef<typeof CommandPrimitive>, ComboboxProps>(
@@ -115,6 +177,7 @@ const Combobox = React.forwardRef<React.ComponentRef<typeof CommandPrimitive>, C
       onOpenChange,
       loop = true,
       vimBindings = false,
+      layout = "popover",
       className,
       children,
       ...props
@@ -129,6 +192,21 @@ const Combobox = React.forwardRef<React.ComponentRef<typeof CommandPrimitive>, C
     // cmdk's highlight, held here so `ComboboxList` can restore it — see there.
     const [highlighted, setHighlighted] = React.useState("");
     const afterSelectRef = React.useRef<(() => void) | null>(null);
+    const [field, setFieldState] = React.useState<PanelField>({
+      shape: "control",
+      focused: false,
+      invalid: false,
+    });
+    const setField = React.useCallback((patch: Partial<PanelField>) => {
+      setFieldState((current) => {
+        const next = { ...current, ...patch };
+        return next.shape === current.shape &&
+          next.focused === current.focused &&
+          next.invalid === current.invalid
+          ? current
+          : next;
+      });
+    }, []);
 
     const setOpen = React.useCallback(
       (next: boolean) => {
@@ -140,8 +218,19 @@ const Combobox = React.forwardRef<React.ComponentRef<typeof CommandPrimitive>, C
     );
 
     const context = React.useMemo(
-      () => ({ open, setOpen, anchorRef, activeId, setActiveId, setHighlighted, afterSelectRef }),
-      [open, setOpen, activeId],
+      () => ({
+        open,
+        setOpen,
+        anchorRef,
+        activeId,
+        setActiveId,
+        setHighlighted,
+        afterSelectRef,
+        layout,
+        field,
+        setField,
+      }),
+      [open, setOpen, activeId, layout, field, setField],
     );
 
     return (
@@ -181,6 +270,11 @@ interface ComboboxFieldOptions {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   ariaLabelledBy?: string;
+  /** The field's corner in `"panel"` layout — see `PanelField`. */
+  shape: PanelField["shape"];
+  ariaInvalid?: React.AriaAttributes["aria-invalid"];
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
 }
 
 /**
@@ -195,9 +289,43 @@ function useComboboxField({
   defaultValue,
   onValueChange,
   ariaLabelledBy,
+  shape,
+  ariaInvalid,
+  onFocus,
+  onBlur,
 }: ComboboxFieldOptions) {
   const context = useComboboxContext(part);
-  const { open, setOpen, activeId } = context;
+  const { open, setOpen, activeId, layout, setField } = context;
+  const invalid = ariaInvalid === true || ariaInvalid === "true";
+
+  const panel = layout === "panel";
+
+  // `"panel"` layout only: `ComboboxContent` draws the field's border, radius
+  // and focus ring while the list is open, so it has to know them. In
+  // `"popover"` layout nothing is reported and nothing re-renders.
+  React.useLayoutEffect(() => {
+    if (panel) setField({ shape, invalid });
+  }, [panel, setField, shape, invalid]);
+
+  const focusHandlers = {
+    onFocus: (event: React.FocusEvent<HTMLInputElement>) => {
+      onFocus?.(event);
+      if (panel) setField({ focused: true });
+    },
+    onBlur: (event: React.FocusEvent<HTMLInputElement>) => {
+      onBlur?.(event);
+      if (panel) setField({ focused: false });
+    },
+  };
+  /**
+   * `"panel"` layout, list open: the styling hook for the field's half of the
+   * joined panel (`data-[panel=open]:` classes). A `data-*` variant comes
+   * after `focus-visible:` and `aria-*` in Tailwind's variant order, with the
+   * same specificity, so it wins over `Input`'s own focus and invalid border;
+   * the chips frame's `has-*` states outrank it (see
+   * `panelChipsFrameClassName`).
+   */
+  const panelState = panel && open ? "open" : undefined;
   const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue ?? "");
   const isControlled = value !== undefined;
   const text = isControlled ? value : uncontrolledValue;
@@ -238,8 +366,38 @@ function useComboboxField({
   };
   if (!open) ariaOverrides["aria-controls"] = undefined;
 
-  return { context, text, setText, handleValueChange, handleClosedListKeys, ariaOverrides };
+  return {
+    context,
+    text,
+    setText,
+    handleValueChange,
+    handleClosedListKeys,
+    ariaOverrides,
+    focusHandlers,
+    panelState,
+  };
 }
+
+/**
+ * `ComboboxInput`'s half of the open panel (`"panel"` layout): its top
+ * corners take the panel's radius (see `PanelField`), its bottom corners are
+ * square, and its own border, focus ring and transition are off — the
+ * panel (`ComboboxContent`) draws border and ring around field and list
+ * together. Inert while `data-panel` is absent, i.e. closed or `"popover"`.
+ */
+const panelInputClassName = [
+  "data-[panel=open]:rounded-t-[min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))]",
+  "data-[panel=open]:rounded-b-none data-[panel=open]:border-transparent data-[panel=open]:ring-0 data-[panel=open]:transition-none",
+].join(" ");
+
+/**
+ * `ComboboxChipsInput`'s frame: as `panelInputClassName`, but the top corners
+ * keep the field radius. Border and ring need `!`: the frame's own states are
+ * `has-[input:focus-visible]:` selectors, whose `:has()` argument outranks a
+ * `[data-panel=open]` attribute in specificity, whatever the variant order.
+ */
+const panelChipsFrameClassName =
+  "data-[panel=open]:rounded-b-none data-[panel=open]:border-transparent! data-[panel=open]:ring-0! data-[panel=open]:transition-none";
 
 /**
  * The field: the design system's `Input` (same `fieldVariants` look, same
@@ -276,21 +434,37 @@ function useComboboxField({
  */
 const ComboboxInput = React.forwardRef<HTMLInputElement, ComboboxInputProps>(
   (
-    { value, defaultValue, onValueChange, onKeyDown, "aria-labelledby": ariaLabelledBy, ...props },
+    {
+      value,
+      defaultValue,
+      onValueChange,
+      onKeyDown,
+      onFocus,
+      onBlur,
+      className,
+      "aria-labelledby": ariaLabelledBy,
+      ...props
+    },
     ref,
   ) => {
     const {
-      context: { anchorRef },
+      context: { anchorRef, layout },
       text,
       handleValueChange,
       handleClosedListKeys,
       ariaOverrides,
+      focusHandlers,
+      panelState,
     } = useComboboxField({
       part: "ComboboxInput",
       value,
       defaultValue,
       onValueChange,
       ariaLabelledBy,
+      shape: "control",
+      ariaInvalid: props["aria-invalid"],
+      onFocus,
+      onBlur,
     });
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -302,7 +476,15 @@ const ComboboxInput = React.forwardRef<HTMLInputElement, ComboboxInputProps>(
       <PopoverAnchor asChild>
         <div ref={anchorRef} className="w-full">
           <CommandPrimitive.Input asChild value={text} onValueChange={handleValueChange}>
-            <Input ref={ref} {...props} {...ariaOverrides} onKeyDown={handleKeyDown} />
+            <Input
+              ref={ref}
+              {...props}
+              {...ariaOverrides}
+              {...focusHandlers}
+              data-panel={panelState}
+              className={cn(layout === "panel" && panelInputClassName, className)}
+              onKeyDown={handleKeyDown}
+            />
           </CommandPrimitive.Input>
         </div>
       </PopoverAnchor>
@@ -442,20 +624,34 @@ const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInput
       disabled = false,
       onKeyDown,
       onPaste,
+      onFocus,
+      onBlur,
       "aria-labelledby": ariaLabelledBy,
       ...props
     },
     ref,
   ) => {
-    const { context, text, setText, handleValueChange, handleClosedListKeys, ariaOverrides } =
-      useComboboxField({
-        part: "ComboboxChipsInput",
-        value,
-        defaultValue,
-        onValueChange,
-        ariaLabelledBy,
-      });
-    const { open, setOpen, anchorRef, activeId, afterSelectRef } = context;
+    const {
+      context,
+      text,
+      setText,
+      handleValueChange,
+      handleClosedListKeys,
+      ariaOverrides,
+      focusHandlers,
+      panelState,
+    } = useComboboxField({
+      part: "ComboboxChipsInput",
+      value,
+      defaultValue,
+      onValueChange,
+      ariaLabelledBy,
+      shape: "field",
+      ariaInvalid: props["aria-invalid"],
+      onFocus,
+      onBlur,
+    });
+    const { open, setOpen, anchorRef, activeId, afterSelectRef, layout } = context;
     const inputRef = React.useRef<HTMLInputElement>(null);
     React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
     const hasChips = React.Children.toArray(children).length > 0;
@@ -543,6 +739,7 @@ const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInput
           <div
             ref={anchorRef}
             data-slot="combobox-chips-input"
+            data-panel={panelState}
             onMouseDown={handleFrameMouseDown}
             className={cn(
               // Inline flow, not flex: the chips and the input share lines, so
@@ -553,6 +750,7 @@ const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInput
               fieldFrameClassName,
               "block cursor-text py-[7px] pr-4",
               hasChips ? "pl-2.5" : "pl-4",
+              layout === "panel" && panelChipsFrameClassName,
               className,
             )}
           >
@@ -575,6 +773,7 @@ const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInput
                 disabled={disabled}
                 {...props}
                 {...ariaOverrides}
+                {...focusHandlers}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 className={cn(
@@ -696,6 +895,22 @@ ComboboxChip.displayName = "ComboboxChip";
 
 export type ComboboxContentProps = React.ComponentPropsWithoutRef<typeof PopoverContent>;
 
+/** The panel's outer radius per field shape — see the note above `ComboboxContext`. */
+const panelRadius: Record<PanelField["shape"], string> = {
+  control:
+    "rounded-[min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))]",
+  field: "rounded-field",
+};
+
+/**
+ * The panel's border and ring — the closed field's own states
+ * (`fieldVariants` default), drawn around field and list together.
+ */
+const panelFrameState = (field: PanelField) => {
+  if (field.invalid) return field.focused ? "border-error ring-2 ring-error" : "border-error";
+  return field.focused ? "border-primary ring-2 ring-focus-ring" : "";
+};
+
 /**
  * The popover panel under the field (portalled, `z-50`). Its width follows
  * the field (`--radix-popper-anchor-width`); a width utility in `className`
@@ -706,6 +921,28 @@ export type ComboboxContentProps = React.ComponentPropsWithoutRef<typeof Popover
  * focus, and a pointer-down or focus on the field itself does not count as
  * an outside interaction. Radix's `role="dialog"` is removed — the popup's
  * semantics are the listbox inside it.
+ *
+ * **`layout="panel"`** (on `Combobox`): one element draws the whole open
+ * surface. The (still portalled, still `z-50`) content is moved up over the
+ * field — its top edge on the field's top edge, exactly the field's width —
+ * and draws ONE border, ONE outer radius and ONE `shadow-overlay` around
+ * field and list. Its top part is a transparent, `pointer-events: none`
+ * window as tall as the field, so the field underneath stays visible and
+ * clickable (text selection, caret, a click into the field — none of it
+ * reaches the panel). Under the window comes a single `outline-variant`
+ * divider, then the list on the panel surface. While open the field drops
+ * its own border, ring and bottom corners (`data-panel="open"`), and the
+ * panel shows the field's states instead: `primary` border + focus ring
+ * while the input has focus, `error` border with `aria-invalid`.
+ * Radius: a `ComboboxInput` panel takes the field's radius capped at the
+ * Style's box radius (rounded: 8px, pill: 24px); a `ComboboxChipsInput`
+ * panel keeps the field radius. What `"panel"` fixes, overriding props:
+ * width = the field's (a width utility in `className` is ignored), `side`
+ * `bottom`, no collision flipping (`avoidCollisions={false}` — a list that
+ * flipped above the field could not join it), no padding around the window.
+ * TODO: the list's 20rem cap is not shortened to the space left below the
+ * field (not yet confirmed whether a consumer needs it — JustRAG's search
+ * sits in a 64px top bar).
  */
 const ComboboxContent = React.forwardRef<
   React.ComponentRef<typeof PopoverContent>,
@@ -719,17 +956,30 @@ const ComboboxContent = React.forwardRef<
       onCloseAutoFocus,
       onInteractOutside,
       onMouseDown,
+      children,
       ...props
     },
     ref,
   ) => {
-    const { anchorRef } = useComboboxContext("ComboboxContent");
+    const { anchorRef, layout, field } = useComboboxContext("ComboboxContent");
+    const panel = layout === "panel";
     return (
       <PopoverContent
         ref={ref}
         align={align}
         role={undefined}
-        className={cn("w-[var(--radix-popper-anchor-width)] overflow-hidden p-1", className)}
+        data-layout={layout}
+        className={cn(
+          "w-[var(--radix-popper-anchor-width)] overflow-hidden p-1",
+          className,
+          panel && [
+            // Over the field: the wrapper Radix positions sits under the
+            // field (sideOffset 0); the panel reaches up by the field's height.
+            "pointer-events-none -mt-[var(--radix-popper-anchor-height)] w-[var(--radix-popper-anchor-width)] bg-transparent p-0",
+            panelRadius[field.shape],
+            panelFrameState(field),
+          ],
+        )}
         onOpenAutoFocus={(event) => {
           onOpenAutoFocus?.(event);
           event.preventDefault();
@@ -750,7 +1000,34 @@ const ComboboxContent = React.forwardRef<
           event.preventDefault();
         }}
         {...props}
-      />
+        {...(panel ? { side: "bottom", sideOffset: 0, avoidCollisions: false } : null)}
+      >
+        {panel ? (
+          <>
+            {/* The window onto the field: its height minus the panel's 1px
+                top border and the 1px divider below, so the divider lies on
+                the field's own (now transparent) bottom border. */}
+            <div
+              aria-hidden="true"
+              data-slot="combobox-panel-field"
+              className="h-[calc(var(--radix-popper-anchor-height)-2px)]"
+            />
+            {/* Hidden while it shows nothing (only a hidden, option-less
+                list); the panel's bottom border then takes the divider's
+                place, so an empty panel has exactly the framed field's box
+                — but still the panel's `shadow-overlay` (and focus ring)
+                around it, i.e. an open, elevated field with no list. */}
+            <div
+              data-slot="combobox-panel-body"
+              className="pointer-events-auto border-t border-outline-variant bg-surface-container-lowest p-1 not-has-[>:not([hidden])]:hidden"
+            >
+              {children}
+            </div>
+          </>
+        ) : (
+          children
+        )}
+      </PopoverContent>
     );
   },
 );
@@ -852,36 +1129,115 @@ const ComboboxGroup = React.forwardRef<
 ));
 ComboboxGroup.displayName = "ComboboxGroup";
 
+export interface ComboboxItemProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item> {
+  /**
+   * Muted secondary text next to the label (a command palette's
+   * description: "gestern", a path, a topic name). One line, truncated
+   * first when the row is too narrow. Part of the option's accessible name.
+   */
+  description?: React.ReactNode;
+  /**
+   * Keyboard-shortcut hint at the row's trailing edge — a `Kbd` or a
+   * `KbdGroup`. Decorative, as `Input`'s `shortcutHint`: hidden from assistive
+   * tech and not part of the option's name or `value`.
+   */
+  shortcutHint?: React.ReactNode;
+}
+
+/**
+ * The plain text of a label, derived from the React tree: strings and
+ * numbers, through nested elements' `children`. It cannot see text a
+ * component renders (e.g. `<HitText primary="…" />`): for such a label it
+ * returns `""`, or only the plain part of mixed text (`"Chat: "` of
+ * `Chat: <X />`) — which is why `ComboboxItem` asks for `value` there.
+ */
+function textOf(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return textOf(node.props.children);
+  }
+  return "";
+}
+
 /**
  * One option (`role="option"`, `aria-selected` on the highlighted one — cmdk).
  * Speaks the `MenuItem` vocabulary; the highlight uses its hover surface.
  * `onSelect(value)` fires on click and on Enter (and on Tab in a
  * `ComboboxChipsInput`), then the list closes. Pass a
  * stable, unique `value` when the visible text is not unique or changes.
+ *
+ * Palette rows: `children` is the leading icon and the label; `description`
+ * adds muted text next to the label and `shortcutHint` a right-aligned `Kbd`
+ * hint. With either set and no `value`, the option's value is the text of
+ * `children` alone — so `onSelect` receives the label and client filtering
+ * matches the label, not the description or the keys (put the description
+ * into `keywords` to match it too). This works only for a **plain-text
+ * label** (strings, possibly inside plain elements such as a `<span>`). A
+ * label rendered by a component, or mixed text plus a component (e.g.
+ * `Chat: <X />`), **must pass `value`**: otherwise matching and `onSelect`
+ * fall back to cmdk's text of the whole row — the description included —
+ * or to the plain part alone. Pass `value` too whenever the label is not
+ * unique; it always wins. Without `description` / `shortcutHint`, cmdk's own
+ * rule applies unchanged (the row's text content).
  */
 const ComboboxItem = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, onSelect, ...props }, ref) => {
+  ComboboxItemProps
+>(({ className, onSelect, description, shortcutHint, value, children, ...props }, ref) => {
   const { setOpen, afterSelectRef } = useComboboxContext("ComboboxItem");
+  const palette = description != null || shortcutHint != null;
+  const label = textOf(children).trim();
   return (
     <CommandPrimitive.Item
       ref={ref}
+      value={value ?? (palette && label !== "" ? label : undefined)}
       className={cn(
         menuItemVariants(),
         "cursor-default rounded-lg select-none",
         "data-[selected=true]:bg-surface-container-high",
+        // A Kbd is `surface-container-high` too: one step up on the
+        // highlight. Only on rows with a shortcut hint, so plain rows keep
+        // their class list unchanged.
+        shortcutHint != null && "data-[selected=true]:[&_[data-slot=kbd]]:bg-surface-container-highest",
         "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60",
         "[&_svg]:size-4",
         className,
       )}
-      onSelect={(value) => {
-        onSelect?.(value);
+      onSelect={(selected) => {
+        onSelect?.(selected);
         setOpen(false);
         afterSelectRef.current?.();
       }}
       {...props}
-    />
+    >
+      {palette ? (
+        <>
+          {children}
+          {description != null ? (
+            <span
+              data-slot="combobox-item-description"
+              className="min-w-0 truncate text-on-surface-variant"
+            >
+              {description}
+            </span>
+          ) : null}
+          {shortcutHint != null ? (
+            <span
+              aria-hidden="true"
+              data-slot="combobox-item-shortcut"
+              className="ml-auto flex shrink-0 items-center"
+            >
+              {shortcutHint}
+            </span>
+          ) : null}
+        </>
+      ) : (
+        // Unchanged for plain rows: a string child is still cmdk's value.
+        children
+      )}
+    </CommandPrimitive.Item>
   );
 });
 ComboboxItem.displayName = "ComboboxItem";

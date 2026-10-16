@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -623,5 +623,266 @@ describe("ComboboxChipsInput", () => {
       "<ComboboxChip> must be rendered inside <ComboboxChipsInput>.",
     );
     spy.mockRestore();
+  });
+});
+
+/*
+ * layout="panel". Oracle, as above: the DOM as assistive technology sees it
+ * plus the fixture's literals. The joined geometry itself (boxes, radii,
+ * colours) needs a layout engine — it is asserted in Chromium by the
+ * `SinglePanel*` stories; here only what jsdom can observe without reading
+ * the component's own class strings: attributes, roles, focus, structure.
+ */
+describe('Combobox layout="panel"', () => {
+  const panelOf = (listbox: HTMLElement) => listbox.closest('[data-layout="panel"]');
+
+  it("marks the field data-panel=open only while the list is open, and never in popover layout", async () => {
+    const { unmount } = render(<Fixture layout="panel" />);
+    const input = field();
+    expect(input).not.toHaveAttribute("data-panel");
+    await userEvent.type(input, "{ArrowDown}");
+    await screen.findByRole("listbox");
+    expect(input).toHaveAttribute("data-panel", "open");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    expect(input).not.toHaveAttribute("data-panel");
+    unmount();
+
+    render(<Fixture />);
+    await userEvent.type(field(), "{ArrowDown}");
+    const listbox = await screen.findByRole("listbox");
+    expect(field()).not.toHaveAttribute("data-panel");
+    expect(panelOf(listbox)).toBeNull();
+  });
+
+  it("renders one portalled panel: a hidden window onto the field, then the list", async () => {
+    const { container } = render(<Fixture layout="panel" />);
+    await userEvent.type(field(), "{ArrowDown}");
+    const listbox = await screen.findByRole("listbox");
+    const panel = panelOf(listbox);
+    expect(panel).not.toBeNull();
+    expect(container.contains(panel)).toBe(false); // portalled to <body>
+    const [window, body] = Array.from(panel!.children);
+    expect(window).toHaveAttribute("aria-hidden", "true");
+    expect(window).toBeEmptyDOMElement();
+    expect(body).toContainElement(listbox);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps the keyboard and ARIA contract of the popover layout", async () => {
+    const onSelect = vi.fn();
+    render(<Fixture layout="panel" onSelect={onSelect} />);
+    const input = field();
+    input.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    const listbox = await screen.findByRole("listbox", { name: "Vorschläge" });
+    expect(input).toHaveAttribute("aria-expanded", "true");
+    expect(input).toHaveAttribute("aria-controls", listbox.id);
+    const active = () => document.getElementById(input.getAttribute("aria-activedescendant")!);
+    await waitFor(() => expect(active()).toBe(option("Semesterplanung")));
+    await userEvent.keyboard("{ArrowUp}");
+    expect(active()).toBe(option("Modulhandbuch")); // wrapped past the first
+    await userEvent.keyboard("{Home}{ArrowDown}");
+    expect(active()).toBe(option("Prüfungsordnung"));
+    expect(document.activeElement).toBe(input);
+    await userEvent.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledWith("Prüfungsordnung");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(input).not.toHaveAttribute("aria-controls");
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("closes on Escape and on an outside click, not on a click into the field", async () => {
+    render(
+      <>
+        <Fixture layout="panel" />
+        <p>Draußen</p>
+      </>,
+    );
+    const input = field();
+    await userEvent.type(input, "{ArrowDown}");
+    await screen.findByRole("listbox");
+    await userEvent.click(input);
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Draußen"));
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+
+    await userEvent.type(input, "{ArrowDown}");
+    await screen.findByRole("listbox");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("still calls the consumer's onFocus and onBlur", async () => {
+    const onFocus = vi.fn();
+    const onBlur = vi.fn();
+    render(
+      <>
+        <Combobox layout="panel">
+          <ComboboxInput aria-label="Suchen" onFocus={onFocus} onBlur={onBlur} />
+        </Combobox>
+        <button type="button">Weiter</button>
+      </>,
+    );
+    await userEvent.click(field());
+    expect(onFocus).toHaveBeenCalledTimes(1);
+    await userEvent.tab();
+    expect(onBlur).toHaveBeenCalledTimes(1);
+  });
+
+  it("works with ComboboxChipsInput: the frame is marked, Tab still takes the suggestion", async () => {
+    function Chips() {
+      const [chips, setChips] = useState<string[]>([]);
+      return (
+        <Combobox layout="panel">
+          <ComboboxChipsInput aria-label="Personen">
+            {chips.map((c) => (
+              <ComboboxChip key={c} label={c} />
+            ))}
+          </ComboboxChipsInput>
+          <ComboboxContent>
+            <ComboboxList>
+              <ComboboxItem onSelect={(v) => setChips((cs) => [...cs, v])}>Anna Müller</ComboboxItem>
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      );
+    }
+    render(<Chips />);
+    const input = screen.getByRole("combobox", { name: "Personen" });
+    const frame = input.closest('[data-slot="combobox-chips-input"]');
+    await userEvent.type(input, "an");
+    await screen.findByRole("listbox");
+    expect(frame).toHaveAttribute("data-panel", "open");
+    await waitFor(() => expect(input).toHaveAttribute("aria-activedescendant"));
+    await userEvent.tab();
+    expect(screen.getByRole("listitem")).toHaveTextContent("Anna Müller");
+    expect(document.activeElement).toBe(input);
+    await waitFor(() => expect(frame).not.toHaveAttribute("data-panel"));
+  });
+});
+
+/*
+ * Palette rows. Oracle: the accessible name as dom-accessibility-api computes
+ * it from the DOM, `aria-hidden`, and the fixture's literals — the label a
+ * handler must receive and the strings typed.
+ */
+describe("ComboboxItem description and shortcutHint", () => {
+  function Palette({ onSelect = () => {} }: { onSelect?: (value: string) => void }) {
+    return (
+      <Combobox>
+        <ComboboxInput aria-label="Suchen" />
+        <ComboboxContent>
+          <ComboboxEmpty>Keine Treffer</ComboboxEmpty>
+          <ComboboxList>
+            <ComboboxItem onSelect={onSelect} description="Heute" shortcutHint={<kbd>⌘ 1</kbd>}>
+              <svg aria-hidden="true" />
+              <span>Semesterplanung</span>
+            </ComboboxItem>
+            <ComboboxItem onSelect={onSelect} value="explicit" description="Gestern">
+              Modulhandbuch
+            </ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    );
+  }
+
+  it("names the option after label and description, never the shortcut, which is hidden", async () => {
+    render(<Palette />);
+    await userEvent.type(field(), "{ArrowDown}");
+    // jsdom has no layout, so it joins the inline spans without a space; the
+    // exact spaced name is asserted in Chromium (`SinglePanelSearch`).
+    const first = await screen.findByRole("option", { name: /^Semesterplanung\s?Heute$/ });
+    const shortcut = within(first).getByText("⌘ 1").parentElement;
+    expect(shortcut).toHaveAttribute("aria-hidden", "true");
+    expect(within(first).getByText("Heute")).not.toHaveAttribute("aria-hidden");
+  });
+
+  it("passes the label (not description or keys) to onSelect; an explicit value wins", async () => {
+    const onSelect = vi.fn();
+    render(<Palette onSelect={onSelect} />);
+    await userEvent.type(field(), "{ArrowDown}");
+    await screen.findByRole("listbox");
+    await userEvent.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenLastCalledWith("Semesterplanung");
+    await userEvent.keyboard("{ArrowDown}{End}{Enter}");
+    expect(onSelect).toHaveBeenLastCalledWith("explicit");
+  });
+
+  it("keeps the label as the value through a row unmounted and remounted by cmdk", async () => {
+    // The reviewer's sequence: "P" filters, Backspace restores every row,
+    // so cmdk mounts this row again before ArrowDown / Enter reach it.
+    const onSelect = vi.fn();
+    render(
+      <Combobox>
+        <ComboboxInput aria-label="Suchen" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem onSelect={onSelect}>Semesterplanung</ComboboxItem>
+            <ComboboxItem onSelect={onSelect} description="Gestern" shortcutHint={<kbd>⌘ 2</kbd>}>
+              Prüfungsordnung
+            </ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await userEvent.type(field(), "P");
+    await screen.findByRole("listbox");
+    await userEvent.keyboard("{Backspace}");
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(2));
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith("Prüfungsordnung");
+  });
+
+  it("leaves a plain row's classes exactly as before the palette props existed", async () => {
+    // Oracle: the class attribute a plain `ComboboxItem` rendered at the
+    // claim base (86aa39c), copied literally — not derived from this code.
+    const before =
+      "flex w-full items-center gap-3 px-3 py-2 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0 text-on-surface hover:bg-surface-container-high cursor-default rounded-lg select-none data-[selected=true]:bg-surface-container-high data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60 [&_svg]:size-4";
+    render(<Fixture />);
+    await userEvent.type(field(), "{ArrowDown}");
+    expect(await screen.findByRole("option", { name: "Semesterplanung" })).toHaveAttribute(
+      "class",
+      before,
+    );
+  });
+
+  it("filters on the label: typing the description alone matches nothing", async () => {
+    render(<Palette />);
+    await userEvent.type(field(), "heute");
+    expect(await screen.findByText("Keine Treffer")).toBeInTheDocument();
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+  });
+});
+
+/*
+ * Ref forwarding. Oracle: the option element found in the live DOM by role
+ * and accessible name, and `Node.isConnected` — not the component's state.
+ */
+describe("ComboboxItem ref", () => {
+  it("tracks the live option after cmdk filters the row out and back in", async () => {
+    const itemRef = createRef<HTMLDivElement>();
+    render(
+      <Combobox>
+        <ComboboxInput aria-label="Suchen" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem ref={itemRef}>Semesterplanung</ComboboxItem>
+            <ComboboxItem>Modulhandbuch</ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await userEvent.type(field(), "modul");
+    await screen.findByRole("listbox");
+    await waitFor(() => expect(screen.queryByRole("option", { name: "Semesterplanung" })).toBeNull());
+    await userEvent.clear(field());
+    const visible = await screen.findByRole("option", { name: "Semesterplanung" });
+    expect(itemRef.current).toBe(visible);
+    expect(itemRef.current?.isConnected).toBe(true);
   });
 });
