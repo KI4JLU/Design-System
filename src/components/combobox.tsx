@@ -1176,11 +1176,17 @@ function textOf(node: React.ReactNode): string {
  * into `keywords` to match it too). This works only for a **plain-text
  * label** (strings, possibly inside plain elements such as a `<span>`). A
  * label rendered by a component, or mixed text plus a component (e.g.
- * `Chat: <X />`), **must pass `value`**: otherwise matching and `onSelect`
- * fall back to cmdk's text of the whole row — the description included —
- * or to the plain part alone. Pass `value` too whenever the label is not
- * unique; it always wins. Without `description` / `shortcutHint`, cmdk's own
- * rule applies unchanged (the row's text content).
+ * `Chat: <X />`), **must pass `value`**. Without it, a mixed label's value
+ * is its plain part alone, and a component label's falls back to cmdk's
+ * text of the whole row, description included. cmdk (1.1.1) reads that
+ * text from the rendered row, so the row has no value before it has
+ * rendered once: when the list is opened by typing, such a row matches no
+ * query; only after the query is cleared and the row shown does it match,
+ * and `onSelect` then receives the whole row's text. Pass `value` too
+ * whenever the label is not unique; it always wins. Without `description` /
+ * `shortcutHint`, cmdk's own rule applies unchanged: a single string child
+ * is the value, any other children the row's rendered text, with the same
+ * gap when the list is opened by typing.
  */
 const ComboboxItem = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Item>,
