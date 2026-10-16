@@ -1014,7 +1014,9 @@ const ComboboxContent = React.forwardRef<
             />
             {/* Hidden while it shows nothing (only a hidden, option-less
                 list); the panel's bottom border then takes the divider's
-                place, so an empty panel is exactly the framed field. */}
+                place, so an empty panel has exactly the framed field's box
+                — but still the panel's `shadow-overlay` (and focus ring)
+                around it, i.e. an open, elevated field with no list. */}
             <div
               data-slot="combobox-panel-body"
               className="pointer-events-auto border-t border-outline-variant bg-surface-container-lowest p-1 not-has-[>:not([hidden])]:hidden"
@@ -1143,7 +1145,13 @@ export interface ComboboxItemProps
   shortcutHint?: React.ReactNode;
 }
 
-/** The plain text of a label: strings and numbers, through nested elements. */
+/**
+ * The plain text of a label, derived from the React tree: strings and
+ * numbers, through nested elements' `children`. It cannot see text a
+ * component renders (e.g. `<HitText primary="…" />`): for such a label it
+ * returns `""`, or only the plain part of mixed text (`"Chat: "` of
+ * `Chat: <X />`) — which is why `ComboboxItem` asks for `value` there.
+ */
 function textOf(node: React.ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(textOf).join("");
@@ -1165,8 +1173,14 @@ function textOf(node: React.ReactNode): string {
  * hint. With either set and no `value`, the option's value is the text of
  * `children` alone — so `onSelect` receives the label and client filtering
  * matches the label, not the description or the keys (put the description
- * into `keywords` to match it too). Without them, cmdk's own rule applies
- * unchanged (the row's text content).
+ * into `keywords` to match it too). This works only for a **plain-text
+ * label** (strings, possibly inside plain elements such as a `<span>`). A
+ * label rendered by a component, or mixed text plus a component (e.g.
+ * `Chat: <X />`), **must pass `value`**: otherwise matching and `onSelect`
+ * fall back to cmdk's text of the whole row — the description included —
+ * or to the plain part alone. Pass `value` too whenever the label is not
+ * unique; it always wins. Without `description` / `shortcutHint`, cmdk's own
+ * rule applies unchanged (the row's text content).
  */
 const ComboboxItem = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Item>,
@@ -1183,8 +1197,10 @@ const ComboboxItem = React.forwardRef<
         menuItemVariants(),
         "cursor-default rounded-lg select-none",
         "data-[selected=true]:bg-surface-container-high",
-        // A Kbd is `surface-container-high` too: one step up on the highlight.
-        "data-[selected=true]:[&_[data-slot=kbd]]:bg-surface-container-highest",
+        // A Kbd is `surface-container-high` too: one step up on the
+        // highlight. Only on rows with a shortcut hint, so plain rows keep
+        // their class list unchanged.
+        shortcutHint != null && "data-[selected=true]:[&_[data-slot=kbd]]:bg-surface-container-highest",
         "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60",
         "[&_svg]:size-4",
         className,

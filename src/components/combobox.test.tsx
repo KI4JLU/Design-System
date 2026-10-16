@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -812,10 +812,77 @@ describe("ComboboxItem description and shortcutHint", () => {
     expect(onSelect).toHaveBeenLastCalledWith("explicit");
   });
 
+  it("keeps the label as the value through a row unmounted and remounted by cmdk", async () => {
+    // The reviewer's sequence: "P" filters, Backspace restores every row,
+    // so cmdk mounts this row again before ArrowDown / Enter reach it.
+    const onSelect = vi.fn();
+    render(
+      <Combobox>
+        <ComboboxInput aria-label="Suchen" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem onSelect={onSelect}>Semesterplanung</ComboboxItem>
+            <ComboboxItem onSelect={onSelect} description="Gestern" shortcutHint={<kbd>⌘ 2</kbd>}>
+              Prüfungsordnung
+            </ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await userEvent.type(field(), "P");
+    await screen.findByRole("listbox");
+    await userEvent.keyboard("{Backspace}");
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(2));
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith("Prüfungsordnung");
+  });
+
+  it("leaves a plain row's classes exactly as before the palette props existed", async () => {
+    // Oracle: the class attribute a plain `ComboboxItem` rendered at the
+    // claim base (86aa39c), copied literally — not derived from this code.
+    const before =
+      "flex w-full items-center gap-3 px-3 py-2 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0 text-on-surface hover:bg-surface-container-high cursor-default rounded-lg select-none data-[selected=true]:bg-surface-container-high data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60 [&_svg]:size-4";
+    render(<Fixture />);
+    await userEvent.type(field(), "{ArrowDown}");
+    expect(await screen.findByRole("option", { name: "Semesterplanung" })).toHaveAttribute(
+      "class",
+      before,
+    );
+  });
+
   it("filters on the label: typing the description alone matches nothing", async () => {
     render(<Palette />);
     await userEvent.type(field(), "heute");
     expect(await screen.findByText("Keine Treffer")).toBeInTheDocument();
     expect(screen.queryAllByRole("option")).toHaveLength(0);
+  });
+});
+
+/*
+ * Ref forwarding. Oracle: the option element found in the live DOM by role
+ * and accessible name, and `Node.isConnected` — not the component's state.
+ */
+describe("ComboboxItem ref", () => {
+  it("tracks the live option after cmdk filters the row out and back in", async () => {
+    const itemRef = createRef<HTMLDivElement>();
+    render(
+      <Combobox>
+        <ComboboxInput aria-label="Suchen" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem ref={itemRef}>Semesterplanung</ComboboxItem>
+            <ComboboxItem>Modulhandbuch</ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await userEvent.type(field(), "modul");
+    await screen.findByRole("listbox");
+    await waitFor(() => expect(screen.queryByRole("option", { name: "Semesterplanung" })).toBeNull());
+    await userEvent.clear(field());
+    const visible = await screen.findByRole("option", { name: "Semesterplanung" });
+    expect(itemRef.current).toBe(visible);
+    expect(itemRef.current?.isConnected).toBe(true);
   });
 });

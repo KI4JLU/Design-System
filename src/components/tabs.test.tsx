@@ -458,3 +458,49 @@ describe("Tabs — segmented variant", () => {
     expect(screen.getByRole("tab", { name: "A" }).className).toContain("border-b-2");
   });
 });
+
+// ORACLE: the same APG contract for the enclosed (sheet-tab) look — the
+// variant changes classes, never roles, selection or keyboard.
+describe("Tabs — enclosed variant", () => {
+  function renderEnclosed() {
+    return render(
+      <Tabs defaultValue="a">
+        <TabsList variant="enclosed" aria-label="Tabellenblätter">
+          <TabsTrigger value="a">Erhebung</TabsTrigger>
+          <TabsTrigger value="b">Nutzungsarten</TabsTrigger>
+        </TabsList>
+        <TabsContent value="a">Blatt eins</TabsContent>
+        <TabsContent value="b">Blatt zwei</TabsContent>
+      </Tabs>,
+    );
+  }
+
+  it("is still one tablist with tabs and one named panel", () => {
+    renderEnclosed();
+    expect(screen.getByRole("tablist", { name: "Tabellenblätter" })).toHaveAttribute("data-variant", "enclosed");
+    expect(screen.getAllByRole("tab")).toHaveLength(2);
+    expect(screen.getByRole("tabpanel", { name: "Erhebung" })).toHaveTextContent("Blatt eins");
+  });
+
+  it("moves selection with the arrow keys like the default strip", async () => {
+    renderEnclosed();
+    await userEvent.click(screen.getByRole("tab", { name: "Erhebung" }));
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Nutzungsarten" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel", { name: "Nutzungsarten" })).toHaveTextContent("Blatt zwei");
+  });
+
+  it("draws separate tab boxes instead of an underline", () => {
+    renderEnclosed();
+    const tab = screen.getByRole("tab", { name: "Erhebung" });
+    expect(tab.className).toContain("rounded-t-md");
+    expect(tab.className).not.toContain("border-b-2");
+    expect(screen.getByRole("tablist").className).not.toContain("border-b");
+  });
+
+  it("keeps a contrasting focus ring on the active (primary-fixed) tab", () => {
+    renderEnclosed();
+    // Codex review of #71: the shared ring tone nearly vanishes on primary-fixed.
+    expect(screen.getByRole("tab", { name: "Erhebung" }).className).toContain("data-[state=active]:focus-visible:ring-on-primary-fixed");
+  });
+});

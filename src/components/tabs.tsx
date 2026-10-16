@@ -48,10 +48,18 @@ Tabs.displayName = "Tabs";
  * one underlined. `segmented`: the triggers share one tinted track and split
  * its width equally; the active one is a raised surface pill — for a few
  * modes of one task inside a dialog (e.g. invite one / many / by link).
- * Only the look differs: both are the same APG tablist. Set on `TabsList`;
+ * `enclosed`: separated, flat tabs like a workbook's sheet tabs (SeaTable,
+ * Excel) — for many same-kind tabs over one content area, on the panel's own
+ * surface. Inactive tabs are light grey boxes (`surface-container-low`, the
+ * tone of footers and table headers) on the
+ * strip's divider; the active one is the light selection blue
+ * (`primary-fixed`, which follows the accent). The divider is an inset line,
+ * not a border, so no negative margins are needed and the strip also works
+ * inside a clipping (scrolling) container.
+ * Only the look differs: all are the same APG tablist. Set on `TabsList`;
  * its triggers read it from context. Horizontal only.
  */
-export type TabsListVariant = "underline" | "segmented";
+export type TabsListVariant = "underline" | "segmented" | "enclosed";
 
 const TabsVariantContext = React.createContext<TabsListVariant>("underline");
 
@@ -84,7 +92,9 @@ const TabsList = React.forwardRef<
       className={cn(
         variant === "segmented"
           ? "flex items-center gap-1 rounded-[var(--ui-radius-control)] bg-surface-container-high p-1"
-          : [
+          : variant === "enclosed"
+            ? "flex items-end gap-1 shadow-[inset_0_-1px_0_var(--color-outline-variant)]"
+            : [
               "flex items-center gap-1 border-b border-outline-variant",
               "data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:border-r",
             ],
@@ -122,7 +132,20 @@ const TabsTrigger = React.forwardRef<
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
         "disabled:pointer-events-none disabled:opacity-60",
         "[&_svg]:shrink-0",
-        variant === "segmented"
+        variant === "enclosed"
+          ? [
+              // Inactive: a grey box on the divider. Active: the light
+              // selection blue — recoloured, never resized.
+              // h-8: the compact control height, so buttons beside the strip
+              // (paging arrows, actions) share its bottom and centre line.
+              "h-8 shrink-0 rounded-t-md py-0 bg-surface-container-low",
+              "hover:bg-surface-container hover:text-on-surface",
+              "data-[state=active]:bg-primary-fixed data-[state=active]:text-on-primary-fixed data-[state=active]:hover:bg-primary-fixed",
+              // The shared focus-ring tone is too close to primary-fixed
+              // (~1.3:1); on the active tab the ring takes the text tone.
+              "data-[state=active]:focus-visible:ring-on-primary-fixed",
+            ]
+          : variant === "segmented"
           ? [
               // Equal shares of the track where it has room, never below the
               // label's own width (min-width stays auto — controls are never

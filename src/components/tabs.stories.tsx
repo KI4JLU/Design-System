@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Bot, FlaskConical, Link2, SlidersHorizontal, User, Users, Workflow } from "lucide-react";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { Card } from "./card";
@@ -365,5 +365,32 @@ export const SegmentedNarrow: Story = {
     for (const tab of tabs) await expect(tab.scrollWidth).toBeLessThanOrEqual(tab.clientWidth);
     const rects = tabs.map((t) => t.getBoundingClientRect());
     for (let i = 1; i < rects.length; i++) await expect(rects[i].left).toBeGreaterThanOrEqual(rects[i - 1].right - 0.5);
+  },
+};
+
+/**
+ * Getrennte Reiter wie die Blätter einer Arbeitsmappe: die inaktiven als graue
+ * Kästen auf der Trennlinie, der aktive im hellen Auswahlblau
+ * (`primary-fixed`). Für viele gleichartige Reiter über einem
+ * Inhalt (z. B. die Tabellenblätter einer Excel-Vorschau).
+ */
+export const Enclosed: Story = {
+  render: () => (
+    <Tabs defaultValue="erhebung" className="max-w-2xl gap-0">
+      <TabsList variant="enclosed" aria-label="Tabellenblätter" className="px-2 pt-1.5">
+        <TabsTrigger value="erhebung">Erhebung Nutzungsart</TabsTrigger>
+        <TabsTrigger value="arten">Nutzungsarten</TabsTrigger>
+        <TabsTrigger value="bauarten">Bauarten</TabsTrigger>
+      </TabsList>
+      {["erhebung", "arten", "bauarten"].map((v) => (
+        <TabsContent key={v} value={v} className="bg-surface-container-lowest p-6">
+          Inhalt von „{v}"
+        </TabsContent>
+      ))}
+    </Tabs>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("tablist")).toHaveAttribute("data-variant", "enclosed");
   },
 };
