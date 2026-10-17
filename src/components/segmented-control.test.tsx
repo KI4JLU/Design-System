@@ -129,4 +129,62 @@ describe("SegmentedControl", () => {
       expect(onValueChange).toHaveBeenCalledWith("list");
     });
   });
+
+  /* Icon + visible label (`showLabel`).
+   *
+   * ORACLE: the same accessible-name computation, plus the rendered text — the
+   * label must be both the name AND visible (not inside an sr-only span), and
+   * an icon-only segment in the same row must stay icon-only.
+   */
+  describe("icon + label segments", () => {
+    const MIXED = [
+      { value: "single", label: "Einzeln", icon: <LayoutGrid aria-hidden />, showLabel: true },
+      { value: "list", label: "Liste", icon: <List aria-hidden /> },
+    ];
+
+    it("shows the label next to the icon and keeps it as the name", () => {
+      render(
+        <SegmentedControl options={MIXED} value="single" onValueChange={() => {}} aria-label="Modus" />,
+      );
+      const labelled = screen.getByRole("button", { name: "Einzeln" });
+      expect(labelled).toHaveAttribute("aria-pressed", "true");
+      expect(labelled.querySelector("svg")).not.toBeNull();
+      const text = Array.from(labelled.querySelectorAll("span")).find((el) => el.textContent === "Einzeln");
+      expect(text).toBeDefined();
+      expect(text).not.toHaveClass("sr-only");
+      expect(labelled).not.toHaveClass("w-9");
+    });
+
+    it("leaves an icon-only segment in the same row icon-only", () => {
+      render(
+        <SegmentedControl options={MIXED} value="single" onValueChange={() => {}} aria-label="Modus" />,
+      );
+      const iconOnly = screen.getByRole("button", { name: "Liste" });
+      expect(iconOnly.querySelector(".sr-only")).toHaveTextContent("Liste");
+      expect(iconOnly).toHaveClass("w-9");
+    });
+
+    it("has no effect without an icon", () => {
+      render(
+        <SegmentedControl
+          options={[{ value: "a", label: "Alpha", showLabel: true }]}
+          value="a"
+          onValueChange={() => {}}
+          aria-label="X"
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Alpha" });
+      expect(button).toHaveClass("px-4", "py-2");
+      expect(button.querySelector(".sr-only")).toBeNull();
+    });
+
+    it("reports the value when pressed", async () => {
+      const onValueChange = vi.fn();
+      render(
+        <SegmentedControl options={MIXED} value="list" onValueChange={onValueChange} aria-label="Modus" />,
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Einzeln" }));
+      expect(onValueChange).toHaveBeenCalledWith("single");
+    });
+  });
 });

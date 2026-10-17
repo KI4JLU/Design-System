@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect } from "storybook/test";
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 
@@ -69,4 +70,40 @@ export const Disabled: Story = {
       <Checkbox disabled defaultChecked aria-label="An, deaktiviert" />
     </div>
   ),
+};
+
+/**
+ * `locked`: ein fester Wert, den etwas anderes vorgibt (eine Rolle, eine
+ * Richtlinie). Neutral grau statt verblasst wie `disabled`, nicht bedienbar,
+ * als deaktiviert angesagt — der zugängliche Name sagt, warum er fest ist.
+ * Daneben zum Vergleich `disabled`.
+ */
+export const Locked: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-4">
+        <Checkbox locked checked aria-label="Gewährt (fest durch die Rolle)" />
+        <Checkbox locked checked={false} aria-label="Nicht gewährt (fest durch die Rolle)" />
+        <span className="text-sm text-on-surface-variant">locked</span>
+      </div>
+      <div className="flex items-center gap-4">
+        <Checkbox disabled defaultChecked aria-label="An, deaktiviert" />
+        <Checkbox disabled aria-label="Aus, deaktiviert" />
+        <span className="text-sm text-on-surface-variant">disabled</span>
+      </div>
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const on = canvas.getByRole("checkbox", { name: "Gewährt (fest durch die Rolle)" });
+    const off = canvas.getByRole("checkbox", { name: "Nicht gewährt (fest durch die Rolle)" });
+    for (const box of [on, off]) {
+      await expect(box).toBeDisabled();
+      await expect(box).toHaveAttribute("data-locked");
+      await expect(getComputedStyle(box).opacity).toBe("1");
+    }
+    await userEvent.click(on);
+    await expect(on).toHaveAttribute("aria-checked", "true");
+    await expect(off).toHaveAttribute("aria-checked", "false");
+    await expect(getComputedStyle(canvas.getByRole("checkbox", { name: "Aus, deaktiviert" })).opacity).toBe("0.6");
+  },
 };

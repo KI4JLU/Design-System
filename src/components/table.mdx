@@ -27,6 +27,15 @@ kaputt machen.
 | `scope` | `TableHead` | `'col' \| 'row' \| …` | Default `'col'`. Bestimmt, ob die Zelle als `columnheader` oder `rowheader` vorgelesen wird — nicht die Optik. |
 | `colSpan` / `rowSpan` | `TableCell`, `TableHead` | `number` | Native Attribute; für Leerzustands- und Summenzeilen. |
 | `data-state="selected"` | `TableRow` | `string` | Markiert eine ausgewählte Zeile (`bg-secondary-container`). shadcn-Konvention für Data-Table-Rezepte. |
+| `wrap` | `TableHead`, `TableCell` | `'anywhere' \| 'words'` | Default `'anywhere'` (`wrap-anywhere`: bricht auch mitten im Wort, für Hashes/URLs). `'words'` (`wrap-break-word`) bricht nur zwischen Wörtern — für Kopfzeilen und kurze Beschriftungen, wo „Sehe-n" schlechter ist als eine etwas breitere Spalte. |
+| `group` | `TableHead` | `boolean` | Spaltengruppen-Überschrift über `colSpan` Spalten: zentriert, halbfett, Label in Primärfarbe unterstrichen; `scope` wird `'colgroup'` (ein explizites `scope` gewinnt). |
+| `divider` | `TableHead`, `TableCell` | `boolean` | Senkrechte Linie an der vorderen Kante der Zelle — die Grenze zwischen zwei Spaltengruppen, in Kopf **und** Rumpf zu setzen. |
+| `density` | `Table` | `'default' \| 'compact'` | Default `'default'`. `'compact'` setzt die ganze Tabelle dichter: `text-xs`, 32px Kopfzeilen, `p-1.5` in den Zellen, kleinere Gruppenüberschrift und Beschriftung. Kopf- und Rumpfzellen lesen den Wert über Context, der Aufrufort braucht keine Schriftgrößen- oder Padding-Klassen. |
+| `muted` | `TableHead`, `TableCell` | `boolean` | Eine Spalte, die angezeigt, aber hier nicht einstellbar ist (z. B. eine Rolle, die immer alle Rechte hat): getöntes Band (`surface-container`), ruhigere Schrift (`on-surface-variant`). An **jede** Zelle der Spalte setzen, Kopf eingeschlossen. |
+| `section` | `TableHead` | `boolean \| 'band'` | Zeilengruppen-Überschrift: die Beschriftungszeile über einer Gruppe von Zeilen. `scope` wird `'rowgroup'` (ein explizites `scope` gewinnt), kleines, halbfettes Label in Großbuchstaben; die Zeile bekommt keinen Hover-Ton und keine Linie. `true`: schlichtes Label mit Abstand nach oben. `'band'`: die ganze Zeile wird ein getöntes Band (`surface-container`). |
+| `count` | `TableHead` | `ReactNode` | Nur mit `section`: eine Anzahl hinter dem Label, ruhiger und nicht in Großbuchstaben. Gehört zum zugänglichen Namen, mit einem nur vorgelesenen Komma: „Quellen in der Sidebar, 4". |
+| `mutedEdge` | `TableHead`, `TableCell` | `'top' \| 'bottom'` | Rundet das Ende des Bands: `'top'` an der Kopfzelle, `'bottom'` an der letzten Rumpfzelle. Wirkt nur zusammen mit `muted`. |
+| `mutedJoin` | `TableHead`, `TableCell` | `'start' \| 'middle' \| 'end'` | Verbindet benachbarte gedämpfte Spalten zu **einem** Band: `'start'` an jeder Zelle der ersten, `'end'` der letzten, `'middle'` der Spalten dazwischen. Kein Spalt und keine Rundung an den Nahtstellen, gerundet nur außen. Wirkt nur zusammen mit `muted`. |
 
 Alle Teile geben restliche Props und `ref` an das jeweilige native Element
 durch (`<table>`, `<thead>`, `<tr>`, `<th>`, `<td>`, `<caption>`).
@@ -46,6 +55,83 @@ machen es bereits genau so.
 Vertikales Scrollen ist eine Höhe am Container, nicht an der Tabelle:
 
 <Canvas of={TableStories.BoundedHeightScrolls} />
+
+## Spaltengruppen
+
+Eine zweite Kopfzeile über den Spaltenköpfen fasst Spalten zusammen:
+`TableHead group colSpan={n}` je Gruppe, `divider` an der ersten Spalte jeder
+weiteren Gruppe (Gruppenkopf, Spaltenkopf und jede Rumpfzelle). Eine
+Zeilen-Überschriftsspalte links überspannt beide Kopfzeilen mit
+`rowSpan={2}`. Unter dem Kopf steht genau **eine** Linie: `TableHeader` nimmt
+allen Kopfzeilen außer der letzten ihre untere Linie, die Unterstreichung der
+Gruppen trennt die beiden Kopfzeilen. Die Unterstreichung sitzt am Label,
+nicht an der Zelle, ist also um das Zellen-Padding eingerückt — zwei
+benachbarte Gruppen stoßen nicht aneinander.
+
+<Canvas of={TableStories.GroupedColumns} />
+
+## Dichte Tabellen
+
+`density="compact"` am `Table` für Matrizen, die in eine schmale Spalte passen
+müssen: kleinere Schrift, niedrigere Kopfzeilen, engere Zellen. Die Dichte
+gilt für alle Teile der Tabelle — Klassen für Schriftgröße oder Padding am
+Aufrufort sind nicht nötig (und auf DS-Bausteinen per Lint-Regel ohnehin
+unerwünscht). Eine Klasse am Aufrufort gewinnt trotzdem, wie überall.
+
+<Canvas of={TableStories.GroupedColumnsCompact} />
+
+## Gedämpfte Spalten
+
+Eine Spalte, deren Werte fest sind (Eigentümer und Admin haben immer jedes
+Recht), wird mit `muted` an jeder ihrer Zellen zu einem getönten Band; die
+Kopfzelle bekommt `mutedEdge="top"`, die letzte Rumpfzelle
+`mutedEdge="bottom"` — dort sind die Ecken gerundet. Zwischen zwei gedämpften
+Zellen läuft das Band über die Zeilenlinie hinweg, die Spalte liest sich als
+ein Stück. Zwei benachbarte gedämpfte Spalten bleiben durch einen schmalen
+Spalt zwei Bänder — es sei denn, `mutedJoin` verbindet sie: dann entfallen
+Spalt und Rundung an der Naht, gerundet sind nur die äußeren Ecken des
+gemeinsamen Bands (Besitzer + Admin in der Matrix unten). Seiten und Ecken sind
+logisch (start/end), das Band spiegelt sich also in RTL mit.
+
+Das Band ist eine `::before`-Ebene hinter dem Zelleninhalt, nicht der
+Hintergrund der Zelle selbst: `border-radius` wirkt laut CSS Backgrounds 3
+nicht auf Tabellenzellen unter `border-collapse: collapse`, und das setzt
+Tailwinds Preflight für jede Tabelle.
+
+<Canvas of={TableStories.RotatedMatrix} />
+
+## Zeilengruppen
+
+Eine Beschriftungszeile gliedert die Zeilen darunter in Gruppen (THEMA,
+QUELLEN IN DER SIDEBAR, ANTWORTEN): `TableHead section` als erste Zeile jeder
+Gruppe, jede Gruppe in einem eigenen `TableBody` — das ist die Zeilengruppe,
+auf die sich `scope="rowgroup"` bezieht. Die Überschrift wird als
+`rowheader` vorgelesen. Ihre Zeile färbt sich beim Überfahren nicht und zieht
+keine Linie: `TableRow` erkennt sie selbst (`:has()` auf
+`data-slot="table-section-head"`), der Aufrufort markiert die Zeile nicht.
+
+`section="band"` macht die ganze Zeile zu einem getönten Band
+(`surface-container`), `count` setzt eine Anzahl ruhiger hinter das Label. Das
+Band ist **ein** Inset-Schatten auf der Zeile, kein Zeilenhintergrund:
+Chromium malt einen Zeilenhintergrund Zelle für Zelle und lässt bei
+gebrochenen Spaltenbreiten 1px-Haarlinien zwischen den Zellen stehen.
+
+Über alle Spalten spannt die Überschrift mit `colSpan` — eine Überschriftzelle,
+die eine gedämpfte Spalte überspannt, verdeckt aber deren Band. Damit das
+Spaltenband durch die Abschnittszeile läuft, steht die Überschrift nur in den
+Spalten vor der ersten gedämpften, die übrigen Zellen der Zeile sind leere
+`TableCell`s (`muted`/`mutedJoin` in den gedämpften Spalten). In einer
+Band-Zeile malt die Tabelle diese Kreuzung eine Stufe dunkler
+(`surface-container-high`): das Spaltenband bleibt sichtbar, das
+Abschnittsband liegt quer darüber. Die schlichte Form ohne Band zeigt
+`RotatedMatrixPlain`.
+
+<Canvas of={TableStories.RotatedMatrixPlain} />
+
+Der Hover-Ausschluss ist nur als Klasse getestet: Testing Librarys `hover`
+löst Ereignisse aus, versetzt die Zeile aber nie in den CSS-Zustand `:hover`.
+Die Story misst stattdessen, dass dieselbe `:has()`-Variante im Browser greift
+(keine Linie unter der Zeile).
 
 ## Entscheidungen
 
@@ -78,8 +164,11 @@ Vertikales Scrollen ist eine Höhe am Container, nicht an der Tabelle:
 - **Kopfzeile ruhiger als der Inhalt** (`text-on-surface-variant`,
   `font-medium`) — so machen es alle fünf Admin-Tabellen in JustRAG heute
   schon (`var(--text-secondary)`).
-- **Ohne `data-slot`-Attribute und ohne die Checkbox-Helfer der Vorlage.**
-  `data-slot` benutzt sonst keine Komponente dieses Systems, und
+- **Ohne die `data-slot`-Attribute und die Checkbox-Helfer der Vorlage.**
+  Ausnahmen sind `data-slot="table-group-head"` am Gruppenkopf sowie
+  `table-section-head` / `table-section-count` an der Zeilengruppen-Überschrift,
+  damit ein Aufrufort sie ohne Klassen-Selektor findet (und `TableRow` die
+  Überschriftzeile per `:has()` erkennt); und
   `[&>[role=checkbox]]:translate-y-[2px]` ist ein arbiträrer Wert für ein
   Rezept (Zeilenauswahl), das noch kein Aufrufort verwendet.
 

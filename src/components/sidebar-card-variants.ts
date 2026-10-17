@@ -32,7 +32,7 @@ export const sidebarRowInsetX = {
 
 export const sidebarCardVariants = cva(
   [
-    "group/sidebar-card flex w-full min-w-0 cursor-pointer items-center border text-left text-on-surface shadow-card transition-colors",
+    "group/sidebar-card flex w-full min-w-0 items-center border text-left text-on-surface shadow-card transition-colors",
     "focus-within:outline-none",
   ],
   {
@@ -44,11 +44,17 @@ export const sidebarCardVariants = cva(
         pill: `rounded-full has-[[data-slot=sidebar-card-meta]>*]:rounded-2xl ${sidebarRowInset.pill} [&>button:not([role=checkbox])]:size-7`,
       },
       state: {
-        idle: "border-outline-variant bg-surface-container-lowest hover:bg-surface-container-high",
+        idle: "border-outline-variant bg-surface-container-lowest",
         active: "border-primary bg-primary/10",
       },
+      // false = a display-only card (no onOpen): no pointer cursor, no hover fill.
+      interactive: {
+        true: "cursor-pointer",
+        false: "cursor-default",
+      },
     },
-    defaultVariants: { shape: "rounded", state: "idle" },
+    compoundVariants: [{ state: "idle", interactive: true, class: "hover:bg-surface-container-high" }],
+    defaultVariants: { shape: "rounded", state: "idle", interactive: true },
   },
 );
 

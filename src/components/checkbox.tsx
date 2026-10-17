@@ -10,18 +10,37 @@ import { cn } from "../lib/utils";
  * outline. Pair it with <Label htmlFor> or FormControl for the
  * accessible name.
  */
+export interface CheckboxProps
+  extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
+  /**
+   * A value that is shown but cannot be changed here — fixed by something
+   * else (a role, a policy). Not the faded look of `disabled` (which reads as
+   * "unavailable right now") but a neutral grey box; the checkbox is not
+   * interactive and is announced as disabled. Give it an accessible name that
+   * says why it is fixed.
+   */
+  locked?: boolean;
+}
+
 const Checkbox = React.forwardRef<
   React.ComponentRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
+  CheckboxProps
+>(({ className, locked = false, disabled, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
+    disabled={locked || disabled}
+    data-locked={locked ? "" : undefined}
     className={cn(
       "peer h-5 w-5 shrink-0 rounded border border-outline bg-surface transition-colors",
       "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-on-primary",
       "data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-on-primary",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
       "disabled:cursor-not-allowed disabled:opacity-60",
+      locked && [
+        "border-transparent bg-surface-container-high text-on-surface disabled:cursor-default disabled:opacity-100",
+        "data-[state=checked]:border-transparent data-[state=checked]:bg-surface-container-high data-[state=checked]:text-on-surface",
+        "data-[state=indeterminate]:border-transparent data-[state=indeterminate]:bg-surface-container-high data-[state=indeterminate]:text-on-surface",
+      ],
       className,
     )}
     {...props}

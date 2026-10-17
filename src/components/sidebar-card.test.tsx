@@ -14,7 +14,7 @@ beforeEach(() => {
 
 const card = (props: Partial<React.ComponentProps<typeof SidebarCard>> = {}) => (
   <ul>
-    <SidebarCard title="Budget" onOpen={props.onOpen ?? (() => {})} {...props} />
+    <SidebarCard title="Budget" onOpen={"onOpen" in props ? props.onOpen : () => {}} {...props} />
   </ul>
 );
 
@@ -57,6 +57,79 @@ describe("SidebarCard", () => {
     await userEvent.click(screen.getByRole("button", { name: "Budget" }));
     expect(onSelectedChange).toHaveBeenCalledWith(true);
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("with onOpen, the title is a focusable button", async () => {
+    render(card());
+    const title = screen.getByRole("button", { name: "Budget" });
+    await userEvent.tab();
+    expect(title).toHaveFocus();
+    expect(screen.getByRole("listitem")).not.toHaveAttribute("data-static");
+    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer", "hover:bg-surface-container-high");
+  });
+
+  it("without onOpen, the title is plain text: no button, not focusable, no click affordance", async () => {
+    const onSelect = vi.fn();
+    const onSelectedChange = vi.fn();
+    const onClick = vi.fn();
+    render(card({
+      onOpen: undefined,
+      onClick,
+      titleTestId: "title",
+      selectable: true,
+      selectLabel: "Auswählen",
+      onSelectedChange,
+      actionsLabel: "Aktionen für",
+      actions: [{ label: "Umbenennen", onSelect }],
+    }));
+
+    expect(screen.queryByRole("button", { name: "Budget" })).not.toBeInTheDocument();
+    const title = screen.getByTestId("title");
+    expect(title.tagName).toBe("SPAN");
+    expect(title).toHaveTextContent("Budget");
+    expect(title).toHaveAttribute("title", "Budget");
+    expect(title).not.toHaveAttribute("tabindex");
+
+    const item = screen.getByRole("listitem");
+    expect(item).toHaveAttribute("data-static", "");
+    expect(item).toHaveClass("cursor-default");
+    expect(item).not.toHaveClass("cursor-pointer", "hover:bg-surface-container-high");
+
+    // A click on the card reaches the consumer's onClick and nothing else.
+    await userEvent.click(item);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onSelectedChange).not.toHaveBeenCalled();
+
+    // Tab skips the title and lands on the card's own controls.
+    await userEvent.tab();
+    expect(screen.getByRole("checkbox", { name: "Auswählen Budget" })).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Aktionen für Budget" })).toHaveFocus();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Auswählen Budget" }));
+    expect(onSelectedChange).toHaveBeenCalledWith(true);
+    await userEvent.click(screen.getByRole("button", { name: "Aktionen für Budget" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Umbenennen" }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("without onOpen, selection mode still toggles on a card click", async () => {
+    const onSelectedChange = vi.fn();
+    render(card({ onOpen: undefined, selectable: true, selectionMode: true, onSelectedChange }));
+    expect(screen.queryByRole("button", { name: "Budget" })).not.toBeInTheDocument();
+    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer");
+    await userEvent.click(screen.getByText("Budget"));
+    expect(onSelectedChange).toHaveBeenCalledWith(true);
+  });
+
+  it("without onOpen or a checkbox, a toggling card keeps the title button as its keyboard path", async () => {
+    const onSelectedChange = vi.fn();
+    render(card({ onOpen: undefined, selectionMode: true, onSelectedChange }));
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    const title = screen.getByRole("button", { name: "Budget" });
+    title.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(onSelectedChange).toHaveBeenCalledWith(true);
   });
 
   it("takes its shape from the app-wide Style unless told otherwise", () => {
@@ -118,6 +191,46 @@ describe("SidebarRailItem / SidebarSelectionBar", () => {
     expect(screen.getByRole("button", { name: "a.pdf" })).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("button", { name: "a.pdf" })).toHaveTextContent("PDF");
     expect(screen.getByRole("button", { name: "b" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("is a focusable button by default", async () => {
+    const onClick = vi.fn();
+    render(<SidebarRailItem aria-label="a.pdf" iconText="PDF" onClick={onClick} />);
+    const item = screen.getByRole("button", { name: "a.pdf" });
+    await userEvent.tab();
+    expect(item).toHaveFocus();
+    await userEvent.click(item);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("interactive={false} is a named, unfocusable image with no button affordance", async () => {
+    render(
+      <>
+        <SidebarRailItem aria-label="a.pdf" iconText="PDF" interactive={false} muted active aria-pressed type="button" />
+        <button type="button">danach</button>
+      </>,
+    );
+    expect(screen.queryByRole("button", { name: "a.pdf" })).not.toBeInTheDocument();
+    const item = screen.getByRole("img", { name: "a.pdf" });
+    expect(item.tagName).toBe("SPAN");
+    expect(item).toHaveAttribute("data-static", "");
+    expect(item).toHaveAttribute("aria-current", "true");
+    expect(item).not.toHaveAttribute("aria-pressed");
+    expect(item).not.toHaveAttribute("type");
+    expect(item).not.toHaveAttribute("tabindex");
+    expect(item).toHaveTextContent("PDF");
+    expect(item).toHaveClass("opacity-50");
+    expect(item.className).not.toMatch(/hover:|focus-visible:/);
+
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "danach" })).toHaveFocus();
+  });
+
+  it("interactive={false} without a name stays out of the role tree", () => {
+    const { container } = render(<SidebarRailItem interactive={false}>x</SidebarRailItem>);
+    const item = container.querySelector('[data-slot="sidebar-rail-item"]') as HTMLElement;
+    expect(item).not.toHaveAttribute("role");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("names its count and cancels", async () => {
