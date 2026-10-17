@@ -4,6 +4,8 @@ import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
 import { SidebarCard, SidebarSelectionBar } from "./sidebar-card";
 import { SidebarRail, SidebarRailItem } from "./sidebar-rail";
 import { Button } from "./button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
+import { expect, userEvent } from "storybook/test";
 
 const meta = {
   title: "Components/SidebarCard",
@@ -67,4 +69,60 @@ function Panels() {
 export const SidePanels: Story = {
   args: { title: "", onOpen: () => {} },
   render: () => <Panels />,
+};
+
+/**
+ * Not openable: a source the user may see but not open (no download right).
+ * The card has no `onOpen` — its title is plain text, the card shows no
+ * pointer cursor or hover fill, and checkbox and menu work as usual. The rail
+ * entry is `interactive={false}`: a named image, not a button, still showing
+ * its full name in a Tooltip on hover.
+ */
+export const NotOpenable: Story = {
+  args: { title: "" },
+  render: () => (
+    <div className="flex gap-8">
+      <ul className="flex w-80 flex-col gap-3">
+        <SidebarCard title="Haushalt 2027.xlsx" iconText="XLSX" titleTestId="static-title"
+          selectable selectLabel="Auswählen" onSelectedChange={() => {}} actions={actions} actionsLabel="Aktionen für" />
+        <SidebarCard title="1.2_AI_Fluency_Summary_One-Pager.pdf" iconText="PDF" onOpen={() => {}} />
+      </ul>
+      <div className="flex w-[60px] flex-col items-center gap-2 border-l border-outline-variant pt-2">
+        <SidebarRail>
+          <li>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarRailItem aria-label="Haushalt 2027.xlsx" iconText="XLSX" interactive={false} />
+              </TooltipTrigger>
+              <TooltipContent side="right">Haushalt 2027.xlsx</TooltipContent>
+            </Tooltip>
+          </li>
+          <li><SidebarRailItem aria-label="b.xlsx" iconText="XLSX" interactive={false} muted /></li>
+          <li><SidebarRailItem aria-label="a.pdf" iconText="PDF" /></li>
+        </SidebarRail>
+      </div>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    const title = canvas.getByTestId("static-title");
+    await expect(title.tagName).toBe("SPAN");
+    await expect(canvas.queryByRole("button", { name: "Haushalt 2027.xlsx" })).toBeNull();
+    const card = title.closest("li") as HTMLElement;
+    await expect(getComputedStyle(card).cursor).toBe("default");
+
+    const rail = canvas.getByRole("img", { name: "Haushalt 2027.xlsx" });
+    await expect(rail.tabIndex).toBe(-1);
+    await expect(getComputedStyle(rail).cursor).not.toBe("pointer");
+
+    // Tab order: the static card's checkbox and menu, the openable card's
+    // title, the openable rail entry — never a static title or tile.
+    await userEvent.tab();
+    await expect(canvas.getByRole("checkbox", { name: "Auswählen Haushalt 2027.xlsx" })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "Aktionen für Haushalt 2027.xlsx" })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "1.2_AI_Fluency_Summary_One-Pager.pdf" })).toHaveFocus();
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "a.pdf" })).toHaveFocus();
+  },
 };

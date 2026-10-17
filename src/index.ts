@@ -40,7 +40,7 @@ export {
 } from "./components/card";
 export { ChatBubble, type ChatBubbleProps } from "./components/chat-bubble";
 export { chatBubbleVariants } from "./components/chat-bubble-variants";
-export { Checkbox } from "./components/checkbox";
+export { Checkbox, type CheckboxProps } from "./components/checkbox";
 export { CodeBlock, type CodeBlockProps } from "./components/code-block";
 export { Container, type ContainerProps } from "./components/container";
 export { containerVariants } from "./components/container-variants";
@@ -91,6 +91,8 @@ export { MenuItem, type MenuItemProps } from "./components/menu-item";
 export { menuItemVariants } from "./components/menu-item-variants";
 export { NavItem, type NavItemProps } from "./components/nav-item";
 export { navItemVariants } from "./components/nav-item-variants";
+export { Notice, type NoticeProps, type NoticeTone } from "./components/notice";
+export { noticeVariants } from "./components/notice-variants";
 export { PageHeader, type PageHeaderProps } from "./components/page-header";
 export {
   Popover,
@@ -157,12 +159,19 @@ export { Switch } from "./components/switch";
 export {
   Table,
   type TableProps,
+  type TableDensity,
   TableHeader,
   TableBody,
   TableFooter,
   TableHead,
+  type TableHeadProps,
   TableRow,
   TableCell,
+  type TableCellProps,
+  type TableCellWrap,
+  type TableMutedEdge,
+  type TableMutedJoin,
+  type TableSection,
   TableCaption,
 } from "./components/table";
 export {

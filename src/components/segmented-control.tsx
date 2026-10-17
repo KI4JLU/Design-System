@@ -8,8 +8,9 @@ import { cn } from "../lib/utils";
  * describing the choice on the container.
  *
  * Give an option an `icon` to make that segment icon-only: the icon is shown,
- * `label` goes `sr-only` and stays the accessible name. `label` is required
- * either way, so an unnamed segment is not expressible.
+ * `label` goes `sr-only` and stays the accessible name. Add `showLabel` to
+ * keep the label visible next to the icon. `label` is required either way, so
+ * an unnamed segment is not expressible.
  * Renders raw <button> elements — this repo defines the primitives, so the
  * raw-elements rule does not apply here.
  */
@@ -27,9 +28,15 @@ export interface SegmentedControlOption {
   /**
    * Shown INSTEAD of the visible label — a grid/list pair, say. The label goes
    * `sr-only`, so the control is icon-only to the eye and fully named to a
-   * screen reader.
+   * screen reader. With `showLabel`, shown BEFORE the visible label instead.
    */
   icon?: React.ReactNode;
+  /**
+   * Keep the label visible next to the `icon` (icon + text segment) instead of
+   * making the segment icon-only. The accessible name is the label either
+   * way; the icon should be `aria-hidden`. No effect without `icon`.
+   */
+  showLabel?: boolean;
 }
 
 export interface SegmentedControlProps
@@ -56,6 +63,7 @@ const SegmentedControl = React.forwardRef<
   >
     {options.map((option) => {
       const active = option.value === value;
+      const iconOnly = !!option.icon && !option.showLabel;
       return (
         <button
           key={option.value}
@@ -68,7 +76,13 @@ const SegmentedControl = React.forwardRef<
             // pill-less box. Reusing the text padding for an icon would give a
             // wide, off-centre button — the icon has no width of its own to
             // balance the 16px sides.
-            option.icon ? "flex h-9 w-9 items-center justify-center" : "px-4 py-2",
+            // An icon + label segment keeps the text padding and centres the
+            // pair; h-9 matches the height a text segment gets from py-2.
+            iconOnly
+              ? "flex h-9 w-9 items-center justify-center"
+              : option.icon
+                ? "inline-flex h-9 items-center justify-center gap-1.5 px-4"
+                : "px-4 py-2",
             active
               ? "bg-primary text-on-primary"
               : "text-on-surface-variant hover:bg-surface-container-high",
@@ -78,7 +92,7 @@ const SegmentedControl = React.forwardRef<
           {/* Never dropped, only hidden: the accessible name is computed from
               the contents, so removing the text would leave the button unnamed.
               Same rule `SidebarUserMenu` follows when it collapses. */}
-          <span className={option.icon ? "sr-only" : undefined}>{option.label}</span>
+          <span className={iconOnly ? "sr-only" : undefined}>{option.label}</span>
         </button>
       );
     })}

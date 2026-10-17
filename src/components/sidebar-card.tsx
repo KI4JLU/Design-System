@@ -14,8 +14,17 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
   /** A short type label instead of a glyph ("PDF", "DOCX"). Wins over `icon`. */
   iconText?: string;
   title: string;
-  /** Opens the item: the title button and a click anywhere on the card. */
-  onOpen: () => void;
+  /**
+   * Opens the item: the title button and a click anywhere on the card.
+   * Without it the card is not openable (e.g. a source the user may see but
+   * not download): the title is plain text — no button, not focusable — and
+   * the card has no pointer cursor or hover fill. Checkbox, extras and the
+   * actions menu stay as they are; in `selectionMode` a click on the card
+   * still toggles the selection. The checkbox is the keyboard path there —
+   * without `selectable` the title stays a button that toggles, so a
+   * toggling card is never pointer-only.
+   */
+  onOpen?: () => void;
   /** Secondary lines under the title (status, errors, progress). */
   meta?: React.ReactNode;
   /** Inline controls before the checkbox (e.g. retry). */
@@ -37,6 +46,8 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
   titleTestId?: string;
 }
 
+const titleClass = "block w-full truncate text-left text-sm font-medium text-on-surface";
+
 /** A click that landed on one of the card's own controls — or on its portaled
  *  menu, whose React events still bubble through the card. */
 const isControlClick = (e: React.MouseEvent) =>
@@ -49,7 +60,8 @@ const isControlClick = (e: React.MouseEvent) =>
  * sources list. Icon tile · title (+ meta) · extra · checkbox · actions menu.
  *
  * The whole card is the pointer target; the title button is the keyboard
- * path, and clicks on the card's own controls are left to them. Forwards ref
+ * path, and clicks on the card's own controls are left to them. Without
+ * `onOpen` the card is display-only (see the prop). Forwards ref
  * and props to the `<li>`, so it can be a Radix `asChild` trigger (a hover
  * preview). Render it inside a `<ul>`.
  */
@@ -64,10 +76,15 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
   ) => {
     const uiShape = useUiShape().shape;
     const shape = shapeProp ?? uiShape;
-    const activate = () => (selectionMode && onSelectedChange ? onSelectedChange(!selected) : onOpen());
+    const toggles = !!selectionMode && !!onSelectedChange;
+    const activate = () => (toggles ? onSelectedChange?.(!selected) : onOpen?.());
+    // Display-only: nothing happens on a click, so nothing may look clickable.
+    const interactive = toggles || !!onOpen;
+    // The title is the keyboard path unless the checkbox already is one.
+    const titleIsButton = !!onOpen || (toggles && !selectable);
     const planeClick = (e: React.MouseEvent<HTMLLIElement>) => {
       onClick?.(e);
-      if (e.defaultPrevented || isControlClick(e)) return;
+      if (!interactive || e.defaultPrevented || isControlClick(e)) return;
       activate();
     };
     const control = sidebarControlShape[shape];
@@ -78,8 +95,13 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         ref={ref}
         data-slot="sidebar-card"
         data-shape={shape}
+        data-static={onOpen ? undefined : ""}
         className={cn(
-          sidebarCardVariants({ shape, state: active || (selectionMode && selected) ? "active" : "idle" }),
+          sidebarCardVariants({
+            shape,
+            state: active || (selectionMode && selected) ? "active" : "idle",
+            interactive,
+          }),
           className,
         )}
         onClick={planeClick}
@@ -93,16 +115,27 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <button
-            type="button"
-            data-testid={titleTestId}
-            onClick={activate}
-            title={title}
-            aria-current={active ? "true" : undefined}
-            className="block w-full truncate text-left text-sm font-medium text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            {title}
-          </button>
+          {titleIsButton ? (
+            <button
+              type="button"
+              data-testid={titleTestId}
+              onClick={activate}
+              title={title}
+              aria-current={active ? "true" : undefined}
+              className={cn(titleClass, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
+            >
+              {title}
+            </button>
+          ) : (
+            <span
+              data-testid={titleTestId}
+              title={title}
+              aria-current={active ? "true" : undefined}
+              className={titleClass}
+            >
+              {title}
+            </span>
+          )}
           <div data-slot="sidebar-card-meta">{meta}</div>
         </div>
         {!selectionMode && extra}
