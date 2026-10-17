@@ -913,7 +913,14 @@ export const PromptInputTextarea = ({
 
   return (
     <InputGroupTextarea
-      className={cn("field-sizing-content max-h-48 min-h-16", className)}
+      // Never a horizontal scrollbar: text always wraps, an unbroken run
+      // (a URL) included. Classic (always-visible) scrollbars — Safari with a
+      // mouse — would otherwise draw a bar under the text. Vertical
+      // scrolling stays for long drafts.
+      className={cn(
+        "field-sizing-content max-h-48 min-h-16 overflow-x-hidden wrap-anywhere",
+        className,
+      )}
       name="message"
       onCompositionEnd={() => setIsComposing(false)}
       onCompositionStart={() => setIsComposing(true)}
