@@ -22,6 +22,13 @@ import {
  * hysteresis-free: text that wraps only because of the controls counts as
  * multi-line and moves up, and stays there until it fits between them again.
  *
+ * The placeholder is not content. An empty field stays one line and its
+ * placeholder is cut to that line with an ellipsis — otherwise a placeholder
+ * longer than the gap between the controls (a long KB name, a narrow column)
+ * would open the control bar under an empty field. Only when the gap is too
+ * narrow to show any of it (`MIN_EMPTY_SLOT_EM`) does the empty field move
+ * up, and then the placeholder wraps in full.
+ *
  * The consumer positions the controls (absolute, bottom corners of the
  * InputGroup, `laneHeight` tall). `data-multiline` on the textarea exposes the
  * mode for styling the frame.
@@ -37,6 +44,10 @@ export interface PromptInputAdaptiveTextareaProps extends PromptInputTextareaPro
   /** Max height of the text box before it scrolls (px). Default 240. */
   maxHeight?: number;
 }
+
+/** Narrowest gap between the controls, in em of the field's font size, that
+ *  still shows a useful run of the placeholder in one-line mode. */
+const MIN_EMPTY_SLOT_EM = 6;
 
 const PromptInputAdaptiveTextarea = React.forwardRef<
   HTMLTextAreaElement,
@@ -66,6 +77,19 @@ const PromptInputAdaptiveTextarea = React.forwardRef<
     const probe = React.useCallback(() => {
       const el = innerRef.current;
       if (!el) return;
+      if (el.value === "") {
+        // Nothing to measure: the placeholder must not decide the layout.
+        // Measuring it would be engine-dependent as well — WebKit leaves the
+        // placeholder out of `field-sizing: content` but not out of
+        // scrollHeight. A field that is not laid out (clientWidth 0) is
+        // re-probed by the width observer once it is.
+        const slot = el.clientWidth - inlineLeft - inlineRight;
+        const minSlot =
+          (parseFloat(getComputedStyle(el).fontSize) || 16) * MIN_EMPTY_SLOT_EM;
+        const tooNarrow = el.clientWidth > 0 && slot < minSlot;
+        setMultiline((m) => (m === tooNarrow ? m : tooNarrow));
+        return;
+      }
       // Lay the textarea out at the one-line paddings with content sizing
       // off: `rows=1` then gives clientHeight = exactly one line incl.
       // padding, and scrollHeight tells whether the text needs more. No
@@ -125,7 +149,13 @@ const PromptInputAdaptiveTextarea = React.forwardRef<
           value={value}
           data-multiline={multiline ? "" : undefined}
           // No transitions: the layout switch must be instant, not a padding slide.
-          className={cn("min-h-0 basis-full transition-none", className)}
+          // One-line mode: the placeholder keeps to its line (ellipsis)
+          // instead of wrapping under the controls.
+          className={cn(
+            "min-h-0 basis-full transition-none",
+            "[&:not([data-multiline])]:placeholder:truncate",
+            className,
+          )}
           style={{
             ...style,
             maxHeight,

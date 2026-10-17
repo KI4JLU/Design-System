@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { useState } from "react";
 import { ArrowUp, FileText, WandSparkles } from "lucide-react";
 import { PromptInputAdaptiveTextarea } from "./prompt-input-adaptive-textarea";
@@ -28,11 +29,21 @@ type Story = StoryObj<typeof meta>;
  * send bottom-right, both overlaid on the frame; the textarea keeps one line
  * between them and moves above them once it wraps.
  */
-function Composer({ shape, voice }: { shape: PromptInputShape; voice?: boolean }) {
+function Composer({
+  shape,
+  voice,
+  placeholder = "Stelle eine Frage…",
+  className = "mx-auto max-w-3xl",
+}: {
+  shape: PromptInputShape;
+  voice?: boolean;
+  placeholder?: string;
+  className?: string;
+}) {
   const [value, setValue] = useState("");
   const [recording, setRecording] = useState(false);
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className={className}>
       <PromptInput id="composer" shape={shape} onSubmit={() => setValue("")}>
         <InputGroupAddon align="inline-start" className="absolute bottom-1 left-3 p-0">
           <PromptInputActionMenu>
@@ -45,7 +56,7 @@ function Composer({ shape, voice }: { shape: PromptInputShape; voice?: boolean }
         <PromptInputAdaptiveTextarea
           aria-label="Nachricht"
           className="px-4 text-base leading-normal"
-          placeholder="Stelle eine Frage…"
+          placeholder={placeholder}
           rows={1}
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -95,4 +106,53 @@ export const PillComposer: Story = {
 export const VoiceIdle: Story = {
   args: { value: "", onValueChange: undefined } as never,
   render: () => <Composer shape="pill" voice />,
+};
+
+/** A placeholder longer than the gap between the controls (a long topic name,
+ *  a narrow column): the empty field stays one line and the placeholder ends
+ *  in an ellipsis — the control bar opens only once there is text that wraps. */
+export const LongPlaceholder: Story = {
+  args: { value: "", onValueChange: undefined } as never,
+  render: () => (
+    <Composer
+      shape="rounded"
+      className="max-w-[420px]"
+      placeholder="Stelle eine Frage zu Fachbereiche, Zentren und Einrichtungen…"
+    />
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const field = canvas.getByRole("textbox", { name: "Nachricht" }) as HTMLTextAreaElement;
+    const frame = field.closest("[data-slot=input-group]") as HTMLElement;
+    // Never a horizontal scrollbar, in either mode: text wraps (unbroken runs
+    // included) and the x axis does not scroll. Classic scrollbars (Safari
+    // with a mouse) would otherwise draw a bar under the text.
+    const noHorizontalScroll = async () => {
+      const style = getComputedStyle(field);
+      await expect(style.overflowX).toBe("hidden");
+      await expect(style.overflowWrap).toBe("anywhere");
+      await expect(field.scrollWidth).toBeLessThanOrEqual(field.clientWidth);
+      // The field must not widen past its frame either.
+      await expect(field.getBoundingClientRect().width).toBeLessThanOrEqual(frame.clientWidth);
+    };
+
+    await expect(field).not.toHaveAttribute("data-multiline");
+    await expect(getComputedStyle(field, "::placeholder").whiteSpace).toBe("nowrap");
+    await noHorizontalScroll();
+
+    await userEvent.type(field, "Welche Fachbereiche gibt es an der Universität insgesamt?");
+    await expect(field).toHaveAttribute("data-multiline");
+    await noHorizontalScroll();
+
+    await userEvent.clear(field);
+    await userEvent.type(
+      field,
+      "https://www.uni-giessen.de/de/fbz/zentren/hrz/dienste/kommunikation-und-kollaboration/ki-dienste/justrag",
+    );
+    await expect(field).toHaveAttribute("data-multiline");
+    await noHorizontalScroll();
+
+    await userEvent.clear(field);
+    await expect(field).not.toHaveAttribute("data-multiline");
+    await noHorizontalScroll();
+  },
 };
