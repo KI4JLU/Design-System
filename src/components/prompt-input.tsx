@@ -44,6 +44,7 @@ import {
 import { cn } from "../lib/utils";
 import type { ChatStatus, FileUIPart } from "ai";
 import {
+  AlertCircleIcon,
   AudioLinesIcon,
   CornerDownLeftIcon,
   ImageIcon,
@@ -291,14 +292,31 @@ export const usePromptInputAttachments = () => {
   return context;
 };
 
+/**
+ * Where a consumer's handling of an attached file stands, when it does
+ * something with the file before the message is sent (e.g. uploads it).
+ * Absent = nothing to report: the plain chip.
+ */
+export type PromptInputAttachmentStatus = "uploading" | "error";
+
 export type PromptInputAttachmentProps = HTMLAttributes<HTMLDivElement> & {
   data: FileUIPart & { id: string };
   className?: string;
+  /** `uploading`: spinner in place of the file glyph, `aria-busy`.
+   *  `error`: error-toned chip with an alert glyph; the reason is
+   *  `statusMessage`. */
+  status?: PromptInputAttachmentStatus;
+  /** What the status means, in the consumer's language: read out with the
+   *  chip and shown above the preview in the hover card (e.g. the upload
+   *  error). Defaults: "Uploading" / "Upload failed". */
+  statusMessage?: string;
 };
 
 export function PromptInputAttachment({
   data,
   className,
+  status,
+  statusMessage,
   ...props
 }: PromptInputAttachmentProps) {
   const attachments = usePromptInputAttachments();
@@ -309,6 +327,9 @@ export function PromptInputAttachment({
     data.mediaType?.startsWith("image/") && data.url ? "image" : "file";
   const isImage = mediaType === "image";
   const attachmentLabel = filename || (isImage ? "Image" : "Attachment");
+  const statusText = status
+    ? statusMessage || (status === "uploading" ? "Uploading" : "Upload failed")
+    : undefined;
   // A PDF's first page is rendered when the chip mounts, so the hover card
   // shows a ready bitmap instead of decoding the PDF while it opens.
   const pdfImage = usePdfPreviewImage(data.url, data.mediaType);
@@ -319,15 +340,23 @@ export function PromptInputAttachment({
         <div
           className={cn(
             "group relative flex h-8 cursor-pointer select-none items-center gap-1.5 border border-outline-variant px-1.5 font-medium text-sm transition-all hover:bg-surface-container-high hover:text-on-surface",
+            status === "uploading" && "text-on-surface-variant",
+            status === "error" && "border-error text-error hover:text-error",
             promptInputControlShape,
             className,
           )}
           key={data.id}
+          aria-busy={status === "uploading" || undefined}
+          data-status={status}
           {...props}
         >
           <div className="relative size-5 shrink-0">
             <div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-surface">
-              {isImage ? (
+              {status === "uploading" ? (
+                <Loader2Icon aria-hidden="true" className="size-3 animate-spin text-on-surface-variant" />
+              ) : status === "error" ? (
+                <AlertCircleIcon aria-hidden="true" className="size-3 text-error" />
+              ) : isImage ? (
                 <img
                   alt={filename || "attachment"}
                   className="size-5 object-cover"
@@ -344,6 +373,7 @@ export function PromptInputAttachment({
           </div>
 
           <span className="flex-1 truncate">{attachmentLabel}</span>
+          {statusText && <span className="sr-only">{`: ${statusText}`}</span>}
           <Button
             aria-label="Remove attachment"
             className="absolute -top-2 -right-2 z-10 size-5 cursor-pointer rounded-full border border-outline-variant bg-surface-container-lowest p-0 text-on-surface shadow-card opacity-0 transition-opacity hover:bg-surface-container-high focus-visible:opacity-100 group-hover:opacity-100 [&>svg]:size-3"
@@ -360,6 +390,16 @@ export function PromptInputAttachment({
         </div>
       </HoverCardTrigger>
       <PromptInputHoverCardContent className="w-auto p-2">
+        {statusText && (
+          <p
+            className={cn(
+              "mb-2 max-w-40 font-medium text-xs",
+              status === "error" ? "text-error" : "text-on-surface-variant",
+            )}
+          >
+            {statusText}
+          </p>
+        )}
         {/* Fixed-size card regardless of filename (FilePreview): the picture,
             first PDF page, or a file glyph with a filetype badge — nothing
             else, so a long name never resizes it. The name is the chip's text. */}
