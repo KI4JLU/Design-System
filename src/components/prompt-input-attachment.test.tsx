@@ -23,10 +23,12 @@ function Composer({ status, statusMessage }: { status?: PromptInputAttachmentSta
   );
 }
 
-function attach(container: HTMLElement, name = "ordnung.pdf") {
+// A text file, not a PDF: a PDF chip renders its first page through pdf.js,
+// which needs Promise.try (missing on the Node CI runs).
+function attach(container: HTMLElement, name = "ordnung.txt") {
   const input = container.querySelector<HTMLInputElement>('input[type="file"]');
   if (!input) throw new Error("no file input");
-  fireEvent.change(input, { target: { files: [new File(["x"], name, { type: "application/pdf" })] } });
+  fireEvent.change(input, { target: { files: [new File(["x"], name, { type: "text/plain" })] } });
 }
 
 const chip = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-slot="prompt-input-attachments"] > div');
@@ -39,7 +41,7 @@ describe("PromptInputAttachment status", () => {
     expect(el).not.toBeNull();
     expect(el).not.toHaveAttribute("aria-busy");
     expect(el).not.toHaveAttribute("data-status");
-    expect(el?.textContent).toBe("ordnung.pdfRemove");
+    expect(el?.textContent).toBe("ordnung.txtRemove");
   });
 
   it("marks an uploading chip busy and reads the status out", () => {
