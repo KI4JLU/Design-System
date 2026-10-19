@@ -112,7 +112,7 @@ export interface AppShellLayoutProps
    * changes is the bug that recipe could not avoid. Pass the node itself; the
    * template supplies the width cap and the centring.
    *
-   * A DS `ComboboxInput` here reads the slot's palette widths (Unreleased): 24rem
+   * A DS `ComboboxInput` here reads the slot's palette widths (0.56.0): 24rem
    * closed (capped by the slot), 40rem while its list is open — an overlay
    * centred on the slot, capped at the bar row, that moves nothing. Override
    * them by setting `--combobox-width` / `--combobox-open-width` on your own
