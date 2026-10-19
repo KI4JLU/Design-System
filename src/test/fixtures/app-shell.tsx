@@ -80,7 +80,7 @@ export const WORKSPACE_TITLE = "Prüfungsordnung Informatik (Master of Science),
  * The search field of the bar's centre region: a DS `Input` with a leading
  * search icon. JLURAG renders a `Combobox` input with the same leading icon
  * there (`GlobalSearch.tsx`); the dropdown is not the fixture's subject — see
- * `Components/Combobox → InAppShellSearch` for it.
+ * `Components/Combobox → Default` for it.
  */
 export function ShellSearch({ label = "Suchen" }: { label?: string }) {
   return (
