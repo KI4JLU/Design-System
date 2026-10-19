@@ -1,13 +1,14 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { List, Search } from "lucide-react";
+import { List, Search, Settings } from "lucide-react";
 import {
   Combobox,
   ComboboxChip,
   ComboboxChipsInput,
   ComboboxContent,
   ComboboxEmpty,
+  ComboboxFooter,
   ComboboxGroup,
   ComboboxInput,
   ComboboxItem,
@@ -15,6 +16,7 @@ import {
   ComboboxSeparator,
 } from "./combobox";
 import { Avatar } from "./avatar";
+import { Button } from "./button";
 import { Input } from "./input";
 import { Kbd, KbdGroup } from "./kbd";
 import { Label } from "./label";
@@ -28,6 +30,10 @@ import { AppShellFixture } from "../test/fixtures/app-shell";
  * component: `tokens.css` literals (rounded Style: `--radius-action` and
  * `--radius-field` 0.5rem = 8px; pill Style: `--radius-2xl` 1.5rem = 24px)
  * and token colours / shadows resolved by the browser on a probe element.
+ * Widths are compared with the stated width expressions evaluated from
+ * outside: the rem size read off `<html>`, the 24px gutter
+ * (`--spacing-gutter` in `tokens.css`), `window.innerWidth`, and the boxes
+ * of the slot and the bar row the field sits in.
  * Nothing is read back from the component's own class strings or state. The
  * list is portalled to <body>, so it is queried there, not in the canvas.
  */
@@ -93,6 +99,31 @@ const visibleShadowLayers = (boxShadow: string) =>
     .map(([layer]) => layer);
 
 const TRANSPARENT = "rgba(0, 0, 0, 0)";
+
+/** 1rem in px, as the browser resolves it. */
+const remPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+/** `tokens.css`: `--spacing-gutter: 24px`. */
+const GUTTER = 24;
+
+/** An element's content box (inside border and padding), from its box and computed style. */
+const contentBox = (el: HTMLElement) => {
+  const box = el.getBoundingClientRect();
+  const style = getComputedStyle(el);
+  const left = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+  const right = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+  return { left, right, width: right - left };
+};
+
+const centre = (box: { left: number; right: number }) => (box.left + box.right) / 2;
+
+/**
+ * The open field's stated width: the requested palette width, capped by the
+ * nearest container's content width and by the viewport minus both gutters —
+ * never narrower than the closed field.
+ */
+const grownWidth = (requestedPx: number, containerWidth: number, closedWidth: number) =>
+  Math.max(closedWidth, Math.min(requestedPx, containerWidth, window.innerWidth - 2 * GUTTER));
 
 /** Waits for running CSS transitions on `el` (the field animates its border and radius back on close). */
 const settled = async (el: Element) => {
@@ -281,6 +312,9 @@ function ClientCombobox({ onSelect }: { onSelect: (value: string) => void }) {
             </ComboboxItem>
           </ComboboxGroup>
         </ComboboxList>
+        <ComboboxFooter>
+          <span className="font-medium text-on-surface">JLU</span> Alle Einrichtungen
+        </ComboboxFooter>
       </ComboboxContent>
     </Combobox>
   );
@@ -289,7 +323,17 @@ function ClientCombobox({ onSelect }: { onSelect: (value: string) => void }) {
 function DefaultPage() {
   const [selected, setSelected] = useState("—");
   return (
-    <AppShellFixture context="overview" search={<ClientCombobox onSelect={setSelected} />}>
+    <AppShellFixture
+      context="overview"
+      // A label long enough to fill its region: the grown field covers its end.
+      pageLabel="Fachbereiche und zentrale Einrichtungen der Universität"
+      headerActions={
+        <Button type="button" variant="ghost" size="icon" aria-label="Einstellungen">
+          <Settings size={20} aria-hidden="true" />
+        </Button>
+      }
+      search={<ClientCombobox onSelect={setSelected} />}
+    >
       <p className="m-0 p-gutter text-on-surface-variant" data-testid="selected">
         Ausgewählt: {selected}
       </p>
@@ -300,7 +344,12 @@ function DefaultPage() {
 /**
  * The Combobox: field and open list are ONE surface — one border, one outer
  * radius, one shadow, no gap, a single divider — like a command palette
- * growing out of the search field. Closed, it is the ordinary framed field.
+ * growing out of the search field. Closed, it is the ordinary framed field,
+ * 24rem wide (the slot's `--combobox-width`, capped by the slot); open, the
+ * field widens to the 40rem palette width (`--combobox-open-width`, capped
+ * by the bar row and the viewport minus the gutters), centred, as an
+ * overlay — the bar and its regions do not move. A `ComboboxFooter` closes
+ * the panel: the context on the left, the key hints on the right.
  * Shown in the `AppShellLayout` search slot (the shared `overview`
  * fixture), where JustRAG's global search sits. The data is a demo, not
  * JustRAG's UI: JustRAG's search runs in server mode (`shouldFilter={false}`,
@@ -310,7 +359,15 @@ function DefaultPage() {
  * exercise those props. The play function checks in one real-browser run:
  *
  * - **Closed:** a framed field, in a bar that stays 64px open or closed
- *   (JustRAG's `Toast.css` `top: 76px` = 64 + 12 depends on it).
+ *   (JustRAG's `Toast.css` `top: 76px` = 64 + 12 depends on it); 24rem wide
+ *   (at most the slot) and centred in the slot.
+ * - **Growth:** open, the field is min(40rem, bar row content, viewport −
+ *   2 × 24px) wide, centred on its closed box, as tall as before, painted
+ *   over the bar's side region; the row, the slot and both side regions keep
+ *   their boxes. With a huge requested width the bar row's content box caps it.
+ * - **Footer:** below the list, not in it, nothing focusable; a full-width
+ *   `outline-variant` divider on the panel surface; the key hints
+ *   (↵ Öffnen, ↑ ↓ Navigieren, esc Schließen) hidden from assistive tech.
  * - **Keyboard:** ↓ opens a closed list; ↓/↑ move the highlight and wrap
  *   around; Home/End jump; Enter selects and closes. The highlight travels as
  *   `aria-activedescendant`, focus never leaves the field.
@@ -337,6 +394,15 @@ export const Default: Story = {
     const selected = canvas.getByTestId("selected");
     const bar = canvasElement.querySelector("header") as HTMLElement;
     const barHeight = () => getComputedStyle(bar).height;
+    // AppShellLayout's wide bar: `header > row`, the row's three regions.
+    const row = bar.firstElementChild as HTMLElement;
+    const [leftRegion, slot, rightRegion] = Array.from(row.children) as HTMLElement[];
+    await expect(slot.contains(input)).toBe(true);
+    const layoutOf = () =>
+      [row, leftRegion, slot, rightRegion].map((el) => {
+        const box = el.getBoundingClientRect();
+        return [box.left, box.top, box.width, box.height];
+      });
 
     await step("Closed: an ordinary framed field in the 64px bar", async () => {
       await expect(document.documentElement.dataset.uiShape ?? "rounded").toBe("rounded");
@@ -347,6 +413,19 @@ export const Default: Story = {
       await expect(corners(style)).toEqual(["8px", "8px", "8px", "8px"]);
       await expect(style.borderTopWidth).toBe("1px");
       await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-outline-variant)"));
+      // 24rem, at most the slot, centred in it — narrower than the 28rem slot here.
+      const fieldBox = input.getBoundingClientRect();
+      const slotBox = slot.getBoundingClientRect();
+      await expect(Math.abs(fieldBox.width - Math.min(24 * remPx(), slotBox.width))).toBeLessThan(0.5);
+      await expect(fieldBox.width).toBeLessThan(slotBox.width);
+      await expect(Math.abs(centre(fieldBox) - centre(slotBox))).toBeLessThan(0.5);
+      // A closed width larger than the slot is capped at the slot.
+      slot.style.setProperty("--combobox-width", "200rem");
+      try {
+        await expect(Math.abs(input.getBoundingClientRect().width - slotBox.width)).toBeLessThan(0.5);
+      } finally {
+        slot.style.removeProperty("--combobox-width");
+      }
     });
 
     await step("Keyboard: ↓ opens, highlight wraps, Enter selects", async () => {
@@ -382,7 +461,9 @@ export const Default: Story = {
       await expect(document.activeElement).toBe(input);
     });
 
-    await step("Panel: one surface with the field, not clipped by the bar", async () => {
+    await step("Panel: one surface with the field, grown, not clipped by the bar", async () => {
+      const closedField = input.getBoundingClientRect();
+      const closedLayout = layoutOf();
       await userEvent.type(input, "zentr");
       const listbox = await body.findByRole("listbox");
       await waitFor(() => expect(activeOption(input)).not.toBeNull());
@@ -390,6 +471,60 @@ export const Default: Story = {
       // Rounded Style: the field's radius, `--radius-action` 0.5rem.
       await expectJoinedPanel(canvasElement, input, listbox, { radius: "8px" });
       await expect(barHeight()).toBe("64px");
+
+      // Grown: the palette width, centred on the closed field, same height.
+      const openField = input.getBoundingClientRect();
+      const expected = grownWidth(40 * remPx(), contentBox(row).width, closedField.width);
+      await expect(Math.abs(openField.width - expected)).toBeLessThan(0.5);
+      await expect(openField.width).toBeGreaterThan(closedField.width + 1);
+      await expect(Math.abs(centre(openField) - centre(closedField))).toBeLessThan(0.5);
+      await expect(Math.abs(openField.height - closedField.height)).toBeLessThan(0.5);
+      // An overlay: the row, the slot and the side regions did not move.
+      await expect(layoutOf()).toEqual(closedLayout);
+      // Painted over the side region: left of the slot, over the page label's
+      // (truncated) text, the field is what the pointer hits.
+      const x = openField.left + 4;
+      const y = openField.top + openField.height / 2;
+      const label = within(leftRegion).getByText(/^Fachbereiche und zentrale/);
+      const labelBox = label.getBoundingClientRect();
+      await expect(x).toBeLessThan(slot.getBoundingClientRect().left);
+      await expect(x > labelBox.left && x < labelBox.right && y > labelBox.top && y < labelBox.bottom).toBe(true);
+      await expect(document.elementFromPoint(x, y)).toBe(input);
+
+      // Footer: after the list, outside it, nothing focusable in it.
+      const panel = panelOf(listbox);
+      const footer = panel.querySelector<HTMLElement>('[data-slot="combobox-footer"]');
+      if (!footer) throw new Error("footer missing");
+      await expect(listbox.contains(footer)).toBe(false);
+      await expect(footer.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+        listbox.getBoundingClientRect().bottom,
+      );
+      await expect(
+        footer.querySelectorAll("a, button, input, select, textarea, [tabindex], [contenteditable]"),
+      ).toHaveLength(0);
+      // Context left, key hints right, the hints hidden from assistive tech.
+      await expect(footer).toHaveTextContent(/^JLU Alle Einrichtungen/);
+      const keys = Array.from(footer.querySelectorAll('[data-slot="kbd"]'));
+      await expect(keys.map((key) => key.textContent)).toEqual(["↵", "↑", "↓", "esc"]);
+      for (const word of ["Öffnen", "Navigieren", "Schließen"]) {
+        const hint = within(footer).getByText(word);
+        await expect(hint.closest('[aria-hidden="true"]')).not.toBeNull();
+      }
+      for (const key of keys) await expect(key.closest('[aria-hidden="true"]')).not.toBeNull();
+      const context = within(footer).getByText("Alle Einrichtungen", { exact: false });
+      await expect(context.closest('[aria-hidden="true"]')).toBeNull();
+      await expect(keys[0].getBoundingClientRect().left).toBeGreaterThan(context.getBoundingClientRect().right);
+      // One surface: a 1px outline-variant divider, edge to edge inside the
+      // panel's border, the footer transparent on the panel surface.
+      const footerStyle = getComputedStyle(footer);
+      await expect(footerStyle.borderTopWidth).toBe("1px");
+      await expect(footerStyle.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-outline-variant)"));
+      await expect(footerStyle.backgroundColor).toBe(TRANSPARENT);
+      const footerBox = footer.getBoundingClientRect();
+      const panelBox = panel.getBoundingClientRect();
+      await expect(Math.abs(footerBox.left - (panelBox.left + 1))).toBeLessThan(0.5);
+      await expect(Math.abs(footerBox.right - (panelBox.right - 1))).toBeLessThan(0.5);
+      await expect(Math.abs(footerBox.bottom - (panelBox.bottom - 1))).toBeLessThan(0.5);
 
       // Not clipped: the list is outside the bar's subtree, reaches below it,
       // and its last option is what the browser hit-tests at that option's
@@ -415,7 +550,94 @@ export const Default: Story = {
       await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-primary)"));
       await expect(corners(style)).toEqual(["8px", "8px", "8px", "8px"]);
       await expect(barHeight()).toBe("64px");
+      // Back to its closed width.
+      await expect(Math.abs(input.getBoundingClientRect().width - closedField.width)).toBeLessThan(0.5);
       await userEvent.clear(input);
+    });
+
+    await step("Growth cap: the bar row's content box, not the viewport", async () => {
+      const closedField = input.getBoundingClientRect();
+      slot.style.setProperty("--combobox-open-width", "200rem");
+      try {
+        await userEvent.type(input, "zentr");
+        const listbox = await body.findByRole("listbox");
+        const rowContent = contentBox(row);
+        const openField = input.getBoundingClientRect();
+        // 200rem is wider than the row: the row's content width wins.
+        await expect(rowContent.width).toBeLessThan(window.innerWidth - 2 * GUTTER);
+        await expect(Math.abs(openField.width - rowContent.width)).toBeLessThan(0.5);
+        await expect(Math.abs(openField.left - rowContent.left)).toBeLessThan(0.5);
+        await expect(Math.abs(centre(openField) - centre(closedField))).toBeLessThan(0.5);
+        await expect(Math.abs(panelOf(listbox).getBoundingClientRect().width - openField.width)).toBeLessThan(0.5);
+        await expect(barHeight()).toBe("64px");
+        // It now covers the header action too, and is painted over it — also
+        // over a positioned action (a badge on a button makes it `relative`),
+        // which comes later in the bar's tree order than the field.
+        const button = canvas.getByRole("button", { name: "Einstellungen" });
+        button.style.position = "relative";
+        try {
+          const action = button.getBoundingClientRect();
+          // (The action ends on the row's content edge, as the grown field does.)
+          await expect(action.left).toBeGreaterThan(openField.left);
+          await expect(action.right).toBeLessThanOrEqual(openField.right + 0.5);
+          await expect(document.elementFromPoint(centre(action), (action.top + action.bottom) / 2)).toBe(input);
+        } finally {
+          button.style.position = "";
+        }
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+      } finally {
+        slot.style.removeProperty("--combobox-open-width");
+      }
+      await userEvent.clear(input);
+    });
+
+    await step("Narrow panel: the footer's key hints stay inside it", async () => {
+      // No growth (open width 0), so the panel is as narrow as the field.
+      slot.style.setProperty("--combobox-open-width", "0px");
+      try {
+        /** Every hint (key + word) inside the footer's content box and inside the panel's border. */
+        const expectHintsInside = async (width: string) => {
+          slot.style.setProperty("--combobox-width", width);
+          await expect(Math.abs(input.getBoundingClientRect().width - parseFloat(width) * remPx())).toBeLessThan(0.5);
+          await userEvent.type(input, "zentr");
+          const listbox = await body.findByRole("listbox");
+          const panel = panelOf(listbox);
+          const footer = panel.querySelector<HTMLElement>('[data-slot="combobox-footer"]') as HTMLElement;
+          const inner = contentBox(footer);
+          const footerBox = footer.getBoundingClientRect();
+          const panelBox = panel.getBoundingClientRect();
+          const hints = Array.from(footer.querySelectorAll<HTMLElement>('[data-slot="combobox-footer-hint"]'));
+          await expect(hints).toHaveLength(3);
+          for (const hint of hints) {
+            const box = hint.getBoundingClientRect();
+            await expect(box.width).toBeGreaterThan(0);
+            await expect(box.left).toBeGreaterThanOrEqual(inner.left - 0.5);
+            await expect(box.right).toBeLessThanOrEqual(inner.right + 0.5);
+            await expect(box.top).toBeGreaterThanOrEqual(footerBox.top);
+            await expect(box.bottom).toBeLessThanOrEqual(footerBox.bottom + 0.5);
+            await expect(box.left).toBeGreaterThanOrEqual(panelBox.left + 1 - 0.5);
+            await expect(box.right).toBeLessThanOrEqual(panelBox.right - 1 + 0.5);
+            await expect(box.bottom).toBeLessThanOrEqual(panelBox.bottom - 1 + 0.5);
+          }
+          // Every key stays visible.
+          for (const key of footer.querySelectorAll<HTMLElement>('[data-slot="kbd"]')) {
+            await expect(key.getBoundingClientRect().width).toBeGreaterThan(0);
+          }
+          const hintLines = new Set(hints.map((hint) => Math.round(hint.getBoundingClientRect().top))).size;
+          await userEvent.keyboard("{Escape}");
+          await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+          await userEvent.clear(input);
+          return hintLines;
+        };
+        // 16rem — a phone-width field: the compact form fits on one line.
+        await expect(await expectHintsInside("16rem")).toBe(1);
+        // 8rem — the slot's floor: even the keys alone wrap, still inside.
+        await expect(await expectHintsInside("8rem")).toBeGreaterThan(1);
+      } finally {
+        slot.style.removeProperty("--combobox-open-width");
+        slot.style.removeProperty("--combobox-width");
+      }
     });
 
     await step("Palette rows: description in the name, shortcut hidden and trailing", async () => {
@@ -559,8 +781,15 @@ function resolveMember(text: string): Member {
  * error chip for one that cannot be valid, and suggestions under the field
  * that Tab adds. A plain framed `Input` sits below for comparison.
  */
-function AddMembers({ invalid = false }: { invalid?: boolean }) {
-  const [members, setMembers] = useState<Member[]>([resolveMember("amueller")]);
+function AddMembers({
+  invalid = false,
+  initial = ["amueller"],
+}: {
+  invalid?: boolean;
+  /** The chips the field starts with (typed text, resolved as on commit). */
+  initial?: string[];
+}) {
+  const [members, setMembers] = useState<Member[]>(() => initial.map(resolveMember));
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const add = (next: Member[]) =>
@@ -650,7 +879,9 @@ const chipsFrame = (input: HTMLElement) =>
  * paste of several names commits each, Backspace removes the last chip, ×
  * removes one and returns focus to the field. The frame wraps onto new lines
  * and is as tall as a framed `Input` while it holds one row; open, the
- * suggestions join it in one panel, as on `ComboboxInput`.
+ * suggestions join it in one panel, as on `ComboboxInput`. The chips field
+ * never widens (only `ComboboxInput` does): the open frame keeps its width —
+ * the case of JustRAG's members dialog.
  */
 export const Chips: Story = {
   render: () => <AddMembers />,
@@ -678,6 +909,9 @@ export const Chips: Story = {
     await waitFor(() => expect(activeOption(input)).toBe(ben));
     // The same joined panel around the chips frame (`--radius-field` 0.5rem).
     await expectJoinedPanel(canvasElement, input, listbox, { radius: "8px", frame });
+    // No palette width set here: open, the frame is as wide as the Input below.
+    await expect(Math.abs(frame.getBoundingClientRect().width - reference.getBoundingClientRect().width)).toBeLessThan(0.5);
+    await expect(Math.abs(frame.getBoundingClientRect().left - reference.getBoundingClientRect().left)).toBeLessThan(0.5);
     await userEvent.tab();
     await expect(chipTexts()).toEqual(["Anna Müller", "Ben Schmidt"]);
     await expect(input).toHaveValue("");
@@ -740,13 +974,16 @@ export const Chips: Story = {
 };
 
 /**
- * Both field kinds with `aria-invalid`: a `ComboboxInput` and a chips field,
- * plus a plain DS `Input` with the same props as the reference the closed
- * `ComboboxInput` must match.
+ * Both field kinds with `aria-invalid`: a `ComboboxInput` and a chips field
+ * (four chips, wrapping onto several lines), plus a plain DS `Input` with
+ * the same props as the reference the closed `ComboboxInput` must match.
  */
 function InvalidFields() {
   return (
-    <div className="flex max-w-md flex-col gap-6">
+    // Centred, with a 32rem palette width: the ComboboxInput widens while
+    // open, the chips field does not (the closed width is unset, so closed
+    // both fill the column as before).
+    <div data-testid="invalid-column" className="mx-auto flex max-w-md flex-col gap-6 [--combobox-open-width:32rem]">
       <Combobox>
         <ComboboxInput aria-label="Kürzel" aria-invalid leadingIcon={<Search />} />
         <ComboboxContent>
@@ -755,10 +992,12 @@ function InvalidFields() {
               <ComboboxItem key={name}>{name}</ComboboxItem>
             ))}
           </ComboboxList>
+          <ComboboxFooter>Fachbereiche</ComboboxFooter>
         </ComboboxContent>
       </Combobox>
       <Input aria-label="Referenzfeld" aria-invalid leadingIcon={<Search />} />
-      <AddMembers invalid />
+      {/* Four chips: they wrap onto several lines at the column's width. */}
+      <AddMembers invalid initial={["amueller", "cweber", "dkoch", "neu.person"]} />
     </div>
   );
 }
@@ -779,6 +1018,14 @@ function InvalidFields() {
  * with the same `leadingIcon` and `aria-invalid` is the reference, compared
  * at rest, focused, and after the panel was open and closed — the panel's
  * classes on the field may only act while it is open.
+ *
+ * The column sets `--combobox-open-width: 32rem` (no closed width): the
+ * `ComboboxInput` widens to 32rem while open, centred on its closed box, in
+ * the pill Style. The chips field ignores the palette widths — with the
+ * open width set and a 16rem closed width added, it stays the column's
+ * width, open and closed, and its wrapped chips and the field below it do
+ * not move. The `ComboboxInput` panel also has a `ComboboxFooter`, which
+ * alone does not keep the list part open when nothing matches.
  */
 export const Invalid: Story = {
   globals: { shape: "pill" },
@@ -820,12 +1067,33 @@ export const Invalid: Story = {
     });
 
     await step("ComboboxInput: error border and ring on the panel, 24px in pill", async () => {
+      const closed = input.getBoundingClientRect();
       await userEvent.type(input, "recht");
       const listbox = await body.findByRole("listbox");
       // Pill Style: `--radius-2xl` 1.5rem.
       await expectJoinedPanel(canvasElement, input, listbox, { radius: "24px", invalid: true });
+      // Widened to 32rem (no container here: the viewport caps), centred.
+      const open = input.getBoundingClientRect();
+      const expected = grownWidth(32 * remPx(), window.innerWidth, closed.width);
+      await expect(Math.abs(open.width - expected)).toBeLessThan(0.5);
+      await expect(open.width).toBeGreaterThan(closed.width + 1);
+      await expect(Math.abs(centre(open) - centre(closed))).toBeLessThan(0.5);
 
-      // Nothing matches and there is no ComboboxEmpty: no list part, no divider.
+      // A palette width wider than the viewport: capped at the viewport minus
+      // both 24px gutters (no inline-size container around this story).
+      const column = canvas.getByTestId("invalid-column");
+      column.style.setProperty("--combobox-open-width", "200rem");
+      try {
+        await waitFor(() =>
+          expect(Math.abs(input.getBoundingClientRect().width - (window.innerWidth - 2 * GUTTER))).toBeLessThan(0.5),
+        );
+        await expect(Math.abs(centre(input.getBoundingClientRect()) - centre(closed))).toBeLessThan(0.5);
+      } finally {
+        column.style.removeProperty("--combobox-open-width");
+      }
+
+      // Nothing matches and there is no ComboboxEmpty: no list part, no
+      // divider — the footer alone does not keep the list part open.
       const panel = panelOf(listbox);
       await userEvent.type(input, "zzz");
       const panelBody = panel.querySelector('[data-slot="combobox-panel-body"]') as HTMLElement;
@@ -835,17 +1103,52 @@ export const Invalid: Story = {
       ).toBeLessThan(0.5);
     });
 
-    await step("Chips: the panel keeps the 8px field radius in pill", async () => {
-      await userEvent.type(chipsInput, "sch");
-      const listbox = await body.findByRole("listbox", { name: "Personen" });
-      await waitFor(() => expect(activeOption(chipsInput)).not.toBeNull());
-      // `--radius-field` 0.5rem, also in the pill Style.
-      await expectJoinedPanel(canvasElement, chipsInput, listbox, {
-        radius: "8px",
-        frame: chipsFrame(chipsInput),
-        invalid: true,
-      });
-      await expect(document.activeElement).toBe(chipsInput);
+    await step("Chips: 8px in pill, and the palette widths do not apply", async () => {
+      const frame = chipsFrame(chipsInput);
+      const below = canvas.getAllByRole("textbox", { name: "Nachricht" }).at(-1) as HTMLElement;
+      const boxOf = (el: HTMLElement) => {
+        const box = el.getBoundingClientRect();
+        return [box.left, box.top, box.width, box.height];
+      };
+      // The column sets `--combobox-open-width: 32rem`; a closed width too, for this step.
+      const column = canvas.getByTestId("invalid-column");
+      column.style.setProperty("--combobox-width", "16rem");
+      try {
+        // Closed: as wide as the plain Input below it — the column's width,
+        // not 16rem — and its chips wrap onto several lines.
+        await expect(Math.abs(frame.getBoundingClientRect().width - below.getBoundingClientRect().width)).toBeLessThan(0.5);
+        await expect(Math.abs(frame.getBoundingClientRect().left - below.getBoundingClientRect().left)).toBeLessThan(0.5);
+        const lines = new Set(
+          within(frame)
+            .getAllByRole("listitem")
+            .map((chip) => Math.round(chip.getBoundingClientRect().top)),
+        ).size;
+        await expect(lines).toBeGreaterThan(1);
+        const closedFrame = boxOf(frame);
+        const closedBelow = boxOf(below);
+
+        await userEvent.type(chipsInput, "sch");
+        const listbox = await body.findByRole("listbox", { name: "Personen" });
+        await waitFor(() => expect(activeOption(chipsInput)).not.toBeNull());
+        // `--radius-field` 0.5rem, also in the pill Style.
+        await expectJoinedPanel(canvasElement, chipsInput, listbox, {
+          radius: "8px",
+          frame,
+          invalid: true,
+        });
+        // Open: exactly the closed box, and nothing below it moved.
+        await expect(boxOf(frame)).toEqual(closedFrame);
+        await expect(boxOf(below)).toEqual(closedBelow);
+        await expect(document.activeElement).toBe(chipsInput);
+
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+        await expect(boxOf(frame)).toEqual(closedFrame);
+        await expect(boxOf(below)).toEqual(closedBelow);
+      } finally {
+        column.style.removeProperty("--combobox-width");
+      }
     });
+
   },
 };
