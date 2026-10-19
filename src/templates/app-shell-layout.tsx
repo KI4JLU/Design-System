@@ -347,7 +347,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        stacking context) and makes the row's own min-content width 0; the row
        is `w-full` and everything this bar shows that floats is portalled, so
        neither changes what it renders — measured by `BarGivesWayInOrder`.
-       Other content in the slot (a plain `Input`, a `ComboboxChipsInput`)
+       Other content in the slot (a plain `Input`, a `TokenInput`)
        ignores both variables.
 
        **This is the bar's own inset, not a copy of the column header's**

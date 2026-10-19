@@ -2,7 +2,7 @@ import { cva } from "class-variance-authority";
 
 /**
  * The `filled` appearance's tone colours: each status tone on its container
- * token pair. Exported for other status-tinted pills (`ComboboxChip`'s
+ * token pair. Exported for other status-tinted pills (`TokenInputChip`'s
  * `warning` / `error` tones) so the mapping exists once.
  */
 export const badgeFilledTones = {
