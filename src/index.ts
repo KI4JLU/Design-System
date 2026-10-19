@@ -389,7 +389,6 @@ export {
   type ComboboxListProps,
   type ComboboxLoadingProps,
   type ComboboxItemProps,
-  type ComboboxLayout,
 } from "./components/combobox";
 export { HoverCard, HoverCardTrigger, HoverCardContent } from "./components/hover-card";
 export { PdfThumbnail, type PdfThumbnailProps } from "./components/pdf-thumbnail";
