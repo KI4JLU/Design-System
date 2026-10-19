@@ -52,7 +52,7 @@ export const fieldVariants = cva(
 
 /**
  * The `default` (framed) field drawn on a FRAME that holds a borderless
- * `<input>` among other content — `ComboboxChipsInput`'s chips + text input.
+ * `<input>` among other content — `TokenInput`'s chips + text input.
  * Same surface (`framedFieldSurface`), same tokens per state; only the state
  * source differs: the input inside the frame (`has-[input:…]`) instead of the
  * element itself (`focus-visible:`, `aria-[invalid=true]:`, `disabled:`).

@@ -365,13 +365,11 @@ export {
  * A text field with a filterable, grouped listbox anchored under it (WAI-ARIA
  * APG combobox, list autocomplete) — cmdk for the list and keyboard model,
  * Radix Popover for anchoring and dismissal. Client- or server-filtered.
- * `ComboboxChipsInput` + `ComboboxChip` are its multi-value (chips) mode.
+ * Single-line only; several values in one field are `TokenInput`.
  */
 export {
   Combobox,
   ComboboxInput,
-  ComboboxChipsInput,
-  ComboboxChip,
   ComboboxContent,
   ComboboxList,
   ComboboxGroup,
@@ -382,10 +380,6 @@ export {
   ComboboxFooter,
   type ComboboxProps,
   type ComboboxInputProps,
-  type ComboboxChipsInputProps,
-  type ComboboxChipProps,
-  type ComboboxChipLabels,
-  type ComboboxChipTone,
   type ComboboxContentProps,
   type ComboboxListProps,
   type ComboboxLoadingProps,
@@ -393,6 +387,20 @@ export {
   type ComboboxFooterProps,
   type ComboboxFooterLabels,
 } from "./components/combobox";
+/**
+ * Several values in one field: removable chips plus a text input that wraps
+ * onto new lines, with suggestions joined under it. Built on `Combobox`'s
+ * engine — the suggestions are `ComboboxList` / `ComboboxItem` in its
+ * `suggestions` slot. Replaces `ComboboxChipsInput` + `ComboboxChip`.
+ */
+export {
+  TokenInput,
+  TokenInputChip,
+  type TokenInputProps,
+  type TokenInputChipProps,
+  type TokenInputChipLabels,
+  type TokenInputChipTone,
+} from "./components/token-input";
 export { HoverCard, HoverCardTrigger, HoverCardContent } from "./components/hover-card";
 export { PdfThumbnail, type PdfThumbnailProps } from "./components/pdf-thumbnail";
 export { preloadPdfjs, renderPdfFirstPage, setPdfWorkerSrc, type RenderPdfFirstPageOptions } from "./lib/pdf-render";
