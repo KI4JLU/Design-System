@@ -6,6 +6,7 @@ import { cn } from "../lib/utils";
 import { badgeFilledTones } from "./badge-variants";
 import { fieldFrameClassName } from "./field-variants";
 import { Input, type InputProps } from "./input";
+import { Kbd, KbdGroup } from "./kbd";
 import { menuItemVariants } from "./menu-item-variants";
 import { Popover, PopoverAnchor, PopoverContent } from "./popover";
 
@@ -28,6 +29,17 @@ import { Popover, PopoverAnchor, PopoverContent } from "./popover";
  * is drawn and what it fixes (width, side). Works with `ComboboxInput` and
  * `ComboboxChipsInput` — with the framed field only, not with
  * `ComboboxInput`'s `variant="inline"` / `"title"`.
+ *
+ * **Palette widths** (two CSS custom properties, read by `ComboboxInput`
+ * only — the search field; `ComboboxChipsInput` ignores both, see there):
+ * `--combobox-width` sets the closed field's width (capped by its container,
+ * centred; unset = the container's full width, as before) and
+ * `--combobox-open-width` the width the field grows to while the list is
+ * open (an overlay centred on the field, capped by the nearest inline-size
+ * container and by the viewport minus the 24px gutters; unset = no growth).
+ * `AppShellLayout`'s search slot sets 24rem / 40rem; anywhere else nothing
+ * changes until you set them on a wrapper. A `ComboboxFooter` adds the
+ * palette's context + key-hint row under the list.
  *
  * ```tsx
  * <Combobox>
@@ -375,6 +387,40 @@ const panelChipsFrameClassName =
   "data-[panel=open]:rounded-b-none data-[panel=open]:border-transparent! data-[panel=open]:ring-0! data-[panel=open]:transition-none";
 
 /**
+ * `ComboboxInput`'s in-flow box — what the surrounding layout sees, open or closed.
+ * Its width is `--combobox-width` capped at the container (`100%`), centred;
+ * unset, the field fills its container as before. `AppShellLayout`'s search
+ * slot sets it (24rem), so a palette-style search sits narrower than the slot.
+ * The box never changes while the list is open: the growth below is an
+ * overlay, so neighbours do not move and the row's height stays.
+ */
+const fieldSlotClassName = "mx-auto w-[min(var(--combobox-width,100%),100%)]";
+
+/**
+ * `ComboboxInput`'s anchor growth while the list is open (command-palette
+ * style; the chips field never grows, see `ComboboxChipsInput`): it
+ * takes negative inline margins of `min(0px, (100% − W) / 2)` — `100%` being
+ * the in-flow box above — so an auto-width block widens to `W`, centred on its
+ * box, without changing the box or anything around it (the overflow is
+ * painted, not laid out). `W` =
+ *   min(var(--combobox-open-width, 0px), 100cqw, 100vw − 2 × var(--spacing-gutter))
+ * — the requested palette width, capped by the nearest inline-size container
+ * (`AppShellLayout`'s bar row is one; with none, `cqw` is the viewport) and by
+ * the viewport minus the 24px gutters. It never shrinks the field: with
+ * `--combobox-open-width` unset (`0px`) the margin is 0 and nothing grows —
+ * a combobox in a form or dialog keeps its width. `relative z-10` paints the
+ * grown field over the bar's side regions. Not animated: the panel is
+ * positioned from measurements of this element (Radix / floating-ui, taken
+ * once per animation frame — see `ComboboxContent`), so a width transition
+ * would show field and panel apart mid-animation. TODO: whether that lag is
+ * visible in practice is not yet confirmed (not measured); an instant change
+ * also needs no `prefers-reduced-motion` branch. The panel measures this element, so its
+ * width (`--radix-popper-anchor-width`) is the grown width.
+ */
+const fieldGrowClassName =
+  "data-[panel=open]:relative data-[panel=open]:z-10 data-[panel=open]:mx-[min(0px,calc((100%_-_min(var(--combobox-open-width,0px),100cqw,100vw_-_2*var(--spacing-gutter)))/2))]";
+
+/**
  * The field: the design system's `Input` (same `fieldVariants` look, same
  * `leadingIcon` slot, so a combobox search field is pixel-identical to a plain
  * search `Input`), carrying cmdk's combobox semantics.
@@ -448,21 +494,23 @@ const ComboboxInput = React.forwardRef<HTMLInputElement, ComboboxInputProps>(
     };
 
     return (
-      <PopoverAnchor asChild>
-        <div ref={anchorRef} className="w-full">
-          <CommandPrimitive.Input asChild value={text} onValueChange={handleValueChange}>
-            <Input
-              ref={ref}
-              {...props}
-              {...ariaOverrides}
-              {...focusHandlers}
-              data-panel={panelState}
-              className={cn(panelInputClassName, className)}
-              onKeyDown={handleKeyDown}
-            />
-          </CommandPrimitive.Input>
-        </div>
-      </PopoverAnchor>
+      <div data-slot="combobox-field" className={fieldSlotClassName}>
+        <PopoverAnchor asChild>
+          <div ref={anchorRef} data-panel={panelState} className={fieldGrowClassName}>
+            <CommandPrimitive.Input asChild value={text} onValueChange={handleValueChange}>
+              <Input
+                ref={ref}
+                {...props}
+                {...ariaOverrides}
+                {...focusHandlers}
+                data-panel={panelState}
+                className={cn(panelInputClassName, className)}
+                onKeyDown={handleKeyDown}
+              />
+            </CommandPrimitive.Input>
+          </div>
+        </PopoverAnchor>
+      </div>
     );
   },
 );
@@ -584,6 +632,16 @@ export interface ComboboxChipsInputProps
  * where a capsule does not fit (as `Textarea`). `className` goes to the
  * frame (layout only); every other prop goes to the input. A mousedown on
  * the frame outside a chip's button focuses the input.
+ *
+ * **Width: always its container's.** The chips field ignores both palette
+ * variables (`--combobox-width`, `--combobox-open-width`): it neither
+ * narrows when closed nor widens when open, also where an ancestor sets them.
+ * The palette widths describe the search field (`ComboboxInput`, one line at
+ * every width); a chips field is a form's value list, whose width is the
+ * form's — and a field that wraps onto several lines would change height
+ * when widened (fewer lines), moving the content below it on open and back
+ * on close. Its frame is the panel's anchor, exactly as wide as the field,
+ * as before the palette widths existed.
  */
 const ComboboxChipsInput = React.forwardRef<HTMLInputElement, ComboboxChipsInputProps>(
   (
@@ -871,7 +929,8 @@ ComboboxChip.displayName = "ComboboxChip";
 /**
  * `PopoverContent`'s props. Some cannot take effect, because the panel is
  * joined to the field: `side`, `sideOffset` and `avoidCollisions` are
- * overridden (`"bottom"`, `0`, `false`), `align` makes no visible difference
+ * overridden (`"bottom"`, `0`, `false`; `updatePositionStrategy` is forced
+ * to `"always"`), `align` makes no visible difference
  * (the panel is exactly the field's width) and a width utility in
  * `className` is ignored. See `ComboboxContent`.
  */
@@ -910,12 +969,14 @@ const panelFrameState = (field: PanelField) => {
  * the field's radius capped at the Style's box radius (rounded: 8px, pill:
  * 24px); a `ComboboxChipsInput` panel keeps the field radius.
  *
- * What the panel fixes, overriding props: width = the field's (a width
- * utility in `className` is ignored, and `align` makes no visible
- * difference), `side="bottom"` and `sideOffset={0}` (a passed `side` or
+ * What the panel fixes, overriding props: width = the field's — for a
+ * `ComboboxInput`, the grown field's while it is widened to
+ * `--combobox-open-width` (see `fieldGrowClassName`) — (a width utility in `className` is ignored, and
+ * `align` makes no visible difference), `side="bottom"` and `sideOffset={0}` (a passed `side` or
  * `sideOffset` is overridden), no collision flipping (`avoidCollisions` is
  * forced to `false` — a list that flipped above the field could not join
- * it), no padding around the window. `className` reaches the panel element
+ * it), `updatePositionStrategy="always"` (see the note at the prop), no
+ * padding around the window. `className` reaches the panel element
  * for anything else.
  *
  * It never takes focus: opening does not auto-focus it, closing does not
@@ -984,6 +1045,16 @@ const ComboboxContent = React.forwardRef<
         side="bottom"
         sideOffset={0}
         avoidCollisions={false}
+        // A `ComboboxInput` resizes itself when the list opens (`fieldGrowClassName`).
+        // With Radix's default ("optimized") floating-ui watches the field
+        // with a ResizeObserver, and that growth made Chromium report
+        // "ResizeObserver loop completed with undelivered notifications"
+        // (5 of 25 runs of `Default` with a 952px growth, 0 of 25 with this).
+        // "always" follows the field per animation frame instead — one
+        // `getBoundingClientRect` per frame, only while the list is open.
+        // TODO: why floating-ui's own loop guard (floating-ui#1740) does not
+        // catch this case is not yet confirmed.
+        updatePositionStrategy="always"
       >
         {/* The window onto the field: its height minus the panel's 1px top
             border and the 1px divider below, so the divider lies on the
@@ -993,14 +1064,15 @@ const ComboboxContent = React.forwardRef<
           data-slot="combobox-panel-field"
           className="h-[calc(var(--radix-popper-anchor-height)-2px)]"
         />
-        {/* Hidden while it shows nothing (only a hidden, option-less list);
-            the panel's bottom border then takes the divider's place, so an
-            empty panel has exactly the framed field's box — but still the
-            panel's `shadow-overlay` (and focus ring) around it, i.e. an
-            open, elevated field with no list. */}
+        {/* Hidden while it shows nothing (only a hidden, option-less list —
+            a `ComboboxFooter` alone does not count: it annotates a list, it
+            is not one); the panel's bottom border then takes the divider's
+            place, so an empty panel has exactly the framed field's box — but
+            still the panel's `shadow-overlay` (and focus ring) around it,
+            i.e. an open, elevated field with no list. */}
         <div
           data-slot="combobox-panel-body"
-          className="pointer-events-auto border-t border-outline-variant bg-surface-container-lowest p-1 not-has-[>:not([hidden])]:hidden"
+          className="pointer-events-auto border-t border-outline-variant bg-surface-container-lowest p-1 not-has-[>:not([hidden],[data-slot=combobox-footer])]:hidden"
         >
           {children}
         </div>
@@ -1291,6 +1363,105 @@ const ComboboxSeparator = React.forwardRef<
 ));
 ComboboxSeparator.displayName = "ComboboxSeparator";
 
+export interface ComboboxFooterLabels {
+  /** Next to the ↵ key. Default "Öffnen". */
+  open: string;
+  /** Next to the ↑ ↓ keys. Default "Navigieren". */
+  navigate: string;
+  /** Next to the esc key. Default "Schließen". */
+  close: string;
+}
+
+const DEFAULT_FOOTER_LABELS: ComboboxFooterLabels = {
+  open: "Öffnen",
+  navigate: "Navigieren",
+  close: "Schließen",
+};
+
+export interface ComboboxFooterProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
+  /**
+   * The context at the leading edge — what the list searches, e.g. the
+   * scope and „Alle Seiten". Plain text (or inline elements around text):
+   * no controls, the panel holds nothing focusable.
+   */
+  children?: React.ReactNode;
+  /** The words next to the three key hints. */
+  labels?: Partial<ComboboxFooterLabels>;
+}
+
+/**
+ * The palette's footer row: the context on the left, three key hints on the
+ * right (`↵` open, `↑` `↓` navigate, `esc` close, each a `Kbd`). Place it in
+ * `ComboboxContent` after `ComboboxList` (and `ComboboxEmpty` /
+ * `ComboboxLoading`) — next to the list, not inside it: a listbox may own
+ * only options and groups. It sits on the panel surface below a single
+ * `outline-variant` divider, edge to edge, as part of the one joined panel,
+ * and is shown only while the panel shows something else too (a footer
+ * alone does not open an empty panel's list part). In a footer narrower than
+ * 28rem (a narrow field, a phone) the hints drop their words and keep the
+ * keys; if even the keys do not fit, they wrap onto a second line — nothing
+ * runs under the panel's `overflow-hidden`. The context truncates first.
+ *
+ * Never focusable and not part of the listbox. Assistive tech: the context
+ * text is ordinary text (reachable in a screen reader's browse mode, never
+ * announced on its own); the key hints are `aria-hidden` — they restate
+ * what the combobox role already conveys (↓/↑ move through the options,
+ * Enter selects, Escape closes), so reading them out would be noise. Name
+ * the scope in the field's own label if it matters to the user.
+ */
+const ComboboxFooter = React.forwardRef<HTMLDivElement, ComboboxFooterProps>(
+  ({ className, children, labels, ...props }, ref) => {
+    const words = { ...DEFAULT_FOOTER_LABELS, ...labels };
+    return (
+      <div
+        ref={ref}
+        data-slot="combobox-footer"
+        className={cn(
+          // Edge to edge under the body's `p-1`: the divider spans the panel.
+          // An inline-size container: the hints' compact form below keys on
+          // the footer's own width, not the viewport's.
+          "@container -mx-1 mt-1 -mb-1 border-t border-outline-variant px-3 py-2 text-xs text-on-surface-variant",
+          className,
+        )}
+        {...props}
+      >
+        <div className="flex items-center gap-4">
+          <div data-slot="combobox-footer-context" className="min-w-0 flex-1 truncate">
+            {children}
+          </div>
+          {/* Compact below a 28rem footer (a narrow field, a phone): the
+              words go, the keys stay. The keys alone are ~120px, and should
+              even that not fit, the hints wrap onto a second line rather
+              than run under the panel's `overflow-hidden`. */}
+          <div
+            aria-hidden="true"
+            data-slot="combobox-footer-hints"
+            className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1"
+          >
+            <span data-slot="combobox-footer-hint" className="inline-flex shrink-0 items-center gap-1.5">
+              <Kbd>↵</Kbd>
+              <span className="@max-[28rem]:hidden">{words.open}</span>
+            </span>
+            <span data-slot="combobox-footer-hint" className="inline-flex shrink-0 items-center gap-1.5">
+              <KbdGroup>
+                <Kbd>↑</Kbd>
+                <Kbd>↓</Kbd>
+              </KbdGroup>
+              <span className="@max-[28rem]:hidden">{words.navigate}</span>
+            </span>
+            <span data-slot="combobox-footer-hint" className="inline-flex shrink-0 items-center gap-1.5">
+              <Kbd>esc</Kbd>
+              <span className="@max-[28rem]:hidden">{words.close}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  },
+);
+ComboboxFooter.displayName = "ComboboxFooter";
+
 export {
   Combobox,
   ComboboxInput,
@@ -1303,4 +1474,5 @@ export {
   ComboboxEmpty,
   ComboboxLoading,
   ComboboxSeparator,
+  ComboboxFooter,
 };

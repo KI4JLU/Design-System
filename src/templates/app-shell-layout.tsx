@@ -112,6 +112,12 @@ export interface AppShellLayoutProps
    * changes is the bug that recipe could not avoid. Pass the node itself; the
    * template supplies the width cap and the centring.
    *
+   * A DS `ComboboxInput` here reads the slot's palette widths (Unreleased): 24rem
+   * closed (capped by the slot), 40rem while its list is open — an overlay
+   * centred on the slot, capped at the bar row, that moves nothing. Override
+   * them by setting `--combobox-width` / `--combobox-open-width` on your own
+   * wrapper inside the slot.
+   *
    * Chrome, like `pageLabel` and `headerActions`: no heading element belongs
    * here.
    */
@@ -326,6 +332,24 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        `mx-auto`: the three-region flex below is what centres `search`, so the
        row wants the full width of its column.
 
+       **The row is an inline-size container (`@container`), and the search
+       slot sets the Combobox's palette widths.** A `ComboboxInput` in the slot is
+       `--combobox-width` (24rem, capped by the slot) wide while closed —
+       narrower than the 28rem slot — and widens to `--combobox-open-width`
+       (40rem) while its list is open, as an overlay centred on the slot: the
+       slot, the side regions and the 64px row do not move (see
+       `fieldGrowClassName` in `combobox.tsx`). The container is what caps
+       that growth at the row's content box (`100cqw`), so the open field
+       never reaches past the row's gutters into a column. Container units
+       are the only CSS way for a descendant to read this row's width.
+       `container-type: inline-size` adds layout containment (the row
+       becomes the containing block of `position: fixed` descendants, and a
+       stacking context) and makes the row's own min-content width 0; the row
+       is `w-full` and everything this bar shows that floats is portalled, so
+       neither changes what it renders — measured by `BarGivesWayInOrder`.
+       Other content in the slot (a plain `Input`, a `ComboboxChipsInput`)
+       ignores both variables.
+
        **This is the bar's own inset, not a copy of the column header's**
        (0.39.0). It used to be justified as "the inset of a `SidePanel`'s
        `h-16` header row"; that row is `px-4` (16px) now, because the pane's
@@ -334,11 +358,15 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        chrome, not a pane's body — so the two insets are deliberately
        different and neither follows the other. */
     const wideBar = (
-      <div className="flex w-full items-center gap-4 px-gutter [--bar-search-min:8rem] [--bar-side-min:11rem]">
+      <div className="@container flex w-full items-center gap-4 px-gutter [--bar-search-min:8rem] [--bar-side-min:11rem]">
         <div className="flex min-w-[min(var(--bar-side-min),(100%_-_var(--bar-search-min)_-_2rem)/2)] flex-1 items-center">
           {label}
         </div>
-        {search ? <div className="w-md min-w-(--bar-search-min)">{search}</div> : null}
+        {search ? (
+          <div className="w-md min-w-(--bar-search-min) [--combobox-open-width:40rem] [--combobox-width:24rem]">
+            {search}
+          </div>
+        ) : null}
         <div className="flex min-w-[min(var(--bar-side-min),(100%_-_var(--bar-search-min)_-_2rem)/2)] flex-1 items-center justify-end gap-2">
           {headerActions}
         </div>
