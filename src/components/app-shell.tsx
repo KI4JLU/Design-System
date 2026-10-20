@@ -404,7 +404,9 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {handle(left, "left", leftPaneId)}
           </>
         )}
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* `app-shell-content`: the bar plus `<main>` — the region a
+            page-sized dialog covers (`SettingsDialog` `fitTo`). */}
+        <div data-slot="app-shell-content" className="flex min-w-0 flex-1 flex-col">
           {bar}
           <main aria-label={mainLabel} className={PANE_FILL}>
             {children}
