@@ -152,6 +152,57 @@ export {
   type RichTextEditorLabels,
 } from "./components/rich-text-editor";
 export { Shimmer, type ShimmerProps } from "./components/shimmer";
+export {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+  type CollapsibleProps,
+  type CollapsibleTriggerProps,
+  type CollapsibleContentProps,
+} from "./components/collapsible";
+export {
+  Reasoning,
+  type ReasoningProps,
+  ReasoningTrigger,
+  type ReasoningTriggerProps,
+  ReasoningContent,
+  type ReasoningContentProps,
+} from "./components/reasoning";
+export { useReasoning, type ReasoningContextValue } from "./components/reasoning-context";
+export {
+  ChainOfThought,
+  type ChainOfThoughtProps,
+  ChainOfThoughtHeader,
+  type ChainOfThoughtHeaderProps,
+  ChainOfThoughtContent,
+  type ChainOfThoughtContentProps,
+  ChainOfThoughtStep,
+  type ChainOfThoughtStepProps,
+  type ChainOfThoughtStepStatus,
+  ChainOfThoughtSearchResults,
+  type ChainOfThoughtSearchResultsProps,
+  ChainOfThoughtSearchResult,
+  type ChainOfThoughtSearchResultProps,
+  ChainOfThoughtImage,
+  type ChainOfThoughtImageProps,
+} from "./components/chain-of-thought";
+export {
+  chainOfThoughtStepVariants,
+  chainOfThoughtStepIconVariants,
+} from "./components/chain-of-thought-variants";
+export {
+  Task,
+  type TaskProps,
+  TaskTrigger,
+  type TaskTriggerProps,
+  TaskContent,
+  type TaskContentProps,
+  TaskItem,
+  type TaskItemProps,
+  TaskItemFile,
+  type TaskItemFileProps,
+} from "./components/task";
+export { type AiIconComponent } from "./components/ai-disclosure-variants";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";
