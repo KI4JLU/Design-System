@@ -58,7 +58,7 @@ export const DataTable: Story = {
                 <Badge tone={k.state === "aktiv" ? "success" : "neutral"}>{k.state}</Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost-destructive" size="sm">
                   Widerrufen
                 </Button>
               </TableCell>

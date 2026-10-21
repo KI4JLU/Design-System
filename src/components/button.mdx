@@ -1,0 +1,126 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as ButtonStories from "./button.stories";
+import * as SettingsDialogStories from "./settings-dialog.stories";
+
+<Meta of={ButtonStories} />
+
+# Button
+
+Die Schaltfläche des Systems — `<button>` mit den Varianten aus
+`buttonVariants`, per `asChild` (Radix Slot) auch als Link. Alle Farben kommen
+aus semantischen Tokens, beide Themes schalten von selbst.
+
+<Canvas of={ButtonStories.Playground} />
+
+<Controls />
+
+## Varianten
+
+<Canvas of={ButtonStories.Variants} />
+
+| Variante | Wofür |
+|---|---|
+| `default` | Primäraktion (Speichern, Erstellen) — eine pro Bereich |
+| `secondary` | Zweitaktion auf gefülltem Grund |
+| `outline` | neutrale Zweitaktion (Abbrechen, Filter); mit `aria-pressed` ein Toggle, mit `data-state="open"` ein offener Trigger |
+| `ghost` | leise neutrale Aktion (Icon-Buttons, Menü-Trigger, Schließen); `aria-pressed` und `data-state="open"` wie bei `outline` |
+| `primary-outline` | semantischer Toggle „Aktivieren" |
+| `destructive` | Bestätigungsschritt einer Löschung („Endgültig löschen") |
+| `destructive-outline` | zweitrangige Gefahr neben anderen Aktionen („Deaktivieren", „Zugriff widerrufen") |
+| `ghost-destructive` | Löschen/Entfernen in Dialog-Fußzeilen, Werkzeugleisten und Zeilen |
+| `link` | Aktion, die wie ein Link im Fließtext steht |
+
+## Toggle und offener Trigger
+
+`outline` und `ghost` stylen sich selbst, sobald die Aufrufstelle
+`aria-pressed` setzt (Filter-Toggles) oder ein Radix-Trigger
+`data-state="open"` trägt (Dropdown offen). Das ARIA-Attribut ist die API —
+kein zusätzliches Prop.
+
+<Canvas of={ButtonStories.ActiveTrigger} />
+
+## Größen
+
+`default`, `sm`, `lg` und `icon` (rund, nur mit `aria-label`):
+
+<Canvas of={ButtonStories.Sizes} />
+
+`field` ist so hoch wie ein gerahmtes Feld (`Input`, `Select`) in derselben
+Zeile und übernimmt dessen Schriftgröße, damit die Zeile als eine
+Bediengruppe wirkt. Bei Feldern mit Beschriftung mit `items-end` kombinieren.
+
+<Canvas of={ButtonStories.FieldRow} />
+
+## Löschen ist immer rot
+
+**Jede Aktion, die etwas löscht oder entfernt, nutzt eine destruktive
+Variante** — `ghost-destructive`, `destructive-outline` oder `destructive`.
+Nie `ghost` oder `outline` mit einem Papierkorb: ein neutraler Button neben
+Abbrechen und Speichern sieht nicht gefährlich aus, auch nicht auf Hover.
+Alle drei destruktiven Varianten sind schon in Ruhe rot (Schrift, Rahmen
+oder Fläche); `ghost-destructive` legt auf Hover zusätzlich den
+Fehler-Container darunter, `destructive-outline` füllt sich rot.
+
+<Canvas of={ButtonStories.DeleteActions} />
+
+| Wo | Variante |
+|---|---|
+| Dialog-Fußzeile, Werkzeugleiste, Auswahlleiste, Tabellen- oder Listenzeile (auch als Icon-Button) | `ghost-destructive` |
+| zweitrangige Gefahr, die neben anderen Aktionen gleichrangig steht | `destructive-outline` |
+| der Bestätigungsschritt („Wirklich löschen?") | `destructive` |
+
+In Menüs gilt dasselbe über `DropdownMenuItem variant="destructive"` bzw.
+`destructive: true` im `ActionMenu`.
+
+```tsx
+// Zeile oder Werkzeugleiste
+<Button variant="ghost-destructive" size="icon" aria-label="Quelle entfernen">
+  <Trash2 aria-hidden className="size-4" />
+</Button>
+
+// Bestätigungsschritt
+<DialogFooter>
+  <DialogClose asChild><Button variant="outline">Abbrechen</Button></DialogClose>
+  <Button variant="destructive" onClick={remove}>Endgültig löschen</Button>
+</DialogFooter>
+```
+
+Bekannte Lücke: das Entfernen-`×` an `PromptInputAttachment` und
+`TokenInputChip` ist noch neutral, behoben in KI-915.
+
+### Muster: Löschen in der Fußzeile eines Dialogs
+
+Ein Editor, dessen Objekt sich löschen lässt (z. B. „Thema löschen" in den
+Thema-Einstellungen): links in der Fußzeile `ghost-destructive` „Löschen"
+neben dem Status, rechts Abbrechen (`outline`) und Speichern (`default`).
+„Löschen" öffnet einen Bestätigungsdialog, dessen eigener Button
+`destructive` ist.
+
+<Canvas of={SettingsDialogStories.DeleteInFooter} />
+
+```tsx
+<SettingsDialog
+  size="xl"
+  fitTo={contentArea}
+  footer={(
+    <>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost-destructive" onClick={() => setConfirming(true)}>
+          <Trash2 aria-hidden="true" className="size-4" />
+          Löschen
+        </Button>
+        <span className="text-sm text-on-surface-variant">{status}</span>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={close}>Abbrechen</Button>
+        <Button onClick={save}>Speichern</Button>
+      </div>
+    </>
+  )}
+  {...rest}
+/>
+```
+
+Die Fußzeile ordnet ihre zwei Kinder links und rechts an; „Löschen" und der
+Status teilen sich deshalb ein linkes Element. `ContentPanel`s `footer`
+folgt demselben Muster.
