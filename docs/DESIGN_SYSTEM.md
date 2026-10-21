@@ -126,6 +126,18 @@ consuming repo** — new exceptions get the same scrutiny there.
   `@ki4jlu/design-system`**. No raw `<button>` / form controls without a
   documented justification in the PR.
 - **No hardcoded colors.** Every color goes through a semantic token.
+- **A delete or remove action is always red** — a destructive `Button`
+  variant, never a neutral `ghost`/`outline` with a trash icon:
+  `ghost-destructive` in dialog footers, toolbars and rows,
+  `destructive-outline` for a secondary danger next to other actions,
+  `destructive` for the confirm step. In menus, `DropdownMenuItem
+  variant="destructive"` / `ActionMenu`'s `destructive: true`. All three
+  button variants are red at rest, not only on hover. Known gap: the remove
+  `×` on `PromptInputAttachment` and `TokenInputChip` is still neutral, fixed
+  in KI-915. Pattern and examples:
+  [COMPONENT_GUIDELINES.md → „Delete and remove actions"](./COMPONENT_GUIDELINES.md#delete-and-remove-actions),
+  stories `Components/Button → Delete Actions` and
+  `Components/SettingsDialog → Delete In Footer`.
 - Compose classes with `cn()` (exported by the package).
 - **Every raw element with a non-zero user-agent margin carries an explicit
   margin utility** (`m-0` unless the design says otherwise): headings, `<p>`,
@@ -171,7 +183,7 @@ consuming repo** — new exceptions get the same scrutiny there.
 |-----------|------|-------|
 | `Badge` (+ `badgeVariants`) | `badge.tsx` / `badge-variants.ts` | status chip: `tone` = neutral/primary/secondary/success/warning/error/info; `appearance` = filled pill or inline text; never wraps its label (`whitespace-nowrap`, **0.46.0**) |
 | `Breadcrumb` (+ List/Item/Link/Page/Separator/Ellipsis, `BreadcrumbBack`) | `breadcrumb.tsx` | **0.49.0.** shadcn Breadcrumb on JLU tokens: a `nav` landmark ("Navigationspfad") with an ordered trail, `BreadcrumbPage` marks the current page (`aria-current`). `BreadcrumbBack` is the **default back navigation of a sub-view**: "‹ Tetris · Mitglieder" as one primary-coloured link above the title (`trail`, `onClick` or `href`, named "Zurück zu Tetris, Mitglieder"). Replaces bare ← icon buttons (COMPONENT_GUIDELINES.md, "Back navigation") |
-| `Button` (+ `buttonVariants`) | `button.tsx` / `button-variants.ts` | variants: default/secondary/outline/ghost/destructive/destructive-outline/link; sizes: default/sm/lg/icon; `asChild` via Radix Slot. **0.47.0.** `size="field"` matches a framed field's height and text for buttons in a form row |
+| `Button` (+ `buttonVariants`) | `button.tsx` / `button-variants.ts` | variants: default/secondary/outline/ghost/destructive/destructive-outline/primary-outline/ghost-destructive/link; sizes: default/sm/lg/field/icon; `asChild` via Radix Slot. **0.47.0.** `size="field"` matches a framed field's height and text for buttons in a form row. **Delete and remove actions always use a destructive variant** (§4; MDX page `Components/Button`) |
 | `Card` (+ Header/Title/Description/Content/Footer) | `card.tsx` | surface + border + `shadow-card` |
 | `PromptInput` (+ `PromptInputTextarea`, `PromptInputAdaptiveTextarea`, `PromptInputButton`, `PromptInputSubmit`, `PromptInputActionMenu*`, `PromptInputAttachments`/`PromptInputAttachment`, `promptInputFrameVariants`, `promptInputControlShape`) | `prompt-input.tsx` / `prompt-input-adaptive-textarea.tsx` / `prompt-input-variants.ts` | **0.42.0.** The chat composer: form + `InputGroup` frame, controls the consumer places (absolute, bottom corners), attachments (dialog, paste, drop) with hover preview. `shape` = `rounded` \| `pill` decides frame **and** control radius in one place (pill expanded → `rounded-2xl`). `PromptInputSubmit`: `status` (AI SDK `ChatStatus`) swaps the glyph, opt-in `voice` + `idle` for speech input. **0.55.0:** `PromptInputAttachment` `status` (`uploading` \| `error`) + `statusMessage` for a consumer that uploads files as they are attached. Vendored file — re-vendor rather than hand-fix upstream patterns |
 | `InputGroup` (+ Addon/Button/Text/Input/Textarea) | `input-group.tsx` | **0.42.0.** shadcn input-group on JLU tokens; `InputGroupButton` follows the enclosing `PromptInput`'s `shape` |
@@ -518,6 +530,13 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **Unreleased — set the version at release** — Docs and stories only; no component, variant or export changed. The entries:
+
+  - **Rule: delete and remove actions always use a destructive `Button` variant.** `ghost-destructive` in dialog footers, toolbars and rows, `destructive-outline` for a secondary danger, `destructive` for the confirm step — never `ghost`/`outline` with a trash icon. In §4, COMPONENT_GUIDELINES.md („Delete and remove actions") and the new MDX page `Components/Button`. The Button variant lists in both docs now name all nine variants and the `field` size.
+  - **Stories.** `Components/Button → Delete Actions` (the three placements) and `Components/SettingsDialog → Delete In Footer` (delete left next to the status, Abbrechen/Speichern right, a `destructive` confirm step). Both check the computed colours against the `--color-error` tokens; the footer story also checks the positions.
+  - **Audit.** Stories that showed delete or revoke on a neutral variant now use `ghost-destructive`: `SidebarCard` (selection bar), `ContentPanel → Settings Editor`, `Tooltip → Disabled Trigger`, `Table` („Widerrufen"). Known gap: the remove `×` on `PromptInputAttachment` and `TokenInputChip` is still neutral, fixed in KI-915.
+  - **For consumers raising their pin.** JLURAG's `KbSettingsDialog` footer „Löschen" moves from `variant="ghost"` to `variant="ghost-destructive"`.
+
 - **0.57.0** — Additive; nothing removed or renamed, and an existing `SettingsDialog` renders as before. The 0.57.0 entries:
 
   - **Feature: `SettingsDialog size="xl"`.** A workspace for editors that are saved explicitly, next to the default 900×640 window for preferences that apply as they change. Full screen below `sm`; from `sm` a fixed 1120×860, capped by the viewport. `data-size` on the dialog.

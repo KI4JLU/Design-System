@@ -35,7 +35,7 @@ function Panels() {
       <div className="flex w-80 flex-col gap-2">
         {selecting && (
           <SidebarSelectionBar aria-label="Auswahl" countLabel="1 ausgewählt" onCancel={() => setSelecting(false)}>
-            <Button variant="ghost" size="icon" aria-label="Löschen"><Trash2 aria-hidden="true" className="size-4" /></Button>
+            <Button variant="ghost-destructive" size="icon" aria-label="Löschen"><Trash2 aria-hidden="true" className="size-4" /></Button>
           </SidebarSelectionBar>
         )}
         <ul className="flex flex-col gap-2">

@@ -84,7 +84,7 @@ export const DisabledTrigger: Story = {
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="inline-flex rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-            <Button variant="ghost" size="icon" aria-label="Löschen" disabled>
+            <Button variant="ghost-destructive" size="icon" aria-label="Löschen" disabled>
               <Trash2 aria-hidden className="h-4 w-4" />
             </Button>
           </span>

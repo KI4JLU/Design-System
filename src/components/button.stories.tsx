@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ListFilter, Trash2 } from "lucide-react";
 import { expect, fn } from "storybook/test";
 import { Button } from "./button";
+import { resolvedColor } from "../test/fixtures/combobox-panel";
 import { Input } from "./input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
@@ -104,6 +105,44 @@ export const SemanticOutlines: Story = {
       </Button>
     </div>
   ),
+};
+
+/**
+ * Löschen und Entfernen sind immer destruktiv — nie `ghost` oder `outline`
+ * mit einem Papierkorb. Welche Variante wohin gehört:
+ *
+ * - `ghost-destructive` in Dialog-Fußzeilen, Werkzeugleisten und Zeilen
+ *   (rote Schrift, auf Hover der Fehler-Container),
+ * - `destructive-outline` für eine zweitrangige Gefahr neben anderen Aktionen,
+ * - `destructive` für den Bestätigungsschritt („Wirklich löschen?").
+ */
+export const DeleteActions: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button variant="ghost-destructive">
+        <Trash2 aria-hidden className="h-4 w-4" />
+        Löschen
+      </Button>
+      <Button variant="ghost-destructive" size="icon" aria-label="Quelle entfernen">
+        <Trash2 aria-hidden className="h-4 w-4" />
+      </Button>
+      <Button variant="destructive-outline">Zugriff widerrufen</Button>
+      <Button variant="destructive">Endgültig löschen</Button>
+    </div>
+  ),
+  // ORACLE: the browser — each button's computed colours against the
+  // `--color-error` / `--color-on-error` tokens resolved on a probe element,
+  // never the variants' class strings. Both themes resolve their own value.
+  play: async ({ canvas, canvasElement }) => {
+    const error = resolvedColor(canvasElement, "var(--color-error)");
+    const onError = resolvedColor(canvasElement, "var(--color-on-error)");
+    for (const name of ["Löschen", "Quelle entfernen", "Zugriff widerrufen"]) {
+      await expect(getComputedStyle(canvas.getByRole("button", { name })).color).toBe(error);
+    }
+    const confirm = getComputedStyle(canvas.getByRole("button", { name: "Endgültig löschen" }));
+    await expect(confirm.backgroundColor).toBe(error);
+    await expect(confirm.color).toBe(onError);
+  },
 };
 
 export const Sizes: Story = {

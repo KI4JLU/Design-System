@@ -40,7 +40,7 @@ governance.
 | Success / online | `bg-success` / `text-success`; soft badge: `bg-success-container text-on-success-container` |
 | Info / pending | `text-info` / `bg-info-container text-on-info-container` |
 | Warning | `text-warning` / `bg-warning-container text-on-warning-container` |
-| Error / destructive | `text-error`; button: `<Button variant="destructive">` |
+| Error / destructive | `text-error`; button: a destructive variant — every delete/remove action uses one ([Delete and remove actions](#delete-and-remove-actions)) |
 | Brand wordmark (use `<Logo>`) | `text-brand-wordmark` (prefix) + `bg-brand text-on-brand` (badge); badge is theme-invariant |
 | Elevation | `shadow-card`, `hover:shadow-card-hover`, `shadow-overlay` |
 
@@ -178,18 +178,67 @@ import { Button } from "@ki4jlu/design-system";
 <Button variant="secondary">Abbrechen</Button>
 <Button variant="outline" size="sm">Filter</Button>
 <Button variant="ghost" size="icon" aria-label="Menü"><Icon name="menu" /></Button>
-<Button variant="destructive">Löschen</Button>
+// Delete in a footer / toolbar:
+<Button variant="ghost-destructive">Löschen</Button>
 
 // Render a router Link with button styling:
 <Button asChild variant="outline">
   <Link to="/widgets/1">Öffnen</Link>
 </Button>
 ```
-- Variants: `default` (primary) · `secondary` · `outline` · `ghost` · `destructive` · `link`.
-- Sizes: `default` · `sm` · `lg` · `icon`.
+- Variants: `default` (primary) · `secondary` · `outline` · `ghost` · `primary-outline` ·
+  `destructive` · `destructive-outline` · `ghost-destructive` · `link`.
+- Sizes: `default` · `sm` · `lg` · `field` (matches a framed field in the same row) · `icon`.
 - Icon-only buttons **must** have an `aria-label`.
 - To style variants elsewhere, import `buttonVariants` from
   `@ki4jlu/design-system-variants` (not from `button.tsx`).
+
+### Delete and remove actions
+
+**Every action that deletes or removes something uses a destructive variant.**
+Never a neutral `ghost` or `outline` with a trash icon: next to Abbrechen and
+Speichern it does not look dangerous, not even on hover. Which one fits where:
+
+| Where | Variant |
+|-------|---------|
+| Dialog footer, toolbar, selection bar, table or list row (also icon-only) | `ghost-destructive` — red text, error container on hover |
+| A secondary danger standing next to other actions ("Deaktivieren", "Zugriff widerrufen") | `destructive-outline` — red border and text, fills red on hover |
+| The confirm step ("Wirklich löschen?") | `destructive` — filled red |
+
+Menus follow the same rule: `<DropdownMenuItem variant="destructive">`, or
+`destructive: true` on an `ActionMenu` action.
+
+```tsx
+// SettingsDialog / ContentPanel footer: delete + status left, Abbrechen + Speichern right.
+// The footer spreads its two children apart, so delete and status share one wrapper.
+footer={(
+  <>
+    <div className="flex items-center gap-3">
+      <Button variant="ghost-destructive" onClick={() => setConfirming(true)}>
+        <Trash2 aria-hidden="true" className="size-4" />
+        Löschen
+      </Button>
+      <span className="text-sm text-on-surface-variant">{status}</span>
+    </div>
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={close}>Abbrechen</Button>
+      <Button onClick={save}>Speichern</Button>
+    </div>
+  </>
+)}
+
+// The confirm step it opens:
+<DialogFooter>
+  <DialogClose asChild><Button variant="outline">Abbrechen</Button></DialogClose>
+  <Button variant="destructive" onClick={remove}>Endgültig löschen</Button>
+</DialogFooter>
+```
+
+Known gap: the remove `×` on `PromptInputAttachment` and `TokenInputChip` is
+still neutral, fixed in KI-915.
+
+Live: Storybook `Components/Button → Delete Actions` and
+`Components/SettingsDialog → Delete In Footer`.
 
 ## Card
 

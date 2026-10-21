@@ -21,7 +21,7 @@ export const SettingsEditor: Story = {
         onClose={() => {}}
         footer={
           <>
-            <Button variant="ghost">Löschen</Button>
+            <Button variant="ghost-destructive">Löschen</Button>
             <div className="flex gap-2"><Button variant="outline">Abbrechen</Button><Button>Speichern</Button></div>
           </>
         }
