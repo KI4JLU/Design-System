@@ -470,7 +470,8 @@ export interface TokenInputChipProps
  * One value in a `TokenInput` (a `listitem`; it must be rendered as one
  * of its children). A pill of the chip's tone: optional leading slot, a
  * status icon for `warning` / `error`, the label (truncated when it is wider
- * than the field) and a remove button named "{label} entfernen". Removing
+ * than the field) and a remove button named "{label} entfernen" — red like
+ * every delete action (error container on hover). Removing
  * moves focus back to the text input, so the keyboard user is never left on
  * a button that just disappeared.
  */
@@ -509,7 +510,7 @@ const TokenInputChip = React.forwardRef<HTMLLIElement, TokenInputChipProps>(
               onRemove();
               chips.focusInput();
             }}
-            className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none hover:bg-current/10 focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none"
+            className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-error outline-none hover:bg-error-container hover:text-on-error-container focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none"
           >
             <X aria-hidden="true" className="size-3.5" />
           </button>

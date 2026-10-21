@@ -267,6 +267,26 @@ export const Chips: Story = {
 };
 
 /**
+ * The remove × is a delete action, so it is red in every tone — on the
+ * neutral person chip, the warning chip and the error chip alike — and lays
+ * the error container under itself on hover.
+ */
+export const RemoveIsRed: Story = {
+  render: () => <AddMembers initial={["amueller", "neu.person", "max mustermann"]} />,
+  // ORACLE: the browser — each × button's computed `color` against
+  // `--color-error` resolved on a probe element, never the class string.
+  // Synthetic hover does not apply `:hover`, so only the resting colour is
+  // pinned here (it already satisfies "red at least on hover").
+  play: async ({ canvas, canvasElement }) => {
+    const error = resolvedColor(canvasElement, "var(--color-error)");
+    for (const label of ["Anna Müller", "neu.person", "max mustermann"]) {
+      const remove = canvas.getByRole("button", { name: `${label} entfernen` });
+      await expect(getComputedStyle(remove).color).toBe(error);
+    }
+  },
+};
+
+/**
  * `aria-invalid` turns the frame's border to the error token, like `Input` —
  * closed on the frame, open on the panel (whose focus ring becomes the error
  * ring). Runs in the pill Style: the frame and its panel keep the field

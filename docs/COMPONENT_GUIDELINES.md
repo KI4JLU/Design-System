@@ -234,8 +234,8 @@ footer={(
 </DialogFooter>
 ```
 
-Known gap: the remove `×` on `PromptInputAttachment` and `TokenInputChip` is
-still neutral, fixed in KI-915.
+The remove `×` on a `PromptInputAttachment` or `TokenInputChip` is a remove
+action too: red, with the error container on hover.
 
 Live: Storybook `Components/Button → Delete Actions` and
 `Components/SettingsDialog → Delete In Footer`.

@@ -351,7 +351,14 @@ export function PromptInputAttachment({
           {...props}
         >
           <div className="relative size-5 shrink-0">
-            <div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-surface">
+            {/* JLU: only an image thumbnail gets the rounded frame; the file,
+                spinner and alert glyphs sit on the chip without a box. */}
+            <div
+              className={cn(
+                "absolute inset-0 flex size-5 items-center justify-center",
+                isImage && !status && "overflow-hidden rounded bg-surface",
+              )}
+            >
               {status === "uploading" ? (
                 <Loader2Icon aria-hidden="true" className="size-3 animate-spin text-on-surface-variant" />
               ) : status === "error" ? (
@@ -376,13 +383,14 @@ export function PromptInputAttachment({
           {statusText && <span className="sr-only">{`: ${statusText}`}</span>}
           <Button
             aria-label="Remove attachment"
-            className="absolute -top-2 -right-2 z-10 size-5 cursor-pointer rounded-full border border-outline-variant bg-surface-container-lowest p-0 text-on-surface shadow-card opacity-0 transition-opacity hover:bg-surface-container-high focus-visible:opacity-100 group-hover:opacity-100 [&>svg]:size-3"
+            className="absolute -top-2 -right-2 z-10 size-5 cursor-pointer rounded-full border border-outline-variant bg-surface-container-lowest p-0 shadow-card opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [&>svg]:size-3"
             onClick={(e) => {
               e.stopPropagation();
               attachments.remove(data.id);
             }}
             type="button"
-            variant="ghost"
+            // JLU: removing is a delete action — red like every other (KI-915).
+            variant="ghost-destructive"
           >
             <XIcon />
             <span className="sr-only">Remove</span>
@@ -1383,11 +1391,14 @@ export type PromptInputHoverCardContentProps = ComponentProps<
   typeof HoverCardContent
 >;
 
+// JLU: opens above its trigger by default (the attachment preview would
+// otherwise cover the composer); Radix still flips it when there is no room.
 export const PromptInputHoverCardContent = ({
   align = "start",
+  side = "top",
   ...props
 }: PromptInputHoverCardContentProps) => (
-  <HoverCardContent align={align} {...props} />
+  <HoverCardContent align={align} side={side} {...props} />
 );
 
 export type PromptInputTabsListProps = HTMLAttributes<HTMLDivElement>;
