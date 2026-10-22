@@ -61,7 +61,7 @@ Decided:      <owner>, <date>, <PR>
 ```
 
 A compact index (ID, title, status, enforcement) is generated from the records for agents and for
-`code-reviewer`. Consumer repos reference that index from their CLAUDE.md, not the full pages.
+reviews. Consumer repos reference that index from their CLAUDE.md, not the full pages.
 
 **Today:** no registry, no IDs. Existing rules live unnumbered in COMPONENT_GUIDELINES.md and
 DESIGN_SYSTEM.md §4. They migrate into records as part of building the registry.
@@ -78,7 +78,7 @@ Every accepted rule names the strongest level that can carry it:
 3. **runtime** — a development-only `console.warn` with the rule ID, for cases lint cannot see
    (wrapped components, computed children).
 4. **visual** — story/screenshot tests on the canonical do-stories.
-5. **review-only** — checked by `code-reviewer` against the index. This is **debt**: a rule may be
+5. **review-only** — checked in code review against the index. This is **debt**: a rule may be
    accepted at this level only when the record says why nothing stronger fits, and it stays
    visible in the index as such.
 

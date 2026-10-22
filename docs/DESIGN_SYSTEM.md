@@ -160,6 +160,10 @@ consuming repo** — new exceptions get the same scrutiny there.
   merge.
 - New components follow shadcn/ui patterns (Radix primitives + cva + tokens),
   and `npx shadcn@latest add <component>` is the preferred way to start one.
+  **Premade components first (standing rule):** where a shadcn registry already
+  has the component (shadcn/ui, AI Elements, …), it is imported as published
+  and only normalised, never rewritten. The rule and the allowed changes are in
+  [COMPONENT_GUIDELINES.md → „Premade components first"](./COMPONENT_GUIDELINES.md#premade-components-first--a-standing-rule).
   A generated file is **not** mergeable as emitted: it ships shadcn's own token
   vocabulary, the unified `radix-ui` import, an inline `cva` map, and it writes
   a token block into `src/tokens.css`. The canonical, ordered normalisation

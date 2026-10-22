@@ -44,11 +44,10 @@ and record the decision (with date) in the description.
 | `review: changes requested` | `87vv36kmidv9` |
 | `review: comments` | `9ftpe8ba6nqh` |
 
-The three `review:` labels are the reviewer's verdict on the board: **the code-reviewer stamps its
-own verdict label (`toggle_card_label`), never the PM** — a verdict transmitted by the PM is a
-verdict the PM could shade. `approved` and `changes requested` are mutually exclusive;
-`review: comments` is **additive** (non-blocking findings, legal next to `approved`). A card wearing
-both `approved` and `changes requested` is a broken state to report, not to tidy up.
+The three `review:` labels record the outcome of the card's Codex review (`toggle_card_label`):
+`approved` when no blocking finding remains, `changes requested` while one does, and `comments`
+(additive, legal next to `approved`) for findings that were skipped. `approved` and
+`changes requested` are mutually exclusive; swap one for the other, never wear both.
 
 > If a call fails with a stale-id error (board recreated, lists renamed, etc.), re-resolve:
 > `list_workspaces` → the workspace → `get_board` with the board publicId → read the current
@@ -63,7 +62,7 @@ Cards on this board are written in **English** (titles and descriptions).
 ## The core rule: `In Progress` must mirror reality
 
 **Whenever you are actively working a milestone, exactly that card must be in `In Progress`.**
-This applies to **carded work** (the pipeline lane). A quick-edit batch (see the `project-manager`
+This applies to **carded work** (the card lane). A quick-edit batch (see the `project-manager`
 skill) needs no card: its record is the PR. If a batch completes an existing card, move that card
 to `Done` with the PR record once the batch merges.
 
@@ -90,22 +89,19 @@ Concretely, on every carded task:
 ## The PM owns planning and every card move
 
 Card planning (creating cards, writing briefs, attaching labels) and **every list move** belong
-to the PM — the orchestrating session. Worker and reviewer agents never move cards; they record
-their result as a card comment, and the PM moves the card based on that report. The move is due
-**immediately when the stage completes**, in the same session — a comment describing the new
-state without the corresponding move is exactly how the board goes stale.
+to the PM — the main session, which also does the work. The move is due **immediately when the
+stage completes**, in the same session — a comment describing the new state without the
+corresponding move is exactly how the board goes stale.
 
 | Stage just completed | PM moves the card to |
 |---|---|
-| worker reports finished, gates green | `Code Review` |
-| reviewer reports **PASS** | stays in `Code Review` (awaits merge) |
-| reviewer reports **FAIL** | back to `In Progress` |
+| implemented, gates green, Codex review started | `Code Review` |
+| Codex review: no blocking finding left | stays in `Code Review` (awaits merge) |
+| Codex review: blocking finding to fix | back to `In Progress` |
 | PR merged (or merge observed) | `Done`, with a comment citing PR number + merge commit |
 
 If the merge happens outside a session (e.g. the owner merges on GitHub), the **first session
-that notices the merge** makes the `Done` move. A PM delegating work must fold each agent's
-report into the board before treating the delegation as finished — an unmoved card means the
-PM's job is not done yet.
+that notices the merge** makes the `Done` move.
 
 **Session-start reconciliation (mandatory):** `get_board`, and for every card in `In Progress`
 and `Code Review`, cross-check against git — is the card's branch/PR merged into `main`
@@ -119,13 +115,12 @@ what comes next. Finishing one stage **is** the trigger for dispatching the next
 
 1. Pick the top workable card (`In Progress` first, then `To Do` top-down; respect
    dependencies noted on cards). Move it to `In Progress`.
-2. Dispatch a **worker** agent (in a temporary worktree, per CLAUDE.md). Fold its report into
-   the card, move to `Code Review`.
-3. Dispatch an independent **reviewer** agent over the worker's diff.
-   - **FAIL** → card back to `In Progress`, re-dispatch the worker with the findings.
-   - **PASS** → commit on the feature branch, open the PR, merge it, card → `Done` with
+2. Implement it on a feature branch (a temporary worktree while a quick-edit batch is open, per
+   CLAUDE.md). Run the five gates, move the card to `Code Review`, run the Codex review.
+   - **Blocking finding** → card back to `In Progress`, fix it, review again.
+   - **Clean** → commit on the feature branch, open the PR, merge it, card → `Done` with
      PR number + merge commit.
-4. Go to 1.
+3. Go to 1.
 
 A card blocked on input only the user can give goes to `Needs Decision` (rule above) and the
 loop continues with the next card — a blocked card never stalls the loop. The loop ends only

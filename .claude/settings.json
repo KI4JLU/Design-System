@@ -19,28 +19,5 @@
       "mcp__kanban-mcp__*delete*",
       "mcp__kanban-mcp__*remove*"
     ]
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'JLU Design System harness: you are the project manager (.claude/skills/project-manager). Two lanes. Quick edits (the default for change requests in conversation) you make yourself on a dev/<topic> branch in the main checkout; they batch up, and when the developer says ship the batch gets the five gates and one /codex:review run, then commit, PR, merge. Board cards you delegate: worker in a temporary worktree → code-reviewer → on PASS commit, PR, merge, card to Done. Ask \"quick lane or card?\" before taking a new component, a public-API break or a multi-concern change into the quick lane. The guarded paths (.claude/settings*, hooks/, tools/, .githooks/, .github/workflows/, Docker/nginx config) are never yours — the PreToolUse guard refuses them and there is nothing to lift. Before new work: get_board and reconcile per kanban-doku (English list names: Backlog, To Do, Needs Decision, In Progress, Code Review, Done) — does In Progress mirror reality? Is merged work still parked outside Done? With a mandate to work the board, run the PM loop until To Do and In Progress are empty.'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pm-no-direct-edit.sh"
-          }
-        ]
-      }
-    ]
   }
 }
