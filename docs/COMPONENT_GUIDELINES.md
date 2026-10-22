@@ -56,6 +56,45 @@ generated files are normalised before merge. This section is the canonical
 reference for that normalisation; DESIGN_SYSTEM.md §4/§6 point here rather than
 restating it.
 
+### Premade components first — a standing rule
+
+**If a premade component exists in a shadcn registry (shadcn/ui, AI Elements
+at `elements.ai-sdk.dev`, or another free registry), the DS takes it as
+published. It does not write its own.** This holds whether or not a card
+mentions it. A component is built from scratch only when no registry has one,
+and the card says so.
+
+1. **Import, don't port.** Install with `npx shadcn@latest add <name or registry
+   URL>`. For AI Elements that URL is
+   `https://elements.ai-sdk.dev/api/registry/<name>.json`, the current source
+   (the older `registry.ai-sdk.dev/<name>.json` serves a stale revision). The
+   `ai-elements` CLI does the same, but it is announced as deprecated, and
+   `npx ai-elements` without `add <name>` installs **every** component. Copying the registry JSON and
+   rewriting the code by hand is not an import. If the CLI fails, report it as a
+   blocker. Don't work around it. Neither CLI may overwrite an existing DS file
+   (`badge.tsx`, `shimmer.tsx`, …); revert any it touched.
+2. **Change only what this checklist requires.** The allowed changes are the
+   [post-generation checklist](#post-generation-checklist) steps (JLU tokens,
+   the reverted `tokens.css` injection, the `@radix-ui/react-*` import, the
+   sibling `*-variants.ts`, stories and tests), plus:
+   - pointing a registry dependency at the **existing DS primitive** of the
+     same name (Shimmer, Badge, CodeBlock, …) instead of a second copy;
+   - dropping a heavy runtime the DS deliberately does not ship (`motion`,
+     `streamdown`), with the smallest change that keeps the component working;
+   - default labels translated to German, as a change to the string literals
+     only (the logic that picks them stays upstream's);
+   - a change a gate forces (e.g. moving a hook into a `*-context.ts` file for
+     `react-refresh`), named in the PR.
+3. **Everything else stays upstream.** That covers the component structure,
+   behaviour, prop names and types, which elements are rendered, `asChild`, and
+   function vs `forwardRef`. A bug or a11y defect in upstream is not fixed
+   inside the import. It gets its own commit after the import,
+   so the fix is visible against the original.
+4. **Prove fidelity.** The PR lists the registry URL of every imported item.
+   Diff each file against the registry source; every remaining hunk must map to
+   an allowed change from step 2. The review checks this diff, not only the
+   behaviour.
+
 ### shadcn → JLU token mapping
 
 The CLI styles components against its own Tailwind-4 CSS-variable set
