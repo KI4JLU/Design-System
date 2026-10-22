@@ -20,12 +20,20 @@ export interface CheckboxProps
    * says why it is fixed.
    */
   locked?: boolean;
+  /**
+   * `destructive` ticks in the error colour: the box marks something for
+   * removal (a delete selection), not a choice to keep. Unticked it looks as
+   * usual. Ignored when `locked`.
+   */
+  tone?: CheckboxTone;
 }
+
+export type CheckboxTone = "default" | "destructive";
 
 const Checkbox = React.forwardRef<
   React.ComponentRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, locked = false, disabled, ...props }, ref) => (
+>(({ className, locked = false, tone = "default", disabled, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     disabled={locked || disabled}
@@ -36,6 +44,10 @@ const Checkbox = React.forwardRef<
       "data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-on-primary",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
       "disabled:cursor-not-allowed disabled:opacity-60",
+      tone === "destructive" && !locked && [
+        "data-[state=checked]:border-error data-[state=checked]:bg-error data-[state=checked]:text-on-error",
+        "data-[state=indeterminate]:border-error data-[state=indeterminate]:bg-error data-[state=indeterminate]:text-on-error",
+      ],
       locked && [
         "border-transparent bg-surface-container-high text-on-surface disabled:cursor-default disabled:opacity-100",
         "data-[state=checked]:border-transparent data-[state=checked]:bg-surface-container-high data-[state=checked]:text-on-surface",
