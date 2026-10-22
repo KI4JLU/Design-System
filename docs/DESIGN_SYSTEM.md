@@ -544,7 +544,7 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
-- **Unreleased — set the version at release** — Type fix only.
+- **0.59.1** — Type fix only.
 
   - **Fix: `ReasoningContent` accepts any `children`.** Its type still said `string`, a leftover of the streamdown renderer the import dropped, so a consumer rendering its own Markdown inside it failed to type-check; it renders `ReactNode` as before.
 
