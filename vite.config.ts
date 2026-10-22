@@ -37,7 +37,7 @@ export default defineConfig({
       fileName: "index"
     },
     rollupOptions: {
-      external: [/^react($|\/)/, /^react-dom($|\/)/, /^@radix-ui\//, /^radix-ui($|\/)/, "class-variance-authority", "clsx", "tailwind-merge", /^lucide-react($|\/)/, /^@shadcn\/react($|\/)/, /^@tiptap\//, /^pdfjs-dist($|\/)/]
+      external: [/^react($|\/)/, /^react-dom($|\/)/, /^@radix-ui\//, /^radix-ui($|\/)/, "class-variance-authority", "clsx", "tailwind-merge", /^lucide-react($|\/)/, /^@shadcn\/react($|\/)/, /^@tiptap\//, /^pdfjs-dist($|\/)/, /^vaul($|\/)/]
     }
   },
   test: {
