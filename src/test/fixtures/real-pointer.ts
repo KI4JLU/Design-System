@@ -70,6 +70,17 @@ export async function realUnhover(el: Element): Promise<boolean> {
   return true;
 }
 
+/**
+ * Presses keys on the real keyboard (Playwright), so the browser's own focus
+ * heuristics apply (`:focus-visible`). `false` outside Vitest (skip the checks).
+ */
+export async function realKeyboard(keys: string): Promise<boolean> {
+  const vitest = await vitestBrowser();
+  if (!vitest) return false;
+  await vitest.userEvent.keyboard(keys);
+  return true;
+}
+
 /** WCAG 2.x contrast ratio of two computed `rgb(…)` / `rgba(…)` colours (alpha ignored). */
 export function contrastRatio(a: string, b: string): number {
   const luminance = (color: string) => {
