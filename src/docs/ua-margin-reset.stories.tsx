@@ -1,6 +1,11 @@
 import * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
+import { CopyIcon } from "lucide-react";
+import { ChainOfThoughtImage } from "../components/chain-of-thought";
+import { MessageAction } from "../components/message";
+import { Reasoning, ReasoningTrigger } from "../components/reasoning";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../components/tooltip";
 import { CodeBlock } from "../components/code-block";
 import {
   Dialog,
@@ -241,5 +246,81 @@ export const NothingMoves: Story = {
     const dialog = query(document, '[data-testid="dialog"]');
     await expect(margins(query(dialog, "h2"))).toBe("0px 0px 0px 0px");
     await expect(margins(query(dialog, "p"))).toBe("0px 0px 0px 0px");
+  },
+};
+
+/**
+ * Dieselbe Gegenprobe für die AI-Komponenten (KI-916, KI-921): der Tooltip
+ * einer `MessageAction` (sein Text ist ein `<p>`), die Bildunterschrift von
+ * `ChainOfThoughtImage` und die Standard-Beschriftungen von
+ * `ReasoningTrigger` (fertig und während des Streams, `Shimmer`).
+ */
+export const AiComponentsDoNotMove: Story = {
+  render: () => (
+    <WithUaMarginRevert>
+      <div className="flex flex-col items-start gap-stack-lg p-8 pt-16" data-testid="ai-probe">
+        <p className="text-body-base text-on-surface-variant" data-testid="ai-control">
+          Kontrollabsatz ohne Rand-Utility
+        </p>
+        <div className="flex gap-16">
+          <MessageAction tooltip="Kopieren">
+            <CopyIcon className="size-4" />
+          </MessageAction>
+          <Tooltip open>
+            <TooltipTrigger asChild>
+              <span data-testid="reference-trigger">Referenz</span>
+            </TooltipTrigger>
+            <TooltipContent data-testid="reference-tooltip">Kopieren</TooltipContent>
+          </Tooltip>
+        </div>
+        <div data-testid="cot-image">
+          <ChainOfThoughtImage caption="Abbildung 1">
+            <span>Bild</span>
+          </ChainOfThoughtImage>
+        </div>
+        <div data-testid="reasoning-done">
+          <Reasoning duration={3}>
+            <ReasoningTrigger />
+          </Reasoning>
+        </div>
+        <div data-testid="reasoning-streaming">
+          <Reasoning isStreaming>
+            <ReasoningTrigger />
+          </Reasoning>
+        </div>
+      </div>
+    </WithUaMarginRevert>
+  ),
+  play: async ({ canvasElement, userEvent }) => {
+    const probe = query(canvasElement, '[data-testid="ai-probe"]');
+    // Der Reset ist aktiv: der Kontrollabsatz bekommt den User-Agent-Rand.
+    await expect(margins(query(probe, '[data-testid="ai-control"]'))).toBe("16px 0px 16px 0px");
+
+    // MessageAction-Tooltip: sein <p> hat keinen Rand, und er ist so hoch wie
+    // der Standard-Tooltip mit demselben einzeiligen Text.
+    await userEvent.hover(within(probe as HTMLElement).getByRole("button", { name: "Kopieren" }));
+    const actionTooltip = await waitFor(() => {
+      const el = [...document.querySelectorAll('[data-slot="tooltip-content"]')].find(
+        (c) => !c.matches('[data-testid="reference-tooltip"]'),
+      );
+      if (!el) throw new Error("MessageAction-Tooltip nicht offen");
+      return el;
+    });
+    await expect(margins(query(actionTooltip, "p"))).toBe("0px 0px 0px 0px");
+    const reference = query(document, '[data-testid="reference-tooltip"]');
+    await expect(actionTooltip.getBoundingClientRect().height).toBe(
+      reference.getBoundingClientRect().height,
+    );
+
+    await expect(margins(query(probe, '[data-testid="cot-image"] p'))).toBe("0px 0px 0px 0px");
+
+    // ReasoningTrigger: kein <p> im <button> (Inhaltsmodell), also kein Rand.
+    for (const id of ["reasoning-done", "reasoning-streaming"]) {
+      const trigger = query(probe, `[data-testid="${id}"] button`);
+      await expect(trigger.querySelector("p, h1, h2, h3, h4, h5, h6, div")).toBeNull();
+      for (const child of trigger.children) {
+        await expect(margins(child)).toBe("0px 0px 0px 0px");
+      }
+    }
   },
 };

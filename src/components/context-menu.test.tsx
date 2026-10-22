@@ -11,6 +11,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "./context-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "./dropdown-menu";
 
 // Oracles for this file, independent of the DS file:
 // - shadcn/ui's registry source of `context-menu`
@@ -119,5 +120,86 @@ describe("ContextMenu", () => {
       "destructive",
     );
     expect(screen.getByText("⌘C")).toHaveAttribute("data-slot", "context-menu-shortcut");
+  });
+});
+
+// DS fixes, each checked against the defect:
+// - UI Events / ARIA APG: the context-menu key (and Shift+F10 on Windows/Linux)
+//   dispatches `contextmenu` on the FOCUSED element — a consumer's own
+//   focusable trigger must receive it.
+// - A long-press on touch must not also start a text selection / the iOS
+//   callout; a mouse keeps selecting text.
+// - COMPONENT_GUIDELINES rule 3: no manual `dark:` colour variants.
+// - DropdownMenu is the DS menu reference: same disabled dimming.
+const classesOf = (el: Element) => (el.getAttribute("class") ?? "").split(/\s+/);
+
+describe("ContextMenu DS fixes", () => {
+  it("takes a consumer's focusable element as trigger via asChild; contextmenu on it opens (fix #1)", async () => {
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <button type="button">Antwort-Aktionen</button>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem>Kopieren</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    const button = screen.getByRole("button", { name: "Antwort-Aktionen" });
+    expect(button).toHaveAttribute("data-slot", "context-menu-trigger");
+    await userEvent.tab();
+    expect(button).toHaveFocus();
+    fireEvent.contextMenu(button);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  it("stops text selection and the callout on touch pointers only, opt-out via className (fix #2)", () => {
+    const { rerender } = render(<ContextMenu><ContextMenuTrigger>Text</ContextMenuTrigger></ContextMenu>);
+    const trigger = screen.getByText("Text");
+    expect(trigger).toHaveClass("pointer-coarse:select-none", "pointer-coarse:[-webkit-touch-callout:none]");
+    expect(trigger).not.toHaveClass("select-none");
+    rerender(
+      <ContextMenu>
+        <ContextMenuTrigger className="pointer-coarse:select-text">Text</ContextMenuTrigger>
+      </ContextMenu>,
+    );
+    expect(screen.getByText("Text")).toHaveClass("pointer-coarse:select-text");
+    expect(screen.getByText("Text")).not.toHaveClass("pointer-coarse:select-none");
+  });
+
+  it("uses no manual dark: variant on any part (fix #3)", () => {
+    render(<Subject />);
+    fireEvent.contextMenu(trigger());
+    const parts = [trigger(), ...document.querySelectorAll("[data-slot^=context-menu]")];
+    for (const el of parts) {
+      expect(classesOf(el).filter((c) => c.includes("dark:"))).toEqual([]);
+    }
+  });
+
+  it("dims a disabled item like DropdownMenu does (fix #6)", () => {
+    render(
+      <>
+        <DropdownMenu open>
+          <DropdownMenuContent>
+            <DropdownMenuItem disabled>Dropdown</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <ContextMenu>
+          <ContextMenuTrigger>Ziel</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem disabled>Kontext</ContextMenuItem>
+            <ContextMenuCheckboxItem disabled>Kontext-Haken</ContextMenuCheckboxItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </>,
+    );
+    fireEvent.contextMenu(screen.getByText("Ziel"));
+    const dim = (text: string) =>
+      classesOf(screen.getByText(text).closest("[role^=menuitem]")!).filter((c) =>
+        c.startsWith("data-[disabled]:opacity-"),
+      );
+    expect(dim("Dropdown")).toHaveLength(1);
+    expect(dim("Kontext")).toEqual(dim("Dropdown"));
+    expect(dim("Kontext-Haken")).toEqual(dim("Dropdown"));
   });
 });

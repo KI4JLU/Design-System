@@ -506,3 +506,27 @@ describe("MessageBranchPage format (consumer translation)", () => {
     expect(screen.getByText("2 of 3")).toBeInTheDocument();
   });
 });
+
+describe("MessageBranchPrevious/Next formatLabel (consumer translation)", () => {
+  // Oracle: the consumer's formatter names the buttons from the 1-based version
+  // each one goes to and the total — the same numbers the German default uses.
+  it("names Previous/Next through formatLabel and follows steps", async () => {
+    render(
+      <MessageBranch>
+        <MessageBranchContent>
+          <p key="1">eins</p>
+          <p key="2">zwei</p>
+          <p key="3">drei</p>
+        </MessageBranchContent>
+        <MessageBranchSelector aria-label="Versions">
+          <MessageBranchPrevious formatLabel={(t, n) => `Previous version (${t} of ${n})`} />
+          <MessageBranchNext formatLabel={(t, n) => `Next version (${t} of ${n})`} />
+        </MessageBranchSelector>
+      </MessageBranch>,
+    );
+    expect(await screen.findByRole("button", { name: "Previous version (3 of 3)" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next version (2 of 3)" }));
+    expect(screen.getByRole("button", { name: "Previous version (1 of 3)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next version (3 of 3)" })).toBeInTheDocument();
+  });
+});

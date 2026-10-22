@@ -108,7 +108,7 @@ export const MessageAction = ({
           {/* Inverse surface, not the DS Tooltip's primary: on a primary user
               bubble a primary tooltip disappears into it (message actions only) */}
           <TooltipContent className="bg-inverse-surface text-inverse-on-surface">
-            <p>{tooltip}</p>
+            <p className="m-0">{tooltip}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -298,10 +298,14 @@ export const MessageBranchSelector = ({
   );
 };
 
-export type MessageBranchPreviousProps = ComponentProps<typeof Button>;
+export type MessageBranchPreviousProps = ComponentProps<typeof Button> & {
+  /** The button's name from the version it goes to (1-based) and the total. */
+  formatLabel?: (target: number, total: number) => string;
+};
 
 export const MessageBranchPrevious = ({
   children,
+  formatLabel = (target, total) => `Vorherige Version (${target} von ${total})`,
   ...props
 }: MessageBranchPreviousProps) => {
   const { currentBranch, goToPrevious, totalBranches } = useMessageBranch();
@@ -309,7 +313,7 @@ export const MessageBranchPrevious = ({
 
   return (
     <Button
-      aria-label={`Vorherige Version (${target + 1} von ${totalBranches})`}
+      aria-label={formatLabel(target + 1, totalBranches)}
       disabled={totalBranches <= 1}
       onClick={goToPrevious}
       size="icon"
@@ -322,10 +326,14 @@ export const MessageBranchPrevious = ({
   );
 };
 
-export type MessageBranchNextProps = ComponentProps<typeof Button>;
+export type MessageBranchNextProps = ComponentProps<typeof Button> & {
+  /** The button's name from the version it goes to (1-based) and the total. */
+  formatLabel?: (target: number, total: number) => string;
+};
 
 export const MessageBranchNext = ({
   children,
+  formatLabel = (target, total) => `Nächste Version (${target} von ${total})`,
   ...props
 }: MessageBranchNextProps) => {
   const { currentBranch, goToNext, totalBranches } = useMessageBranch();
@@ -333,7 +341,7 @@ export const MessageBranchNext = ({
 
   return (
     <Button
-      aria-label={`Nächste Version (${target + 1} von ${totalBranches})`}
+      aria-label={formatLabel(target + 1, totalBranches)}
       disabled={totalBranches <= 1}
       onClick={goToNext}
       size="icon"

@@ -218,7 +218,7 @@ export const ChainOfThoughtImage = memo(
       <div className="relative flex max-h-[22rem] items-center justify-center overflow-hidden rounded-lg bg-surface-container p-3">
         {children}
       </div>
-      {caption && <p className="text-on-surface-variant text-xs">{caption}</p>}
+      {caption && <p className="m-0 text-on-surface-variant text-xs">{caption}</p>}
     </div>
   )
 );
