@@ -74,6 +74,23 @@ export {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "./components/dropdown-menu";
+export {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuRadioItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuGroup,
+  ContextMenuPortal,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuRadioGroup,
+} from "./components/context-menu";
 export { fieldVariants } from "./components/field-variants";
 export { FilterChips, type FilterChipsProps, type FilterChipsOption } from "./components/filter-chips";
 export { filterChipVariants } from "./components/filter-chips-variants";
@@ -236,6 +253,34 @@ export {
   Source,
   type SourceProps,
 } from "./components/sources";
+export {
+  InlineCitation,
+  type InlineCitationProps,
+  InlineCitationText,
+  type InlineCitationTextProps,
+  InlineCitationCard,
+  type InlineCitationCardProps,
+  InlineCitationCardTrigger,
+  type InlineCitationCardTriggerProps,
+  InlineCitationCardBody,
+  type InlineCitationCardBodyProps,
+  InlineCitationSource,
+  type InlineCitationSourceProps,
+  InlineCitationQuote,
+  type InlineCitationQuoteProps,
+} from "./components/inline-citation";
+export {
+  Drawer,
+  DrawerPortal,
+  DrawerOverlay,
+  DrawerTrigger,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
+} from "./components/drawer";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";

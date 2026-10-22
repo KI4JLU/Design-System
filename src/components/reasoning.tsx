@@ -142,18 +142,18 @@ export type ReasoningTriggerProps = Omit<
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming) {
-    return <Shimmer duration={1}>Denke nach …</Shimmer>;
+    return <Shimmer as="span" duration={1}>Denke nach …</Shimmer>;
   }
   if (duration === undefined) {
-    return <p>Nachgedacht für ein paar Sekunden</p>;
+    return <span>Nachgedacht für ein paar Sekunden</span>;
   }
   if (duration === 0) {
-    return <p>Nachgedacht für weniger als 1 Sekunde</p>;
+    return <span>Nachgedacht für weniger als 1 Sekunde</span>;
   }
   if (duration === 1) {
-    return <p>Nachgedacht für 1 Sekunde</p>;
+    return <span>Nachgedacht für 1 Sekunde</span>;
   }
-  return <p>Nachgedacht für {duration} Sekunden</p>;
+  return <span>Nachgedacht für {duration} Sekunden</span>;
 };
 
 export const ReasoningTrigger = memo(

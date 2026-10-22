@@ -63,9 +63,18 @@ export const SourcesContent = ({
   />
 );
 
-export type SourceProps = ComponentProps<"a">;
+export type SourceProps = ComponentProps<"a"> & {
+  /** Visually hidden hint while the link opens a new tab. */
+  newTabLabel?: string;
+};
 
-export const Source = ({ href, title, children, ...props }: SourceProps) => (
+export const Source = ({
+  href,
+  title,
+  children,
+  newTabLabel = "(öffnet in neuem Tab)",
+  ...props
+}: SourceProps) => (
   <a
     className="flex items-center gap-2 rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     href={href}
@@ -80,7 +89,7 @@ export const Source = ({ href, title, children, ...props }: SourceProps) => (
       </>
     )}
     {(props.target ?? "_blank") === "_blank" && (
-      <span className="sr-only"> (öffnet in neuem Tab)</span>
+      <span className="sr-only"> {newTabLabel}</span>
     )}
   </a>
 );
