@@ -11,7 +11,9 @@ import {
   expectJoinedPanel,
   page,
   resolvedColor,
+  resolvedStyle,
 } from "../test/fixtures/combobox-panel";
+import { contrastRatio, realHover, realUnhover } from "../test/fixtures/real-pointer";
 
 /*
  * Oracle for every play function below: the DOM as the browser and assistive
@@ -263,6 +265,52 @@ export const Chips: Story = {
       "Clara Weber",
     ]);
     await expect(document.activeElement).toBe(input);
+  },
+};
+
+/**
+ * The remove × is a delete action, so it is red in every tone — on the
+ * neutral person chip, the warning chip and the error chip alike — and fills
+ * red on hover (`error` with `on-error`), which stands out on every chip
+ * background, the error chip's own container included.
+ */
+export const RemoveIsRed: Story = {
+  render: () => <AddMembers initial={["amueller", "neu.person", "max mustermann"]} />,
+  // ORACLE: the browser — each × button's computed colours against
+  // `--color-error` / `--color-on-error` resolved on probe elements, and the
+  // WCAG contrast of the hover fill against the chip's own computed
+  // background (≥ 3:1, the non-text minimum); never the class strings. The
+  // hover is the real Playwright pointer (`realHover`), so `:hover` applies;
+  // in the Storybook UI, outside the Vitest runner, the hover step is skipped.
+  play: async ({ canvas, canvasElement, step }) => {
+    const error = resolvedColor(canvasElement, "var(--color-error)");
+    const errorFill = resolvedStyle(canvasElement, "backgroundColor", "var(--color-error)");
+    const onError = resolvedColor(canvasElement, "var(--color-on-error)");
+    for (const label of ["Anna Müller", "neu.person", "max mustermann"]) {
+      await step(`${label}: red at rest, filled red on hover`, async () => {
+        const remove = canvas.getByRole("button", { name: `${label} entfernen` });
+        await expect(getComputedStyle(remove).color).toBe(error);
+        if (!(await realHover(remove))) return;
+        await expect(getComputedStyle(remove).backgroundColor).toBe(errorFill);
+        await expect(getComputedStyle(remove).color).toBe(onError);
+        const chip = remove.closest("li")!;
+        await expect(
+          contrastRatio(getComputedStyle(remove).backgroundColor, getComputedStyle(chip).backgroundColor),
+        ).toBeGreaterThanOrEqual(3);
+        await realUnhover(remove);
+      });
+    }
+  },
+};
+
+/** The same in the dark theme, where every chip and the error token change. */
+export const RemoveIsRedDark: Story = {
+  ...RemoveIsRed,
+  globals: { theme: "dark" },
+  play: async (context) => {
+    // The story really runs dark (`ThemeProvider` is the only writer of `<html data-theme>`).
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    await RemoveIsRed.play!(context);
   },
 };
 

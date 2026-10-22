@@ -132,9 +132,8 @@ consuming repo** — new exceptions get the same scrutiny there.
   `destructive-outline` for a secondary danger next to other actions,
   `destructive` for the confirm step. In menus, `DropdownMenuItem
   variant="destructive"` / `ActionMenu`'s `destructive: true`. All three
-  button variants are red at rest, not only on hover. Known gap: the remove
-  `×` on `PromptInputAttachment` and `TokenInputChip` is still neutral, fixed
-  in KI-915. Pattern and examples:
+  button variants are red at rest, not only on hover. The remove `×` on
+  `PromptInputAttachment` and `TokenInputChip` is red too. Pattern and examples:
   [COMPONENT_GUIDELINES.md → „Delete and remove actions"](./COMPONENT_GUIDELINES.md#delete-and-remove-actions),
   stories `Components/Button → Delete Actions` and
   `Components/SettingsDialog → Delete In Footer`.
@@ -530,12 +529,16 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
-- **Unreleased — set the version at release** — Docs and stories only; no component, variant or export changed. The entries:
+- **Unreleased — set the version at release** — Nothing removed or renamed; no export, prop or default changed. The attachment chip and the chip `×` change their look. The entries:
 
   - **Rule: delete and remove actions always use a destructive `Button` variant.** `ghost-destructive` in dialog footers, toolbars and rows, `destructive-outline` for a secondary danger, `destructive` for the confirm step — never `ghost`/`outline` with a trash icon. In §4, COMPONENT_GUIDELINES.md („Delete and remove actions") and the new MDX page `Components/Button`. The Button variant lists in both docs now name all nine variants and the `field` size.
   - **Stories.** `Components/Button → Delete Actions` (the three placements) and `Components/SettingsDialog → Delete In Footer` (delete left next to the status, Abbrechen/Speichern right, a `destructive` confirm step). Both check the computed colours against the `--color-error` tokens; the footer story also checks the positions.
-  - **Audit.** Stories that showed delete or revoke on a neutral variant now use `ghost-destructive`: `SidebarCard` (selection bar), `ContentPanel → Settings Editor`, `Tooltip → Disabled Trigger`, `Table` („Widerrufen"). Known gap: the remove `×` on `PromptInputAttachment` and `TokenInputChip` is still neutral, fixed in KI-915.
+  - **Audit.** Stories that showed delete or revoke on a neutral variant now use `ghost-destructive`: `SidebarCard` (selection bar), `ContentPanel → Settings Editor`, `Tooltip → Disabled Trigger`, `Table` („Widerrufen").
   - **For consumers raising their pin.** JLURAG's `KbSettingsDialog` footer „Löschen" moves from `variant="ghost"` to `variant="ghost-destructive"`.
+  - **Fix: the remove `×` is red.** On `PromptInputAttachment` it uses `ghost-destructive` (red `×`, error container on hover; still shown only on hover or focus). On `TokenInputChip` the raw button is `text-error` and fills red on hover (`bg-error` + `text-on-error`) in every tone — an error-container hover would vanish on the error chip, whose own background it is. Stories `Components/TokenInput → Remove Is Red` / `→ Remove Is Red Dark` (resting colour, the hover fill and its ≥ 3:1 contrast against each chip, both themes).
+  - **Fix: the attachment preview opens above the chip.** `PromptInputAttachment` passes `side="top"` to its `PromptInputHoverCardContent` (whose own defaults are unchanged), so the preview no longer covers the composer and the suggestions under it; Radix still flips it below when there is no room above.
+  - **Fix: the attachment chip's file glyph has no box.** Only an image thumbnail keeps the rounded `bg-surface` frame; the file, spinner and alert glyphs sit on the chip. Stories `Components/PromptInputAttachment → Chip And Preview` / `→ Chip And Preview Dark` (glyph without a box, thumbnail framed, red `×` and its hover, preview above — computed colours against probe-resolved tokens and layout boxes) and `→ Preview Flips Below`.
+  - **Test helper: the real pointer.** `src/test/fixtures/real-pointer.ts` hovers with `vitest/browser`'s `userEvent` (Playwright's mouse), so a story can check a CSS `:hover` state — `storybook/test`'s `userEvent` is synthetic and never applies `:hover`. Under Vitest (`import.meta.env.MODE === "test"`) a hover that cannot run — `vitest/browser` not loadable, or the element not matching `:hover` afterwards — throws, so the story fails; only outside Vitest (the Storybook UI) are the hover steps skipped. Pinned by `src/test/fixtures/real-pointer.test.ts`.
 
 - **0.57.0** — Additive; nothing removed or renamed, and an existing `SettingsDialog` renders as before. The 0.57.0 entries:
 
