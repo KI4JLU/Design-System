@@ -29,6 +29,12 @@ export {
 export { Button, type ButtonProps } from "./components/button";
 export { buttonVariants } from "./components/button-variants";
 export {
+  ButtonGroup,
+  ButtonGroupSeparator,
+  ButtonGroupText,
+} from "./components/button-group";
+export { buttonGroupVariants } from "./components/button-group-variants";
+export {
   Card,
   type CardProps,
   CardHeader,
@@ -194,9 +200,46 @@ export {
   TaskItemFile,
   type TaskItemFileProps,
 } from "./components/task";
+export {
+  Message,
+  type MessageProps,
+  MessageContent,
+  type MessageContentProps,
+  MessageActions,
+  type MessageActionsProps,
+  MessageAction,
+  type MessageActionProps,
+  MessageBranch,
+  type MessageBranchProps,
+  MessageBranchContent,
+  type MessageBranchContentProps,
+  MessageBranchSelector,
+  type MessageBranchSelectorProps,
+  MessageBranchPrevious,
+  type MessageBranchPreviousProps,
+  MessageBranchNext,
+  type MessageBranchNextProps,
+  MessageBranchPage,
+  type MessageBranchPageProps,
+  MessageResponse,
+  type MessageResponseProps,
+  MessageToolbar,
+  type MessageToolbarProps,
+} from "./components/message";
+export {
+  Sources,
+  type SourcesProps,
+  SourcesTrigger,
+  type SourcesTriggerProps,
+  SourcesContent,
+  type SourcesContentProps,
+  Source,
+  type SourceProps,
+} from "./components/sources";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";
+export { Separator } from "./components/separator";
 export { Switch } from "./components/switch";
 export {
   Table,
