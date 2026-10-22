@@ -544,6 +544,10 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **0.59.1** — Type fix only.
+
+  - **Fix: `ReasoningContent` accepts any `children`.** Its type still said `string`, a leftover of the streamdown renderer the import dropped, so a consumer rendering its own Markdown inside it failed to type-check; it renders `ReactNode` as before.
+
 - **0.59.0** — Additive; nothing removed or renamed.
 
   - **Dependencies.** Two new: `@radix-ui/react-collapsible` and `@radix-ui/react-use-controllable-state` (for `Collapsible`, `Reasoning`, `ChainOfThought`, `Task` below).

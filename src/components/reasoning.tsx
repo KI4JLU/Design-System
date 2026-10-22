@@ -195,7 +195,8 @@ export const ReasoningTrigger = memo(
 export type ReasoningContentProps = ComponentProps<
   typeof CollapsibleContent
 > & {
-  children: string;
+  /** The reasoning text, rendered as given: a string or the consumer's own Markdown output. */
+  children: ReactNode;
 };
 
 export const ReasoningContent = memo(
