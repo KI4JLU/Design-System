@@ -397,7 +397,9 @@ export function PromptInputAttachment({
           </Button>
         </div>
       </HoverCardTrigger>
-      <PromptInputHoverCardContent className="w-auto p-2">
+      {/* JLU: the preview opens above the chip, so it does not cover the
+          composer; Radix still flips it below when there is no room. */}
+      <PromptInputHoverCardContent className="w-auto p-2" side="top">
         {statusText && (
           <p
             className={cn(
@@ -1391,14 +1393,11 @@ export type PromptInputHoverCardContentProps = ComponentProps<
   typeof HoverCardContent
 >;
 
-// JLU: opens above its trigger by default (the attachment preview would
-// otherwise cover the composer); Radix still flips it when there is no room.
 export const PromptInputHoverCardContent = ({
   align = "start",
-  side = "top",
   ...props
 }: PromptInputHoverCardContentProps) => (
-  <HoverCardContent align={align} side={side} {...props} />
+  <HoverCardContent align={align} {...props} />
 );
 
 export type PromptInputTabsListProps = HTMLAttributes<HTMLDivElement>;

@@ -10,6 +10,7 @@ import {
   type PromptInputAttachmentStatus,
 } from "./prompt-input";
 import { resolvedColor, resolvedStyle } from "../test/fixtures/combobox-panel";
+import { realHover, realUnhover } from "../test/fixtures/real-pointer";
 
 const meta = {
   title: "Components/PromptInputAttachment",
@@ -177,6 +178,31 @@ export const ChipAndPreview: Story = {
       );
       await userEvent.unhover(fileChip);
     });
+
+    // The real Playwright pointer (`realHover`), so `:hover` applies; skipped
+    // in the Storybook UI, outside the Vitest runner.
+    await step("the remove × lays the error container under itself on hover", async () => {
+      const remove = canvas.getAllByRole("button", { name: "Remove attachment" })[0];
+      if (!(await realHover(remove))) return;
+      await expect(getComputedStyle(remove).backgroundColor).toBe(
+        resolvedStyle(canvasElement, "backgroundColor", "var(--color-error-container)"),
+      );
+      await expect(getComputedStyle(remove).color).toBe(
+        resolvedColor(canvasElement, "var(--color-on-error-container)"),
+      );
+      await realUnhover(remove);
+    });
+  },
+};
+
+/** The same chip in the dark theme: the red ×, its hover and the preview placement. */
+export const ChipAndPreviewDark: Story = {
+  ...ChipAndPreview,
+  globals: { theme: "dark" },
+  play: async (context) => {
+    // The story really runs dark (`ThemeProvider` is the only writer of `<html data-theme>`).
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    await ChipAndPreview.play!(context);
   },
 };
 

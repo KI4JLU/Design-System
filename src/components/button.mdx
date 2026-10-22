@@ -86,7 +86,10 @@ In Menüs gilt dasselbe über `DropdownMenuItem variant="destructive"` bzw.
 ```
 
 Auch das Entfernen-`×` an `PromptInputAttachment` und `TokenInputChip`
-ist rot, auf Hover mit dem Fehler-Container.
+ist in Ruhe rot. Auf Hover legt das `×` am Anhang den Fehler-Container unter
+sich (`ghost-destructive`); das `×` am Chip füllt sich rot (`error` mit
+`on-error`), weil der Fehler-Chip selbst schon den Fehler-Container als
+Fläche hat.
 
 ### Muster: Löschen in der Fußzeile eines Dialogs
 

@@ -235,7 +235,10 @@ footer={(
 ```
 
 The remove `×` on a `PromptInputAttachment` or `TokenInputChip` is a remove
-action too: red, with the error container on hover.
+action too, so it is red at rest. On hover the attachment `×` lays the error
+container under itself (`ghost-destructive`); the chip `×` fills red
+(`error` with `on-error`), because the error chip's own background is the
+error container.
 
 Live: Storybook `Components/Button → Delete Actions` and
 `Components/SettingsDialog → Delete In Footer`.
