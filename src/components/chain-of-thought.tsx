@@ -11,11 +11,12 @@ import { cn } from "../lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { BrainIcon, ChevronDownIcon, DotIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, memo, useContext, useMemo } from "react";
+import { createContext, memo, useContext, useId, useMemo } from "react";
 
 interface ChainOfThoughtContextValue {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  contentId: string;
 }
 
 const ChainOfThoughtContext = createContext<ChainOfThoughtContextValue | null>(
@@ -53,9 +54,12 @@ export const ChainOfThought = memo(
       prop: open,
     });
 
+    // Header and content sit in two Collapsibles; one shared id links them.
+    const contentId = useId();
+
     const chainOfThoughtContext = useMemo(
-      () => ({ isOpen, setIsOpen }),
-      [isOpen, setIsOpen]
+      () => ({ contentId, isOpen, setIsOpen }),
+      [contentId, isOpen, setIsOpen]
     );
 
     return (
@@ -68,22 +72,27 @@ export const ChainOfThought = memo(
   }
 );
 
-export type ChainOfThoughtHeaderProps = ComponentProps<
-  typeof CollapsibleTrigger
+// No asChild: the header always renders icon, label and chevron, which a Slot cannot take.
+export type ChainOfThoughtHeaderProps = Omit<
+  ComponentProps<typeof CollapsibleTrigger>,
+  "asChild"
 >;
 
 export const ChainOfThoughtHeader = memo(
   ({ className, children, ...props }: ChainOfThoughtHeaderProps) => {
-    const { isOpen, setIsOpen } = useChainOfThought();
+    const { contentId, isOpen, setIsOpen } = useChainOfThought();
 
     return (
       <Collapsible onOpenChange={setIsOpen} open={isOpen}>
         <CollapsibleTrigger
+          aria-controls={isOpen ? contentId : undefined}
           className={cn(
             "flex w-full items-center gap-2 text-on-surface-variant text-sm transition-colors hover:text-on-surface",
+            "rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
             className
           )}
           {...props}
+          asChild={false}
         >
           <BrainIcon className="size-4" />
           <span className="flex-1 text-left">
@@ -111,7 +120,7 @@ export type ChainOfThoughtStepProps = ComponentProps<"div"> & {
 const stepStatusStyles = {
   active: "text-on-surface",
   complete: "text-on-surface-variant",
-  pending: "text-on-surface-variant/50",
+  pending: "text-on-surface-variant",
 };
 
 export const ChainOfThoughtStep = memo(
@@ -134,7 +143,7 @@ export const ChainOfThoughtStep = memo(
       {...props}
     >
       <div className="relative mt-0.5">
-        <Icon className="size-4" />
+        <Icon className={cn("size-4", status === "pending" && "text-outline")} />
         <div className="absolute top-7 bottom-0 left-1/2 -mx-px w-px bg-outline-variant" />
       </div>
       <div className="flex-1 space-y-2 overflow-hidden">
@@ -179,11 +188,12 @@ export type ChainOfThoughtContentProps = ComponentProps<
 
 export const ChainOfThoughtContent = memo(
   ({ className, children, ...props }: ChainOfThoughtContentProps) => {
-    const { isOpen } = useChainOfThought();
+    const { contentId, isOpen } = useChainOfThought();
 
     return (
       <Collapsible open={isOpen}>
         <CollapsibleContent
+          id={contentId}
           className={cn(
             "mt-2 space-y-3",
             "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-on-surface outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",

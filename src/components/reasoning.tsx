@@ -60,6 +60,7 @@ export const Reasoning = memo(
     const hasEverStreamedRef = useRef(isStreaming);
     const [hasAutoClosed, setHasAutoClosed] = useState(false);
     const startTimeRef = useRef<number | null>(null);
+    const wasStreamingRef = useRef(false);
 
     // Track when streaming starts and compute duration
     useEffect(() => {
@@ -74,11 +75,13 @@ export const Reasoning = memo(
       }
     }, [isStreaming, setDuration]);
 
-    // Auto-open when streaming starts (unless explicitly closed)
+    // Auto-open when streaming starts (unless explicitly closed) — only on the
+    // start transition, so a close during the stream sticks
     useEffect(() => {
-      if (isStreaming && !isOpen && !isExplicitlyClosed) {
+      if (isStreaming && !wasStreamingRef.current && !isOpen && !isExplicitlyClosed) {
         setIsOpen(true);
       }
+      wasStreamingRef.current = isStreaming;
     }, [isStreaming, isOpen, setIsOpen, isExplicitlyClosed]);
 
     // Auto-close when streaming ends (once only, and only if it ever streamed)
@@ -98,16 +101,20 @@ export const Reasoning = memo(
       }
     }, [isStreaming, isOpen, setIsOpen, hasAutoClosed]);
 
+    // A user toggle after a stream takes over: that stream never auto-closes again
     const handleOpenChange = useCallback(
       (newOpen: boolean) => {
+        if (hasEverStreamedRef.current && !isStreaming) {
+          setHasAutoClosed(true);
+        }
         setIsOpen(newOpen);
       },
-      [setIsOpen]
+      [isStreaming, setIsOpen]
     );
 
     const contextValue = useMemo(
-      () => ({ duration, isOpen, isStreaming, setIsOpen }),
-      [duration, isOpen, isStreaming, setIsOpen]
+      () => ({ duration, isOpen, isStreaming, setIsOpen: handleOpenChange }),
+      [duration, isOpen, isStreaming, handleOpenChange]
     );
 
     return (
@@ -125,18 +132,26 @@ export const Reasoning = memo(
   }
 );
 
-export type ReasoningTriggerProps = ComponentProps<
-  typeof CollapsibleTrigger
+// No asChild: without children the trigger renders icon, label and chevron, which a Slot cannot take.
+export type ReasoningTriggerProps = Omit<
+  ComponentProps<typeof CollapsibleTrigger>,
+  "asChild"
 > & {
   getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
 };
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
-  if (isStreaming || duration === 0) {
+  if (isStreaming) {
     return <Shimmer duration={1}>Denke nach …</Shimmer>;
   }
   if (duration === undefined) {
     return <p>Nachgedacht für ein paar Sekunden</p>;
+  }
+  if (duration === 0) {
+    return <p>Nachgedacht für weniger als 1 Sekunde</p>;
+  }
+  if (duration === 1) {
+    return <p>Nachgedacht für 1 Sekunde</p>;
   }
   return <p>Nachgedacht für {duration} Sekunden</p>;
 };
@@ -154,9 +169,11 @@ export const ReasoningTrigger = memo(
       <CollapsibleTrigger
         className={cn(
           "flex w-full items-center gap-2 text-on-surface-variant text-sm transition-colors hover:text-on-surface",
+          "rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
           className
         )}
         {...props}
+        asChild={false}
       >
         {children ?? (
           <>

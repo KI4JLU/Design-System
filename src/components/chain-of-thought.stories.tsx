@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FileTextIcon, ImageIcon, SearchIcon } from "lucide-react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Button } from "./button";
+import { keyboardFocusRings } from "../test/fixtures/focus-ring";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -10,6 +12,7 @@ import {
   ChainOfThoughtSearchResults,
   ChainOfThoughtStep,
 } from "./chain-of-thought";
+import { contrastRatio } from "../test/fixtures/real-pointer";
 
 /**
  * AI Elements `ChainOfThought` (https://elements.ai-sdk.dev/api/registry/chain-of-thought.json),
@@ -60,6 +63,33 @@ function Steps() {
   );
 }
 
+const STEP_LABELS = [
+  "Prüfungsordnungen durchsucht",
+  "Fristenübersicht gelesen",
+  "Antwort wird formuliert",
+  "Quellen prüfen",
+];
+
+/** The first opaque background behind `el`. */
+function backgroundBehind(el: Element): string {
+  for (let node: Element | null = el; node; node = node.parentElement) {
+    const bg = getComputedStyle(node).backgroundColor;
+    if (bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") return bg;
+  }
+  return getComputedStyle(document.body).backgroundColor;
+}
+
+/** `color` (any CSS colour, possibly translucent) painted over `background`, as opaque rgb(). */
+function paintedOver(color: string, background: string): string {
+  const ctx = document.createElement("canvas").getContext("2d")!;
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, 1, 1);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 /** Open, with complete, active and pending steps, search results and an image. */
 export const MixedSteps: Story = {
   render: () => (
@@ -75,6 +105,14 @@ export const MixedSteps: Story = {
     );
     await expect(canvas.getByText("PO Informatik 2024")).toBeVisible();
     await expect(canvas.getByText("Anmeldefristen im Wintersemester")).toBeVisible();
+    // WCAG 1.4.3: every step label, the pending one included, is at least
+    // 4.5:1 against the surface it sits on (alpha composited first).
+    for (const label of STEP_LABELS) {
+      const el = canvas.getByText(label);
+      const bg = backgroundBehind(el);
+      const ratio = contrastRatio(paintedOver(getComputedStyle(el).color, bg), bg);
+      await expect(ratio, `${label}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+    }
   },
 };
 
@@ -102,5 +140,30 @@ export const Collapsed: Story = {
     await expect(canvas.queryByText("Prüfungsordnungen durchsucht")).toBeNull();
     await userEvent.click(header);
     await expect(canvas.getByText("Prüfungsordnungen durchsucht")).toBeVisible();
+  },
+};
+
+/**
+ * Keyboard focus: the trigger shows the DS focus ring — the same computed
+ * ring as the `Button` before it (DS fix on top of AI Elements).
+ */
+export const KeyboardFocus: Story = {
+  render: () => (
+    <div className="flex flex-col items-start gap-4">
+      <Button variant="outline">Referenz</Button>
+      <ChainOfThought>
+        <Steps />
+      </ChainOfThought>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const reference = canvas.getByRole("button", { name: "Referenz" });
+    const target = canvas.getByRole("button", { name: "Gedankengang" });
+    const rings = await keyboardFocusRings(reference, target);
+    if (!rings) return; // outside Vitest: no real keyboard
+    // The Button recipe: a 2px ring outside a 2px offset, i.e. a 4px spread shadow.
+    await expect(rings.reference.boxShadow).toMatch(/rgb\(\d+, \d+, \d+\) 0px 0px 0px 4px/);
+    await expect(rings.target).toEqual(rings.reference);
   },
 };

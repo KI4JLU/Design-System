@@ -77,6 +77,33 @@ describe("ChainOfThought", () => {
     expect(screen.getByText("Fristen")).toBeInTheDocument();
   });
 
+  // Deviations from upstream (DESIGN_SYSTEM.md, KI-916 fixes).
+  it("points the header's aria-controls at the rendered content (WAI-ARIA disclosure)", () => {
+    // Oracle: APG disclosure pattern — the button's aria-controls names the
+    // element it shows and hides.
+    render(<Subject defaultOpen />);
+    const header = screen.getByRole("button", { name: "Gedankengang" });
+    const id = header.getAttribute("aria-controls");
+    expect(id).toBeTruthy();
+    const controlled = document.getElementById(id!);
+    expect(controlled).not.toBeNull();
+    expect(controlled).toHaveTextContent("Suche");
+  });
+
+  it("ignores asChild on the header instead of throwing in the Slot", () => {
+    // Oracle: the defect — asChild made the Radix Slot receive three
+    // children (icon, label, chevron) and throw. asChild is not a prop any
+    // more (the directive fails tsc if it becomes one again) and is ignored
+    // at runtime.
+    render(
+      <ChainOfThought>
+        {/* @ts-expect-error asChild is not a ChainOfThoughtHeader prop */}
+        <ChainOfThoughtHeader asChild />
+      </ChainOfThought>,
+    );
+    expect(screen.getByRole("button", { name: "Gedankengang" }).tagName).toBe("BUTTON");
+  });
+
   it("throws when a part is used outside ChainOfThought", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => render(<ChainOfThoughtHeader />)).toThrow(

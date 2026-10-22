@@ -45,7 +45,12 @@ export const Task = ({
   <Collapsible className={cn(className)} defaultOpen={defaultOpen} {...props} />
 );
 
-export type TaskTriggerProps = ComponentProps<typeof CollapsibleTrigger> & {
+// No asChild: the trigger always slots its child (the default button or yours);
+// asChild={false} would nest the default button inside a second one.
+export type TaskTriggerProps = Omit<
+  ComponentProps<typeof CollapsibleTrigger>,
+  "asChild"
+> & {
   title: string;
 };
 
@@ -55,13 +60,16 @@ export const TaskTrigger = ({
   title,
   ...props
 }: TaskTriggerProps) => (
-  <CollapsibleTrigger asChild className={cn("group", className)} {...props}>
+  <CollapsibleTrigger className={cn("group", className)} {...props} asChild>
     {children ?? (
-      <div className="flex w-full cursor-pointer items-center gap-2 text-on-surface-variant text-sm transition-colors hover:text-on-surface">
+      <button
+        type="button"
+        className="flex w-full cursor-pointer items-center gap-2 text-on-surface-variant text-sm transition-colors hover:text-on-surface rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      >
         <SearchIcon className="size-4" />
-        <p className="text-sm">{title}</p>
+        <span className="text-sm">{title}</span>
         <ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
-      </div>
+      </button>
     )}
   </CollapsibleTrigger>
 );

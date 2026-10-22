@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Button } from "./button";
+import { keyboardFocusRings } from "../test/fixtures/focus-ring";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
 
 /**
@@ -121,5 +123,31 @@ export const LiveCycle: Story = {
     await waitFor(() => expect(done).toHaveAttribute("aria-expanded", "false"), {
       timeout: 3000,
     });
+  },
+};
+
+/**
+ * Keyboard focus: the trigger shows the DS focus ring — the same computed
+ * ring as the `Button` before it (DS fix on top of AI Elements).
+ */
+export const KeyboardFocus: Story = {
+  render: () => (
+    <div className="flex flex-col items-start gap-4">
+      <Button variant="outline">Referenz</Button>
+      <Reasoning defaultOpen duration={4}>
+        <ReasoningTrigger />
+        <ReasoningContent>{REASONING}</ReasoningContent>
+      </Reasoning>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const reference = canvas.getByRole("button", { name: "Referenz" });
+    const target = canvas.getByRole("button", { name: "Nachgedacht für 4 Sekunden" });
+    const rings = await keyboardFocusRings(reference, target);
+    if (!rings) return; // outside Vitest: no real keyboard
+    // The Button recipe: a 2px ring outside a 2px offset, i.e. a 4px spread shadow.
+    await expect(rings.reference.boxShadow).toMatch(/rgb\(\d+, \d+, \d+\) 0px 0px 0px 4px/);
+    await expect(rings.target).toEqual(rings.reference);
   },
 };
