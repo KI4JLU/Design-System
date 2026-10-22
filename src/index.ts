@@ -40,7 +40,7 @@ export {
 } from "./components/card";
 export { ChatBubble, type ChatBubbleProps } from "./components/chat-bubble";
 export { chatBubbleVariants } from "./components/chat-bubble-variants";
-export { Checkbox, type CheckboxProps } from "./components/checkbox";
+export { Checkbox, type CheckboxProps, type CheckboxTone } from "./components/checkbox";
 export { CodeBlock, type CodeBlockProps } from "./components/code-block";
 export { Container, type ContainerProps } from "./components/container";
 export { containerVariants } from "./components/container-variants";
@@ -264,6 +264,7 @@ export {
   type SidebarCardProps,
   type SidebarCardListProps,
   type SidebarCardAction,
+  type SidebarSelectionTone,
   type SidebarSelectionBarProps,
 } from "./components/sidebar-card";
 export { sidebarCardVariants, sidebarIconTileVariants, sidebarRowInset, sidebarRowInsetX } from "./components/sidebar-card-variants";

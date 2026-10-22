@@ -40,10 +40,10 @@ function Panels() {
         )}
         <ul className="flex flex-col gap-2">
           <SidebarCard title="🧪 Chemische Formelextraktion" icon="🧪" onOpen={() => {}} active actions={actions} actionsLabel="Aktionen für"
-            selectable={selecting} selectionMode={selecting} selected onSelectedChange={() => {}} />
+            selectable={selecting} selectionMode={selecting} selectionTone="destructive" selected onSelectedChange={() => {}} />
           <SidebarCard title="Projektstatusbericht" icon={<MessageSquare />} onOpen={() => {}}
             actions={[...actions, { label: "Auswählen", onSelect: () => setSelecting(true) }]} actionsLabel="Aktionen für"
-            selectable={selecting} selectionMode={selecting} onSelectedChange={() => {}} />
+            selectable={selecting} selectionMode={selecting} selectionTone="destructive" onSelectedChange={() => {}} />
         </ul>
       </div>
       <ul className="flex w-80 flex-col gap-3">
@@ -69,6 +69,69 @@ function Panels() {
 export const SidePanels: Story = {
   args: { title: "", onOpen: () => {} },
   render: () => <Panels />,
+};
+
+/**
+ * Delete selection: `selectionTone="destructive"` — what is ticked for removal
+ * reads in the error colour (card border and fill, checkbox), next to a
+ * `ghost-destructive` remove action in the bar. Unticked cards look as usual.
+ */
+export const DeleteSelection: Story = {
+  args: { title: "" },
+  render: () => (
+    <div className="flex w-80 flex-col gap-2">
+      <SidebarSelectionBar aria-label="Entfernen" countLabel="1 ausgewählt" onCancel={() => {}}>
+        <Button variant="ghost-destructive" size="icon" aria-label="Ausgewählte entfernen"><Trash2 aria-hidden="true" className="size-4" /></Button>
+      </SidebarSelectionBar>
+      <ul className="flex flex-col gap-2">
+        <SidebarCard title="Haushalt 2027.xlsx" iconText="XLSX" onOpen={() => {}} selectable selectionMode
+          selectionTone="destructive" selected onSelectedChange={() => {}} selectLabel="Auswählen" />
+        <SidebarCard title="Protokoll.docx" iconText="DOCX" onOpen={() => {}} selectable selectionMode
+          selectionTone="destructive" selected={false} onSelectedChange={() => {}} selectLabel="Auswählen" />
+      </ul>
+    </div>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const [ticked, unticked] = canvasElement.querySelectorAll("[data-slot=sidebar-card]");
+    // Oracle: the error token itself, read off the remove button that uses it.
+    const error = getComputedStyle(canvas.getByRole("button", { name: "Ausgewählte entfernen" })).color;
+    await expect(getComputedStyle(ticked).borderTopColor).toBe(error);
+    await expect(getComputedStyle(canvas.getByRole("checkbox", { name: "Auswählen Haushalt 2027.xlsx" })).backgroundColor).toBe(error);
+    await expect(getComputedStyle(unticked).borderTopColor).not.toBe(error);
+  },
+};
+
+/**
+ * Muted: sources left out of the chat. Tile, title and meta are greyed out
+ * like a muted rail entry; the menu stays at full strength because the source
+ * still works — open, download, delete. Not a disabled state.
+ */
+export const Muted: Story = {
+  args: { title: "" },
+  render: () => (
+    <div className="flex gap-8">
+      <ul className="flex w-80 flex-col gap-3">
+        <SidebarCard title="Studienordnung 2026.pdf" iconText="PDF" onOpen={() => {}} actions={actions} actionsLabel="Aktionen für" />
+        <SidebarCard title="Haushalt 2027.xlsx" iconText="XLSX" onOpen={() => {}} muted actions={actions} actionsLabel="Aktionen für" />
+        <SidebarCard title="Protokoll.docx" iconText="DOCX" onOpen={() => {}} muted
+          meta={<span className="text-xs text-on-surface-variant">Wartet auf Verarbeitung</span>} actions={actions} actionsLabel="Aktionen für" />
+      </ul>
+      <div className="flex w-[60px] flex-col items-center gap-2 border-l border-outline-variant pt-2">
+        <SidebarRail>
+          <li><SidebarRailItem aria-label="Studienordnung 2026.pdf" iconText="PDF" /></li>
+          <li><SidebarRailItem aria-label="Haushalt 2027.xlsx" iconText="XLSX" muted /></li>
+          <li><SidebarRailItem aria-label="Protokoll.docx" iconText="DOCX" muted /></li>
+        </SidebarRail>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const muted = canvasElement.querySelectorAll("[data-slot=sidebar-card][data-muted]");
+    await expect(muted).toHaveLength(2);
+    // The menu of a muted card is at full strength.
+    const trigger = muted[0].querySelector("button[aria-label^='Aktionen für']") as HTMLElement;
+    await expect(getComputedStyle(trigger).opacity).toBe("1");
+  },
 };
 
 /**

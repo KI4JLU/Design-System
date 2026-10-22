@@ -55,6 +55,22 @@ describe("Checkbox", () => {
  * native button maps to `disabled`), marked with `data-locked`, and — unlike
  * `disabled` — not faded.
  */
+describe("Checkbox — tone", () => {
+  // Oracle: the class names that carry the colour; the computed colour is
+  // checked in SidebarCard's DeleteSelection story.
+  it("destructive ticks in the error colour, default in primary", () => {
+    const { rerender } = render(<Checkbox aria-label="Box" tone="destructive" checked />);
+    expect(screen.getByRole("checkbox").className).toContain("data-[state=checked]:bg-error");
+    rerender(<Checkbox aria-label="Box" checked />);
+    expect(screen.getByRole("checkbox").className).not.toContain("bg-error");
+  });
+
+  it("locked wins over destructive", () => {
+    render(<Checkbox aria-label="Box" tone="destructive" locked checked />);
+    expect(screen.getByRole("checkbox").className).not.toContain("bg-error");
+  });
+});
+
 describe("Checkbox — locked", () => {
   it("is disabled, carries data-locked and keeps its checked state", async () => {
     const onChange = vi.fn();
