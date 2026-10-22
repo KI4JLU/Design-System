@@ -353,6 +353,10 @@ function RichTextEditorInner({
   const [fullscreenEl, setFullscreenEl] = React.useState<HTMLElement | null>(null);
   const fullscreen = fullscreenEl !== null;
   const [copied, setCopied] = React.useState(false);
+  // The "copied" flag resets after 1.5 s; cleared on unmount so the timer never
+  // fires into an unmounted editor (or a torn-down test environment).
+  const copiedTimer = React.useRef<number | undefined>(undefined);
+  React.useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
   const onChangeRef = React.useRef(onChange);
   React.useEffect(() => {
     onChangeRef.current = onChange;
@@ -453,7 +457,8 @@ function RichTextEditorInner({
     if (!editor) return;
     await navigator.clipboard.writeText(serialize(editor));
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 1500);
   };
 
   const chain = () => editor!.chain().focus();
