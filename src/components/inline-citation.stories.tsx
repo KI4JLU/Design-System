@@ -20,6 +20,8 @@ import {
 const meta = {
   title: "Components/InlineCitation",
   component: InlineCitationCard,
+  // PreviewContent is a helper shared with the Drawer stories, not a story.
+  excludeStories: ["PreviewContent"],
 } satisfies Meta<typeof InlineCitationCard>;
 
 export default meta;

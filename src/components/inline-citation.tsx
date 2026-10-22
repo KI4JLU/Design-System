@@ -43,6 +43,8 @@ export type InlineCitationCardProps = ComponentProps<typeof Popover> & {
   openDelay?: number;
   /** Grace period for the pointer to travel between chip and card, in ms. */
   closeDelay?: number;
+  /** `false`: the card opens only on click or Enter, never on hover. Default `true`. */
+  openOnHover?: boolean;
 };
 
 export const InlineCitationCard = ({
@@ -51,6 +53,7 @@ export const InlineCitationCard = ({
   onOpenChange,
   openDelay = 300,
   closeDelay = 150,
+  openOnHover = true,
   ...props
 }: InlineCitationCardProps) => {
   const [open = false, setOpen] = useControllableState({
@@ -59,32 +62,47 @@ export const InlineCitationCard = ({
     prop: openProp,
   });
   const pinnedRef = useRef(false);
+  // Whether closing should hand focus back to the chip: only for a card a
+  // click or Enter pinned, never for a hover preview.
+  const restoreFocusRef = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const cancel = useCallback(() => clearTimeout(timer.current), []);
   useEffect(() => cancel, [cancel]);
 
   const hoverOpen = useCallback(() => {
     cancel();
-    if (open) return;
+    if (open || !openOnHover) return;
     timer.current = setTimeout(() => setOpen(true), openDelay);
-  }, [cancel, open, openDelay, setOpen]);
+  }, [cancel, open, openDelay, openOnHover, setOpen]);
   const hoverClose = useCallback(() => {
     cancel();
-    if (pinnedRef.current) return;
+    if (pinnedRef.current || !openOnHover) return;
     timer.current = setTimeout(() => setOpen(false), closeDelay);
-  }, [cancel, closeDelay, setOpen]);
+  }, [cancel, closeDelay, openOnHover, setOpen]);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
       cancel();
-      if (!next) pinnedRef.current = false;
+      if (!next) {
+        restoreFocusRef.current = pinnedRef.current;
+        pinnedRef.current = false;
+      }
       setOpen(next);
     },
     [cancel, setOpen]
   );
 
+  // A controlled consumer can close the card without onOpenChange: drop the
+  // pin there too, or the next hover preview would open pinned.
+  useEffect(() => {
+    if (!open && pinnedRef.current) {
+      restoreFocusRef.current = true;
+      pinnedRef.current = false;
+    }
+  }, [open]);
+
   const context = useMemo(
-    () => ({ cancel, hoverClose, hoverOpen, open, pinnedRef, setOpen }),
+    () => ({ cancel, hoverClose, hoverOpen, open, pinnedRef, restoreFocusRef, setOpen }),
     [cancel, hoverClose, hoverOpen, open, setOpen]
   );
 
@@ -115,7 +133,7 @@ export const InlineCitationCardTrigger = ({
       <button
         className={cn(
           "ml-1 inline-flex h-5 min-w-5 items-center justify-center px-1.5 align-baseline text-[11px] font-semibold leading-none",
-          "rounded-[var(--ui-radius-tile,6px)] bg-primary-fixed text-on-primary-fixed-variant transition-colors",
+          "rounded bg-primary-fixed text-on-primary-fixed-variant transition-colors",
           "data-[state=open]:bg-primary data-[state=open]:text-on-primary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
           className
@@ -164,11 +182,12 @@ export type InlineCitationCardBodyProps = ComponentProps<typeof PopoverContent>;
 export const InlineCitationCardBody = ({
   className,
   onOpenAutoFocus,
+  onCloseAutoFocus,
   onPointerEnter,
   onPointerLeave,
   ...props
 }: InlineCitationCardBodyProps) => {
-  const { cancel, hoverClose, pinnedRef } = useInlineCitationCard();
+  const { cancel, hoverClose, pinnedRef, restoreFocusRef } = useInlineCitationCard();
   return (
     <PopoverContent
       className={cn("relative w-80 p-0", className)}
@@ -176,6 +195,12 @@ export const InlineCitationCardBody = ({
         onOpenAutoFocus?.(event);
         // A hover preview must not steal focus; a pinnedRef one takes it.
         if (!pinnedRef.current) event.preventDefault();
+      }}
+      onCloseAutoFocus={(event) => {
+        onCloseAutoFocus?.(event);
+        // Closing a hover preview leaves focus where it was (e.g. a text field).
+        if (!restoreFocusRef.current) event.preventDefault();
+        restoreFocusRef.current = false;
       }}
       onPointerEnter={(event) => {
         onPointerEnter?.(event);

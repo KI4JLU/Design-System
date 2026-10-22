@@ -5,8 +5,10 @@ import { createContext, useContext, type MutableRefObject } from "react";
 export interface InlineCitationCardContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
-  /** True once a click / Enter pinnedRef the card (hover no longer closes it). */
+  /** True once a click / Enter pinned the card (hover no longer closes it). */
   pinnedRef: MutableRefObject<boolean>;
+  /** Set when a pinned card closes: only then does focus return to the chip. */
+  restoreFocusRef: MutableRefObject<boolean>;
   hoverOpen: () => void;
   hoverClose: () => void;
   cancel: () => void;
