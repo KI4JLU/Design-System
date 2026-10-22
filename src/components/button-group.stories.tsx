@@ -29,9 +29,7 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     const group = canvas.getByRole("group", { name: "Ansicht" });
     await expect(group).toHaveAttribute("data-slot", "button-group");
-    // Upstream sets data-orientation only from an explicit prop; the
-    // horizontal default is the cva default, not an attribute.
-    await expect(group).not.toHaveAttribute("data-orientation");
+    await expect(group).toHaveAttribute("data-orientation", "horizontal");
   },
 };
 

@@ -5,7 +5,10 @@ import {
   ThumbsDownIcon,
   ThumbsUpIcon,
 } from "lucide-react";
-import { expect, screen, waitFor } from "storybook/test";
+import { expect, screen, waitFor, within } from "storybook/test";
+import { Button } from "./button";
+import { Source, Sources, SourcesContent, SourcesTrigger } from "./sources";
+import { keyboardFocusRings } from "../test/fixtures/focus-ring";
 import {
   Message,
   MessageAction,
@@ -79,7 +82,6 @@ export const ActionsRow: Story = {
   play: async ({ canvas, userEvent }) => {
     const copy = canvas.getByRole("button", { name: "Kopieren" });
     await userEvent.hover(copy);
-    await waitFor(() => expect(copy).toHaveAttribute("aria-describedby"));
     await expect(await screen.findByRole("tooltip")).toHaveTextContent("Kopieren");
     await expect(canvas.getAllByRole("button")).toHaveLength(4);
   },
@@ -137,11 +139,11 @@ export const ToolbarWithBranches: Story = {
   play: async ({ canvas, userEvent }) => {
     await expect(await canvas.findByText("1 von 3")).toBeVisible();
     await expect(canvas.getByText(/^Version 1/)).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Nächste Version" }));
+    await userEvent.click(canvas.getByRole("button", { name: /^Nächste Version/ }));
     await expect(canvas.getByText("2 von 3")).toBeVisible();
     await expect(canvas.getByText(/^Version 2/)).toBeVisible();
     await expect(canvas.getByText(/^Version 1/)).not.toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Vorherige Version" }));
+    await userEvent.click(canvas.getByRole("button", { name: /^Vorherige Version/ }));
     await expect(canvas.getByText("1 von 3")).toBeVisible();
   },
 };
@@ -153,5 +155,96 @@ export const ToolbarWithBranchesDark: Story = {
   play: async (context) => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
     await ToolbarWithBranches.play!(context);
+  },
+};
+
+const corners = (el: Element) => {
+  const s = getComputedStyle(el);
+  return [s.borderTopLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius, s.borderBottomLeftRadius];
+};
+
+/** Distinct line boxes of an element's text: 1 means it did not wrap. */
+const lineCount = (el: Element) => {
+  const tops = new Set<number>();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    for (const r of range.getClientRects()) tops.add(Math.round(r.top));
+  }
+  return tops.size;
+};
+
+/**
+ * The branch selector's Previous/Next keep the DS icon Button's shape and
+ * focus ring (a reference icon Button sits right before the selector).
+ */
+export const BranchSelectorShape: Story = {
+  render: () => (
+    <MessageBranch>
+      <MessageBranchContent>
+        <p key="1">Version 1</p>
+        <p key="2">Version 2</p>
+      </MessageBranchContent>
+      <div className="flex items-center gap-4">
+        <Button aria-label="Referenz" size="icon" variant="ghost">
+          <CopyIcon className="size-4" />
+        </Button>
+        <MessageBranchSelector>
+          <MessageBranchPrevious />
+          <MessageBranchPage />
+          <MessageBranchNext />
+        </MessageBranchSelector>
+      </div>
+    </MessageBranch>
+  ),
+  play: async ({ canvas }) => {
+    const reference = canvas.getByRole("button", { name: "Referenz" });
+    const previous = await canvas.findByRole("button", { name: /^Vorherige Version/ });
+    const next = canvas.getByRole("button", { name: /^Nächste Version/ });
+    await expect(corners(previous)).toEqual(corners(reference));
+    await expect(corners(next)).toEqual(corners(reference));
+    const rings = await keyboardFocusRings(reference, previous);
+    if (!rings) return; // outside Vitest: no real keyboard
+    await expect(rings.reference.boxShadow).toMatch(/rgb\(\d+, \d+, \d+\) 0px 0px 0px 4px/);
+    await expect(rings.target).toEqual(rings.reference);
+  },
+};
+
+/**
+ * A narrow answer toolbar (JustRAG's footer at ~360px): the sources trigger
+ * and the page „N von M" stay on one line.
+ */
+export const NarrowToolbar: Story = {
+  render: () => (
+    <div className="w-[360px]">
+      <MessageBranch>
+        <MessageBranchContent>
+          <p key="1">Version 1</p>
+          <p key="2">Version 2</p>
+        </MessageBranchContent>
+        <MessageToolbar>
+          <MessageBranchSelector>
+            <MessageBranchPrevious />
+            <MessageBranchPage />
+            <MessageBranchNext />
+          </MessageBranchSelector>
+          <Actions />
+          <Sources>
+            <SourcesTrigger count={4} />
+            <SourcesContent>
+              <Source href="https://www.uni-giessen.de" title="Startseite" />
+            </SourcesContent>
+          </Sources>
+        </MessageToolbar>
+      </MessageBranch>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = await canvas.findByText("1 von 2");
+    const trigger = canvas.getByRole("button", { name: "4 Quellen verwendet" });
+    await expect(lineCount(page)).toBe(1);
+    await expect(lineCount(trigger)).toBe(1);
   },
 };

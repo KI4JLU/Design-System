@@ -9,7 +9,7 @@ import { cn } from "../lib/utils";
 import { BookIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps } from "react";
 
-export type SourcesProps = ComponentProps<"div">;
+export type SourcesProps = ComponentProps<typeof Collapsible>;
 
 export const Sources = ({ className, ...props }: SourcesProps) => (
   <Collapsible
@@ -29,13 +29,19 @@ export const SourcesTrigger = ({
   ...props
 }: SourcesTriggerProps) => (
   <CollapsibleTrigger
-    className={cn("flex items-center gap-2", className)}
+    className={cn(
+      "group flex shrink-0 items-center gap-2 whitespace-nowrap",
+      "rounded-action transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+      className
+    )}
     {...props}
   >
     {children ?? (
       <>
-        <p className="font-medium">{count} Quellen verwendet</p>
-        <ChevronDownIcon className="h-4 w-4" />
+        <span className="font-medium">
+          {count === 1 ? "1 Quelle verwendet" : `${count} Quellen verwendet`}
+        </span>
+        <ChevronDownIcon className="h-4 w-4 transition-transform motion-reduce:transition-none group-data-[state=open]:rotate-180" />
       </>
     )}
   </CollapsibleTrigger>
@@ -61,7 +67,7 @@ export type SourceProps = ComponentProps<"a">;
 
 export const Source = ({ href, title, children, ...props }: SourceProps) => (
   <a
-    className="flex items-center gap-2"
+    className="flex items-center gap-2 rounded-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     href={href}
     rel="noreferrer"
     target="_blank"
@@ -72,6 +78,9 @@ export const Source = ({ href, title, children, ...props }: SourceProps) => (
         <BookIcon className="h-4 w-4" />
         <span className="block font-medium">{title}</span>
       </>
+    )}
+    {(props.target ?? "_blank") === "_blank" && (
+      <span className="sr-only"> (öffnet in neuem Tab)</span>
     )}
   </a>
 );

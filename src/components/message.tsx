@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "./tooltip";
 import { cn } from "../lib/utils";
+import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
@@ -20,7 +21,7 @@ import {
   memo,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -72,10 +73,9 @@ export const MessageActions = ({
   </div>
 );
 
-export type MessageActionProps = ComponentProps<typeof Button> & {
-  tooltip?: string;
-  label?: string;
-};
+// A name is required (WCAG 4.1.2): `label`, or `tooltip`, which then names the button.
+export type MessageActionProps = ComponentProps<typeof Button> &
+  ({ tooltip: string; label?: string } | { tooltip?: string; label: string });
 
 export const MessageAction = ({
   tooltip,
@@ -93,10 +93,18 @@ export const MessageAction = ({
   );
 
   if (tooltip) {
+    // Without a distinct label the tooltip text IS the name; describing the
+    // button with it again would announce it twice.
+    const describes = Boolean(label) && label !== tooltip;
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipTrigger
+            asChild
+            {...(describes ? {} : { "aria-describedby": props["aria-describedby"] })}
+          >
+            {button}
+          </TooltipTrigger>
           <TooltipContent>
             <p>{tooltip}</p>
           </TooltipContent>
@@ -115,6 +123,7 @@ interface MessageBranchContextType {
   goToNext: () => void;
   branches: ReactElement[];
   setBranches: (branches: ReactElement[]) => void;
+  countOnly: boolean;
 }
 
 const MessageBranchContext = createContext<MessageBranchContextType | null>(
@@ -135,48 +144,69 @@ const useMessageBranch = () => {
 
 export type MessageBranchProps = HTMLAttributes<HTMLDivElement> & {
   defaultBranch?: number;
+  /** Controlled current branch index (pair with `onBranchChange`). */
+  branch?: number;
+  /**
+   * The number of branches, for a consumer that renders only the current one
+   * (e.g. a server-side message tree). `MessageBranchContent` then shows its
+   * children as that branch instead of picking one by index.
+   */
+  totalBranches?: number;
   onBranchChange?: (branchIndex: number) => void;
 };
 
 export const MessageBranch = ({
   defaultBranch = 0,
+  branch,
+  totalBranches: totalBranchesProp,
   onBranchChange,
   className,
   ...props
 }: MessageBranchProps) => {
-  const [currentBranch, setCurrentBranch] = useState(defaultBranch);
+  const [storedBranch, setCurrentBranch] = useControllableState({
+    defaultProp: defaultBranch,
+    onChange: onBranchChange,
+    prop: branch,
+  });
   const [branches, setBranches] = useState<ReactElement[]>([]);
+  const countOnly = totalBranchesProp !== undefined;
+  const totalBranches = totalBranchesProp ?? branches.length;
+  // Children that shrank below the current index show their last branch —
+  // only once the count is known: before MessageBranchContent registers (SSR,
+  // the first client render) the requested branch stands.
+  const currentBranch =
+    totalBranches > 0 ? Math.min(storedBranch, totalBranches - 1) : storedBranch;
 
   const handleBranchChange = useCallback(
     (newBranch: number) => {
       setCurrentBranch(newBranch);
-      onBranchChange?.(newBranch);
     },
-    [onBranchChange]
+    [setCurrentBranch]
   );
 
   const goToPrevious = useCallback(() => {
     const newBranch =
-      currentBranch > 0 ? currentBranch - 1 : branches.length - 1;
+      currentBranch > 0 ? currentBranch - 1 : totalBranches - 1;
     handleBranchChange(newBranch);
-  }, [currentBranch, branches.length, handleBranchChange]);
+  }, [currentBranch, totalBranches, handleBranchChange]);
 
   const goToNext = useCallback(() => {
     const newBranch =
-      currentBranch < branches.length - 1 ? currentBranch + 1 : 0;
+      currentBranch < totalBranches - 1 ? currentBranch + 1 : 0;
     handleBranchChange(newBranch);
-  }, [currentBranch, branches.length, handleBranchChange]);
+  }, [currentBranch, totalBranches, handleBranchChange]);
 
   const contextValue = useMemo<MessageBranchContextType>(
     () => ({
       branches,
+      countOnly,
       currentBranch,
       goToNext,
       goToPrevious,
       setBranches,
-      totalBranches: branches.length,
+      totalBranches,
     }),
-    [branches, currentBranch, goToNext, goToPrevious]
+    [branches, countOnly, currentBranch, goToNext, goToPrevious, totalBranches]
   );
 
   return (
@@ -193,33 +223,50 @@ export type MessageBranchContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const MessageBranchContent = ({
   children,
+  className,
   ...props
 }: MessageBranchContentProps) => {
-  const { currentBranch, setBranches, branches } = useMessageBranch();
+  const { countOnly, currentBranch, setBranches } = useMessageBranch();
   const childrenArray = useMemo(
     () => (Array.isArray(children) ? children : [children]),
     [children]
   );
 
-  // Use useEffect to update branches when they change
-  useEffect(() => {
-    if (branches.length !== childrenArray.length) {
-      setBranches(childrenArray);
-    }
-  }, [childrenArray, branches, setBranches]);
+  // Before paint (so the selector is there on the first frame), and whenever
+  // the branch children change, not only their count
+  useLayoutEffect(() => {
+    setBranches(childrenArray);
+  }, [childrenArray, setBranches]);
 
-  return childrenArray.map((branch, index) => (
-    <div
-      className={cn(
-        "grid gap-2 overflow-hidden [&>div]:pb-0",
-        index === currentBranch ? "block" : "hidden"
-      )}
-      key={branch.key}
-      {...props}
-    >
-      {branch}
-    </div>
-  ));
+  // Count-only: the children ARE the current branch — one wrapper for all of them
+  if (countOnly) {
+    return (
+      <div
+        className={cn("grid gap-2 overflow-hidden [&>div]:pb-0", "block", className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return childrenArray.map((branch, index) => {
+    const isCurrent = index === currentBranch;
+    // Props (id, handlers, className) go to the shown branch only, not to every wrapper
+    return (
+      <div
+        className={cn(
+          "grid gap-2 overflow-hidden [&>div]:pb-0",
+          isCurrent ? "block" : "hidden",
+          isCurrent && className
+        )}
+        key={branch.key ?? index}
+        {...(isCurrent ? props : {})}
+      >
+        {branch}
+      </div>
+    );
+  });
 };
 
 export type MessageBranchSelectorProps = ComponentProps<typeof ButtonGroup>;
@@ -237,8 +284,10 @@ export const MessageBranchSelector = ({
 
   return (
     <ButtonGroup
+      aria-label="Versionen"
       className={cn(
-        "[&>*:not(:first-child)]:rounded-l-action [&>*:not(:last-child)]:rounded-r-action",
+        // `!`: must beat ButtonGroup's squared inner corners; full = the DS icon Button's radius
+        "[&>*:not(:first-child)]:rounded-l-full! [&>*:not(:last-child)]:rounded-r-full!",
         className
       )}
       orientation="horizontal"
@@ -253,11 +302,12 @@ export const MessageBranchPrevious = ({
   children,
   ...props
 }: MessageBranchPreviousProps) => {
-  const { goToPrevious, totalBranches } = useMessageBranch();
+  const { currentBranch, goToPrevious, totalBranches } = useMessageBranch();
+  const target = currentBranch > 0 ? currentBranch - 1 : totalBranches - 1;
 
   return (
     <Button
-      aria-label="Vorherige Version"
+      aria-label={`Vorherige Version (${target + 1} von ${totalBranches})`}
       disabled={totalBranches <= 1}
       onClick={goToPrevious}
       size="icon"
@@ -276,11 +326,12 @@ export const MessageBranchNext = ({
   children,
   ...props
 }: MessageBranchNextProps) => {
-  const { goToNext, totalBranches } = useMessageBranch();
+  const { currentBranch, goToNext, totalBranches } = useMessageBranch();
+  const target = currentBranch < totalBranches - 1 ? currentBranch + 1 : 0;
 
   return (
     <Button
-      aria-label="Nächste Version"
+      aria-label={`Nächste Version (${target + 1} von ${totalBranches})`}
       disabled={totalBranches <= 1}
       onClick={goToNext}
       size="icon"
@@ -303,8 +354,10 @@ export const MessageBranchPage = ({
 
   return (
     <ButtonGroupText
+      aria-atomic="true"
+      aria-live="polite"
       className={cn(
-        "border-none bg-transparent text-on-surface-variant shadow-none",
+        "whitespace-nowrap border-none bg-transparent text-on-surface-variant shadow-none",
         className
       )}
       {...props}
@@ -325,8 +378,7 @@ export const MessageResponse = memo(
       )}
       {...props}
     />
-  ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children
+  )
 );
 
 MessageResponse.displayName = "MessageResponse";

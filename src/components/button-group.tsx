@@ -7,7 +7,7 @@ import { buttonGroupVariants } from "./button-group-variants"
 
 function ButtonGroup({
   className,
-  orientation,
+  orientation = "horizontal",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
   return (
@@ -33,7 +33,7 @@ function ButtonGroupText({
   return (
     <Comp
       className={cn(
-        "flex items-center gap-2 rounded-action border border-outline-variant bg-surface-container px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        "flex items-center gap-2 rounded-action border border-outline-variant bg-surface-container px-4 font-label-sm text-label-sm shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
