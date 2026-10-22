@@ -74,6 +74,23 @@ export {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "./components/dropdown-menu";
+export {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuRadioItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuGroup,
+  ContextMenuPortal,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuRadioGroup,
+} from "./components/context-menu";
 export { fieldVariants } from "./components/field-variants";
 export { FilterChips, type FilterChipsProps, type FilterChipsOption } from "./components/filter-chips";
 export { filterChipVariants } from "./components/filter-chips-variants";
