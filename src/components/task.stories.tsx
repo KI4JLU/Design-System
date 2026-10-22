@@ -1,81 +1,56 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FileSpreadsheet, FileText, ListChecks } from "lucide-react";
-import { expect, userEvent, within } from "storybook/test";
+import { FileTextIcon } from "lucide-react";
+import { expect, waitFor, within } from "storybook/test";
 import { Task, TaskContent, TaskItem, TaskItemFile, TaskTrigger } from "./task";
 
+/**
+ * AI Elements `Task` (https://elements.ai-sdk.dev/api/registry/task.json),
+ * imported with the AI Elements CLI. Open by default.
+ */
 const meta = {
   title: "Components/Task",
   component: Task,
-  decorators: [
-    (Story) => (
-      <div className="max-w-xl space-y-4">
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof Task>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Two tasks of an agent run: the files each line touched as inline chips.
- * The second task is folded (`defaultOpen={false}`) and uses its own icon.
- */
+/** One agent task with its items; file names as `TaskItemFile` chips. */
 export const WithFiles: Story = {
   render: () => (
-    <>
-      <Task>
-        <TaskTrigger title="Suche in den Quellen" />
-        <TaskContent>
-          <TaskItem>Suche nach „Anmeldefrist Modulprüfung“</TaskItem>
-          <TaskItem>
-            Lese{" "}
-            <TaskItemFile>
-              <FileText aria-hidden="true" />
-              PO_Informatik_2024.pdf
-            </TaskItemFile>{" "}
-            und{" "}
-            <TaskItemFile>
-              <FileText aria-hidden="true" />
-              PO_Mathematik_2023.pdf
-            </TaskItemFile>
-          </TaskItem>
-          <TaskItem>
-            Prüfe{" "}
-            <TaskItemFile>
-              <FileSpreadsheet aria-hidden="true" />
-              Termine_WS.xlsx
-            </TaskItemFile>
-          </TaskItem>
-        </TaskContent>
-      </Task>
-      <Task defaultOpen={false}>
-        <TaskTrigger title="Antwort prüfen" icon={ListChecks} />
-        <TaskContent>
-          <TaskItem>3 Zitate gegen die Quellen geprüft</TaskItem>
-        </TaskContent>
-      </Task>
-    </>
+    <Task>
+      <TaskTrigger title="Prüfungsordnungen durchsuchen" />
+      <TaskContent>
+        <TaskItem>Suche nach „Anmeldefrist" in der Wissensdatenbank</TaskItem>
+        <TaskItem>
+          Gelesen:{" "}
+          <TaskItemFile>
+            <FileTextIcon className="size-4" />
+            <span>po-informatik-2024.pdf</span>
+          </TaskItemFile>{" "}
+          <TaskItemFile>
+            <FileTextIcon className="size-4" />
+            <span>po-mathematik-2023.pdf</span>
+          </TaskItemFile>
+        </TaskItem>
+        <TaskItem>Zwei Fristen gefunden</TaskItem>
+      </TaskContent>
+    </Task>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const first = canvas.getByRole("button", { name: "Suche in den Quellen" });
-    const second = canvas.getByRole("button", { name: "Antwort prüfen" });
-    await expect(first).toHaveAttribute("aria-expanded", "true");
-    await expect(second).toHaveAttribute("aria-expanded", "false");
+    await expect(canvas.getByText("po-informatik-2024.pdf")).toBeVisible();
+    const trigger = canvas.getByText("Prüfungsordnungen durchsuchen").closest("[aria-expanded]");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  },
+};
 
-    const chip = canvas.getByText("PO_Informatik_2024.pdf");
-    await expect(chip.tagName).toBe("SPAN");
-    // The chip sits on the text line, not on a line of its own.
-    const line = chip.parentElement as HTMLElement;
-    await expect(chip.getBoundingClientRect().top).toBeLessThan(line.getBoundingClientRect().top + 8);
-
-    second.focus();
-    await userEvent.keyboard("{Enter}");
-    await expect(second).toHaveAttribute("aria-expanded", "true");
-    await expect(canvas.getByText("3 Zitate gegen die Quellen geprüft")).toBeVisible();
-    await userEvent.click(first);
-    await expect(canvas.queryByText("PO_Informatik_2024.pdf")).not.toBeInTheDocument();
+/** The same in the dark theme. */
+export const WithFilesDark: Story = {
+  ...WithFiles,
+  globals: { theme: "dark" },
+  play: async (context) => {
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    await WithFiles.play!(context);
   },
 };

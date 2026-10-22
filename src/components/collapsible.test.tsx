@@ -1,60 +1,45 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible";
 
-// Oracle for this file: the WAI-ARIA APG "Disclosure (Show/Hide)" pattern —
-// the control is a button, `aria-expanded` reflects the state, `aria-controls`
-// names the region, Enter and Space toggle. It is written down outside this
-// repo and does not depend on how the component is built.
-
-const renderCollapsible = (props: React.ComponentProps<typeof Collapsible> = {}) =>
-  render(
-    <Collapsible {...props}>
-      <CollapsibleTrigger>Details</CollapsibleTrigger>
-      <CollapsibleContent>Verborgener Inhalt</CollapsibleContent>
-    </Collapsible>,
-  );
-
+// Oracle for this file: the registry source of shadcn/ui's `collapsible`
+// (https://ui.shadcn.com/r/styles/new-york-v4/collapsible.json) — each part
+// adds a `data-slot` and forwards everything else to Radix Collapsible — and
+// Radix Collapsible's documented behaviour (closed content is not mounted,
+// the trigger carries aria-expanded). Neither is derived from this repo.
 describe("Collapsible", () => {
-  it("is a button with aria-expanded that shows and hides the content", async () => {
-    renderCollapsible();
-    const trigger = screen.getByRole("button", { name: "Details" });
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Verborgener Inhalt")).not.toBeInTheDocument();
+  function renderCollapsible(props: { defaultOpen?: boolean } = {}) {
+    return render(
+      <Collapsible data-testid="root" {...props}>
+        <CollapsibleTrigger>Mehr</CollapsibleTrigger>
+        <CollapsibleContent data-testid="content">Inhalt</CollapsibleContent>
+      </Collapsible>,
+    );
+  }
 
-    await userEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    const content = screen.getByText("Verborgener Inhalt");
-    expect(trigger).toHaveAttribute("aria-controls", content.id);
-    expect(content).toHaveAttribute("data-state", "open");
-
-    await userEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Verborgener Inhalt")).not.toBeInTheDocument();
+  it("marks every part with its data-slot", () => {
+    renderCollapsible({ defaultOpen: true });
+    expect(screen.getByTestId("root")).toHaveAttribute("data-slot", "collapsible");
+    expect(screen.getByRole("button", { name: "Mehr" })).toHaveAttribute(
+      "data-slot",
+      "collapsible-trigger",
+    );
+    expect(screen.getByTestId("content")).toHaveAttribute("data-slot", "collapsible-content");
   });
 
-  it("toggles from the keyboard with Enter and Space", async () => {
+  it("is closed by default and does not mount the closed content", () => {
     renderCollapsible();
-    const trigger = screen.getByRole("button", { name: "Details" });
-    await userEvent.tab();
-    expect(trigger).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await userEvent.keyboard(" ");
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Mehr" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Inhalt")).not.toBeInTheDocument();
   });
 
-  it("supports defaultOpen and controlled open with onOpenChange", async () => {
-    const { unmount } = renderCollapsible({ defaultOpen: true });
-    expect(screen.getByText("Verborgener Inhalt")).toBeInTheDocument();
-    unmount();
-
-    const onOpenChange = vi.fn();
-    renderCollapsible({ open: false, onOpenChange });
-    await userEvent.click(screen.getByRole("button", { name: "Details" }));
-    expect(onOpenChange).toHaveBeenCalledWith(true);
-    // Controlled and the parent did not apply the change: still closed.
-    expect(screen.queryByText("Verborgener Inhalt")).not.toBeInTheDocument();
+  it("toggles open and closed from the trigger", () => {
+    renderCollapsible();
+    const trigger = screen.getByRole("button", { name: "Mehr" });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Inhalt")).toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 });

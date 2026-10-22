@@ -1,7 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { SearchIcon } from "lucide-react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
@@ -12,126 +10,78 @@ import {
   ChainOfThoughtStep,
 } from "./chain-of-thought";
 
-// Oracles: the WAI-ARIA APG disclosure pattern (button + aria-expanded +
-// aria-controls naming the region), the ARIA spec's `aria-current="step"`
-// for the current step of a process, and the token names from
-// COMPONENT_GUIDELINES.md's shadcn → JLU mapping (muted-foreground →
-// on-surface-variant, foreground → on-surface, secondary → secondary-container).
-
-function renderChain(props: React.ComponentProps<typeof ChainOfThought> = {}) {
-  return render(
-    <ChainOfThought {...props}>
-      <ChainOfThoughtHeader />
-      <ChainOfThoughtContent>
-        <ChainOfThoughtStep label="Anfrage verstanden" status="complete" />
-        <ChainOfThoughtStep icon={SearchIcon} label="Suche in den Quellen" status="active">
-          <ChainOfThoughtSearchResults>
-            <ChainOfThoughtSearchResult>uni-giessen.de</ChainOfThoughtSearchResult>
-          </ChainOfThoughtSearchResults>
-        </ChainOfThoughtStep>
-        <ChainOfThoughtStep label="Antwort formulieren" description="Noch nicht begonnen" status="pending" />
-        <ChainOfThoughtImage caption="Belegung je Semester">
-          <img alt="Diagramm" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" />
-        </ChainOfThoughtImage>
-      </ChainOfThoughtContent>
-    </ChainOfThought>,
-  );
-}
-
-const step = (label: string) => screen.getByText(label).closest("[data-status]") as HTMLElement;
-
+// Oracle for this file: the AI Elements registry source of `chain-of-thought`
+// (https://elements.ai-sdk.dev/api/registry/chain-of-thought.json, the
+// revision the AI Elements CLI installed): `defaultOpen = false`, header and
+// content each in their own Collapsible driven by one shared open state,
+// the header's fallback label "Chain of Thought" (here its German
+// translation „Gedankengang"), the step's label/description/children
+// layout, the image's optional caption, and the context-guard message.
 describe("ChainOfThought", () => {
-  it("is closed by default; the header is a button whose aria-controls names the content", async () => {
-    renderChain();
+  function Subject(props: { defaultOpen?: boolean; open?: boolean; onOpenChange?: (o: boolean) => void }) {
+    return (
+      <ChainOfThought {...props}>
+        <ChainOfThoughtHeader />
+        <ChainOfThoughtContent>
+          <ChainOfThoughtStep label="Suche" description="Zwei Treffer">
+            <ChainOfThoughtSearchResults>
+              <ChainOfThoughtSearchResult>PO Informatik</ChainOfThoughtSearchResult>
+            </ChainOfThoughtSearchResults>
+          </ChainOfThoughtStep>
+        </ChainOfThoughtContent>
+      </ChainOfThought>
+    );
+  }
+
+  it("is closed by default with the default header label", () => {
+    render(<Subject />);
     const header = screen.getByRole("button", { name: "Gedankengang" });
     expect(header).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Anfrage verstanden")).not.toBeInTheDocument();
-
-    await userEvent.click(header);
-    expect(header).toHaveAttribute("aria-expanded", "true");
-    const content = screen.getByText("Anfrage verstanden").closest("[data-state]") as HTMLElement;
-    // AI Elements renders header and content in two separate Collapsibles,
-    // so there the id would not resolve. One root here.
-    expect(header.getAttribute("aria-controls")).toBe(content.id);
-    expect(document.getElementById(content.id)).toBe(content);
+    expect(screen.queryByText("Suche")).not.toBeInTheDocument();
   });
 
-  it("toggles from the keyboard and takes a custom header label", async () => {
+  it("opens the content from the header (shared open state across both Collapsibles)", () => {
+    render(<Subject />);
+    fireEvent.click(screen.getByRole("button", { name: "Gedankengang" }));
+    expect(screen.getByRole("button", { name: "Gedankengang" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Suche")).toBeInTheDocument();
+    expect(screen.getByText("Zwei Treffer")).toBeInTheDocument();
+    expect(screen.getByText("PO Informatik")).toBeInTheDocument();
+  });
+
+  it("reports toggles through onOpenChange when controlled", () => {
+    const onOpenChange = vi.fn();
+    render(<Subject open={false} onOpenChange={onOpenChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Gedankengang" }));
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    // Controlled and still `open={false}`: stays closed.
+    expect(screen.queryByText("Suche")).not.toBeInTheDocument();
+  });
+
+  it("uses header children instead of the default label", () => {
     render(
       <ChainOfThought>
         <ChainOfThoughtHeader>Recherche</ChainOfThoughtHeader>
-        <ChainOfThoughtContent>
-          <ChainOfThoughtStep label="Schritt" />
-        </ChainOfThoughtContent>
       </ChainOfThought>,
     );
-    const header = screen.getByRole("button", { name: "Recherche" });
-    await userEvent.tab();
-    expect(header).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
-    expect(screen.getByText("Schritt")).toBeInTheDocument();
-    await userEvent.keyboard(" ");
-    expect(screen.queryByText("Schritt")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Recherche" })).toBeInTheDocument();
   });
 
-  // Review finding KI-916 r1: the header renders icon + label + chevron, so a
-  // Radix Slot (asChild) would throw on three children. Oracle: the type
-  // rejects asChild, and an untyped caller passing it still gets the button.
-  it("the header has no asChild and stays a button if it is passed anyway", async () => {
+  it("renders an image with its caption", () => {
     render(
-      <ChainOfThought>
-        {/* @ts-expect-error asChild is not part of ChainOfThoughtHeaderProps */}
-        <ChainOfThoughtHeader asChild>Recherche</ChainOfThoughtHeader>
-        <ChainOfThoughtContent>
-          <ChainOfThoughtStep label="Schritt" />
-        </ChainOfThoughtContent>
-      </ChainOfThought>,
+      <ChainOfThoughtImage caption="Fristen">
+        <span>Bild</span>
+      </ChainOfThoughtImage>,
     );
-    const header = screen.getByRole("button", { name: "Recherche" });
-    expect(header.tagName).toBe("BUTTON");
-    await userEvent.click(header);
-    expect(screen.getByText("Schritt")).toBeInTheDocument();
+    expect(screen.getByText("Bild")).toBeInTheDocument();
+    expect(screen.getByText("Fristen")).toBeInTheDocument();
   });
 
-  it("styles each step by status and marks only the active one aria-current=step", () => {
-    renderChain({ defaultOpen: true });
-
-    const complete = step("Anfrage verstanden");
-    const active = step("Suche in den Quellen");
-    const pending = step("Antwort formulieren");
-
-    expect(complete).toHaveAttribute("data-status", "complete");
-    expect(complete).toHaveClass("text-on-surface-variant");
-    expect(complete).not.toHaveAttribute("aria-current");
-
-    expect(active).toHaveAttribute("data-status", "active");
-    expect(active).toHaveClass("text-on-surface");
-    expect(active).toHaveAttribute("aria-current", "step");
-
-    expect(pending).toHaveAttribute("data-status", "pending");
-    expect(pending).not.toHaveAttribute("aria-current");
-    // Pending dims its icon, not its label (the label stays AA-readable).
-    expect(pending).toHaveClass("text-on-surface-variant");
-    expect(pending.querySelector("svg")).toHaveClass("text-outline");
-    expect(complete.querySelector("svg")).not.toHaveClass("text-outline");
-    expect(screen.getByText("Noch nicht begonnen")).toHaveClass("text-xs", "text-on-surface-variant");
-  });
-
-  it("renders search results as secondary badges and decorative icons", () => {
-    renderChain({ defaultOpen: true });
-    expect(screen.getByText("uni-giessen.de")).toHaveClass(
-      "bg-secondary-container",
-      "text-on-secondary-container",
+  it("throws when a part is used outside ChainOfThought", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<ChainOfThoughtHeader />)).toThrow(
+      "ChainOfThought components must be used within ChainOfThought",
     );
-    for (const svg of document.querySelectorAll("svg")) {
-      expect(svg).toHaveAttribute("aria-hidden", "true");
-    }
-  });
-
-  it("renders an image step as a figure with its caption", () => {
-    renderChain({ defaultOpen: true });
-    const figure = screen.getByRole("figure");
-    expect(figure.querySelector("figcaption")).toHaveTextContent("Belegung je Semester");
-    expect(figure).toContainElement(screen.getByAltText("Diagramm"));
+    spy.mockRestore();
   });
 });

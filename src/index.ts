@@ -156,9 +156,6 @@ export {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-  type CollapsibleProps,
-  type CollapsibleTriggerProps,
-  type CollapsibleContentProps,
 } from "./components/collapsible";
 export {
   Reasoning,
@@ -168,7 +165,7 @@ export {
   ReasoningContent,
   type ReasoningContentProps,
 } from "./components/reasoning";
-export { useReasoning, type ReasoningContextValue } from "./components/reasoning-context";
+export { useReasoning } from "./components/reasoning-context";
 export {
   ChainOfThought,
   type ChainOfThoughtProps,
@@ -178,7 +175,6 @@ export {
   type ChainOfThoughtContentProps,
   ChainOfThoughtStep,
   type ChainOfThoughtStepProps,
-  type ChainOfThoughtStepStatus,
   ChainOfThoughtSearchResults,
   type ChainOfThoughtSearchResultsProps,
   ChainOfThoughtSearchResult,
@@ -186,10 +182,6 @@ export {
   ChainOfThoughtImage,
   type ChainOfThoughtImageProps,
 } from "./components/chain-of-thought";
-export {
-  chainOfThoughtStepVariants,
-  chainOfThoughtStepIconVariants,
-} from "./components/chain-of-thought-variants";
 export {
   Task,
   type TaskProps,
@@ -202,7 +194,6 @@ export {
   TaskItemFile,
   type TaskItemFileProps,
 } from "./components/task";
-export { type AiIconComponent } from "./components/ai-disclosure-variants";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";

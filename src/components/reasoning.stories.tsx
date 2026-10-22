@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { Button } from "./button";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
-import { reducedMotionSets } from "../test/fixtures/ai-display";
 
+/**
+ * AI Elements `Reasoning` (https://elements.ai-sdk.dev/api/registry/reasoning.json),
+ * imported with the AI Elements CLI. The label is the DS `Shimmer` while
+ * streaming; `ReasoningContent` renders its string as given (no streamdown).
+ */
 const meta = {
   title: "Components/Reasoning",
   component: Reasoning,
@@ -20,162 +23,103 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const REASONING = [
-  "Die Frage nennt zwei Studiengänge, also suche ich beide Prüfungsordnungen.",
-  "In der Ordnung für Informatik steht die Anmeldefrist in § 12, für Mathematik in § 9.",
-  "Beide Fristen enden vier Wochen vor der Prüfung; das fasse ich zusammen.",
-];
+const REASONING =
+  "Die Frage nennt zwei Studiengänge, also suche ich beide Prüfungsordnungen. " +
+  "In der Ordnung für Informatik steht die Anmeldefrist in § 12, für Mathematik in § 9. " +
+  "Beide Fristen enden vier Wochen vor der Prüfung; das fasse ich zusammen.";
 
-const Text = () => (
-  <div className="space-y-2">
-    {REASONING.map((line) => (
-      <p key={line} className="m-0">
-        {line}
-      </p>
-    ))}
-  </div>
-);
-
-/**
- * While the model reasons: the label shimmers „Denke nach …" and the text
- * is open. With reduced motion the label reads as plain muted text.
- */
+/** While the model reasons: open, the label shimmers „Denke nach …". */
 export const Streaming: Story = {
   render: () => (
     <Reasoning isStreaming>
       <ReasoningTrigger />
-      <ReasoningContent>
-        <Text />
-      </ReasoningContent>
+      <ReasoningContent>{REASONING}</ReasoningContent>
     </Reasoning>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByRole("button", { name: "Denke nach …" });
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    const shimmer = canvas.getByText("Denke nach …");
-    // The keyframe runs in normal mode …
-    await expect(getComputedStyle(shimmer).animationName).toBe("shimmer");
-    // … and the loaded CSS switches it off under prefers-reduced-motion.
-    await expect(reducedMotionSets("motion-reduce:animate-none", "animation-name", "none")).toBe(true);
+    await expect(canvas.getByText(/Prüfungsordnungen/)).toBeVisible();
   },
 };
 
-/** Done, as loaded from history: the stored duration, still open (`defaultOpen`). */
+/** Done, opened from history (`defaultOpen`) with the stored duration. */
 export const Done: Story = {
   render: () => (
-    <Reasoning duration={4}>
+    <Reasoning defaultOpen duration={4}>
       <ReasoningTrigger />
-      <ReasoningContent>
-        <Text />
-      </ReasoningContent>
+      <ReasoningContent>{REASONING}</ReasoningContent>
     </Reasoning>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "Nachgedacht für 4 Sekunden" });
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  },
 };
 
-/** Done and folded: only the trigger line shows; a click or Enter opens it. */
+/** The same in the dark theme. */
+export const DoneDark: Story = {
+  ...Done,
+  globals: { theme: "dark" },
+  play: async (context) => {
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    await Done.play!(context);
+  },
+};
+
+/** History without `defaultOpen`: closed, only the trigger line shows; a click opens it. */
 export const Collapsed: Story = {
   render: () => (
-    <Reasoning defaultOpen={false} duration={12}>
+    <Reasoning duration={12}>
       <ReasoningTrigger />
-      <ReasoningContent>
-        <Text />
-      </ReasoningContent>
+      <ReasoningContent>{REASONING}</ReasoningContent>
     </Reasoning>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByRole("button", { name: "Nachgedacht für 12 Sekunden" });
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await expect(canvas.queryByText(REASONING[0])).not.toBeInTheDocument();
-    trigger.focus();
-    await userEvent.keyboard("{Enter}");
+    await expect(canvas.queryByText(/Prüfungsordnungen/)).toBeNull();
+    await userEvent.click(trigger);
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(canvas.getByText(REASONING[0])).toBeVisible();
   },
 };
 
-const STREAM_MS = 1200;
-
-function LiveStream() {
-  const [streaming, setStreaming] = useState(false);
-  const [shown, setShown] = useState(0);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
-  const start = () => {
-    setShown(0);
-    setStreaming(true);
-    REASONING.forEach((_, i) => {
-      timers.current.push(setTimeout(() => setShown(i + 1), ((i + 1) * STREAM_MS) / (REASONING.length + 1)));
-    });
-    timers.current.push(setTimeout(() => setStreaming(false), STREAM_MS));
-  };
-
+function LiveCycleDemo() {
+  const [isStreaming, setIsStreaming] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setIsStreaming(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
   return (
-    <div className="space-y-4">
-      <Button variant="outline" onClick={start} disabled={streaming}>
-        Antwort simulieren
-      </Button>
-      <Reasoning isStreaming={streaming} defaultOpen={false}>
-        <ReasoningTrigger />
-        <ReasoningContent>
-          <div className="space-y-2">
-            {REASONING.slice(0, shown).map((line) => (
-              <p key={line} className="m-0">
-                {line}
-              </p>
-            ))}
-          </div>
-        </ReasoningContent>
-      </Reasoning>
-    </div>
+    <Reasoning isStreaming={isStreaming}>
+      <ReasoningTrigger />
+      <ReasoningContent>{REASONING}</ReasoningContent>
+    </Reasoning>
   );
 }
 
 /**
- * The whole cycle: „Antwort simulieren" streams for 1.2 s. The text opens
- * when the stream starts, the label then shows the time (rounded up to
- * whole seconds) and the text folds one second later.
+ * A simulated 1.2 s stream: open while streaming, then the measured time
+ * rounded up („Nachgedacht für 2 Sekunden"), then it folds one second later.
  */
 export const LiveCycle: Story = {
-  render: () => <LiveStream />,
+  render: () => <LiveCycleDemo />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "Antwort simulieren" }));
-    const trigger = await canvas.findByRole("button", { name: "Denke nach …" });
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await waitFor(() => expect(trigger).toHaveAccessibleName(/^Nachgedacht für \d+ Sekunden?$/), {
+    await expect(canvas.getByRole("button", { name: "Denke nach …" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    const done = await canvas.findByRole(
+      "button",
+      { name: "Nachgedacht für 2 Sekunden" },
+      { timeout: 3000 },
+    );
+    await waitFor(() => expect(done).toHaveAttribute("aria-expanded", "false"), {
       timeout: 3000,
     });
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"), { timeout: 3000 });
-  },
-};
-
-/**
- * The app's UI is German but the model reasons in English: `lang` on
- * `ReasoningContent` lets screen readers switch voice, and
- * `getThinkingMessage` replaces the label (here with the app's own words).
- */
-export const OtherLanguage: Story = {
-  render: () => (
-    <Reasoning duration={3}>
-      <ReasoningTrigger
-        getThinkingMessage={(streaming, duration) =>
-          streaming ? "Denkt nach …" : `Gedankengang (${duration ?? "?"} s)`
-        }
-      />
-      <ReasoningContent lang="en">
-        <p className="m-0">
-          The user asks about two degree programmes, so I look up both examination regulations.
-        </p>
-      </ReasoningContent>
-    </Reasoning>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: "Gedankengang (3 s)" })).toBeInTheDocument();
-    await expect(canvas.getByText(/The user asks/).closest("[lang]")).toHaveAttribute("lang", "en");
   },
 };

@@ -1,179 +1,201 @@
-import * as React from "react";
+"use client";
+
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import { BrainIcon, ChevronDownIcon } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./collapsible";
 import { cn } from "../lib/utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible";
-import { aiDisclosureChevronClass, aiDisclosureTriggerClass } from "./ai-disclosure-variants";
+import { BrainIcon, ChevronDownIcon } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import { ReasoningContext, useReasoning } from "./reasoning-context";
 import { Shimmer } from "./shimmer";
 
-/** How long the text stays open after a stream ends before it folds away. */
-const AUTO_CLOSE_DELAY_MS = 1000;
+export type ReasoningProps = ComponentProps<typeof Collapsible> & {
+  isStreaming?: boolean;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  duration?: number;
+};
+
+const AUTO_CLOSE_DELAY = 1000;
 const MS_IN_S = 1000;
 
-/**
- * A model's reasoning ("thinking") text, folded under a one-line trigger.
- * Port of the AI Elements `Reasoning` (https://registry.ai-sdk.dev/reasoning.json)
- * on a Radix Collapsible and JLU tokens.
- *
- * While `isStreaming` is true the trigger shimmers „Denke nach …" and the text
- * is open. When a stream ends, the time it took is kept (seconds, rounded
- * up — „Nachgedacht für 4 Sekunden") and the text folds away after one
- * second, unless the user toggled it in that second. A `Reasoning` that is
- * never streamed in its lifetime (a message loaded from history) does not
- * fold by itself: it shows `defaultOpen` and, without a `duration` prop,
- * „Nachgedacht für einige Sekunden".
- *
- * `open`/`defaultOpen`/`onOpenChange` work as on any Radix disclosure. When
- * controlled, the auto-open and auto-close arrive as `onOpenChange` calls.
- */
-export interface ReasoningProps extends React.ComponentPropsWithoutRef<typeof Collapsible> {
-  /** The reasoning text is still arriving. */
-  isStreaming?: boolean;
-  /** Seconds the reasoning took, when the app knows it (e.g. stored with the message). Overrides the measured time. */
-  duration?: number;
-}
+export const Reasoning = memo(
+  ({
+    className,
+    isStreaming = false,
+    open,
+    defaultOpen,
+    onOpenChange,
+    duration: durationProp,
+    children,
+    ...props
+  }: ReasoningProps) => {
+    const resolvedDefaultOpen = defaultOpen ?? isStreaming;
+    // Track if defaultOpen was explicitly set to false (to prevent auto-open)
+    const isExplicitlyClosed = defaultOpen === false;
 
-const Reasoning = React.forwardRef<HTMLDivElement, ReasoningProps>(
-  (
-    {
-      isStreaming = false,
-      open,
-      defaultOpen = true,
-      onOpenChange,
-      duration: durationProp,
-      children,
-      ...props
-    },
-    ref,
-  ) => {
-    const [isOpen, setIsOpen] = useControllableState({
-      prop: open,
-      defaultProp: defaultOpen,
+    const [isOpen, setIsOpen] = useControllableState<boolean>({
+      defaultProp: resolvedDefaultOpen,
       onChange: onOpenChange,
-      caller: "Reasoning",
+      prop: open,
     });
-    const [measuredDuration, setMeasuredDuration] = React.useState<number | undefined>(undefined);
-    const duration = durationProp ?? measuredDuration;
-
-    // Radix's setter changes identity whenever a controlled `open` changes.
-    // Read it through a ref so the stream effect below re-runs only on
-    // `isStreaming`: a parent changing `open` inside the one-second window
-    // must not cancel the pending close.
-    const setIsOpenRef = React.useRef(setIsOpen);
-    React.useLayoutEffect(() => {
-      setIsOpenRef.current = setIsOpen;
+    const [duration, setDuration] = useControllableState<number | undefined>({
+      defaultProp: undefined,
+      prop: durationProp,
     });
-    const streamStartRef = React.useRef<number | null>(null);
-    const autoCloseTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    React.useEffect(() => {
+    const hasEverStreamedRef = useRef(isStreaming);
+    const [hasAutoClosed, setHasAutoClosed] = useState(false);
+    const startTimeRef = useRef<number | null>(null);
+
+    // Track when streaming starts and compute duration
+    useEffect(() => {
       if (isStreaming) {
-        if (streamStartRef.current === null) {
-          streamStartRef.current = Date.now();
-          setIsOpenRef.current(true);
+        hasEverStreamedRef.current = true;
+        if (startTimeRef.current === null) {
+          startTimeRef.current = Date.now();
         }
-        return;
+      } else if (startTimeRef.current !== null) {
+        setDuration(Math.ceil((Date.now() - startTimeRef.current) / MS_IN_S));
+        startTimeRef.current = null;
       }
-      const start = streamStartRef.current;
-      if (start === null) return;
-      streamStartRef.current = null;
-      setMeasuredDuration(Math.ceil((Date.now() - start) / MS_IN_S));
-      const timer = setTimeout(() => setIsOpenRef.current(false), AUTO_CLOSE_DELAY_MS);
-      autoCloseTimerRef.current = timer;
-      return () => clearTimeout(timer);
-    }, [isStreaming]);
+    }, [isStreaming, setDuration]);
 
-    // A toggle by the user wins over the pending auto-close — through the
-    // built-in trigger (Radix's onOpenChange) and through `useReasoning()`'s
-    // setter alike, so a custom trigger behaves the same.
-    const handleOpenChange = (next: boolean) => {
-      clearTimeout(autoCloseTimerRef.current);
-      setIsOpen(next);
-    };
+    // Auto-open when streaming starts (unless explicitly closed)
+    useEffect(() => {
+      if (isStreaming && !isOpen && !isExplicitlyClosed) {
+        setIsOpen(true);
+      }
+    }, [isStreaming, isOpen, setIsOpen, isExplicitlyClosed]);
+
+    // Auto-close when streaming ends (once only, and only if it ever streamed)
+    useEffect(() => {
+      if (
+        hasEverStreamedRef.current &&
+        !isStreaming &&
+        isOpen &&
+        !hasAutoClosed
+      ) {
+        const timer = setTimeout(() => {
+          setIsOpen(false);
+          setHasAutoClosed(true);
+        }, AUTO_CLOSE_DELAY);
+
+        return () => clearTimeout(timer);
+      }
+    }, [isStreaming, isOpen, setIsOpen, hasAutoClosed]);
+
+    const handleOpenChange = useCallback(
+      (newOpen: boolean) => {
+        setIsOpen(newOpen);
+      },
+      [setIsOpen]
+    );
+
+    const contextValue = useMemo(
+      () => ({ duration, isOpen, isStreaming, setIsOpen }),
+      [duration, isOpen, isStreaming, setIsOpen]
+    );
 
     return (
-      <ReasoningContext.Provider
-        value={{ isStreaming, isOpen, setIsOpen: handleOpenChange, duration }}
-      >
-        <Collapsible ref={ref} open={isOpen} onOpenChange={handleOpenChange} {...props}>
+      <ReasoningContext.Provider value={contextValue}>
+        <Collapsible
+          className={cn("not-prose mb-4", className)}
+          onOpenChange={handleOpenChange}
+          open={isOpen}
+          {...props}
+        >
           {children}
         </Collapsible>
       </ReasoningContext.Provider>
     );
-  },
-);
-Reasoning.displayName = "Reasoning";
-
-function defaultGetThinkingMessage(isStreaming: boolean, duration?: number): React.ReactNode {
-  if (isStreaming) {
-    return (
-      <Shimmer as="span" duration={1}>
-        Denke nach …
-      </Shimmer>
-    );
   }
-  if (duration === undefined) return <span>Nachgedacht für einige Sekunden</span>;
-  if (duration < 1) return <span>Nachgedacht für weniger als 1 Sekunde</span>;
-  return <span>Nachgedacht für {duration === 1 ? "1 Sekunde" : `${duration} Sekunden`}</span>;
-}
+);
 
-/**
- * The button that shows and hides the reasoning: brain icon, status label,
- * chevron. `getThinkingMessage(isStreaming, duration)` replaces the label
- * (defaults are German: „Denke nach …" shimmering while streaming, then
- * „Nachgedacht für N Sekunden" / „… 1 Sekunde" / „… weniger als 1 Sekunde" /
- * „… einige Sekunden" when no duration is known). `children` replace the
- * whole row inside the button. The label is the button's accessible name,
- * so keep it text. No `asChild`: the trigger is always this button — for a
- * trigger element of your own, build it on `useReasoning()`.
- */
-export interface ReasoningTriggerProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof CollapsibleTrigger>, "asChild"> {
-  getThinkingMessage?: (isStreaming: boolean, duration?: number) => React.ReactNode;
-}
+export type ReasoningTriggerProps = ComponentProps<
+  typeof CollapsibleTrigger
+> & {
+  getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
+};
 
-const ReasoningTrigger = React.forwardRef<HTMLButtonElement, ReasoningTriggerProps>(
-  ({ className, children, getThinkingMessage = defaultGetThinkingMessage, ...props }, ref) => {
-    const { isStreaming, duration } = useReasoning();
+const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
+  if (isStreaming || duration === 0) {
+    return <Shimmer duration={1}>Denke nach …</Shimmer>;
+  }
+  if (duration === undefined) {
+    return <p>Nachgedacht für ein paar Sekunden</p>;
+  }
+  return <p>Nachgedacht für {duration} Sekunden</p>;
+};
+
+export const ReasoningTrigger = memo(
+  ({
+    className,
+    children,
+    getThinkingMessage = defaultGetThinkingMessage,
+    ...props
+  }: ReasoningTriggerProps) => {
+    const { isStreaming, isOpen, duration } = useReasoning();
+
     return (
       <CollapsibleTrigger
-        ref={ref}
-        className={cn(aiDisclosureTriggerClass, className)}
+        className={cn(
+          "flex w-full items-center gap-2 text-on-surface-variant text-sm transition-colors hover:text-on-surface",
+          className
+        )}
         {...props}
-        asChild={false}
       >
         {children ?? (
           <>
-            <BrainIcon aria-hidden="true" className="size-4" />
+            <BrainIcon className="size-4" />
             {getThinkingMessage(isStreaming, duration)}
-            <ChevronDownIcon aria-hidden="true" className={aiDisclosureChevronClass} />
+            <ChevronDownIcon
+              className={cn(
+                "size-4 transition-transform",
+                isOpen ? "rotate-180" : "rotate-0"
+              )}
+            />
           </>
         )}
       </CollapsibleTrigger>
     );
-  },
+  }
 );
-ReasoningTrigger.displayName = "ReasoningTrigger";
 
-/**
- * The reasoning text. Renders its `children` as given — bring your own
- * markdown/math rendering (AI Elements renders a markdown string through
- * `streamdown`; this port does not ship a renderer). Every other prop lands
- * on the element, e.g. `lang="en"` when the model reasons in another
- * language than the UI.
- */
-export type ReasoningContentProps = React.ComponentPropsWithoutRef<typeof CollapsibleContent>;
+export type ReasoningContentProps = ComponentProps<
+  typeof CollapsibleContent
+> & {
+  children: string;
+};
 
-const ReasoningContent = React.forwardRef<HTMLDivElement, ReasoningContentProps>(
-  ({ className, ...props }, ref) => (
+export const ReasoningContent = memo(
+  ({ className, children, ...props }: ReasoningContentProps) => (
     <CollapsibleContent
-      ref={ref}
-      className={cn("mt-4 text-sm text-on-surface-variant outline-none", className)}
+      className={cn(
+        "mt-4 text-sm",
+        "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-on-surface-variant outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
+        className
+      )}
       {...props}
-    />
-  ),
+    >
+      {children}
+    </CollapsibleContent>
+  )
 );
-ReasoningContent.displayName = "ReasoningContent";
 
-export { Reasoning, ReasoningTrigger, ReasoningContent };
+Reasoning.displayName = "Reasoning";
+ReasoningTrigger.displayName = "ReasoningTrigger";
+ReasoningContent.displayName = "ReasoningContent";
