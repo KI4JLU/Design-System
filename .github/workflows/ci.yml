@@ -8,6 +8,13 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # Playwright's image ships Chromium and its system libraries, so the job
+    # skips `playwright install --with-deps` (6–9 min of downloads and apt per
+    # run). Keep the tag equal to the `playwright` version in package-lock.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,10 +22,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Storybook-Story-Tests laufen im Vitest-Browser-Mode (Playwright/Chromium).
-      - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck
+      # Storybook-Story-Tests laufen im Vitest-Browser-Mode (Playwright/Chromium).
+      # A green run takes 1–2 min; a hung one fails here instead of blocking the PR.
       - run: npm test
+        timeout-minutes: 5
       - run: npm run build
       - run: npm run build-storybook
