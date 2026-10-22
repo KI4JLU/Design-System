@@ -59,6 +59,60 @@ describe("SidebarCard", () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 
+  // Oracle: the prop's contract — dimmed content, controls at full strength,
+  // behaviour unchanged. `opacity-50` is the muted SidebarRailItem's class,
+  // asserted by name so the two cannot drift apart unnoticed.
+  it("muted dims tile, title and meta, but not the checkbox or menu, and still opens", async () => {
+    const onOpen = vi.fn();
+    const { container } = render(card({
+      onOpen, muted: true, meta: <span>Ausgeschlossen</span>,
+      selectable: true, selectLabel: "Auswählen", actions: [{ label: "Umbenennen", onSelect: () => {} }], actionsLabel: "Aktionen für",
+    }));
+    const li = container.querySelector("[data-slot=sidebar-card]")!;
+    expect(li).toHaveAttribute("data-muted");
+    expect(li).not.toHaveClass("opacity-50");
+    expect(screen.getByRole("button", { name: "Budget" }).closest(".opacity-50")).not.toBeNull();
+    expect(screen.getByText("Ausgeschlossen").closest(".opacity-50")).not.toBeNull();
+    expect(li.querySelector("[aria-hidden=true]")).toHaveClass("opacity-50");
+    expect(screen.getByRole("checkbox", { name: "Auswählen Budget" }).closest(".opacity-50")).toBeNull();
+    expect(screen.getByRole("button", { name: "Aktionen für Budget" }).closest(".opacity-50")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Budget" }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  // Oracle: the variant classes by name — the colours themselves are checked
+  // in the DeleteSelection story, where tokens resolve.
+  it("selectionTone destructive marks a ticked card and its checkbox in the error colour", () => {
+    const { container } = render(card({
+      selectable: true, selectionMode: true, selected: true, onSelectedChange: () => {},
+      selectionTone: "destructive", selectLabel: "Auswählen",
+    }));
+    const li = container.querySelector("[data-slot=sidebar-card]")!;
+    expect(li).toHaveClass("border-error", "bg-error/10");
+    expect(li).not.toHaveClass("border-primary");
+    expect(screen.getByRole("checkbox", { name: "Auswählen Budget" }).className).toContain("data-[state=checked]:bg-error");
+  });
+
+  it("selectionTone destructive leaves an unticked card and the default tone as before", () => {
+    const { container, rerender } = render(card({
+      selectable: true, selectionMode: true, selected: false, onSelectedChange: () => {}, selectionTone: "destructive",
+    }));
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+    // Outside selection mode the tone does nothing — neither card nor checkbox.
+    rerender(card({ selectable: true, selected: true, onSelectedChange: () => {}, selectionTone: "destructive" }));
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+    expect(screen.getByRole("checkbox").className).not.toContain("bg-error");
+    rerender(card({ selectable: true, selectionMode: true, selected: true, onSelectedChange: () => {} }));
+    expect(container.querySelector("[data-slot=sidebar-card]")).toHaveClass("border-primary");
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+  });
+
+  it("without muted carries no data-muted and no dimming", () => {
+    const { container } = render(card());
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveAttribute("data-muted");
+    expect(container.querySelector(".opacity-50")).toBeNull();
+  });
+
   it("with onOpen, the title is a focusable button", async () => {
     render(card());
     const title = screen.getByRole("button", { name: "Budget" });

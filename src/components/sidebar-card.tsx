@@ -7,6 +7,7 @@ import { sidebarCardVariants, sidebarControlShape, sidebarIconTileVariants } fro
 import { useUiShape, type UiShape } from "./ui-shape-context";
 
 export type SidebarCardAction = ActionMenuItem;
+export type SidebarSelectionTone = "default" | "destructive";
 
 export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, "title"> {
   /** Leading glyph (an svg, or an emoji string), shown in the tinted tile. */
@@ -41,12 +42,28 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
   selectLabel?: string;
   /** Batch mode: a click toggles the selection instead of opening; menu and extras hide. */
   selectionMode?: boolean;
+  /**
+   * Greyed out: the item is there and fully usable, but currently left out of
+   * something (a source excluded from the chat). Dims the tile, title and
+   * meta; the checkbox, extras and actions menu keep full strength, since they
+   * still work. Not a disabled state — clicks, focus and the menu behave as
+   * without it.
+   */
+  muted?: boolean;
+  /**
+   * What the selection is for. `destructive` = a delete selection: a ticked
+   * card and its checkbox take the error colour instead of primary, so the
+   * user sees what is about to go. Only matters in `selectionMode`.
+   */
+  selectionTone?: SidebarSelectionTone;
   /** Default: the app-wide Style (`useUiShape`). */
   shape?: UiShape;
   titleTestId?: string;
 }
 
 const titleClass = "block w-full truncate text-left text-sm font-medium text-on-surface";
+/** The same strength as a muted SidebarRailItem, so card and rail agree. */
+const mutedClass = "opacity-50";
 
 /** A click that landed on one of the card's own controls — or on its portaled
  *  menu, whose React events still bubble through the card. */
@@ -70,7 +87,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     {
       icon, iconText, title, onOpen, meta, extra, actions, actionsLabel,
       active, selectable, selected = false, onSelectedChange, selectLabel,
-      selectionMode, shape: shapeProp, titleTestId, className, onClick, ...rest
+      selectionMode, muted, selectionTone = "default", shape: shapeProp, titleTestId, className, onClick, ...rest
     },
     ref,
   ) => {
@@ -96,10 +113,13 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         data-slot="sidebar-card"
         data-shape={shape}
         data-static={onOpen ? undefined : ""}
+        data-muted={muted ? "" : undefined}
         className={cn(
           sidebarCardVariants({
             shape,
-            state: active || (selectionMode && selected) ? "active" : "idle",
+            state: selectionMode && selected
+              ? (selectionTone === "destructive" ? "marked" : "active")
+              : active ? "active" : "idle",
             interactive,
           }),
           className,
@@ -107,14 +127,14 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         onClick={planeClick}
         {...rest}
       >
-        <span aria-hidden="true" className={sidebarIconTileVariants({ shape })}>
+        <span aria-hidden="true" className={cn(sidebarIconTileVariants({ shape }), muted && mutedClass)}>
           {iconText ? (
             <span className="text-[8px] font-bold tracking-wide">{iconText}</span>
           ) : (
             icon
           )}
         </span>
-        <div className="min-w-0 flex-1">
+        <div className={cn("min-w-0 flex-1", muted && mutedClass)}>
           {titleIsButton ? (
             <button
               type="button"
@@ -141,6 +161,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         {!selectionMode && extra}
         {selectable && (
           <Checkbox
+            tone={selectionMode ? selectionTone : "default"}
             checked={selected}
             onCheckedChange={(c) => onSelectedChange?.(c === true)}
             aria-label={selectLabel ? `${selectLabel} ${title}` : title}

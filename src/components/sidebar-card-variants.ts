@@ -46,6 +46,8 @@ export const sidebarCardVariants = cva(
       state: {
         idle: "border-outline-variant bg-surface-container-lowest",
         active: "border-primary bg-primary/10",
+        // Ticked in a delete selection (SidebarCard selectionTone="destructive").
+        marked: "border-error bg-error/10",
       },
       // false = a display-only card (no onOpen): no pointer cursor, no hover fill.
       interactive: {
