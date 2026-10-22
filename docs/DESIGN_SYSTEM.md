@@ -529,7 +529,7 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
-- **Unreleased — set the version at release** — Nothing removed or renamed; no export, prop or default changed. The attachment chip and the chip `×` change their look. The entries:
+- **0.57.1** — Nothing removed or renamed; no export, prop or default changed. The attachment chip and the chip `×` change their look. The entries:
 
   - **Rule: delete and remove actions always use a destructive `Button` variant.** `ghost-destructive` in dialog footers, toolbars and rows, `destructive-outline` for a secondary danger, `destructive` for the confirm step — never `ghost`/`outline` with a trash icon. In §4, COMPONENT_GUIDELINES.md („Delete and remove actions") and the new MDX page `Components/Button`. The Button variant lists in both docs now name all nine variants and the `field` size.
   - **Stories.** `Components/Button → Delete Actions` (the three placements) and `Components/SettingsDialog → Delete In Footer` (delete left next to the status, Abbrechen/Speichern right, a `destructive` confirm step). Both check the computed colours against the `--color-error` tokens; the footer story also checks the positions.
