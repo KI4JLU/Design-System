@@ -15,7 +15,7 @@ import { cn } from "../lib/utils";
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
+import type { ComponentProps, HTMLAttributes, ReactElement, ReactNode } from "react";
 import {
   createContext,
   memo,
@@ -105,7 +105,9 @@ export const MessageAction = ({
           >
             {button}
           </TooltipTrigger>
-          <TooltipContent>
+          {/* Inverse surface, not the DS Tooltip's primary: on a primary user
+              bubble a primary tooltip disappears into it (message actions only) */}
+          <TooltipContent className="bg-inverse-surface text-inverse-on-surface">
             <p>{tooltip}</p>
           </TooltipContent>
         </Tooltip>
@@ -344,10 +346,16 @@ export const MessageBranchNext = ({
   );
 };
 
-export type MessageBranchPageProps = HTMLAttributes<HTMLSpanElement>;
+export type MessageBranchPageProps = HTMLAttributes<HTMLSpanElement> & {
+  /** Replaces the default „N von M" (1-based current branch, total). */
+  format?: (current: number, total: number) => ReactNode;
+};
+
+const defaultFormatPage = (current: number, total: number) => `${current} von ${total}`;
 
 export const MessageBranchPage = ({
   className,
+  format = defaultFormatPage,
   ...props
 }: MessageBranchPageProps) => {
   const { currentBranch, totalBranches } = useMessageBranch();
@@ -362,7 +370,7 @@ export const MessageBranchPage = ({
       )}
       {...props}
     >
-      {currentBranch + 1} von {totalBranches}
+      {format(currentBranch + 1, totalBranches)}
     </ButtonGroupText>
   );
 };

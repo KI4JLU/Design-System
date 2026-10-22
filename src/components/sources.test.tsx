@@ -126,3 +126,14 @@ describe("Sources", () => {
     expect(screen.getByRole("link", { name: "Hier" })).toBeInTheDocument();
   });
 });
+
+describe("Source newTabLabel (consumer translation)", () => {
+  // Oracle: the consumer's hint replaces the German default in the link name.
+  it("uses newTabLabel for the new-tab hint", () => {
+    render(<Source href="/a" newTabLabel="(opens in a new tab)" title="Exam rules" />);
+    expect(
+      screen.getByRole("link", { name: /^Exam rules\s?\(opens in a new tab\)$/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link")).not.toHaveAttribute("newtablabel");
+  });
+});

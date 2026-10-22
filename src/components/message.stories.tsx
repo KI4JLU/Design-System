@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
+  PencilIcon,
   CopyIcon,
   RefreshCcwIcon,
   ThumbsDownIcon,
@@ -7,6 +8,7 @@ import {
 } from "lucide-react";
 import { expect, screen, waitFor, within } from "storybook/test";
 import { Button } from "./button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "./sources";
 import { keyboardFocusRings } from "../test/fixtures/focus-ring";
 import {
@@ -246,5 +248,80 @@ export const NarrowToolbar: Story = {
     const trigger = canvas.getByRole("button", { name: "4 Quellen verwendet" });
     await expect(lineCount(page)).toBe(1);
     await expect(lineCount(trigger)).toBe(1);
+  },
+};
+
+const rgb = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+const luminance = (c: string) => {
+  const [r, g, b] = rgb(c).map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+const tooltipContent = (text: string) =>
+  [...document.querySelectorAll('[data-slot="tooltip-content"]')].find((el) =>
+    el.textContent?.includes(text),
+  ) as HTMLElement | undefined;
+
+/**
+ * A user's message as a primary bubble with its action row; the action
+ * tooltip opens over the bubble. Message actions use the inverse surface, so
+ * the tooltip stays visible on primary (the DS Tooltip itself, open on the
+ * right for comparison, stays primary).
+ */
+export const TooltipOnPrimaryBubble: Story = {
+  render: () => (
+    <div className="flex items-start justify-between gap-8 pt-16">
+      <Tooltip open>
+        <TooltipTrigger asChild>
+          <Button variant="outline">Referenz</Button>
+        </TooltipTrigger>
+        <TooltipContent>Standard-Tooltip</TooltipContent>
+      </Tooltip>
+      <div className="flex flex-col items-end gap-1">
+        <div
+          className="rounded-lg bg-primary px-4 py-3 text-sm text-on-primary"
+          data-testid="bubble"
+        >
+          Wann endet die Prüfungsanmeldung?
+        </div>
+        <MessageActions>
+          <MessageAction tooltip="Bearbeiten">
+            <PencilIcon className="size-4" />
+          </MessageAction>
+          <MessageAction tooltip="Kopieren">
+            <CopyIcon className="size-4" />
+          </MessageAction>
+        </MessageActions>
+      </div>
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.hover(canvas.getByRole("button", { name: "Bearbeiten" }));
+    await waitFor(() => expect(tooltipContent("Bearbeiten")).toBeDefined());
+    const action = getComputedStyle(tooltipContent("Bearbeiten")!);
+    const reference = getComputedStyle(tooltipContent("Standard-Tooltip")!);
+    const bubble = getComputedStyle(canvas.getByTestId("bubble"));
+    await expect(action.backgroundColor).not.toBe(bubble.backgroundColor);
+    await expect(action.backgroundColor).not.toBe(reference.backgroundColor);
+    // Neither half of the DS Tooltip's primary pair: the text colour changes too.
+    await expect(action.color).not.toBe(reference.color);
+    await expect(reference.backgroundColor).toBe(bubble.backgroundColor);
+    await expect(contrast(action.color, action.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+  },
+};
+
+/** The same in the dark theme. */
+export const TooltipOnPrimaryBubbleDark: Story = {
+  ...TooltipOnPrimaryBubble,
+  globals: { theme: "dark" },
+  play: async (context) => {
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    await TooltipOnPrimaryBubble.play!(context);
   },
 };

@@ -482,3 +482,27 @@ describe("MessageBranch before the count is known (Codex review)", () => {
     expect(withId[0]).not.toHaveClass("hidden");
   });
 });
+
+describe("MessageBranchPage format (consumer translation)", () => {
+  // Oracle: a consumer's formatter replaces the default text and receives the
+  // 1-based current branch and the total, as the default „N von M" shows them.
+  it("renders format(current, total) instead of „N von M“ and follows steps", async () => {
+    render(
+      <MessageBranch>
+        <MessageBranchContent>
+          <p key="1">eins</p>
+          <p key="2">zwei</p>
+          <p key="3">drei</p>
+        </MessageBranchContent>
+        <MessageBranchSelector aria-label="Versions">
+          <MessageBranchNext aria-label="Next version" />
+          <MessageBranchPage format={(current, total) => `${current} of ${total}`} />
+        </MessageBranchSelector>
+      </MessageBranch>,
+    );
+    expect(await screen.findByText("1 of 3")).toBeInTheDocument();
+    expect(screen.queryByText(/von/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next version" }));
+    expect(screen.getByText("2 of 3")).toBeInTheDocument();
+  });
+});
