@@ -51,6 +51,27 @@
   --p-rose-800: #7f292b;
   --p-rose-950: #410007;
 
+  /* Dunkelmodus-Palette — neutrale Graustufen (dunkel → hell) und fünf
+   * Akzente, nur im Dunkelmodus verwendet. */
+  --p-night-950: #0e0e0e;
+  --p-night-925: #191919;
+  --p-night-900: #1e1e1e;
+  --p-night-850: #272727;
+  --p-night-800: #353535;
+  --p-night-750: #3c3c3c;
+  /* Akzente je als Paar: hell (Text, Akzent) und tief (Container). */
+  --p-night-pink: #ff5b8a;
+  --p-night-pink-deep: #e84077;
+  --p-night-orange: #ff956d;
+  --p-night-orange-deep: #e85b3b;
+  --p-night-yellow: #ffd76f;
+  --p-night-yellow-deep: #d17723;
+  --p-night-green: #a4dc7b;
+  --p-night-green-deep: #009e6a;
+  --p-night-cyan: #6adde7;
+  --p-night-cyan-deep: #008da6;
+  --p-night-purple: #ab9df2;
+
   /* Neutral / Grau (kühl) — Flächen, Text, Ränder (hell → dunkel) */
   --p-white: #ffffff;
   --p-black: #000000;
@@ -198,11 +219,13 @@
   --color-surface-container-lowest: var(--p-white);
   --color-surface-container-low: var(--p-gray-75);
 
-  /* App frame: `canvas` is the main content area (white in the drawn design,
-   * the side-panel grey from contrast `medium` up), `sidebar` the side
-   * panels. AppShell paints them; a page inside `<main>` stays transparent. */
+  /* App frame: `canvas` is the main content area, `sidebar` the side panels.
+   * Both white in the drawn design; from contrast `medium` up the canvas
+   * steps to `--p-gray-25` and the side panels stay white. AppShell paints
+   * them; a page inside `<main>` stays transparent. (A settings window's nav
+   * column always sits on `surface`, a second colour beside its content.) */
   --color-canvas: var(--p-white);
-  --color-sidebar: var(--p-gray-25);
+  --color-sidebar: var(--p-white);
   --color-surface-container: var(--p-gray-150);
   --color-surface-container-high: var(--p-gray-175);
   --color-surface-container-highest: var(--p-gray-200);
@@ -381,7 +404,7 @@
    * [data-theme="dark"]-Block): ein Code-Viewer bleibt in hell UND dunkel
    * identisch dunkel, wie ein Editor-Fenster.
    * ------------------------------------------------------------------------ */
-  --color-code-surface: var(--p-ink-900);
+  --color-code-surface: var(--p-night-925);
   --color-on-code-surface: var(--p-ink-100);
   --color-code-accent: var(--p-emerald-300);
 
@@ -432,63 +455,66 @@
 [data-theme="dark"] {
     color-scheme: dark;
 
-    --color-background: var(--p-gray-950);
+    /* Flächen aus der neutralen Dunkel-Palette (`--p-night-*`): Seite,
+     * Arbeitsfläche und Seitenleisten auf #0e0e0e, Karten, Menüs, Dialoge
+     * und Felder (surface-container-lowest) eine Spur heller auf #191919,
+     * Hover und Container in den helleren Stufen. */
+    --color-background: var(--p-night-950);
     --color-on-background: var(--p-gray-125);
 
-    --color-surface: var(--p-gray-950);
-    --color-surface-dim: var(--p-gray-975);
-    --color-surface-bright: var(--p-gray-835);
+    --color-surface: var(--p-night-950);
+    --color-surface-dim: var(--p-black);
+    --color-surface-bright: var(--p-night-750);
     --color-on-surface: var(--p-gray-125);
     --color-on-surface-variant: var(--p-gray-350);
-    --color-surface-variant: var(--p-gray-820);
+    --color-surface-variant: var(--p-night-800);
 
-    /* Chrome-Flächen (Sidebar, Header, Card, …) sind schwarz — das dunkle
-     * Gegenstück zum reinen Weiß im Hellmodus. Sie heben sich damit bewusst
-     * dunkler ab als der Seitenhintergrund (surface, dunkelgrau), analog zur
-     * Beziehung Weiß-auf-Hellgrau im Light-Theme. */
-    --color-surface-container-lowest: var(--p-black);
-    --color-surface-container-low: var(--p-gray-925);
-    --color-canvas: var(--p-gray-950);
-    --color-sidebar: var(--p-black);
-    --color-surface-container: var(--p-gray-910);
-    --color-surface-container-high: var(--p-gray-880);
-    --color-surface-container-highest: var(--p-gray-840);
+    --color-surface-container-lowest: var(--p-night-925);
+    --color-surface-container-low: var(--p-night-850);
+    --color-canvas: var(--p-night-950);
+    --color-sidebar: var(--p-night-950);
+    --color-surface-container: var(--p-night-800);
+    --color-surface-container-high: var(--p-night-750);
+    --color-surface-container-highest: var(--p-night-750);
 
     /* Inverse-Tokens sind jetzt die echte Umkehrung: hell auf dunkel. */
     --color-inverse-surface: var(--p-gray-125);
-    --color-inverse-on-surface: var(--p-gray-870);
+    --color-inverse-on-surface: var(--p-night-850);
 
     --color-outline: var(--p-gray-450);
-    /* Dividers spiegeln im Dunkeln das Hell-Verhältnis: dort eine Spur dunkler
-     * als das weiße Chrome, hier eine Spur heller als das schwarze — gedämpft,
-     * nie als helle Linie auf dunklem Grund. */
-    --color-outline-variant: var(--p-gray-880);
+    /* Dividers: eine Spur heller als die Fläche — gedämpft, nie als helle
+     * Linie auf dunklem Grund. */
+    --color-outline-variant: var(--p-night-800);
 
     /* Sekundär-Container (Hover/aktive Sub-Navigation) gedämpftes Blau. */
     --color-secondary-container: var(--p-slate-800);
     --color-on-secondary-container: var(--p-slate-150);
 
     /* Fehlerfarben für dunklen Grund (heller Rot-Ton). */
-    --color-error: var(--p-red-300);
-    --color-on-error: var(--p-red-950);
-    --color-error-container: var(--p-red-900);
-    --color-on-error-container: var(--p-red-100);
+    --color-error: var(--p-night-pink);
+    --color-on-error: var(--p-night-900);
+    --color-error-container: color-mix(in oklab, var(--p-night-pink-deep) 28%, var(--p-night-950));
+    --color-on-error-container: var(--p-night-pink);
 
     /* Status-Tokens auf dunklem Grund: hellere Akzente, dunkle Container. */
-    --color-success: var(--p-green-400);
-    --color-on-success: var(--p-green-900);
-    --color-success-container: var(--p-green-900);
-    --color-on-success-container: var(--p-green-200);
+    --color-success: var(--p-night-green);
+    --color-on-success: var(--p-night-900);
+    --color-success-container: color-mix(in oklab, var(--p-night-green-deep) 28%, var(--p-night-950));
+    --color-on-success-container: var(--p-night-green);
 
-    --color-warning: var(--p-amber-400);
-    --color-on-warning: var(--p-amber-900);
-    --color-warning-container: var(--p-amber-900);
-    --color-on-warning-container: var(--p-amber-200);
+    --color-warning: var(--p-night-yellow);
+    --color-on-warning: var(--p-night-900);
+    /* Status containers on dark: a 28 % tint of the deep shade on the page
+     * black, with the bright shade as text — the bright yellow for warnings
+     * (notices, suspect chips). A solid bright fill would sink an error fill
+     * on top of it below 3:1. */
+    --color-warning-container: color-mix(in oklab, var(--p-night-yellow) 28%, var(--p-night-950));
+    --color-on-warning-container: var(--p-night-yellow);
 
-    --color-info: var(--p-teal-400);
-    --color-on-info: var(--p-teal-900);
-    --color-info-container: var(--p-teal-900);
-    --color-on-info-container: var(--p-teal-200);
+    --color-info: var(--p-night-cyan);
+    --color-on-info: var(--p-night-900);
+    --color-info-container: color-mix(in oklab, var(--p-night-cyan-deep) 28%, var(--p-night-950));
+    --color-on-info-container: var(--p-night-cyan);
 
     /* Primary kehrt sich um: im Dunkeln ist die Primärfarbe ein HELLER Akzent
        mit dunkler Schrift darauf (M3). Vorher blieb --color-primary in beiden
@@ -572,8 +598,9 @@ body {
  * Accent colour (AppearanceProvider → <html data-accent>). `standard` is the
  * JLU blue defined above; each other accent replaces the whole primary family,
  * light and dark, so everything drawn in `primary` follows it. Light values
- * keep ≥ 6:1 against white; dark values are the light-on-dark M3 inversion
- * with the accent's darkest shade as `on-primary`.
+ * keep ≥ 6:1 against white; dark values are the dark-mode palette's accents
+ * (`--p-night-*`: cyan, purple, green, pink, orange) with `--p-night-900` as
+ * `on-primary`; hover and active mix in white.
  * The swatches are what pickers show (AccentSwatch).
  * ========================================================================== */
 :root {
@@ -600,11 +627,11 @@ body {
   --color-focus-ring: #00696b;
 }
 [data-theme="dark"][data-accent="teal"] {
-  --color-primary: #80d5d4;
-  --color-on-primary: #003738;
-  --color-primary-hover: #b2efee;
-  --color-primary-active: #dcfaf9;
-  --color-focus-ring: #80d5d4;
+  --color-primary: var(--p-night-cyan);
+  --color-on-primary: var(--p-night-900);
+  --color-primary-hover: color-mix(in oklab, var(--p-night-cyan) 80%, white);
+  --color-primary-active: color-mix(in oklab, var(--p-night-cyan) 60%, white);
+  --color-focus-ring: var(--p-night-cyan);
 }
 
 [data-accent="violet"] {
@@ -622,11 +649,11 @@ body {
   --color-focus-ring: #5b3fbf;
 }
 [data-theme="dark"][data-accent="violet"] {
-  --color-primary: #cabeff;
-  --color-on-primary: #2a1070;
-  --color-primary-hover: #e6deff;
-  --color-primary-active: #f4f0ff;
-  --color-focus-ring: #cabeff;
+  --color-primary: var(--p-night-purple);
+  --color-on-primary: var(--p-night-900);
+  --color-primary-hover: color-mix(in oklab, var(--p-night-purple) 80%, white);
+  --color-primary-active: color-mix(in oklab, var(--p-night-purple) 60%, white);
+  --color-focus-ring: var(--p-night-purple);
 }
 
 [data-accent="green"] {
@@ -644,11 +671,11 @@ body {
   --color-focus-ring: #2e6b30;
 }
 [data-theme="dark"][data-accent="green"] {
-  --color-primary: #a7d5a4;
-  --color-on-primary: #0f3a12;
-  --color-primary-hover: #c3efc0;
-  --color-primary-active: #e6f7e4;
-  --color-focus-ring: #a7d5a4;
+  --color-primary: var(--p-night-green);
+  --color-on-primary: var(--p-night-900);
+  --color-primary-hover: color-mix(in oklab, var(--p-night-green) 80%, white);
+  --color-primary-active: color-mix(in oklab, var(--p-night-green) 60%, white);
+  --color-focus-ring: var(--p-night-green);
 }
 
 [data-accent="rose"] {
@@ -666,11 +693,11 @@ body {
   --color-focus-ring: #a8325a;
 }
 [data-theme="dark"][data-accent="rose"] {
-  --color-primary: #ffb1c5;
-  --color-on-primary: #5c0f2c;
-  --color-primary-hover: #ffd9e2;
-  --color-primary-active: #fff0f3;
-  --color-focus-ring: #ffb1c5;
+  --color-primary: var(--p-night-pink);
+  --color-on-primary: var(--p-night-900);
+  --color-primary-hover: color-mix(in oklab, var(--p-night-pink) 80%, white);
+  --color-primary-active: color-mix(in oklab, var(--p-night-pink) 60%, white);
+  --color-focus-ring: var(--p-night-pink);
 }
 
 [data-accent="amber"] {
@@ -688,11 +715,11 @@ body {
   --color-focus-ring: #8a5100;
 }
 [data-theme="dark"][data-accent="amber"] {
-  --color-primary: #ffb86e;
-  --color-on-primary: #4a2800;
-  --color-primary-hover: #ffdcbc;
-  --color-primary-active: #fff1e4;
-  --color-focus-ring: #ffb86e;
+  --color-primary: var(--p-night-orange);
+  --color-on-primary: var(--p-night-900);
+  --color-primary-hover: color-mix(in oklab, var(--p-night-orange) 80%, white);
+  --color-primary-active: color-mix(in oklab, var(--p-night-orange) 60%, white);
+  --color-focus-ring: var(--p-night-orange);
 }
 
 /* ==========================================================================
@@ -704,11 +731,17 @@ body {
  * the outline off (`focus-visible:outline-none`) in favour of their own
  * subtler treatment, which is exactly what this mode overrides.
  * ========================================================================== */
-/* `medium` and `more` lay the canvas on the side-panel grey. Light only: in
- * dark mode the canvas already sits apart from the black panels. */
+/* `medium` and `more` set the main content apart from the side panels, which
+ * keep their colour: light `--p-white` → `--p-gray-25` (#fcfcfc), dark
+ * `--p-night-950` → `--p-black` (#0e0e0e → #000000) — recessed in both
+ * schemes. */
 :root:not([data-theme="dark"])[data-contrast="medium"],
 :root:not([data-theme="dark"])[data-contrast="more"] {
-  --color-canvas: var(--color-sidebar);
+  --color-canvas: var(--p-gray-25);
+}
+[data-theme="dark"][data-contrast="medium"],
+[data-theme="dark"][data-contrast="more"] {
+  --color-canvas: var(--p-black);
 }
 
 [data-contrast="more"] {

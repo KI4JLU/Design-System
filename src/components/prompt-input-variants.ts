@@ -12,7 +12,13 @@ import { cva } from "class-variance-authority";
  * circles (`promptInputControlShape`).
  */
 export const promptInputFrameVariants = cva(
-  "group/prompt-input flex-wrap overflow-hidden bg-surface-container-lowest rounded-full has-[>textarea[data-multiline]]:rounded-2xl has-[>[data-slot=prompt-input-attachments]]:rounded-2xl",
+  [
+    "group/prompt-input flex-wrap overflow-hidden bg-surface-container-lowest rounded-full has-[>textarea[data-multiline]]:rounded-2xl has-[>[data-slot=prompt-input-attachments]]:rounded-2xl",
+    // The drop zone (PromptInput `data-dragging`): armed — a dashed primary
+    // border, as an idle FileDropzone; over — plus the focus ring.
+    "data-[dragging]:border-dashed data-[dragging]:border-primary",
+    "data-[dragging=over]:ring-2 data-[dragging=over]:ring-focus-ring",
+  ],
 );
 
 /**

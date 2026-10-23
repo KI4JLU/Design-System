@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
+import { useWindowFileDrag } from "../lib/use-window-file-drag";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card";
 import {
   InputGroup,
@@ -490,6 +491,14 @@ export type PromptInputProps = Omit<
   multiple?: boolean;
   // When true, accepts drops anywhere on document. Default false (opt-in).
   globalDrop?: boolean;
+  // DS: shown over the composer while files are dragged over it (the drop
+  // zone). Default „Dateien hier ablegen".
+  dropLabel?: string;
+  // DS: where a file drag lights the drop zone up. `self` (default): over the
+  // composer (the drop target). `page`: anywhere in the window, so the
+  // composer announces itself as soon as a file enters the app — the drop
+  // itself still lands only on the composer (unless `globalDrop`).
+  dropZoneScope?: "self" | "page";
   // Render a hidden input with given name and keep it in sync for native form posts. Default false.
   syncHiddenInput?: boolean;
   // Minimal constraints
@@ -510,6 +519,8 @@ export const PromptInput = ({
   accept,
   multiple,
   globalDrop,
+  dropLabel = "Dateien hier ablegen",
+  dropZoneScope = "self",
   syncHiddenInput,
   maxFiles,
   maxFileSize,
@@ -656,6 +667,52 @@ export const PromptInput = ({
       inputRef.current.value = "";
     }
   }, [files, syncHiddenInput]);
+
+  // DS: the composer as a drop zone, in two steps like a side panel's
+  // FileDropzone. *Armed* while files are dragged over the area that lights it
+  // up — the form, or with `globalDrop` / `dropZoneScope="page"` the whole
+  // window (`useWindowFileDrag`) — and *over* while they are directly above
+  // the composer, where the drop lands. dragenter/dragleave fire for every
+  // child crossed, so a depth counter tells "still inside" from "left"; a
+  // drop or a drag ending elsewhere resets.
+  const pageScope = globalDrop || dropZoneScope === "page";
+  const windowDrag = useWindowFileDrag(pageScope);
+  const [overForm, setOverForm] = useState(false);
+  const dropState: "armed" | "over" | undefined = overForm ? "over" : pageScope && windowDrag ? "armed" : undefined;
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    let depth = 0;
+    const hasFiles = (e: Event) => !!(e as DragEvent).dataTransfer?.types?.includes("Files");
+    const onEnter = (e: Event) => {
+      if (!hasFiles(e)) return;
+      depth += 1;
+      setOverForm(true);
+    };
+    const onLeave = (e: Event) => {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setOverForm(false);
+    };
+    const reset = () => {
+      depth = 0;
+      setOverForm(false);
+    };
+    form.addEventListener("dragenter", onEnter);
+    form.addEventListener("dragleave", onLeave);
+    form.addEventListener("drop", reset);
+    document.addEventListener("dragend", reset);
+    document.addEventListener("drop", reset);
+    window.addEventListener("blur", reset);
+    return () => {
+      form.removeEventListener("dragenter", onEnter);
+      form.removeEventListener("dragleave", onLeave);
+      form.removeEventListener("drop", reset);
+      document.removeEventListener("dragend", reset);
+      document.removeEventListener("drop", reset);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
 
   // Attach drop handlers on nearest form and document (opt-in)
   useEffect(() => {
@@ -841,8 +898,26 @@ export const PromptInput = ({
       >
         <InputGroup
           className={promptInputFrameVariants()}
+          data-dragging={dropState}
         >
           {children}
+          {dropState && (
+            <div
+              data-slot="prompt-input-dropzone"
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[inherit] text-sm font-medium transition-colors",
+                // Armed: the card surface, like an idle FileDropzone; over: the
+                // primary tint FileDropzone takes under the pointer.
+                dropState === "over"
+                  ? "bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-surface-container-lowest))] text-primary"
+                  : "bg-surface-container-lowest/90 text-on-surface-variant",
+              )}
+            >
+              <PaperclipIcon className="size-4" />
+              {dropLabel}
+            </div>
+          )}
         </InputGroup>
       </form>
     </>

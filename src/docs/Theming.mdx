@@ -47,10 +47,12 @@ Ein Provider für die beiden übrigen Achsen, einmal nahe der Wurzel neben dem
 ```
 
 - **Kontrast** (`useContrast`): `normal` („Standard") ist das Design wie
-  gezeichnet: weiße Arbeitsfläche (`--color-canvas`) neben den hellgrauen
-  Seitenleisten (`--color-sidebar`), Fokus über Hervorhebungsflächen, zarte
-  Linien. `medium` („Mittel") legt die Arbeitsfläche auf dasselbe Grau wie die
-  Seitenleisten (nur im hellen Schema). `more` („Hoch") tut das auch,
+  gezeichnet: Arbeitsfläche (`--color-canvas`) und Seitenleisten
+  (`--color-sidebar`) in einem Weiß, Fokus über Hervorhebungsflächen, zarte
+  Linien. `medium` („Mittel") setzt die Arbeitsfläche einen Hauch ab, die
+  Seitenleisten behalten ihre Farbe: hell `--p-gray-25` statt Weiß, dunkel
+  `--p-gray-975` statt `--p-gray-950`. Nur die Navigationsspalte eines Einstellungsfensters hat immer eine
+  zweite Farbe (`surface`). `more` („Hoch") tut das auch,
   verstärkt Linien und gedämpften Text (`outline-variant` → `outline`,
   `on-surface-variant` → `on-surface`) und erzwingt auf **jedem**
   fokussierbaren Element einen sichtbaren Fokusrahmen (3px `focus-ring`,

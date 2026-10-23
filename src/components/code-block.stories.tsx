@@ -24,6 +24,15 @@ type Story = StoryObj<typeof meta>;
  */
 export const Playground: Story = {};
 
+/** Mit Sprache im Kopf und einklappbar. */
+export const WithLanguage: Story = {
+  args: {
+    code: 'print("Hello, World!")',
+    language: "python",
+    collapsible: true,
+  },
+};
+
 /** Eigene Labels, z. B. für englischsprachige Oberflächen. */
 export const CustomLabels: Story = {
   args: {

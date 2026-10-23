@@ -6,9 +6,10 @@ import * as React from "react";
  *
  * - **Contrast** (`data-contrast`): `system` follows the OS — increased
  *   contrast (`prefers-contrast: more`) or a forced-colours theme, else
- *   `normal` — `normal` is the design as drawn (white canvas, subtle focus:
- *   highlight backgrounds), `medium` lays the canvas on the same light grey
- *   as the side panels, `more` does that too and strengthens borders and
+ *   `normal` — `normal` is the design as drawn (content and side panels on
+ *   one white, subtle focus: highlight backgrounds), `medium` sets the main
+ *   content a hair apart (light `--p-gray-25`, dark `--p-gray-975`; side
+ *   panels keep their colour), `more` does that too and strengthens borders and
  *   muted text and forces a visible focus ring on every focusable element
  *   (tokens.css).
  * - **Accent** (`data-accent`): the primary colour family; `standard` is the
