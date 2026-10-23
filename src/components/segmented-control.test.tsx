@@ -152,7 +152,7 @@ describe("SegmentedControl", () => {
       const text = Array.from(labelled.querySelectorAll("span")).find((el) => el.textContent === "Einzeln");
       expect(text).toBeDefined();
       expect(text).not.toHaveClass("sr-only");
-      expect(labelled).not.toHaveClass("w-9");
+      expect(labelled).not.toHaveClass("size-8");
     });
 
     it("leaves an icon-only segment in the same row icon-only", () => {
@@ -161,7 +161,7 @@ describe("SegmentedControl", () => {
       );
       const iconOnly = screen.getByRole("button", { name: "Liste" });
       expect(iconOnly.querySelector(".sr-only")).toHaveTextContent("Liste");
-      expect(iconOnly).toHaveClass("w-9");
+      expect(iconOnly).toHaveClass("size-8");
     });
 
     it("has no effect without an icon", () => {
@@ -174,7 +174,7 @@ describe("SegmentedControl", () => {
         />,
       );
       const button = screen.getByRole("button", { name: "Alpha" });
-      expect(button).toHaveClass("px-4", "py-2");
+      expect(button).toHaveClass("h-8", "px-3");
       expect(button.querySelector(".sr-only")).toBeNull();
     });
 

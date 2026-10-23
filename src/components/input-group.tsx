@@ -79,7 +79,7 @@ function InputGroupAddon({
 }
 
 const inputGroupButtonVariants = cva(
-  // Radius follows the enclosing PromptInput's `shape` (pill → circle).
+  // Circles, like every control inside the composer.
   cn("flex items-center gap-2 py-0 text-sm shadow-none [&>svg:not([class*='size-'])]:size-5", promptInputControlShape),
   {
     variants: {

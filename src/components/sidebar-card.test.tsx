@@ -4,12 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { SidebarCard, SidebarSelectionBar } from "./sidebar-card";
 import { SidebarRailItem } from "./sidebar-rail";
 import { SidebarAction } from "./sidebar-action";
-import { UiShapeProvider } from "./ui-shape-provider";
-import { useUiShape } from "./ui-shape-context";
-
 beforeEach(() => {
   window.localStorage.clear();
-  delete document.documentElement.dataset.uiShape;
 });
 
 const card = (props: Partial<React.ComponentProps<typeof SidebarCard>> = {}) => (
@@ -88,8 +84,8 @@ describe("SidebarCard", () => {
       selectionTone: "destructive", selectLabel: "Auswählen",
     }));
     const li = container.querySelector("[data-slot=sidebar-card]")!;
-    expect(li).toHaveClass("border-error", "bg-error/10");
-    expect(li).not.toHaveClass("border-primary");
+    expect(li).toHaveClass("bg-error/10");
+    expect(li).not.toHaveClass("bg-primary/10");
     expect(screen.getByRole("checkbox", { name: "Auswählen Budget" }).className).toContain("data-[state=checked]:bg-error");
   });
 
@@ -97,14 +93,14 @@ describe("SidebarCard", () => {
     const { container, rerender } = render(card({
       selectable: true, selectionMode: true, selected: false, onSelectedChange: () => {}, selectionTone: "destructive",
     }));
-    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("bg-error/10");
     // Outside selection mode the tone does nothing — neither card nor checkbox.
     rerender(card({ selectable: true, selected: true, onSelectedChange: () => {}, selectionTone: "destructive" }));
-    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("bg-error/10");
     expect(screen.getByRole("checkbox").className).not.toContain("bg-error");
     rerender(card({ selectable: true, selectionMode: true, selected: true, onSelectedChange: () => {} }));
-    expect(container.querySelector("[data-slot=sidebar-card]")).toHaveClass("border-primary");
-    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("border-error");
+    expect(container.querySelector("[data-slot=sidebar-card]")).toHaveClass("bg-primary/10");
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("bg-error/10");
   });
 
   it("without muted carries no data-muted and no dimming", () => {
@@ -119,7 +115,7 @@ describe("SidebarCard", () => {
     await userEvent.tab();
     expect(title).toHaveFocus();
     expect(screen.getByRole("listitem")).not.toHaveAttribute("data-static");
-    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer", "hover:bg-surface-container-high");
+    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer", "hover:bg-surface-container-low");
   });
 
   it("without onOpen, the title is plain text: no button, not focusable, no click affordance", async () => {
@@ -147,7 +143,7 @@ describe("SidebarCard", () => {
     const item = screen.getByRole("listitem");
     expect(item).toHaveAttribute("data-static", "");
     expect(item).toHaveClass("cursor-default");
-    expect(item).not.toHaveClass("cursor-pointer", "hover:bg-surface-container-high");
+    expect(item).not.toHaveClass("cursor-pointer", "hover:bg-surface-container-low");
 
     // A click on the card reaches the consumer's onClick and nothing else.
     await userEvent.click(item);
@@ -184,58 +180,6 @@ describe("SidebarCard", () => {
     title.focus();
     await userEvent.keyboard("{Enter}");
     expect(onSelectedChange).toHaveBeenCalledWith(true);
-  });
-
-  it("takes its shape from the app-wide Style unless told otherwise", () => {
-    window.localStorage.setItem("ui-shape", "pill");
-    render(
-      <UiShapeProvider>
-        {card()}
-        <ul><SidebarCard title="Fix" shape="rounded" onOpen={() => {}} /></ul>
-      </UiShapeProvider>,
-    );
-    const [fromContext, fixed] = screen.getAllByRole("listitem");
-    expect(fromContext).toHaveAttribute("data-shape", "pill");
-    expect(fixed).toHaveAttribute("data-shape", "rounded");
-  });
-});
-
-/**
- * The provider on its own, without a switch component. `UiShapeToggle` was
- * the switch until it was removed (KI-846); the user-facing control is now
- * `AppearanceSettings`' Style row (covered in `appearance-settings.test.tsx`).
- * This probe is the smallest consumer of the context: it prints the shape and
- * requests `pill`.
- *
- * Oracles: the `<html data-ui-shape>` attribute and the `ui-shape`
- * localStorage key, both documented outputs of the provider that the probe
- * never writes itself.
- */
-function ShapeProbe() {
-  const { shape, setShape } = useUiShape();
-  return (
-    <button type="button" onClick={() => setShape("pill")}>
-      {shape}
-    </button>
-  );
-}
-
-describe("UiShapeProvider", () => {
-  it("defaults to rounded, mirrors to <html>, and remembers the switch", async () => {
-    const { unmount } = render(<UiShapeProvider><ShapeProbe /></UiShapeProvider>);
-    expect(document.documentElement.dataset.uiShape).toBe("rounded");
-    expect(screen.getByRole("button")).toHaveTextContent("rounded");
-
-    await userEvent.click(screen.getByRole("button"));
-    expect(document.documentElement.dataset.uiShape).toBe("pill");
-    expect(window.localStorage.getItem("ui-shape")).toBe("pill");
-    unmount();
-
-    // A fresh mount reads the stored choice back.
-    delete document.documentElement.dataset.uiShape;
-    render(<UiShapeProvider><ShapeProbe /></UiShapeProvider>);
-    expect(screen.getByRole("button")).toHaveTextContent("pill");
-    expect(document.documentElement.dataset.uiShape).toBe("pill");
   });
 });
 
@@ -452,15 +396,22 @@ describe("SidebarPanel nav slot", () => {
   });
 });
 
-// Oracle: the shared row inset (sidebarRowInsetX) — the action row must carry
-// the same side padding as a card of the same shape, so both icons share an axis.
+// Oracle: the shared row inset (sidebarRowInset) — the action row carries the
+// same side padding as a card row, so both icons share an axis.
 describe("SidebarAction", () => {
-  it("left-aligns its label and uses the card rows' side inset per shape", () => {
-    const { rerender } = render(<SidebarAction icon={<svg />} shape="pill">Neuer Chat</SidebarAction>);
+  it("left-aligns its label and uses the card rows' side inset", () => {
+    render(<SidebarAction icon={<svg />}>Neuer Chat</SidebarAction>);
     const button = screen.getByRole("button", { name: "Neuer Chat" });
-    expect(button).toHaveClass("justify-start", "px-[7px]", "border");
-    rerender(<SidebarAction icon={<svg />} shape="rounded">Neuer Chat</SidebarAction>);
-    expect(button).toHaveClass("px-3");
+    expect(button).toHaveClass("justify-start", "px-2.5");
     expect(button).not.toHaveClass("justify-center");
+  });
+
+  // Oracle: Button's own variant classes — the ghost row colours must not
+  // paint over a filled variant.
+  it("keeps a filled variant's colours", () => {
+    render(<SidebarAction icon={<svg />} variant="default">Neuer Chat</SidebarAction>);
+    const button = screen.getByRole("button", { name: "Neuer Chat" });
+    expect(button).toHaveClass("text-on-primary");
+    expect(button).not.toHaveClass("text-on-surface", "hover:bg-surface-container-low");
   });
 });

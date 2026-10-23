@@ -17,10 +17,8 @@ import { cva } from "class-variance-authority";
  * consumer's px width) — a token would have to be re-read from CSS to be used
  * in the same expression.
  *
- * TODO: not aligned with the AppShell header's `h-16` (64px) — one shared
- * "chrome unit" token across AppShell, SidePanel and BottomTabBar would be
- * the tidier system, but that changes existing components and needs owner
- * sign-off; not confirmed as wanted.
+ * Not the AppShell header's `h-14` (56px): the rail is a width, the bar a
+ * height, and the two need not agree.
  */
 export const SIDE_PANEL_RAIL_WIDTH = 60;
 
@@ -36,7 +34,7 @@ export const SIDE_PANEL_RAIL_WIDTH = 60;
  * pointer drag, and an animated width lags the pointer.
  */
 export const sidePanelVariants = cva(
-  "flex h-full shrink-0 flex-col overflow-hidden bg-surface-container-lowest",
+  "flex h-full shrink-0 flex-col overflow-hidden bg-sidebar",
   {
     variants: {
       side: {

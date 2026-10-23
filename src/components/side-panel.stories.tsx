@@ -178,27 +178,26 @@ export const CollapsedWithoutPreview: Story = {
 };
 
 /**
- * **Header-row geometry: the toggle sits on the body's first control.** The
- * row is inset `px-4` (16px) and the button is 32px wide (`p-1.5` + a 20px
- * icon), so its centre is 32px from the column's edge. A `p-4`-padded body
- * (how `AppShellLayout` pads its navigation) puts a 32px control at the
- * trailing end of its first row on the same centre: 16px padding + 16px half
- * width. (The 10px miss this fixed: Changelog, 0.39.0.)
+ * **Header-row geometry.** The row is inset `px-2` (8px), like the `p-2` body
+ * `AppShellLayout` gives its navigation, and the toggle is a 36px ghost square
+ * (20px icon) with a 4px gap to the edge it sits on — so its right edge is
+ * 12px from the column's edge, where the ⋯ menus of the `p-2` body's rows end
+ * (8px body padding + the row's 4px end inset).
  *
  * **The oracle is the body control's rectangle, not a number in the test.**
- * The `play` function measures both centres in the same browser layout and
- * compares them: swapping `px-4` for another measure, or setting the button
- * back to `p-2`, fails the comparison. Only the button's width (32px) and the
- * row's padding (16px) are also pinned as numbers, because otherwise two
- * measures moved together would look valid.
+ * The body here is a `p-2` box whose 36px control carries the row's `mr-1`
+ * end inset; the `play` function compares both right edges in the same
+ * browser layout. The button's width (36px) and the row's padding (8px) are
+ * also pinned as numbers, because otherwise two measures moved together would
+ * look valid.
  */
 export const ToggleAlignsWithBodyControl: Story = {
   args: {
     header: paneTitle("Verlauf"),
     children: (
-      <div className="p-4">
+      <div className="p-2">
         <div className="flex">
-          <button className="ml-auto h-8 w-8" data-testid="body-control" />
+          <button className="mr-1 ml-auto size-9" data-testid="body-control" />
         </div>
       </div>
     ),
@@ -214,27 +213,11 @@ export const ToggleAlignsWithBodyControl: Story = {
   play: async ({ canvas }) => {
     const toggle = await canvas.findByRole("button", { name: "Verlauf einklappen" });
     const bodyControl = await canvas.findByTestId("body-control");
-    const glyph = toggle.querySelector("svg") as SVGSVGElement;
-
-    // The actual assertion: the DRAWN outer edge of the glyph lies on the
-    // outer edge of the filled button below it. That is what the eye reads as
-    // flush on a ghost button with no visible box. Not the svg box: lucide
-    // draws 3..21 of 24, i.e. 2.5px inside the 20px box, and that remainder
-    // is exactly the step that used to show. The drawn edge comes from
-    // `getBBox()` (user units), scaled to the rendered box.
-    const box = glyph.getBoundingClientRect();
-    const bbox = glyph.getBBox();
-    const scale = box.width / glyph.viewBox.baseVal.width;
-    const drawnRight = box.left + (bbox.x + bbox.width) * scale;
-    await expect(Math.abs(drawnRight - bodyControl.getBoundingClientRect().right)).toBeLessThan(1);
-
-    // Und die beiden Maße, aus denen sich das ergibt — ohne sie wären zwei
-    // gemeinsam verschobene Werte (etwa `px-6` plus ein 48px-Knopf) genauso
-    // grün.
-    await expect(toggle.getBoundingClientRect().width).toBeCloseTo(32, 0);
+    await expect(Math.abs(toggle.getBoundingClientRect().right - bodyControl.getBoundingClientRect().right)).toBeLessThan(1);
+    await expect(toggle.getBoundingClientRect().width).toBeCloseTo(36, 0);
     // Der Elternknoten des Umschalters IST die Kopfzeile — `SidePanel` rendert
-    // ihn direkt in die `h-16`-Zeile.
+    // ihn direkt in die `h-14`-Zeile.
     const headerRow = toggle.parentElement as HTMLElement;
-    await expect(getComputedStyle(headerRow).paddingLeft).toBe("16px");
+    await expect(getComputedStyle(headerRow).paddingLeft).toBe("8px");
   },
 };

@@ -1,14 +1,13 @@
 import type { Preview, Decorator } from '@storybook/react-vite';
 import { useEffect } from 'react';
 import { ThemeProvider, useTheme, type Theme } from '../src/theme/ThemeContext';
-import { AppearanceProvider } from '../src/components/ui-shape-provider';
+import { AppearanceProvider } from '../src/components/appearance-provider';
 import {
   useAccent,
   useContrast,
   type AccentColor,
   type ContrastChoice,
 } from '../src/components/appearance-context';
-import { useUiShape, type UiShape } from '../src/components/ui-shape-context';
 import './preview.css';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { setPdfWorkerSrc } from '../src/lib/pdf-render';
@@ -25,26 +24,22 @@ function ThemeSync({ theme }: { theme: Theme }) {
   return null;
 }
 
-/** The same bridge for the three AppearanceProvider axes (data-contrast,
- * data-accent, data-ui-shape on <html>). One-way like ThemeSync: the toolbar
+/** The same bridge for the two AppearanceProvider axes (data-contrast and
+ * data-accent on <html>). One-way like ThemeSync: the toolbar
  * sets the value whenever it changes; a control inside a story (e.g.
  * AppearanceSettings) may change it afterwards, and the toolbar's next change
  * wins again. */
 function AppearanceSync({
   contrast,
   accent,
-  shape,
 }: {
   contrast: ContrastChoice;
   accent: AccentColor;
-  shape: UiShape;
 }) {
   const { setContrast } = useContrast();
   const { setAccent } = useAccent();
-  const { setShape } = useUiShape();
   useEffect(() => setContrast(contrast), [contrast, setContrast]);
   useEffect(() => setAccent(accent), [accent, setAccent]);
-  useEffect(() => setShape(shape), [shape, setShape]);
   return null;
 }
 
@@ -55,7 +50,6 @@ const withTheme: Decorator = (Story, context) => (
       <AppearanceSync
         contrast={context.globals.contrast as ContrastChoice}
         accent={context.globals.accent as AccentColor}
-        shape={context.globals.shape as UiShape}
       />
       {/* Full-page templates (parameters.layout: "fullscreen") render edge-to-edge;
           component stories keep the padded canvas. */}
@@ -93,8 +87,9 @@ const preview: Preview = {
         title: 'Kontrast',
         icon: 'contrast',
         items: [
-          { value: 'normal', title: 'Kontrast: Normal' },
-          { value: 'more', title: 'Kontrast: Erhöht' },
+          { value: 'normal', title: 'Kontrast: Standard' },
+          { value: 'medium', title: 'Kontrast: Mittel' },
+          { value: 'more', title: 'Kontrast: Hoch' },
           { value: 'system', title: 'Kontrast: System' },
         ],
         dynamicTitle: true,
@@ -117,18 +112,6 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
-    shape: {
-      description: 'Stil (abgerundet eckig / Pille)',
-      toolbar: {
-        title: 'Stil',
-        icon: 'circlehollow',
-        items: [
-          { value: 'rounded', title: 'Stil: Abgerundet eckig' },
-          { value: 'pill', title: 'Stil: Pille' },
-        ],
-        dynamicTitle: true,
-      },
-    },
   },
   // Deterministic defaults — the design as drawn, like `theme: 'light'`.
   // `normal` rather than `system` contrast, so a story test does not depend
@@ -137,7 +120,6 @@ const preview: Preview = {
     theme: 'light',
     contrast: 'normal',
     accent: 'standard',
-    shape: 'rounded',
   },
   decorators: [withTheme],
   parameters: {

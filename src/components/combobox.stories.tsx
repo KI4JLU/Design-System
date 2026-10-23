@@ -40,8 +40,8 @@ import {
  * technology see it — `document.activeElement`, ARIA attributes, roles and
  * accessible names, layout boxes, `elementFromPoint` — never component state.
  * Geometry and colours are compared with values taken from outside the
- * component: `tokens.css` literals (rounded Style: `--radius-action` and
- * `--radius-field` 0.5rem = 8px; pill Style: `--radius-2xl` 1.5rem = 24px)
+ * component: `tokens.css` literals (`--radius-action` and
+ * `--radius-field` = `--ui-radius-control` 10px)
  * and token colours / shadows resolved by the browser on a probe element.
  * Widths are compared with the stated width expressions evaluated from
  * outside: the rem size read off `<html>`, the 24px gutter
@@ -172,8 +172,8 @@ function DefaultPage() {
  * „Alle Einrichtungen anzeigen" row with its `shortcutHint` — are made up to
  * exercise those props. The play function checks in one real-browser run:
  *
- * - **Closed:** a framed field, in a bar that stays 64px open or closed
- *   (JustRAG's `Toast.css` `top: 76px` = 64 + 12 depends on it); 24rem wide
+ * - **Closed:** a framed field, in a bar that stays 56px open or closed
+ *   (JustRAG's `Toast.css` `top: 68px` = 56 + 12 depends on it); 24rem wide
  *   (at most the slot) and centred in the slot.
  * - **Growth:** open, the field is min(40rem, bar row content, viewport −
  *   2 × 24px) wide, centred on its closed box, as tall as before, painted
@@ -218,13 +218,12 @@ export const Default: Story = {
         return [box.left, box.top, box.width, box.height];
       });
 
-    await step("Closed: an ordinary framed field in the 64px bar", async () => {
-      await expect(document.documentElement.dataset.uiShape ?? "rounded").toBe("rounded");
-      await expect(barHeight()).toBe("64px");
+    await step("Closed: an ordinary framed field in the 56px bar", async () => {
+      await expect(barHeight()).toBe("56px");
       await expect(input).toHaveAttribute("aria-expanded", "false");
       await expect(input).not.toHaveAttribute("data-panel");
       const style = getComputedStyle(input);
-      await expect(corners(style)).toEqual(["8px", "8px", "8px", "8px"]);
+      await expect(corners(style)).toEqual(["9999px", "9999px", "9999px", "9999px"]);
       await expect(style.borderTopWidth).toBe("1px");
       await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-outline-variant)"));
       // 24rem, at most the slot, centred in it — narrower than the 28rem slot here.
@@ -282,9 +281,10 @@ export const Default: Story = {
       const listbox = await body.findByRole("listbox");
       await waitFor(() => expect(activeOption(input)).not.toBeNull());
       await expect(input).toHaveAttribute("data-panel", "open");
-      // Rounded Style: the field's radius, `--radius-action` 0.5rem.
-      await expectJoinedPanel(canvasElement, input, listbox, { radius: "8px" });
-      await expect(barHeight()).toBe("64px");
+      // The bar's search is a capsule; open, field and panel share the row
+      // radius (`--combobox-open-radius`) — a capsule cannot frame a list.
+      await expectJoinedPanel(canvasElement, input, listbox, { radius: "10px" });
+      await expect(barHeight()).toBe("56px");
 
       // Grown: the palette width, centred on the closed field, same height.
       const openField = input.getBoundingClientRect();
@@ -362,8 +362,8 @@ export const Default: Story = {
       await settled(input);
       const style = getComputedStyle(input);
       await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-primary)"));
-      await expect(corners(style)).toEqual(["8px", "8px", "8px", "8px"]);
-      await expect(barHeight()).toBe("64px");
+      await expect(corners(style)).toEqual(["9999px", "9999px", "9999px", "9999px"]);
+      await expect(barHeight()).toBe("56px");
       // Back to its closed width.
       await expect(Math.abs(input.getBoundingClientRect().width - closedField.width)).toBeLessThan(0.5);
       await userEvent.clear(input);
@@ -383,7 +383,7 @@ export const Default: Story = {
         await expect(Math.abs(openField.left - rowContent.left)).toBeLessThan(0.5);
         await expect(Math.abs(centre(openField) - centre(closedField))).toBeLessThan(0.5);
         await expect(Math.abs(panelOf(listbox).getBoundingClientRect().width - openField.width)).toBeLessThan(0.5);
-        await expect(barHeight()).toBe("64px");
+        await expect(barHeight()).toBe("56px");
         // It now covers the header action too, and is painted over it — also
         // over a positioned action (a badge on a button makes it `relative`),
         // which comes later in the bar's tree order than the field.
@@ -583,8 +583,7 @@ function InvalidFields() {
  * error ring). A panel with nothing to show — no option, no `ComboboxEmpty`
  * — has no list part and no divider: it is just the framed field.
  *
- * Runs in the pill Style, where the panel takes the Style's box radius (24px
- * — a capsule cannot frame a list); `Default` shows the rounded Style (8px).
+ * The panel takes the field radius (10px), as in `Default`.
  * `TokenInput`'s `Invalid` story covers the chips field.
  *
  * Closed, the `ComboboxInput` is the ordinary framed field: a plain `Input`
@@ -594,15 +593,12 @@ function InvalidFields() {
  *
  * The column sets `--combobox-open-width: 32rem` (no closed width): the
  * `ComboboxInput` widens to 32rem while open, centred on its closed box, in
- * the pill Style. The panel also has a `ComboboxFooter`, which
+ * the one Style. The panel also has a `ComboboxFooter`, which
  * alone does not keep the list part open when nothing matches.
  */
 export const Invalid: Story = {
-  globals: { shape: "pill" },
   render: () => <InvalidFields />,
   play: async ({ canvas, canvasElement, userEvent, step }) => {
-    // The story really runs pill (the provider is the only writer).
-    await waitFor(() => expect(document.documentElement.dataset.uiShape).toBe("pill"));
     const body = page(canvasElement);
     const error = resolvedColor(canvasElement, "var(--color-error)");
     const input = canvas.getByRole("combobox", { name: "Kürzel" });
@@ -633,12 +629,11 @@ export const Invalid: Story = {
       await expect(getComputedStyle(input).borderTopColor).toBe(error);
     });
 
-    await step("ComboboxInput: error border and ring on the panel, 24px in pill", async () => {
+    await step("ComboboxInput: error border and ring on the panel, 10px", async () => {
       const closed = input.getBoundingClientRect();
       await userEvent.type(input, "recht");
       const listbox = await body.findByRole("listbox");
-      // Pill Style: `--radius-2xl` 1.5rem.
-      await expectJoinedPanel(canvasElement, input, listbox, { radius: "24px", invalid: true });
+      await expectJoinedPanel(canvasElement, input, listbox, { radius: "10px", invalid: true });
       // Widened to 32rem (no container here: the viewport caps), centred.
       const open = input.getBoundingClientRect();
       const expected = grownWidth(32 * remPx(), window.innerWidth, closed.width);

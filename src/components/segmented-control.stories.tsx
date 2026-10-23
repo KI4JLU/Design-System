@@ -80,6 +80,6 @@ export const IconWithLabel: Story = {
     // Visible: the label has a real box, not the 1px sr-only clip.
     const label = Array.from(single.querySelectorAll("span")).find((el) => el.textContent === "Einzeln") as HTMLElement;
     await expect(label.getBoundingClientRect().width).toBeGreaterThan(20);
-    await expect(single.getBoundingClientRect().height).toBe(36);
+    await expect(single.getBoundingClientRect().height).toBe(32);
   },
 };

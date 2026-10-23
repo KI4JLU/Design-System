@@ -4,7 +4,6 @@ import { AccentSwatch } from "./accent-swatch";
 import { ACCENT_COLORS, useAccent, useContrast, type AccentColor, type ContrastChoice } from "./appearance-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { SettingsRow } from "./settings-dialog";
-import { useUiShape, type UiShape } from "./ui-shape-context";
 
 /** Every visible string of `AppearanceSettings`. German defaults; override any subset via `labels`. */
 export interface AppearanceSettingsLabels {
@@ -19,17 +18,13 @@ export interface AppearanceSettingsLabels {
   contrastDescription?: React.ReactNode;
   contrastSystem: string;
   contrastNormal: string;
+  contrastMedium: string;
   contrastMore: string;
   /** Row label of the accent colour. Default "Akzentfarbe". */
   accent: string;
   accentDescription?: React.ReactNode;
   /** One name per accent family; a partial map overrides only the names it carries. */
   accents: Record<AccentColor, string>;
-  /** Row label of the Style (rounded / pill). Default "Stil". */
-  shape: string;
-  shapeDescription?: React.ReactNode;
-  shapeRounded: string;
-  shapePill: string;
 }
 
 const DEFAULT_LABELS: AppearanceSettingsLabels = {
@@ -38,10 +33,11 @@ const DEFAULT_LABELS: AppearanceSettingsLabels = {
   themeDark: "Dunkel",
   themeSystem: "System",
   contrast: "Kontrast",
-  contrastDescription: "Erhöht: deutliche Fokusrahmen und kräftigere Linien. „System“ folgt der Kontrasteinstellung des Geräts.",
+  contrastDescription: "Mittel: grauer Hintergrund. Hoch: dazu deutliche Fokusrahmen und kräftigere Linien. „System“ folgt der Kontrasteinstellung des Geräts.",
   contrastSystem: "System",
-  contrastNormal: "Normal",
-  contrastMore: "Erhöht",
+  contrastNormal: "Standard",
+  contrastMedium: "Mittel",
+  contrastMore: "Hoch",
   accent: "Akzentfarbe",
   accents: {
     standard: "Standard",
@@ -51,10 +47,6 @@ const DEFAULT_LABELS: AppearanceSettingsLabels = {
     rose: "Rosé",
     amber: "Bernstein",
   },
-  shape: "Stil",
-  shapeDescription: "Abgerundete Ecken oder Pillenform.",
-  shapeRounded: "Abgerundet eckig",
-  shapePill: "Pille",
 };
 
 export interface AppearanceSettingsProps {
@@ -101,7 +93,7 @@ function Choice<T extends string>({
 }) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as T)}>
-      <SelectTrigger aria-labelledby={labelId} aria-describedby={descriptionId} className="w-48">
+      <SelectTrigger variant="ghost" aria-labelledby={labelId} aria-describedby={descriptionId}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
@@ -114,10 +106,9 @@ function Choice<T extends string>({
 }
 
 /**
- * The appearance rows of a settings window — colour scheme, contrast, accent
- * colour and Style — each wired to the provider that owns that preference:
- * `useTheme` (ThemeProvider), `useContrast` / `useAccent` / `useUiShape`
- * (AppearanceProvider). Choosing a value calls the provider's setter, so the
+ * The appearance rows of a settings window — colour scheme, contrast and
+ * accent colour — each wired to the provider that owns that preference:
+ * `useTheme` (ThemeProvider), `useContrast` / `useAccent` (AppearanceProvider). Choosing a value calls the provider's setter, so the
  * provider persists it and mirrors it to `<html>` exactly as it does for any
  * other caller; this component holds no state of its own.
  *
@@ -126,7 +117,7 @@ function Choice<T extends string>({
  * rules between rows stay continuous.
  *
  * Needs a `ThemeProvider` above it (`useTheme` throws without one). Without an
- * `AppearanceProvider` the contrast, accent and Style rows show their defaults
+ * `AppearanceProvider` the contrast and accent rows show their defaults
  * and choosing does nothing — the hooks' documented read-only fallback.
  */
 function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
@@ -134,12 +125,11 @@ function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
   const { theme, setTheme } = useTheme();
   const { contrast, setContrast } = useContrast();
   const { accent, setAccent } = useAccent();
-  const { shape, setShape } = useUiShape();
   const id = React.useId();
   const ids = (row: string) => ({ label: `${id}-${row}`, description: `${id}-${row}-description` });
 
   const row = (
-    key: "theme" | "contrast" | "accent" | "shape",
+    key: "theme" | "contrast" | "accent",
     description: React.ReactNode,
     control: (labelId: string, descriptionId?: string) => React.ReactNode,
   ) => {
@@ -181,6 +171,7 @@ function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
           options={[
             ["system", labels.contrastSystem],
             ["normal", labels.contrastNormal],
+            ["medium", labels.contrastMedium],
             ["more", labels.contrastMore],
           ]}
         />
@@ -198,18 +189,6 @@ function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
               {labels.accents[a]}
             </span>,
           ] as const)}
-        />
-      ))}
-      {row("shape", labels.shapeDescription, (labelId, descriptionId) => (
-        <Choice<UiShape>
-          labelId={labelId}
-          descriptionId={descriptionId}
-          value={shape}
-          onChange={setShape}
-          options={[
-            ["rounded", labels.shapeRounded],
-            ["pill", labels.shapePill],
-          ]}
         />
       ))}
     </>

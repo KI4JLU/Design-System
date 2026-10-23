@@ -9,19 +9,19 @@ import { cva } from "class-variance-authority";
  * Löschen).
  */
 export const menuItemVariants = cva(
-  "flex w-full items-center gap-3 px-3 py-2 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0",
+  "flex min-h-9 w-full items-center gap-2.5 px-2.5 py-1.5 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "text-on-surface hover:bg-surface-container-high",
-        destructive: "text-error hover:bg-surface-container-high",
+        default: "text-on-surface hover:bg-surface-container-low",
+        destructive: "text-error hover:bg-error/10",
       },
       selected: {
         true: "text-primary font-medium",
         false: "",
       },
       highlighted: {
-        true: "bg-surface-container-high",
+        true: "bg-surface-container-low",
         false: "",
       },
     },

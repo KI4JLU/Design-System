@@ -1,19 +1,21 @@
 import * as React from "react";
 
 /**
- * Two appearance preferences beside the Style (ui-shape-context.ts), held by
- * the same `AppearanceProvider` and mirrored to `<html>` the same way:
+ * The two appearance preferences, held by `AppearanceProvider` and mirrored
+ * to `<html>`:
  *
  * - **Contrast** (`data-contrast`): `system` follows the OS — increased
- *   contrast (`prefers-contrast: more`) or a forced-colours theme — `normal`
- *   is the design as drawn (subtle focus: highlight backgrounds), `more`
- *   strengthens borders and muted text and forces a visible focus ring on
- *   every focusable element (tokens.css).
+ *   contrast (`prefers-contrast: more`) or a forced-colours theme, else
+ *   `normal` — `normal` is the design as drawn (white canvas, subtle focus:
+ *   highlight backgrounds), `medium` lays the canvas on the same light grey
+ *   as the side panels, `more` does that too and strengthens borders and
+ *   muted text and forces a visible focus ring on every focusable element
+ *   (tokens.css).
  * - **Accent** (`data-accent`): the primary colour family; `standard` is the
  *   JLU blue. Every `primary` token follows it in light and dark.
  */
-export type ContrastChoice = "system" | "normal" | "more";
-export type ResolvedContrast = "normal" | "more";
+export type ContrastChoice = "system" | "normal" | "medium" | "more";
+export type ResolvedContrast = "normal" | "medium" | "more";
 
 export const ACCENT_COLORS = ["standard", "teal", "violet", "green", "rose", "amber"] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];

@@ -100,7 +100,7 @@ export const OpensSettings: Story = {
 
     const dialog = await body.findByRole("dialog", { name: "Einstellungen" });
     await expect(within(dialog).getByRole("heading", { level: 2, name: "Darstellung" })).toBeVisible();
-    for (const row of ["Farbschema", "Kontrast", "Akzentfarbe", "Stil"]) {
+    for (const row of ["Farbschema", "Kontrast", "Akzentfarbe"]) {
       await expect(within(dialog).getByRole("combobox", { name: row })).toBeVisible();
     }
     // The menu has closed behind the dialog.

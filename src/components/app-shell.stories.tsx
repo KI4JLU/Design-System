@@ -146,7 +146,7 @@ function Frame() {
  *
  * Both columns collapse to the 60px rail independently; the left column's
  * header row, the main column's bar and the right column's header row are
- * each 64px high and on one line. Below `lg` the same shell shows **one**
+ * each 56px high and on one line. Below `lg` the same shell shows **one**
  * area plus the `BottomTabBar` — visible by making the window narrower than
  * 1024px; the narrow arrangement is asserted in `app-shell.test.tsx` (jsdom,
  * stubbed viewport), because the Storybook runner renders at 1280px.
@@ -181,9 +181,9 @@ export const Reference: Story = {
     await expect(l.right).toBeLessThanOrEqual(m.left + 1);
     await expect(m.right).toBeLessThanOrEqual(r.left + 1);
 
-    // Eine Chrome-Einheit: die Zeile über dem Inhalt ist 64px hoch und liegt
+    // Eine Chrome-Einheit: die Zeile über dem Inhalt ist 56px hoch und liegt
     // auf der Oberkante beider Spalten.
-    await expect(bar.getBoundingClientRect().height).toBe(64);
+    await expect(bar.getBoundingClientRect().height).toBe(56);
     await expect(Math.round(bar.getBoundingClientRect().top)).toBe(Math.round(l.top));
     await expect(Math.round(r.top)).toBe(Math.round(l.top));
 

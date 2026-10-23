@@ -7,7 +7,6 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { NavItem } from "./nav-item";
 import { SidebarPanel } from "./sidebar-panel";
-import { useUiShape } from "./ui-shape-context";
 
 export interface SettingsSection {
   /** Stable id; also the controlled `value`. */
@@ -118,15 +117,14 @@ function SettingsDialog({
   fitTo,
   footer,
 }: SettingsDialogProps) {
-  const { shape } = useUiShape();
   // Measured only while open: a dialog mounted closed would otherwise keep the
   // box from mount time, wherever the page has scrolled since.
   const box = useElementBox(open && size === "xl" ? fitTo : undefined);
   // Re-rendered on every re-measure, which a window resize triggers too.
   const fit = box && fitGeometry(box, { width: window.innerWidth, height: window.innerHeight });
-  const radius = shape === "pill" ? "rounded-3xl" : "rounded-xl";
-  // Full screen below `sm` has no corners; literal classes, so Tailwind sees them.
-  const smRadius = shape === "pill" ? "sm:rounded-3xl" : "sm:rounded-xl";
+  // The box radius; full screen below `sm` has no corners.
+  const radius = "rounded-[var(--ui-radius-box)]";
+  const smRadius = "sm:rounded-[var(--ui-radius-box)]";
   const [inner, setInner] = React.useState(sections[0]?.value);
   const [query, setQuery] = React.useState("");
   const current = valueProp ?? inner;
@@ -172,10 +170,14 @@ function SettingsDialog({
               column: search fixed on top, the rows below scroll. */}
           <nav
             aria-label={title}
-            className="w-60 shrink-0 border-r border-outline-variant bg-surface-container-low max-sm:w-auto"
+            // A shade off the content pane (surface vs. lowest), plus the rule.
+            className="w-60 shrink-0 border-r border-outline-variant bg-surface max-sm:w-auto"
           >
+            {/* The column title is the dialog's own title, as the grey label
+                over the section rows (SidebarPanel's list label). */}
             <SidebarPanel
               fade={0}
+              title={title}
               head={(
                 <Input
                   type="search"
@@ -184,10 +186,13 @@ function SettingsDialog({
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   leadingIcon={<Search aria-hidden="true" />}
+                  // The nav column's search matches its 14px rows; Input has no small size yet.
+                  // eslint-disable-next-line design-system/layout-only-classname -- row-sized field in the settings nav, reasoned above
+                  className="h-9 py-0 text-sm"
                 />
               )}
             >
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 {visible.map((s) => (
                   <NavItem
                     key={s.value}
@@ -208,13 +213,13 @@ function SettingsDialog({
           <div className="flex min-w-0 flex-1 flex-col">
             <section
               aria-labelledby={shown ? `settings-section-${shown.value}` : undefined}
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 py-6 max-sm:px-4"
+              className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-7 pb-6 max-sm:px-4"
             >
               {shown && (
                 <>
                   <h2
                     id={`settings-section-${shown.value}`}
-                    className="m-0 border-b border-outline-variant pr-12 pb-5 text-2xl font-semibold text-on-surface"
+                    className="m-0 pr-12 pb-2 text-[17px] font-semibold text-on-surface"
                   >
                     {shown.label}
                   </h2>
@@ -258,13 +263,13 @@ const SettingsRow = React.forwardRef<HTMLDivElement, SettingsRowProps>(
     <div
       ref={ref}
       data-slot="settings-row"
-      className={cn("flex flex-col gap-3 border-b border-outline-variant py-5 last:border-b-0", className)}
+      className={cn("flex flex-col gap-3 border-b border-outline-variant py-4 last:border-b-0", className)}
       {...props}
     >
       <div className="flex items-center justify-between gap-6">
         <div className="min-w-0">
-          <div id={labelId} className="text-base text-on-surface">{label}</div>
-          {description && <p className="m-0 mt-1 text-sm text-on-surface-variant">{description}</p>}
+          <div id={labelId} className="text-[15px] text-on-surface">{label}</div>
+          {description && <p className="m-0 mt-0.5 text-sm text-on-surface-variant">{description}</p>}
         </div>
         {control && <div className="shrink-0">{control}</div>}
       </div>

@@ -2,11 +2,17 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "../lib/utils";
+import { buttonVariants } from "./button-variants";
 
 /**
  * Accessible modal dialog built on Radix. Provides focus trap, Escape-to-close,
  * scroll lock, and correct ARIA roles out of the box — the plan's a11y bar for
  * dialogs. Colors reference semantic tokens only.
+ *
+ * The one look: a 24px inset on every side, the box radius (16px), a 17px
+ * semibold title whose line sits on the centre of the close button — a 36px
+ * ghost icon button in the top-right corner, the same control as every other
+ * icon button. Actions go in `DialogFooter`.
  */
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -41,18 +47,22 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
-        "rounded-xl border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",
+        "rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",
         "focus:outline-none",
         className,
       )}
       {...props}
     >
       {children}
+      {/* 36px, its centre 36px from the top — on the title's line (24px inset + half its 24px line). */}
       <DialogPrimitive.Close
-        className="absolute right-4 top-4 rounded-md p-1 text-on-surface-variant opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "absolute top-[18px] right-[18px] size-9 p-0 text-on-surface-variant active:scale-100 [&_svg]:size-5",
+        )}
         aria-label={closeLabel}
       >
-        <X className="h-5 w-5" />
+        <X aria-hidden="true" />
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
@@ -87,7 +97,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "m-0 font-headline-md text-headline-md font-semibold text-on-surface",
+      "m-0 pr-10 text-[17px] leading-6 font-semibold text-on-surface",
       className,
     )}
     {...props}

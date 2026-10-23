@@ -15,15 +15,16 @@ import { menuItemVariants } from "./menu-item-variants";
 import { Popover, PopoverAnchor, PopoverContent } from "./popover";
 
 /*
- * The open panel's outer radius for a `ComboboxInput`:
+ * The open panel's outer radius for a `ComboboxInput`: `--combobox-open-radius`
+ * when an ancestor sets it, else
  *   min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))
- * — the field's own radius (`--ui-radius-control`, the Style's button
- * radius), capped at the Style's multi-line box radius (`--ui-radius-box`).
- * Rounded Style: min(8px, 12px) = 8px, the closed field's corner. Pill Style:
- * min(9999px, 24px) = 24px — a capsule cannot frame a multi-line box, and
- * 24px is within a pixel of the 50px field's capsule corner (25px). A
- * `TokenInput` keeps the field radius (`--radius-field`) in every Style,
- * open or closed. The expression is written out in every class that
+ * — the field's own radius (`--ui-radius-control`, 10px), capped at the
+ * multi-line box radius (`--ui-radius-box`, 16px). The panel is portalled to
+ * <body>, out of reach of a local re-pointing of `--ui-radius-control`, so a
+ * container that draws its field as a capsule (AppShellLayout's bar search)
+ * also sets `--combobox-open-radius` to the row radius: open, field and panel
+ * share one radius again. A `TokenInput` keeps the field radius
+ * (`--radius-field`), open or closed. The expression is written out in every class that
  * uses it: Tailwind only generates CSS for class names that appear literally
  * in source (here, and in every consumer compiling these strings from `dist`).
  */
@@ -222,7 +223,7 @@ export interface ComboboxInputProps
  * together. Inert while `data-panel` is absent, i.e. while the list is closed.
  */
 const panelInputClassName = [
-  "data-[panel=open]:rounded-t-[min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))]",
+  "data-[panel=open]:rounded-t-[var(--combobox-open-radius,min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl))))]",
   "data-[panel=open]:rounded-b-none data-[panel=open]:border-transparent data-[panel=open]:ring-0 data-[panel=open]:transition-none",
 ].join(" ");
 
@@ -369,7 +370,7 @@ export type ComboboxContentProps = React.ComponentPropsWithoutRef<typeof Popover
 /** The panel's outer radius per field shape — see the note above `ComboboxContext`. */
 const panelRadius: Record<PanelField["shape"], string> = {
   control:
-    "rounded-[min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl)))]",
+    "rounded-[var(--combobox-open-radius,min(var(--ui-radius-control,var(--radius-field)),var(--ui-radius-box,var(--radius-xl))))]",
   field: "rounded-field",
 };
 
@@ -396,8 +397,8 @@ const panelFrameState = (field: PanelField) => {
  * bottom corners (`data-panel="open"`), and the panel shows the field's
  * states instead: `primary` border + focus ring while the input has focus,
  * `error` border with `aria-invalid`. Radius: a `ComboboxInput` panel takes
- * the field's radius capped at the Style's box radius (rounded: 8px, pill:
- * 24px); a `TokenInput` panel keeps the field radius.
+ * the field's radius capped at the box radius (10px; see the note above
+ * `ComboboxContext`); a `TokenInput` panel keeps the field radius.
  *
  * What the panel fixes, overriding props: width = the field's — for a
  * `ComboboxInput`, the grown field's while it is widened to

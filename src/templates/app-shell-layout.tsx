@@ -45,7 +45,7 @@ import { useIsDesktop } from "../lib/pane-layout";
  * which is what makes the centre region centred on the row rather than in the
  * space the label leaves — the difference to 0.29.0's `mx-auto` recipe, which
  * centred the content of `headerActions` only when there was no label at all.
- * The row's height is `AppShell`'s: 64px in every state.
+ * The row's height is `AppShell`'s: 56px in every state.
  *
  * **On a short bar the search gives way first** (0.44.1, KI-842): it shrinks
  * from 28rem to an 8rem floor while each side keeps an 11rem floor, and only
@@ -59,7 +59,7 @@ import { useIsDesktop } from "../lib/pane-layout";
  * columns, not page content, so it takes the plain column gutter rather than a
  * page measure, and the visible gap between the bar and the columns is gone.
  * **It is not a mirror of the column header's inset**: since 0.39.0 a
- * `SidePanel`'s `h-16` header row is `px-4` (16px), because its toggle is
+ * `SidePanel`'s `h-14` header row is `px-4` (16px), because its toggle is
  * aligned on the pane BODY's first control and not on this bar. The bar is
  * inset for its own content; the two numbers are independent by decision.
  */
@@ -92,10 +92,10 @@ export interface AppShellLayoutProps
    * since 0.30.0 it is that empty region which keeps `search` centred on the
    * row.
    *
-   * The bar itself stays either way: `h-16` / 64px with a label, with only
+   * The bar itself stays either way: `h-14` / 56px with a label, with only
    * actions, with both, and with neither. It is chrome above the page content,
    * and consumers derive overlay offsets from that height (JustRAG's
-   * `Toast.css`: `top: 76px` = 64 + 12), so a bar that collapsed when empty
+   * `Toast.css`: `top: 68px` = 56 + 12), so a bar that collapsed when empty
    * would move their toasts, not just this template's markup.
    */
   pageLabel?: React.ReactNode;
@@ -337,7 +337,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        `--combobox-width` (24rem, capped by the slot) wide while closed —
        narrower than the 28rem slot — and widens to `--combobox-open-width`
        (40rem) while its list is open, as an overlay centred on the slot: the
-       slot, the side regions and the 64px row do not move (see
+       slot, the side regions and the 56px row do not move (see
        `fieldGrowClassName` in `combobox.tsx`). The container is what caps
        that growth at the row's content box (`100cqw`), so the open field
        never reaches past the row's gutters into a column. Container units
@@ -352,7 +352,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
 
        **This is the bar's own inset, not a copy of the column header's**
        (0.39.0). It used to be justified as "the inset of a `SidePanel`'s
-       `h-16` header row"; that row is `px-4` (16px) now, because the pane's
+       `h-14` header row"; that row is `px-4` (16px) now, because the pane's
        toggle is aligned on the pane BODY's first control (`side-panel.tsx`).
        The gutter stays here on its own merit — this row holds page-level
        chrome, not a pane's body — so the two insets are deliberately
@@ -363,7 +363,10 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
           {label}
         </div>
         {search ? (
-          <div className="w-md min-w-(--bar-search-min) [--combobox-open-width:40rem] [--combobox-width:24rem]">
+          // The bar's search is drawn as a pill: the slot re-points the control
+          // radius for whatever field the consumer hangs in it, and gives an
+          // open Combobox the radius its portalled panel has (combobox.tsx).
+          <div className="w-md min-w-(--bar-search-min) [--combobox-open-width:40rem] [--combobox-width:24rem] [--ui-radius-control:9999px] [--combobox-open-radius:var(--ui-radius-row)]">
             {search}
           </div>
         ) : null}
@@ -428,7 +431,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
             // column's), so the nav adds none around it and lets it fill.
             <nav
               aria-label={navLabel}
-              className="flex flex-col gap-2 p-4 has-[>[data-slot=sidebar-panel]]:h-full has-[>[data-slot=sidebar-panel]]:gap-0 has-[>[data-slot=sidebar-panel]]:p-0"
+              className="flex flex-col gap-0.5 p-2 has-[>[data-slot=sidebar-panel]]:h-full has-[>[data-slot=sidebar-panel]]:gap-0 has-[>[data-slot=sidebar-panel]]:p-0"
             >
               {nav}
             </nav>
@@ -441,7 +444,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
             </nav>
           ),
           header: logo,
-          footer: sidebarFooter ? <div className="p-4">{sidebarFooter}</div> : undefined,
+          footer: sidebarFooter ? <div className="p-2">{sidebarFooter}</div> : undefined,
           label: navLabel,
           isOpen: leftOpen,
           onOpenChange: onLeftOpenChange,

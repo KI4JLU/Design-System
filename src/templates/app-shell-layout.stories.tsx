@@ -86,22 +86,22 @@ type Story = StoryObj<typeof meta>;
 
 /**
  * Die Chrome-Zeile selbst: das `banner`-Landmark der Shell. Über die Rolle
- * gesucht und nicht über eine Klasse — `h-16` ist genau die Behauptung, die
- * hier geprüft wird, und ein Selektor `.h-16` wäre auch dann grün, wenn das
+ * gesucht und nicht über eine Klasse — `h-14` ist genau die Behauptung, die
+ * hier geprüft wird, und ein Selektor `.h-14` wäre auch dann grün, wenn das
  * Utility zu nichts kompilierte.
  */
 const bar = (canvasElement: HTMLElement) =>
   canvasElement.querySelector("header") as HTMLElement;
 
 /**
- * **64px, in jeder Kombination** (nur Label / nur Suche / nur Aktionen /
+ * **56px, in jeder Kombination** (nur Label / nur Suche / nur Aktionen /
  * alles / nichts). Die Zahl ist kein aus diesem Code abgelesenes Maß, sondern
  * der veröffentlichte Geometrie-Vertrag dieser Zeile: JustRAG positioniert
- * seine Toasts mit `top: 76px` = 64 + 12 darunter und misst dieselbe 64 in
+ * seine Toasts mit `top: 68px` = 56 + 12 darunter und misst dieselbe 56 in
  * einem eigenen Chromium-Test (`AppShellGeometry` in HomeView.stories.tsx).
  */
 async function expectBarHeight(canvasElement: HTMLElement) {
-  await expect(getComputedStyle(bar(canvasElement)).height).toBe("64px");
+  await expect(getComputedStyle(bar(canvasElement)).height).toBe("56px");
 }
 
 /**
@@ -167,7 +167,7 @@ const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.
  * `SectionedGridLayout`, the overview/browse template.
  *
  * `play` (Chromium), oracles in brackets:
- * 1. the bar is 64px [the published geometry contract JustRAG positions its
+ * 1. the bar is 56px [the published geometry contract JustRAG positions its
  *    toasts against, not a number read from the component];
  * 2. the column stands left of `<main>` [the layout engine's boxes];
  * 3. the field is centred on the bar with no label beside it, and the bar
@@ -224,7 +224,7 @@ export const Overview: Story = {
  *
  * `play` (Chromium, the runner's 1280px window, both columns at their 320px
  * default), oracles in brackets:
- * 1. the bar is 64px [the published contract, as above];
+ * 1. the bar is 56px [the published contract, as above];
  * 2. history | main | sources, left to right [the layout boxes];
  * 3. each column has its named separator [ARIA `separator` + name];
  * 4. the bar's four controls do not overlap or clip, and the field sits on
@@ -412,8 +412,8 @@ export const WithCenteredSearch: Story = {
 
 /**
  * Weder Label noch Suche noch Aktionen — die leere Zeile. Sie bleibt trotzdem
- * **64px hoch**: Consumer legen Overlays unter dieser Kante ab (JustRAGs
- * `Toast.css`: `top: 76px` = 64 + 12), und eine Zeile, die beim Weglassen der
+ * **56px hoch**: Consumer legen Overlays unter dieser Kante ab (JustRAGs
+ * `Toast.css`: `top: 68px` = 56 + 12), und eine Zeile, die beim Weglassen der
  * letzten Prop zusammenfiele, wäre für eine unveränderte Aufrufstelle eine
  * brechende Geometrie-Änderung.
  *
@@ -461,7 +461,7 @@ const COLUMN_WIDTH = 320;
  *    value from the component);
  * 2. nothing overlaps and nothing is clipped (`expectNoOverlap`);
  * 3. the field's centre is the bar's centre **within 1px**;
- * 4. the bar is 64px.
+ * 4. the bar is 56px.
  *
  * Preconditions are asserted too, so the story cannot pass by measuring a
  * different case: the bar IS 560px and the back button IS 36px.
@@ -538,7 +538,7 @@ export const WideBarKeepsTheSearchAtItsMaximum: Story = {
  * 560, 480 and 300px:
  *
  * - **At every step** the field is centred on the bar within 1px, nothing
- *   overlaps, and the bar is 64px. That is the centring rule: the two side
+ *   overlaps, and the bar is 56px. That is the centring rule: the two side
  *   regions are identical flex items in every state, so the search sits on
  *   the bar's exact centre down to the width where the side regions reach
  *   0 — a bar of 208px (search floor 128 + 2 × 16px gap + 2 × 24px inset),
@@ -605,7 +605,7 @@ export const BarGivesWayInOrder: Story = {
  * `Container`: the bar is not a page-content column but chrome between two
  * `SidePanel`s. (The measurement that led here: Changelog, 0.37.0.)
  *
- * **It is the bar's own measure.** A `SidePanel`'s `h-16` header row is
+ * **It is the bar's own measure.** A `SidePanel`'s `h-14` header row is
  * `px-4` (16px), because its toggle sits on the first control of the
  * **column body**, not on this bar. The two insets differ on purpose, so
  * neither can be the other's oracle.
@@ -739,7 +739,7 @@ export const WithCollapsibleColumns: Story = {
 /**
  * **The rail is the vertical mirror of the expanded column**: every control
  * keeps its height on the page across a collapse. The rail mirrors the
- * `h-16` chrome row and the column body's padding instead of a vertical
+ * `h-14` chrome row and the column body's padding instead of a vertical
  * rhythm of its own. Measured in Chromium, relative to the column's top, so
  * neither the scroll position nor the window size enters.
  *
@@ -752,7 +752,7 @@ export const WithCollapsibleColumns: Story = {
  * title, `head` or `nav` around the rows, bare rows in the rail. The story
  * asserts that frame before it measures, so it cannot silently fall back to
  * bare rows. A head-less panel renders no head, and its list carries the
- * 16px top inset (`pt-4`) the rail's `py-stack-md` mirrors. (The failures
+ * 8px top inset (`pt-2`) the rail's `py-2` mirrors. (The failures
  * this pins: Changelog, 0.35.0 and KI-852.)
  */
 export const CollapsedRailKeepsVerticalPositions: Story = {

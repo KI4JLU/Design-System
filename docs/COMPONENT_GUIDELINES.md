@@ -702,9 +702,9 @@ component means adding the utility in the same commit.
   [`ThemeProvider`](../src/theme/ThemeContext.tsx) and a no-flash script in
   `index.html`. Users switch it in the settings window (next point); the
   standalone `ThemeToggle` was removed in KI-846.
-- Contrast, accent colour and Style sit beside it on `<html data-contrast
-  data-accent data-ui-shape>`, held by `AppearanceProvider`. A settings window
-  offers all four with [`AppearanceSettings`](../src/components/appearance-settings.tsx)
+- Contrast and accent colour sit beside it on `<html data-contrast
+  data-accent>`, held by `AppearanceProvider` (there is one Style; the
+  rounded / pill switch is gone). A settings window offers all three with [`AppearanceSettings`](../src/components/appearance-settings.tsx)
   inside a `SettingsDialog` section — never rebuild those rows in the app.
 - Because tokens carry the theme, **components need no theme awareness** — style
   with tokens and both themes work. Verify new screens in **both** themes.

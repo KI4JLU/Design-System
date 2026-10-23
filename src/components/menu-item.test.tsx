@@ -15,7 +15,7 @@ describe("MenuItem", () => {
 
   it("shows the keyboard highlight surface", () => {
     render(<MenuItem highlighted>Beantwortet</MenuItem>);
-    expect(screen.getByRole("button")).toHaveClass("bg-surface-container-high");
+    expect(screen.getByRole("button")).toHaveClass("bg-surface-container-low");
   });
 
   it("styles destructive actions with the error color", () => {

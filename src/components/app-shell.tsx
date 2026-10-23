@@ -64,7 +64,7 @@ export interface AppShellPanel {
   /** Column body: nav rows, a source list, whatever the column is for. */
   content: React.ReactNode;
   /**
-   * Node in the column's `h-16` header row, inline with the collapse toggle
+   * Node in the column's `h-14` header row, inline with the collapse toggle
    * (`SidePanel.header`): a logo on the left column, a pane title on the
    * right. Unmounted while collapsed — the rail holds only the expand button
    * and `collapsedPreview`.
@@ -115,12 +115,12 @@ export interface AppShellPanel {
  *
  * ```
  * | left SidePanel        | main column                 | right SidePanel   |
- * | header: logo + toggle | topBar (h-16)               | header + toggle   |
+ * | header: logo + toggle | topBar (h-14)               | header + toggle   |
  * | content … footer      | <main> scrolls on its own   | content … footer  |
  * ```
  *
  * **Both side columns are `SidePanel`** (0.30.0), with its own toggle, its own
- * rail and its `h-16` header row, which is why the two column headers and
+ * rail and its `h-14` header row, which is why the two column headers and
  * `topBar` land on one baseline. The collapsed form **is** the 60px rail; a
  * shell that wants icons in it passes `collapsedPreview`. (The legacy 80px
  * `Sidebar` this frame rendered before 0.30.0 was removed in KI-846.)
@@ -206,9 +206,9 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    */
   showRight?: boolean;
   /**
-   * Content of the `h-16` chrome bar above `<main>`, in **both**
+   * Content of the `h-14` chrome bar above `<main>`, in **both**
    * arrangements — the page-label/search/actions row on a wide screen, the
-   * brand row on a narrow one. The frame owns the row's height (64px in every
+   * brand row on a narrow one. The frame owns the row's height (56px in every
    * state: consumers position overlays under that edge), the consumer owns
    * what is in it. Omitted entirely, no bar and no `banner` landmark render.
    */
@@ -275,13 +275,13 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     const rightPaneId = React.useId();
 
     /*
-      The chrome bar. `h-16` is on the row itself and not derived from its
-      contents, so the bar is 64px tall whatever is hung into it — the same
+      The chrome bar. `h-14` is on the row itself and not derived from its
+      contents, so the bar is 56px tall whatever is hung into it — the same
       chrome unit as a `SidePanel` header row, and a published geometry
-      contract outside this repo (JustRAG's `Toast.css`: `top: 76px` = 64 + 12).
+      contract outside this repo (JustRAG's `Toast.css`: `top: 68px` = 56 + 12).
     */
     const bar = topBar ? (
-      <header className="flex h-16 shrink-0 items-center bg-surface-container-lowest">
+      <header className="flex h-14 shrink-0 items-center">
         {topBar}
       </header>
     ) : null;
@@ -350,7 +350,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         <div
           ref={ref}
           className={cn(
-            "flex h-dvh min-h-0 flex-col overflow-hidden bg-surface text-on-surface",
+            "flex h-dvh min-h-0 flex-col overflow-hidden bg-canvas text-on-surface",
             className,
           )}
           {...props}
@@ -359,7 +359,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           {panel ? (
             <aside
               aria-label={panel.label}
-              className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface-container-lowest"
+              className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar"
               style={MOBILE_PANE_STYLE}
             >
               <div className="min-h-0 flex-1 overflow-y-auto">{panel.content}</div>
@@ -389,7 +389,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           // height. With `min-h-dvh` the heights inside resolve against the
           // content, and a long page would push the columns past the viewport
           // instead of scrolling the main area.
-          "flex h-dvh overflow-hidden bg-surface text-on-surface",
+          "flex h-dvh overflow-hidden bg-canvas text-on-surface",
           className,
         )}
         {...props}

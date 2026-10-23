@@ -34,14 +34,15 @@ describe("NavItem", () => {
     render(<NavItem active>Agenten</NavItem>);
     const item = screen.getByRole("button", { name: "Agenten" });
     expect(item).toHaveAttribute("aria-current", "page");
-    expect(item).toHaveClass("bg-primary");
+    expect(item).toHaveClass("bg-primary/10", "text-primary");
   });
 
   it("renders inactive items without aria-current", () => {
     render(<NavItem>Agenten</NavItem>);
     const item = screen.getByRole("button", { name: "Agenten" });
     expect(item).not.toHaveAttribute("aria-current");
-    expect(item).toHaveClass("text-on-surface-variant");
+    expect(item).toHaveClass("text-on-surface");
+    expect(item).not.toHaveClass("bg-primary/10");
   });
 
   it("renders the child element when asChild is set", () => {
@@ -52,12 +53,12 @@ describe("NavItem", () => {
     );
     const link = screen.getByRole("link", { name: "Statistiken" });
     expect(link).toHaveAttribute("aria-current", "page");
-    expect(link).toHaveClass("bg-primary");
+    expect(link).toHaveClass("bg-primary/10");
   });
 
   it("uses the nested sizing for level=sub", () => {
     render(<NavItem level="sub">Unterpunkt</NavItem>);
-    expect(screen.getByRole("button")).toHaveClass("px-3", "py-2");
+    expect(screen.getByRole("button")).toHaveClass("h-9", "px-2.5");
   });
 
   /**

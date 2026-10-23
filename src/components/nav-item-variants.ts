@@ -1,17 +1,16 @@
 import { cva } from "class-variance-authority";
 
 /**
- * NavItem style variants (cva). Formalizes the sidebar-row pattern:
- * rows whose corners follow the app-wide Style (`--ui-radius-control`:
- * rounded squares or pills, UiShapeProvider), `level` picks top-level vs. nested sizing, `active`
- * carries the current-page state (bg-primary top / secondary-container sub).
- * Note: the active top-level row deliberately switches to the label font
- * (font-label-sm) — that is the app's established look, kept 1:1.
+ * NavItem style variants (cva). Formalizes the sidebar-row pattern: flat
+ * rows on the row radius (`--ui-radius-row`), `level` picks top-level vs.
+ * nested sizing, `active` carries the current-page state — a primary tint
+ * with primary text, never a filled bar. Top-level rows are 38px: 14px text,
+ * an 18px icon, 10px side inset.
  *
  * `collapsed` is the icon-only form a collapsed `SidePanel` puts its rows into. It hides
  * every **element** child that is not an `<svg>` and centers what is left, so
- * the row keeps its own `px-4`/`py-3` (and therefore its hit target and its
- * pill shape) at the narrower column width. Two consequences worth knowing:
+ * the row keeps its own height and inset (and therefore its hit target) at
+ * the narrower column width. Two consequences worth knowing:
  *  - the rule is written as a child selector on the row itself, so it works
  *    identically when `asChild` renders a router `<a>` — the class lands on
  *    the `<a>`, and the `<a>`'s children are what gets hidden;
@@ -22,16 +21,16 @@ import { cva } from "class-variance-authority";
  *    prop.
  */
 export const navItemVariants = cva(
-  "flex w-full items-center rounded-[var(--ui-radius-control,var(--radius-action))] transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
+  "flex w-full items-center rounded-[var(--ui-radius-row)] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
   {
     variants: {
       level: {
-        top: "gap-4 px-4 py-3 font-body-base text-body-base",
-        sub: "gap-3 px-3 py-2 font-body-base text-sm",
+        top: "h-[38px] gap-2.5 px-2.5 font-body-base text-sm [&_svg]:size-[18px]",
+        sub: "h-9 gap-2.5 px-2.5 font-body-base text-sm [&_svg]:size-4",
       },
       active: {
         true: "",
-        false: "text-on-surface-variant hover:bg-secondary-container",
+        false: "text-on-surface hover:bg-surface-container-low [&_svg]:text-on-surface-variant",
       },
       collapsed: {
         true: "justify-center [&>*:not(svg)]:hidden",
@@ -42,12 +41,12 @@ export const navItemVariants = cva(
       {
         level: "top",
         active: true,
-        className: "bg-primary text-on-primary font-label-sm",
+        className: "bg-primary/10 font-medium text-primary",
       },
       {
         level: "sub",
         active: true,
-        className: "bg-secondary-container text-on-secondary-container",
+        className: "bg-primary/10 font-medium text-primary",
       },
     ],
     defaultVariants: {

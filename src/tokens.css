@@ -54,7 +54,7 @@
   /* Neutral / Grau (kühl) — Flächen, Text, Ränder (hell → dunkel) */
   --p-white: #ffffff;
   --p-black: #000000;
-  --p-gray-50: #f7fafc;
+  --p-gray-25: #fcfcfc;
   --p-gray-75: #f1f4f6;
   --p-gray-100: #eef1f3;
   --p-gray-125: #e3e3e7;
@@ -185,18 +185,24 @@
   --color-on-error-container: var(--p-red-900);
 
   /* Background / Surface / Text */
-  --color-background: var(--p-gray-50);
+  --color-background: var(--p-gray-25);
   --color-on-background: var(--p-gray-900);
 
-  --color-surface: var(--p-gray-50);
+  --color-surface: var(--p-gray-25);
   --color-surface-dim: var(--p-gray-250);
-  --color-surface-bright: var(--p-gray-50);
+  --color-surface-bright: var(--p-gray-25);
   --color-on-surface: var(--p-gray-900);
   --color-on-surface-variant: var(--p-gray-700);
   --color-surface-variant: var(--p-gray-200);
 
   --color-surface-container-lowest: var(--p-white);
   --color-surface-container-low: var(--p-gray-75);
+
+  /* App frame: `canvas` is the main content area (white in the drawn design,
+   * the side-panel grey from contrast `medium` up), `sidebar` the side
+   * panels. AppShell paints them; a page inside `<main>` stays transparent. */
+  --color-canvas: var(--p-white);
+  --color-sidebar: var(--p-gray-25);
   --color-surface-container: var(--p-gray-150);
   --color-surface-container-high: var(--p-gray-175);
   --color-surface-container-highest: var(--p-gray-200);
@@ -227,9 +233,10 @@
 
   /* Interaktions-Radien — EIN Regler pro Kontrollart. `rounded-action` steuert
    * Buttons UND Navigations-Items gemeinsam, `rounded-field` die
-   * Formularfelder. Hier ändern = überall geändert. */
-  --radius-action: var(--radius-lg);
-  --radius-field: var(--radius-lg);
+   * Formularfelder. Beide zeigen auf den einen Control-Radius (10px), damit
+   * Buttons, Felder, Zeilen und Dialog-Schließen dieselbe Ecke haben. */
+  --radius-action: var(--ui-radius-control);
+  --radius-field: var(--ui-radius-control);
 
   /* Spacing tokens */
   --spacing-gutter: 24px;
@@ -360,13 +367,13 @@
    * Werte aus der Brand-Vorlage: Badge #0056b3, Prefix-Navy #003366.
    * Das Brand-Blau (--p-blue-700) ist zugleich die Basis von
    * --color-primary — Marke und Primäraktion teilen EINE Farbe.
-   * `brand`/`on-brand` (Badge) bleiben BEWUSST in beiden Themes gleich —
-   * Markenfarbe ist Identität (wie code-surface). Nur die Wortmarke
-   * (`brand-wordmark`) invertiert im Dark-Mode zur Lesbarkeit.
+   * Die Logo-Farben folgen der Primärfarbe — und damit der Akzentfarbe des
+   * Nutzers und dem Dark-Mode (dort ein heller Akzent mit dunkler Schrift).
+   * Bei der Standard-Akzentfarbe im Light-Mode ist das genau das Brand-Blau.
    * ------------------------------------------------------------------------ */
-  --color-brand: var(--p-blue-700);
-  --color-on-brand: var(--p-white);
-  --color-brand-wordmark: var(--p-blue-800);
+  --color-brand: var(--color-primary);
+  --color-on-brand: var(--color-on-primary);
+  --color-brand-wordmark: var(--color-primary);
 
   /* --------------------------------------------------------------------------
    * CODE-SURFACE — Editor-Optik für Code-/Terminal-Viewer (CodeBlock).
@@ -441,6 +448,8 @@
      * Beziehung Weiß-auf-Hellgrau im Light-Theme. */
     --color-surface-container-lowest: var(--p-black);
     --color-surface-container-low: var(--p-gray-925);
+    --color-canvas: var(--p-gray-950);
+    --color-sidebar: var(--p-black);
     --color-surface-container: var(--p-gray-910);
     --color-surface-container-high: var(--p-gray-880);
     --color-surface-container-highest: var(--p-gray-840);
@@ -480,10 +489,6 @@
     --color-on-info: var(--p-teal-900);
     --color-info-container: var(--p-teal-900);
     --color-on-info-container: var(--p-teal-200);
-
-    /* Brand: Badge bleibt markenkonstant (kein Override); nur die Wortmarke
-       wird hell, damit sie auf dunklem Grund lesbar ist. */
-    --color-brand-wordmark: var(--p-gray-125);
 
     /* Primary kehrt sich um: im Dunkeln ist die Primärfarbe ein HELLER Akzent
        mit dunkler Schrift darauf (M3). Vorher blieb --color-primary in beiden
@@ -526,27 +531,23 @@ body {
 }
 
 /* ==========================================================================
- * Style (UiShapeProvider → <html data-ui-shape>): radii for consumer CSS that
- * should follow the global rounded / pill switch. DS components read the
- * shape themselves; these exist for surfaces an app builds on its own.
- *   card    — a one-line row (sidebar card)
- *   box     — a multi-line surface (pill → 24px, not a capsule)
- *   control — a button
- *   tile    — an icon tile
+ * Shape radii — the one Style (the rounded / pill switch is gone). DS
+ * components and a consumer's own CSS read the same values:
+ *   row     — a list or menu row (nav, history, sources, menu items): 10px
+ *   card    — a one-line row card; since the flat sidebar rows, the row radius
+ *   box     — a multi-line surface (menu, popover, notice, card): 16px
+ *   control — a form control (field, select, segmented control, tabs): the
+ *             row radius. Pills are reserved for the few chip-like things
+ *             that are drawn as pills on purpose (composer, chips, the
+ *             chrome bar's search) and say so themselves.
+ *   tile    — a small icon tile or type badge
  * ========================================================================== */
-:root,
-[data-ui-shape="rounded"] {
-  --ui-radius-card: var(--radius-xl);
-  --ui-radius-box: var(--radius-xl);
-  --ui-radius-control: var(--radius-action);
-  --ui-radius-tile: 6px;
-}
-
-[data-ui-shape="pill"] {
-  --ui-radius-card: 9999px;
-  --ui-radius-box: var(--radius-2xl);
-  --ui-radius-control: 9999px;
-  --ui-radius-tile: 9999px;
+:root {
+  --ui-radius-row: 10px;
+  --ui-radius-card: var(--ui-radius-row);
+  --ui-radius-box: 1rem;
+  --ui-radius-control: var(--ui-radius-row);
+  --ui-radius-tile: 5px;
 }
 
 /* ==========================================================================
@@ -703,6 +704,13 @@ body {
  * the outline off (`focus-visible:outline-none`) in favour of their own
  * subtler treatment, which is exactly what this mode overrides.
  * ========================================================================== */
+/* `medium` and `more` lay the canvas on the side-panel grey. Light only: in
+ * dark mode the canvas already sits apart from the black panels. */
+:root:not([data-theme="dark"])[data-contrast="medium"],
+:root:not([data-theme="dark"])[data-contrast="more"] {
+  --color-canvas: var(--color-sidebar);
+}
+
 [data-contrast="more"] {
   --color-outline-variant: var(--color-outline);
   --color-on-surface-variant: var(--color-on-surface);
