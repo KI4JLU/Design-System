@@ -50,6 +50,27 @@ describe("CodeBlock", () => {
     ).toBeInTheDocument();
   });
 
+  // Oracle: the props passed in, read back through roles and visibility.
+  it("shows the language and folds the code with collapsible", () => {
+    render(<CodeBlock code="print(1)" language="python" collapsible />);
+    expect(screen.getByText("python")).toBeInTheDocument();
+    const code = screen.getByText("print(1)");
+    expect(code).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Code einklappen" }));
+    expect(code).not.toBeVisible();
+    const toggle = screen.getByRole("button", { name: "Code ausklappen" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(code).toBeVisible();
+  });
+
+  it("has no fold toggle by default and puts app actions before copy", () => {
+    render(<CodeBlock code="x" actions={<button type="button">Ausführen</button>} />);
+    expect(screen.queryByRole("button", { name: "Code einklappen" })).toBeNull();
+    const names = screen.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
+    expect(names).toEqual(["Ausführen", "Code kopieren"]);
+  });
+
   it("supports custom labels", async () => {
     stubClipboard();
     render(<CodeBlock code="ls" copyLabel="Copy" copiedLabel="Copied" />);

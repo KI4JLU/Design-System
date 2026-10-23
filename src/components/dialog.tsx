@@ -49,6 +49,13 @@ const DialogContent = React.forwardRef<
         "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
         "rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",
         "focus:outline-none",
+        // The close button's geometry as custom properties, so content can
+        // align with it: `--dialog-close-inset` (its distance from the top and
+        // right edge) and `--dialog-close-size`. A toolbar ends its last
+        // control at `pr-[var(--dialog-close-inset)]` — the close button's
+        // right edge — and a header row keeps `--dialog-close-reserve` (inset
+        // + size) clear for it. Changing the button changes them with it.
+        "[--dialog-close-inset:18px] [--dialog-close-size:2.25rem] [--dialog-close-reserve:calc(var(--dialog-close-inset)_+_var(--dialog-close-size))]",
         className,
       )}
       {...props}
@@ -58,7 +65,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
-          "absolute top-[18px] right-[18px] size-9 p-0 text-on-surface-variant active:scale-100 [&_svg]:size-5",
+          "absolute top-[var(--dialog-close-inset)] right-[var(--dialog-close-inset)] size-[var(--dialog-close-size)] p-0 text-on-surface-variant active:scale-100 [&_svg]:size-5",
         )}
         aria-label={closeLabel}
       >

@@ -54,8 +54,18 @@ export interface ActionMenuProps {
  * React bubbles along the component tree), so a clickable host must ignore
  * clicks from `[role="menu"]` / `[role="menuitem"]` and the trigger button.
  */
-export function ActionMenu({ actions, label, triggerClassName, align = "end" }: ActionMenuProps) {
-  if (actions.length === 0) return null;
+export function ActionMenu(props: ActionMenuProps) {
+  if (props.actions.length === 0) return null;
+  return <ActionMenuDropdown {...props} />;
+}
+
+function ActionMenuDropdown({ actions, label, triggerClassName, align = "end" }: ActionMenuProps) {
+  // Closed by a click elsewhere, the menu does not hand focus back to its
+  // trigger: the user has moved on, and a returned focus would draw the
+  // trigger's focus ring and keep its host's focus-driven extras (a hover
+  // preview, the revealed ⋯) up. Closed by Esc or a chosen item, focus returns
+  // as usual — the keyboard path.
+  const closedOutside = React.useRef(false);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -63,7 +73,16 @@ export function ActionMenu({ actions, label, triggerClassName, align = "end" }: 
           <MoreHorizontal aria-hidden="true" className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align}>
+      <DropdownMenuContent
+        align={align}
+        onPointerDownOutside={() => {
+          closedOutside.current = true;
+        }}
+        onCloseAutoFocus={(e) => {
+          if (closedOutside.current) e.preventDefault();
+          closedOutside.current = false;
+        }}
+      >
         <ActionMenuItems actions={actions} />
       </DropdownMenuContent>
     </DropdownMenu>

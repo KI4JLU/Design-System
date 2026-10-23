@@ -132,7 +132,10 @@ export const InlineCitationCardTrigger = ({
     <PopoverTrigger asChild>
       <button
         className={cn(
-          "ml-1 inline-flex h-5 min-w-5 items-center justify-center px-1.5 align-baseline text-[11px] font-semibold leading-none",
+          // `align-[2px]`: on the baseline the 20px chip hangs 2px below the
+          // centre of the capitals beside it (measured at 15px Inter); raised,
+          // it sits centred on the line's cap height.
+          "ml-1 inline-flex h-5 min-w-5 items-center justify-center px-1.5 align-[2px] text-[11px] font-semibold leading-none",
           "rounded bg-primary-fixed text-on-primary-fixed-variant transition-colors",
           "data-[state=open]:bg-primary data-[state=open]:text-on-primary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",

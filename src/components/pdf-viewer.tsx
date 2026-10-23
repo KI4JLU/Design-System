@@ -51,6 +51,12 @@ export interface PdfViewerProps
   toolbarEnd?: React.ReactNode;
   onLoad?: (pageCount: number) => void;
   onError?: (err: unknown) => void;
+  /**
+   * No grey canvas: the pages run edge to edge on the page colour, divided by
+   * a hairline instead of a grey gap (a preview window). Default: shadowed
+   * pages on the `surface-container-low` canvas.
+   */
+  plain?: boolean;
 }
 
 type PdfDocument = Awaited<ReturnType<Awaited<ReturnType<typeof loadPdfjs>>["getDocument"]>["promise"]>;
@@ -61,7 +67,7 @@ const PAGE_GAP = 16;
 const SIDE_PAD = 24;
 
 const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
-  ({ src, initialPage = 1, labels: labelsProp, toolbarEnd, onLoad, onError, className, ...props }, ref) => {
+  ({ src, initialPage = 1, labels: labelsProp, toolbarEnd, onLoad, onError, plain = false, className, ...props }, ref) => {
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
     const scrollRef = React.useRef<HTMLDivElement | null>(null);
     const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -149,7 +155,8 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
     }, []);
 
     const widest = sizes.reduce((m, s) => Math.max(m, s.width), 0);
-    const fitScale = widest > 0 && containerWidth > 0 ? (containerWidth - SIDE_PAD * 2) / widest : 1;
+    const sidePad = plain ? 0 : SIDE_PAD;
+    const fitScale = widest > 0 && containerWidth > 0 ? (containerWidth - sidePad * 2) / widest : 1;
     const scale = zoom ?? fitScale;
 
     // Scroll to the requested page once the layout exists.
@@ -207,12 +214,12 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
       <div
         ref={rootRef}
         data-slot="pdf-viewer"
-        className={cn("flex min-h-0 flex-col bg-surface-container-low text-on-surface", className)}
+        className={cn("flex min-h-0 flex-col text-on-surface", plain ? "bg-surface-container-lowest" : "bg-surface-container-low", className)}
         {...props}
       >
         <div
           data-slot="pdf-viewer-toolbar"
-          className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface-container-lowest px-2"
+          className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface-container-lowest pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
         >
           <Button variant="ghost" size="icon" aria-label={labels.previousPage} disabled={current <= 1} onClick={() => goTo(current - 1)}>
             <ChevronUp aria-hidden="true" className="size-4" />
@@ -262,7 +269,10 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
               <Loader2 aria-hidden="true" className="size-5 animate-spin" />
             </div>
           ) : (
-            <div className="flex flex-col items-center" style={{ padding: `${PAGE_GAP}px ${SIDE_PAD}px`, gap: PAGE_GAP }}>
+            <div
+              className={cn("flex flex-col items-center", plain && "divide-y divide-outline-variant")}
+              style={plain ? undefined : { padding: `${PAGE_GAP}px ${SIDE_PAD}px`, gap: PAGE_GAP }}
+            >
               {sizes.map((size, i) => (
                 <div
                   key={i}
@@ -270,7 +280,7 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
                   ref={(el) => {
                     pageRefs.current[i] = el;
                   }}
-                  className="bg-surface-container-lowest shadow-card"
+                  className={cn("bg-surface-container-lowest", !plain && "shadow-card")}
                   style={{ width: Math.floor(size.width * scale), height: Math.floor(size.height * scale) }}
                 >
                   {doc && <PdfViewerPage doc={doc} index={i + 1} scale={scale} root={scrollRef} />}

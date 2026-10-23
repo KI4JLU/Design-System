@@ -127,6 +127,12 @@ export interface RichTextEditorProps {
   toolbarEnd?: React.ReactNode;
   /** No border or radius of its own — the container frames it (a dialog). */
   bare?: boolean;
+  /**
+   * No grey canvas around the page: the document fills the editor edge to
+   * edge on the page colour (a preview window). Default: a white page on the
+   * `surface-container-low` canvas.
+   */
+  plain?: boolean;
   className?: string;
 }
 
@@ -344,6 +350,7 @@ function RichTextEditorInner({
   readOnly = false,
   toolbarEnd,
   bare = false,
+  plain = false,
   className,
 }: RichTextEditorProps) {
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
@@ -470,7 +477,8 @@ function RichTextEditorInner({
       ref={rootRef}
       data-slot="rich-text-editor"
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden bg-surface-container-low text-on-surface",
+        "flex min-h-0 flex-col overflow-hidden text-on-surface",
+        plain ? "bg-surface-container-lowest" : "bg-surface-container-low",
         !bare && !fullscreen && "rounded-xl border border-outline-variant has-[[role=textbox][aria-invalid=true]]:border-error",
         className,
       )}
@@ -481,7 +489,7 @@ function RichTextEditorInner({
         // Scrolls sideways when narrower than its controls, without showing a
         // scrollbar track under the 48px row (PdfViewer's toolbar has none).
         // Inline style: an app's unlayered global scrollbar rules would beat a utility.
-        className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-outline-variant bg-surface-container-lowest px-2 [&::-webkit-scrollbar]:hidden"
+        className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-outline-variant bg-surface-container-lowest pl-2 pr-[var(--dialog-close-inset,0.5rem)] [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         {!readOnly && !isText && (
@@ -566,8 +574,8 @@ function RichTextEditorInner({
       </div>
 
       {/* The page on the canvas: the same 16px/24px spacing as PdfViewer's pages. */}
-      <div data-slot="rich-text-editor-canvas" className="min-h-0 flex-1 overflow-auto px-6 py-4">
-        <div className="mx-auto flex min-h-full max-w-5xl flex-col bg-surface-container-lowest shadow-card">
+      <div data-slot="rich-text-editor-canvas" className={cn("min-h-0 flex-1 overflow-auto", !plain && "px-6 py-4")}>
+        <div className={cn("mx-auto flex min-h-full max-w-5xl flex-col bg-surface-container-lowest", !plain && "shadow-card")}>
           <EditorContent editor={editor} className="flex flex-1 flex-col" />
         </div>
       </div>
