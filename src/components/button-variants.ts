@@ -12,7 +12,7 @@ import { cva } from "class-variance-authority";
  * triggers) — no extra prop, the ARIA attribute IS the API.
  */
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-action font-label-sm text-label-sm whitespace-nowrap transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 rounded-action font-label-sm text-label-sm whitespace-nowrap no-underline transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -25,7 +25,8 @@ export const buttonVariants = cva(
           "data-[state=open]:border-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary",
         ].join(" "),
         ghost: [
-          "text-on-surface hover:bg-surface-container-high",
+          // The redesign's quiet hover, the same fill as a hovered row.
+          "text-on-surface hover:bg-surface-container-low",
           "aria-[pressed=true]:bg-primary/10 aria-[pressed=true]:text-primary",
           "data-[state=open]:bg-primary/10 data-[state=open]:text-primary",
         ].join(" "),
@@ -46,7 +47,9 @@ export const buttonVariants = cva(
         // (py-3 + 24px line + 1px border top and bottom = 50px) and body text.
         // A fixed height, so a bordered variant (outline) does not grow.
         field: "h-12.5 px-5 text-base font-medium leading-6",
-        icon: "p-2 rounded-full",
+        // A rounded square on the control radius, like the rows and fields
+        // around it — not a circle (the composer's circles are its own).
+        icon: "p-2 rounded-[var(--ui-radius-control)]",
       },
     },
     defaultVariants: {

@@ -27,7 +27,7 @@ import { SidebarCollapsedContext } from "./sidebar-context";
  * faces the content.** A left pane reads `[header … toggle]`, a right pane
  * `[toggle … header]` — mirrored, so both panes put their control next to the
  * main column rather than against the window edge, and so the two headers plus
- * the main column's bar line up as one `h-16` chrome row. `header` is
+ * the main column's bar line up as one `h-14` chrome row. `header` is
  * expanded-only; `footer` is **not** — it is pinned under the body when
  * expanded and moves into the rail when collapsed, because it is typically the
  * only route to sign-out and a control that vanished on collapse would strand
@@ -43,7 +43,7 @@ import { SidebarCollapsedContext } from "./sidebar-context";
  * While collapsed the pane shrinks to a `SIDE_PANEL_RAIL_WIDTH` rail showing
  * the expand button, the optional `collapsedPreview` and — since 0.30.0 — the
  * `footer`. **The rail is the expanded column's vertical mirror** (0.35.0): the
- * same `h-16` chrome row for the toggle, then the slot, then the pinned footer
+ * same `h-14` chrome row for the toggle, then the slot, then the pinned footer
  * — so nothing jumps to a different height when the pane collapses. `children`
  * stay mounted but hidden (attribute `hidden` + `display:none`), so scroll
  * position and half-typed input survive a collapse. All labels are props — a consumer
@@ -89,6 +89,9 @@ export interface SidePanelProps extends React.HTMLAttributes<HTMLElement> {
   footer?: React.ReactNode;
   children: React.ReactNode;
 }
+
+/** The collapse / expand toggle: a 36px ghost square, 20px icon, the same in both places. */
+const toggleClass = "size-9 shrink-0 p-0 text-on-surface-variant [&_svg]:size-5";
 
 const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
   (
@@ -156,7 +159,7 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
       <Button
         variant="ghost"
         size="icon"
-        className={cn("shrink-0 p-1.5", side === "left" ? "ml-auto -mr-2" : "-ml-2")}
+        className={cn(toggleClass, side === "left" ? "mr-1 ml-auto" : "ml-0.5")}
         aria-label={collapseLabel}
         aria-expanded={true}
         aria-controls={bodyId}
@@ -191,38 +194,21 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
           // toggle centre 34 vs 32, first nav row top 68 vs 80, footer bottom
           // 32 vs 16, each relative to the column's own box).
           //
-          // Three boxes, matching the expanded body's three: the `h-16` chrome
+          // Three boxes, matching the expanded body's three: the `h-14` chrome
           // row, the scrolling slot, the pinned footer. The footer is separate
           // rather than an `mt-auto` child of the scroll box because it would
           // otherwise ride off the end of a long preview strip — and it is the
           // sign-out route, the one thing in the rail that must stay reachable.
           <div className="flex min-h-0 flex-1 flex-col items-center">
-            {/* The same `h-16` row the expanded header uses, so the toggle is
+            {/* The same `h-14` row the expanded header uses, so the toggle is
                 one control that stays put rather than two that nearly line up.
                 The height is the ROW's, not the button's — exactly as below. */}
-            <div className="flex h-16 shrink-0 items-center justify-center">
-              {/* `p-1.5` for the same reason as the collapse toggle (0.39.0):
-                  the two are one control in two placements and must not differ
-                  in size — the rail is 60px wide, so a 36px button here and a
-                  32px one there would also sit on different centres.
-
-                  `layout-only-classname` flags a positive padding on a control
-                  as a shrink-to-fit hack, and normally it is right. Here the
-                  32px IS the specified geometry (developer decision,
-                  21.09.2026): the toggle has to land on the same vertical line
-                  as a 32px control in a `p-4` body, and no label can stop
-                  fitting — the button's only child is a fixed 20px icon and
-                  its accessible name is the `aria-label`. It stays a
-                  `className` rather than a new `size` variant because the same
-                  4px would then have to be right for every icon button in the
-                  library, which is not this card's decision to make.
-                  TODO: if a second call site wants 32px, promote this to a
-                  `size="icon-sm"` variant instead of repeating the override. */}
+            <div className="flex h-14 shrink-0 items-center justify-center">
+              {/* The same toggle as the expanded header's: one control in two placements. */}
               <Button
                 variant="ghost"
                 size="icon"
-                /* eslint-disable-next-line design-system/layout-only-classname -- specified geometry, reasoned above */
-                className="p-1.5"
+                className={toggleClass}
                 aria-label={expandLabel}
                 aria-expanded={false}
                 aria-controls={bodyId}
@@ -231,12 +217,12 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
                 <ExpandIcon className="h-5 w-5" aria-hidden />
               </Button>
             </div>
-            {/* `py-stack-md` is the rail's counterpart to the padding a pane
-                body brings with it (`p-4` on `AppShellLayout`'s nav), which is
-                what puts the first icon on the same line as the first row.
+            {/* `py-2` is the rail's counterpart to the padding a pane body
+                brings with it (`p-2` on `AppShellLayout`'s nav), which is what
+                puts the first icon on the same line as the first row.
                 `gap-stack-md` spaces the preview's own children — a consumer
                 may pass a bare fragment of icons. */}
-            <div className="flex min-h-0 flex-1 flex-col items-center gap-stack-md overflow-y-auto py-stack-md">
+            <div className="flex min-h-0 flex-1 flex-col items-center gap-stack-md overflow-y-auto py-2">
               {collapsedPreview}
             </div>
             {/* No padding of the rail's own, for the same reason the expanded
@@ -262,7 +248,7 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
           className={cn("min-h-0 flex-1 flex-col", isOpen ? "flex" : "hidden")}
         >
           {/*
-            One fixed-height chrome row, `h-16` like `AppShellLayout`'s bar, so
+            One fixed-height chrome row, `h-14` like `AppShellLayout`'s bar, so
             the left pane's header, the main
             column's bar and the right pane's header sit on one baseline. The
             height is on the row, not derived from the button, so it does not
@@ -284,7 +270,7 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
             `SidePanel` → `ToggleAlignsWithBodyControl`, whose expectation is
             read off the body control's own rect.
           */}
-          <div className="flex h-16 items-center gap-stack-sm px-4">
+          <div className="flex h-14 shrink-0 items-center gap-1.5 px-2">
             {/* The toggle sits on the edge that FACES THE CONTENT, in both
                 directions: a left pane's row reads [header … toggle], a right
                 pane's [toggle … header]. DOM order carries it — on a right
@@ -302,7 +288,7 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
                 collapsed rail carries no title — only the expand button,
                 `collapsedPreview` and the pinned `footer`. */}
             {isOpen && header && (
-              <span className="flex min-w-0 flex-1 items-center gap-stack-sm">
+              <span className={cn("flex min-w-0 flex-1 items-center gap-stack-sm", side === "left" && "pl-2.5")}>
                 {header}
               </span>
             )}

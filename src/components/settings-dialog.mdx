@@ -9,8 +9,7 @@ import * as SidebarUserMenuStories from "./sidebar-user-menu.stories";
 Das Einstellungsfenster einer App: links eine Spalte mit Suche und einer Zeile
 je Abschnitt, rechts der gewählte Abschnitt unter seinem Titel, oben rechts
 der Schließen-Button wie bei jedem `Dialog`. Radix-Dialog darunter —
-Fokusfalle, Escape und Scroll-Sperre inklusive. Der Eckenradius folgt dem
-app-weiten Stil (`useUiShape`).
+Fokusfalle, Escape und Scroll-Sperre inklusive.
 
 Der Inhalt gehört der App: jeder Abschnitt ist eine Liste von
 `SettingsRow`s (Beschriftung + Beschreibung links, Bedienelement rechts,
@@ -21,15 +20,14 @@ mit — **`AppearanceSettings`**.
 
 ## `AppearanceSettings` — der Abschnitt „Darstellung"
 
-Vier `SettingsRow`s, jede mit einem DS-`Select`, jede direkt an den Provider
+Drei `SettingsRow`s, jede mit einem DS-`Select`, jede direkt an den Provider
 gebunden, dem die Einstellung gehört:
 
 | Zeile | Werte | Hook | Wirkung |
 |---|---|---|---|
 | Farbschema | System / Hell / Dunkel | `useTheme` (`ThemeProvider`) | `<html data-theme>` |
-| Kontrast | System / Normal / Erhöht | `useContrast` (`AppearanceProvider`) | `<html data-contrast>` |
+| Kontrast | System / Standard / Mittel / Hoch | `useContrast` (`AppearanceProvider`) | `<html data-contrast>` |
 | Akzentfarbe | die sechs `ACCENT_COLORS`, je mit `AccentSwatch` | `useAccent` (`AppearanceProvider`) | `<html data-accent>` |
-| Stil | Abgerundet eckig / Pille | `useUiShape` (`AppearanceProvider`) | `<html data-ui-shape>` |
 
 Die Komponente hält **keinen eigenen Zustand**: eine Wahl ruft den Setter des
 Providers, der Provider speichert sie (`localStorage`) und spiegelt sie auf
@@ -75,10 +73,9 @@ import { AppearanceSettings, SettingsDialog } from "@ki4jlu/design-system";
 <AppearanceSettings
   labels={{
     theme: "Colour scheme", themeLight: "Light", themeDark: "Dark", themeSystem: "System",
-    contrast: "Contrast", contrastNormal: "Normal", contrastMore: "Increased",
-    contrastDescription: "Increased: clear focus rings and stronger lines.",
+    contrast: "Contrast", contrastNormal: "Standard", contrastMedium: "Medium", contrastMore: "High",
+    contrastDescription: "Medium: grey background. High: also clear focus rings and stronger lines.",
     accent: "Accent colour", accents: { standard: "Default", teal: "Teal" },
-    shape: "Style", shapeRounded: "Rounded square", shapePill: "Pill",
   }}
 />
 ```

@@ -1,78 +1,70 @@
 import { cva } from "class-variance-authority";
 
 /**
- * One row card of a side panel (SidebarCard). `shape` follows the app-wide
- * Style (useUiShape): `rounded` = card radius, `pill` = capsule with tighter
- * padding — and back to `rounded-2xl` once the card grows a meta line, as the
- * composer does when its text wraps.
+ * The row geometry of every side-panel row — cards, the primary action above
+ * them and the user-menu trigger below them — so their leading icons line up
+ * on one axis: a 10px side inset, then the icon slot (`sidebarIconTileVariants`).
  */
-/**
- * The row geometry of every side-panel row — cards, and the user-menu trigger
- * under them — per shape, so their leading icons line up on one axis: 1px
- * border (transparent where a row draws none), this inset, then a 28px tile.
- *
- * Pill: the same 7px on every side, and the row's buttons are 28px circles
- * like the tile (see sidebarCardVariants). 1px border + 7px = 8px = the
- * capsule's end radius (44px row / 2 = 22) minus the tile's (14), so the icon
- * and the menu button sit concentric in the rounded ends.
- */
-export const sidebarRowInset = {
-  rounded: "gap-3 px-3 py-2.5",
-  pill: "gap-2.5 p-[7px]",
-} as const;
+export const sidebarRowInset = "gap-2.5 px-2.5 py-2";
 
 /**
  * The horizontal half of sidebarRowInset — for rows that set their own height
- * (SidebarAction) but must put their icon on the same axis as the cards'.
+ * (SidebarAction, the cards) but must put their icon on the same axis.
  */
-export const sidebarRowInsetX = {
-  rounded: "gap-3 px-3",
-  pill: "gap-2.5 px-[7px]",
-} as const;
+export const sidebarRowInsetX = "gap-2.5 px-2.5";
 
+/**
+ * One row of a side panel (SidebarCard): a flat 36px row — no border, no
+ * shadow — on the row radius, a quiet fill on hover. A card that grows a meta
+ * line grows with it. The ⋯ menu shows on hover, on keyboard focus inside the
+ * row and while it is open (see SidebarCard).
+ */
 export const sidebarCardVariants = cva(
   [
-    "group/sidebar-card flex w-full min-w-0 items-center border text-left text-on-surface shadow-card transition-colors",
+    "group/sidebar-card flex min-h-9 w-full min-w-0 items-center gap-2.5 rounded-[var(--ui-radius-row)] py-1 pr-1 pl-2.5 text-left text-on-surface transition-colors",
     "focus-within:outline-none",
   ],
   {
     variants: {
-      shape: {
-        rounded: `rounded-xl ${sidebarRowInset.rounded}`,
-        // Direct-child buttons (menu, extras) as 28px circles, not 32px: the
-        // row height then follows the tile, and the insets stay concentric.
-        pill: `rounded-full has-[[data-slot=sidebar-card-meta]>*]:rounded-2xl ${sidebarRowInset.pill} [&>button:not([role=checkbox])]:size-7`,
-      },
       state: {
-        idle: "border-outline-variant bg-surface-container-lowest",
-        active: "border-primary bg-primary/10",
+        idle: "",
+        active: "bg-primary/10",
         // Ticked in a delete selection (SidebarCard selectionTone="destructive").
-        marked: "border-error bg-error/10",
+        marked: "bg-error/10",
       },
       // false = a display-only card (no onOpen): no pointer cursor, no hover fill.
+      // An openable card is ONE pointer target: its own buttons (title, ⋯,
+      // extras, checkbox) take the pointer too, or the cursor flips between
+      // hand and arrow as it crosses the title — buttons default to the arrow.
       interactive: {
-        true: "cursor-pointer",
+        true: "cursor-pointer [&_button:not(:disabled)]:cursor-pointer",
         false: "cursor-default",
       },
     },
-    compoundVariants: [{ state: "idle", interactive: true, class: "hover:bg-surface-container-high" }],
-    defaultVariants: { shape: "rounded", state: "idle", interactive: true },
+    // An idle row keeps the hover fill while its ⋯ menu is open (the pointer
+    // has moved into the menu), so the row the menu belongs to stays marked —
+    // grey, never the primary tint an active row has.
+    compoundVariants: [
+      { state: "idle", interactive: true, class: "hover:bg-surface-container-low" },
+      { state: "idle", class: "has-[>button[data-state=open]]:bg-surface-container-low" },
+    ],
+    defaultVariants: { state: "idle", interactive: true },
   },
 );
 
-/** The tinted icon tile at the start of a card (and in the rail). */
+/**
+ * The leading slot of a card: a quiet 16px glyph in the secondary text
+ * colour, or — with `iconText` — a grey type badge (`PDF`, `DOCX`) of 30 × 20.
+ */
 export const sidebarIconTileVariants = cva(
-  "flex size-7 shrink-0 items-center justify-center bg-secondary-container text-[15px] leading-none text-primary [&>svg]:size-[18px]",
+  "flex shrink-0 items-center justify-center leading-none text-on-surface-variant",
   {
     variants: {
-      shape: { rounded: "rounded-[6px]", pill: "rounded-full" },
+      kind: {
+        icon: "size-4 text-[14px] in-data-[icon-slot=badge]:w-[30px] [&>svg]:size-4",
+        text: "h-5 w-[30px] rounded-[var(--ui-radius-tile)] bg-surface-container text-[9px] font-semibold tracking-[0.02em]",
+      },
     },
-    defaultVariants: { shape: "rounded" },
+    defaultVariants: { kind: "icon" },
   },
 );
-
-/** Radius of the card's own icon buttons (menu, extra actions). */
-export const sidebarControlShape = {
-  rounded: "rounded-action",
-  pill: "rounded-full",
-} as const;

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AppearanceProvider } from "./ui-shape-provider";
+import { AppearanceProvider } from "./appearance-provider";
 import { useAccent, useContrast } from "./appearance-context";
 
 // A controllable matchMedia: `more` decides whether the OS asks for contrast.
@@ -26,6 +26,7 @@ function Probe() {
     <>
       <p>{`${contrast}/${resolvedContrast}/${accent}`}</p>
       <button type="button" onClick={() => setContrast("more")}>more</button>
+      <button type="button" onClick={() => setContrast("medium")}>medium</button>
       <button type="button" onClick={() => setAccent("teal")}>teal</button>
     </>
   );
@@ -55,5 +56,17 @@ describe("AppearanceProvider contrast + accent", () => {
 
     render(<AppearanceProvider><Probe /></AppearanceProvider>);
     expect(screen.getByText("more/more/teal")).toBeInTheDocument();
+  });
+
+  it("applies and remembers `medium`, which the OS signal never overrides", async () => {
+    more = true;
+    const { unmount } = render(<AppearanceProvider><Probe /></AppearanceProvider>);
+    await userEvent.click(screen.getByRole("button", { name: "medium" }));
+    expect(document.documentElement.dataset.contrast).toBe("medium");
+    expect(window.localStorage.getItem("ui-shape-contrast")).toBe("medium");
+    unmount();
+
+    render(<AppearanceProvider><Probe /></AppearanceProvider>);
+    expect(screen.getByText("medium/medium/standard")).toBeInTheDocument();
   });
 });

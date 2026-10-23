@@ -5,7 +5,8 @@ import { SidebarCard, SidebarSelectionBar } from "./sidebar-card";
 import { SidebarRail, SidebarRailItem } from "./sidebar-rail";
 import { Button } from "./button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
+import { resolvedStyle } from "../test/fixtures/combobox-panel";
 
 const meta = {
   title: "Components/SidebarCard",
@@ -22,10 +23,7 @@ const actions = [
 ];
 
 /**
- * Chats and sources side by side. The app-wide Style comes from the Storybook
- * toolbar's `Stil` global: the preview decorator wraps every story in an
- * `AppearanceProvider` (which `UiShapeProvider` aliases), so this story sets
- * up no provider of its own. An inner provider would shadow the toolbar.
+ * Chats and sources side by side, in the one Style every row has.
  */
 function Panels() {
   const [selected, setSelected] = useState<Record<string, boolean>>({ a: true, b: false });
@@ -95,9 +93,12 @@ export const DeleteSelection: Story = {
     const [ticked, unticked] = canvasElement.querySelectorAll("[data-slot=sidebar-card]");
     // Oracle: the error token itself, read off the remove button that uses it.
     const error = getComputedStyle(canvas.getByRole("button", { name: "Ausgewählte entfernen" })).color;
-    await expect(getComputedStyle(ticked).borderTopColor).toBe(error);
+    // The ticked row is tinted (error at 10 %), the unticked one is not.
+    await expect(getComputedStyle(ticked).backgroundColor).toBe(
+      resolvedStyle(canvasElement, "backgroundColor", "color-mix(in oklab, var(--color-error) 10%, transparent)"),
+    );
     await expect(getComputedStyle(canvas.getByRole("checkbox", { name: "Auswählen Haushalt 2027.xlsx" })).backgroundColor).toBe(error);
-    await expect(getComputedStyle(unticked).borderTopColor).not.toBe(error);
+    await expect(getComputedStyle(unticked).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   },
 };
 
@@ -128,9 +129,11 @@ export const Muted: Story = {
   play: async ({ canvasElement }) => {
     const muted = canvasElement.querySelectorAll("[data-slot=sidebar-card][data-muted]");
     await expect(muted).toHaveLength(2);
-    // The menu of a muted card is at full strength.
+    // The menu of a muted card is at full strength once it shows (keyboard
+    // focus inside the row reveals it, as hover does).
     const trigger = muted[0].querySelector("button[aria-label^='Aktionen für']") as HTMLElement;
-    await expect(getComputedStyle(trigger).opacity).toBe("1");
+    trigger.focus();
+    await waitFor(() => expect(getComputedStyle(trigger).opacity).toBe("1"));
   },
 };
 

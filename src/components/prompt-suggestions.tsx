@@ -48,8 +48,8 @@ const controlClass = cn(
 /**
  * Starter prompts beneath the composer (PromptInput) of an empty chat: a
  * header (icon, headline, previous/next, optional close) over every
- * suggestion in a single row (scrolling sideways, faded at the edges), each handing its text to `onSelect`. Radii follow the
- * app-wide Style (`--ui-radius-control`: rounded square or pill).
+ * suggestion in a single row (scrolling sideways, faded at the edges), each handing its text to `onSelect`. The
+ * suggestions are pill chips; the header's buttons use the control radius.
  */
 const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProps>(
   (
@@ -204,9 +204,9 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
                 disabled={disabled}
                 onClick={() => onSelect(suggestion)}
                 className={cn(
-                  "inline-flex items-center gap-2 whitespace-nowrap border border-outline-variant bg-surface-container-lowest px-3.5 py-2 text-left text-sm text-on-surface-variant transition-colors",
-                  "rounded-[var(--ui-radius-control,var(--radius-action))]",
-                  "hover:bg-surface-container-high hover:text-on-surface",
+                  // A chip: a pill, like the composer above it.
+                  "inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-2 text-left text-[13px] text-on-surface-variant transition-colors",
+                  "hover:bg-surface-container-low hover:text-on-surface",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                   "disabled:pointer-events-none disabled:opacity-40",
                   "[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-primary",

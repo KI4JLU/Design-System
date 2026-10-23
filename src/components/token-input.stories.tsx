@@ -20,8 +20,7 @@ import { contrastRatio, realHover, realUnhover } from "../test/fixtures/real-poi
  * technology see it — `document.activeElement`, ARIA attributes, roles and
  * accessible names, layout boxes, `elementFromPoint` — never component state.
  * Geometry and colours are compared with values taken from outside the
- * component: `tokens.css` literals (`--radius-field` 0.5rem = 8px, in every
- * Style), token colours / shadows resolved by the browser on a probe element,
+ * component: `tokens.css` literals (`--radius-field` 10px), token colours / shadows resolved by the browser on a probe element,
  * and the boxes of a plain framed `Input` rendered next to the field.
  * Nothing is read back from the component's own class strings or state. The
  * list is portalled to <body>, so it is queried there, not in the canvas.
@@ -203,7 +202,7 @@ export const Chips: Story = {
     const ben = within(listbox).getByRole("option", { name: /Ben Schmidt/ });
     await waitFor(() => expect(activeOption(input)).toBe(ben));
     // The same joined panel around the chips frame (`--radius-field` 0.5rem).
-    await expectJoinedPanel(canvasElement, input, listbox, { radius: "8px", frame });
+    await expectJoinedPanel(canvasElement, input, listbox, { radius: "10px", frame });
     // No palette width set here: open, the frame is as wide as the Input below.
     await expect(Math.abs(frame.getBoundingClientRect().width - reference.getBoundingClientRect().width)).toBeLessThan(0.5);
     await expect(Math.abs(frame.getBoundingClientRect().left - reference.getBoundingClientRect().left)).toBeLessThan(0.5);
@@ -317,9 +316,8 @@ export const RemoveIsRedDark: Story = {
 /**
  * `aria-invalid` turns the frame's border to the error token, like `Input` —
  * closed on the frame, open on the panel (whose focus ring becomes the error
- * ring). Runs in the pill Style: the frame and its panel keep the field
- * radius (8px) in every Style — a field that grows to several lines cannot
- * be a capsule.
+ * ring). The frame and its panel keep the field radius (10px) — a field
+ * that grows to several lines cannot be a capsule.
  *
  * **No growth.** The column sets both palette widths of `Combobox`
  * (`--combobox-open-width: 32rem` and, for one step, `--combobox-width:
@@ -329,7 +327,6 @@ export const RemoveIsRedDark: Story = {
  * not move.
  */
 export const Invalid: Story = {
-  globals: { shape: "pill" },
   render: () => (
     <div data-testid="invalid-column" className="mx-auto max-w-md [--combobox-open-width:32rem]">
       {/* Four chips: they wrap onto several lines at the column's width. */}
@@ -337,8 +334,6 @@ export const Invalid: Story = {
     </div>
   ),
   play: async ({ canvas, canvasElement, userEvent, step }) => {
-    // The story really runs pill (the provider is the only writer).
-    await waitFor(() => expect(document.documentElement.dataset.uiShape).toBe("pill"));
     const body = page(canvasElement);
     const error = resolvedColor(canvasElement, "var(--color-error)");
     const input = canvas.getByRole("combobox", { name: "Benutzernamen" });
@@ -354,7 +349,7 @@ export const Invalid: Story = {
       await expect(getComputedStyle(frame).borderTopColor).toBe(error);
     });
 
-    await step("8px in pill, and the palette widths do not apply", async () => {
+    await step("10px, and the palette widths do not apply", async () => {
       const column = canvas.getByTestId("invalid-column");
       column.style.setProperty("--combobox-width", "16rem");
       try {
@@ -374,9 +369,9 @@ export const Invalid: Story = {
         await userEvent.type(input, "sch");
         const listbox = await body.findByRole("listbox", { name: "Personen" });
         await waitFor(() => expect(activeOption(input)).not.toBeNull());
-        // `--radius-field` 0.5rem, also in the pill Style.
+        // `--radius-field`, 10px.
         await expectJoinedPanel(canvasElement, input, listbox, {
-          radius: "8px",
+          radius: "10px",
           frame,
           invalid: true,
         });

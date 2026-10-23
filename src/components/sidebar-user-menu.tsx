@@ -5,7 +5,6 @@ import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "./dropdown-menu";
 import { sidebarRowInset } from "./sidebar-card-variants";
-import { useUiShape } from "./ui-shape-context";
 import { useSidebarCollapsed } from "./sidebar-context";
 
 /**
@@ -39,7 +38,6 @@ export interface SidebarUserMenuProps {
 
 function SidebarUserMenu({ initials, name, role, children }: SidebarUserMenuProps) {
   const collapsed = useSidebarCollapsed();
-  const { shape } = useUiShape();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -50,15 +48,15 @@ function SidebarUserMenu({ initials, name, role, children }: SidebarUserMenuProp
           // `active:scale-95` + `transition-all` made the row shrink and grow).
           className={cn(
             "min-w-0 transition-colors active:scale-100",
-            // Corners follow the app-wide Style, like the rows around it.
-            "rounded-[var(--ui-radius-control,var(--radius-action))]",
-            // Expanded: the same geometry as the SidebarCards above it (1px
-            // transparent border + sidebarRowInset + 28px avatar), so the
-            // avatar sits on the cards' icon axis.
-            !collapsed && cn("h-auto w-full justify-start border border-transparent", sidebarRowInset[shape]),
+            // A row like the ones above it: row radius, quiet hover, and the
+            // primary tint while the menu is open (ghost's data-state=open).
+            "rounded-[var(--ui-radius-row)] hover:bg-surface-container-low",
+            // Expanded: the rows' 10px inset, so the avatar starts on the
+            // rows' icon edge.
+            !collapsed && cn("h-auto w-full justify-start font-body-base", sidebarRowInset),
           )}
         >
-          <Avatar initials={initials} size={collapsed ? "sm" : "xs"} />
+          <Avatar initials={initials} size="sm" />
           <span
             className={cn(
               "flex min-w-0 flex-col items-start",
@@ -68,19 +66,25 @@ function SidebarUserMenu({ initials, name, role, children }: SidebarUserMenuProp
               collapsed && "sr-only",
             )}
           >
-            <span className="w-full truncate text-left font-semibold">{name}</span>
+            <span className="w-full truncate text-left text-sm leading-tight font-medium text-on-surface">{name}</span>
             {role && (
-              <span className="w-full truncate text-left text-xs text-on-surface-variant">
+              <span className="w-full truncate text-left text-xs leading-tight font-normal text-on-surface-variant">
                 {role}
               </span>
             )}
           </span>
           {!collapsed && (
-            <ChevronDown className="ml-auto shrink-0" width="1em" height="1em" aria-hidden />
+            <ChevronDown className="ml-auto size-4 shrink-0 text-on-surface-variant" aria-hidden />
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-56">
+      {/* As wide as the trigger row (the column minus its insets), 8px above it. */}
+      <DropdownMenuContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className={cn(collapsed ? "w-56" : "w-[var(--radix-dropdown-menu-trigger-width)]")}
+      >
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

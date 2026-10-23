@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MoreVertical } from "lucide-react";
+import { Check, MoreHorizontal } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Badge } from "./badge";
 import { Button } from "./button";
@@ -8,13 +8,24 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 
 export interface ActionMenuItem {
   label: string;
   icon?: React.ReactNode;
-  onSelect: (e: Event) => void;
+  /** Required unless the item opens a `submenu`. */
+  onSelect?: (e: Event) => void;
+  /**
+   * Nested choices: the item becomes a submenu trigger (with its chevron) —
+   * e.g. a setting with a few values ("Synchronisation" → manual / daily).
+   */
+  submenu?: ActionMenuItem[];
+  /** The current value among its siblings: primary text and a trailing check. */
+  checked?: boolean;
   destructive?: boolean;
   disabled?: boolean;
   /** Draw a separator above this item. */
@@ -49,30 +60,54 @@ export function ActionMenu({ actions, label, triggerClassName, align = "end" }: 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={cn("shrink-0", triggerClassName)} aria-label={label}>
-          <MoreVertical aria-hidden="true" className="size-4" />
+          <MoreHorizontal aria-hidden="true" className="size-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        {actions.map((a, i) => (
-          <React.Fragment key={a.label}>
-            {a.separatorBefore && i > 0 && <DropdownMenuSeparator />}
+        <ActionMenuItems actions={actions} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** The rows of an ActionMenu (and of each of its submenus). */
+function ActionMenuItems({ actions }: { actions: ActionMenuItem[] }) {
+  return (
+    <>
+      {actions.map((a, i) => (
+        <React.Fragment key={a.label}>
+          {a.separatorBefore && i > 0 && <DropdownMenuSeparator />}
+          {a.submenu ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger disabled={a.disabled}>
+                {a.icon}
+                {a.label}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <ActionMenuItems actions={a.submenu} />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
             <DropdownMenuItem
               variant={a.destructive ? "destructive" : undefined}
+              selected={a.checked}
               disabled={a.disabled}
               onSelect={a.onSelect}
               // With a badge the name is set explicitly: from the content, the
               // two inline fragments would join without a space. Typeahead
               // still matches the label alone.
               aria-label={a.badge ? `${a.label} (${a.badge})` : undefined}
+              aria-current={a.checked ? "true" : undefined}
               textValue={a.label}
             >
               {a.icon}
               {a.label}
               {a.badge && <Badge className="ml-auto">{a.badge}</Badge>}
+              {a.checked && <Check aria-hidden="true" className="ml-auto !size-4" />}
             </DropdownMenuItem>
-          </React.Fragment>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          )}
+        </React.Fragment>
+      ))}
+    </>
   );
 }

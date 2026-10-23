@@ -288,8 +288,11 @@ export const MessageBranchSelector = ({
     <ButtonGroup
       aria-label="Versionen"
       className={cn(
-        // `!`: must beat ButtonGroup's squared inner corners; full = the DS icon Button's radius
-        "[&>*:not(:first-child)]:rounded-l-full! [&>*:not(:last-child)]:rounded-r-full!",
+        // `!`: must beat ButtonGroup's squared inner corners. Every corner is
+        // the DS icon Button's own (the control radius), so a hovered arrow
+        // is the same rounded square as every other icon button — not half
+        // square, half pill.
+        "[&>*:not(:first-child)]:rounded-l-[var(--ui-radius-control)]! [&>*:not(:last-child)]:rounded-r-[var(--ui-radius-control)]!",
         className
       )}
       orientation="horizontal"

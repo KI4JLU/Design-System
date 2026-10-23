@@ -1,5 +1,4 @@
 import * as React from "react";
-import { DEFAULT_UI_SHAPE, UiShapeContext, type UiShape } from "./ui-shape-context";
 import {
   ACCENT_COLORS,
   AccentContext,
@@ -11,15 +10,14 @@ import {
 
 export interface AppearanceProviderProps {
   children: React.ReactNode;
-  /** Used when nothing is stored yet. Default `rounded`. */
-  defaultShape?: UiShape;
   /** Default `system`. */
   defaultContrast?: ContrastChoice;
   /** Default `standard`. */
   defaultAccent?: AccentColor;
   /**
-   * localStorage key of the Style; contrast and accent use `<key>-contrast` /
-   * `<key>-accent`. Default `ui-shape`.
+   * Prefix of the localStorage keys: `<key>-contrast` and `<key>-accent`.
+   * Default `ui-shape` — the name it had while the provider also held the
+   * rounded / pill Style, kept so stored contrast and accent survive.
    */
   storageKey?: string;
 }
@@ -47,23 +45,24 @@ const systemWantsMore = () =>
     : false;
 
 /**
- * Holds the app-wide appearance preferences — Style (`useUiShape`), contrast
- * (`useContrast`) and accent colour (`useAccent`) — remembers each per
- * browser and mirrors them to `<html data-ui-shape data-contrast data-accent>`,
- * where the tokens pick them up. Mount once near the root, beside ThemeProvider.
+ * Holds the app-wide appearance preferences — contrast (`useContrast`) and
+ * accent colour (`useAccent`) — remembers each per browser and mirrors them
+ * to `<html data-contrast data-accent>`, where the tokens pick them up. Mount
+ * once near the root, beside ThemeProvider.
+ *
+ * There is one Style. The rounded / pill switch is gone: every component has
+ * exactly one shape, and the `--ui-radius-*` tokens are fixed values.
  */
 export function AppearanceProvider({
   children,
-  defaultShape = DEFAULT_UI_SHAPE,
   defaultContrast = "system",
   defaultAccent = "standard",
   storageKey = "ui-shape",
 }: AppearanceProviderProps) {
   const contrastKey = `${storageKey}-contrast`;
   const accentKey = `${storageKey}-accent`;
-  const [shape, setShapeState] = React.useState<UiShape>(() => read(storageKey, ["rounded", "pill"] as const, defaultShape));
   const [contrast, setContrastState] = React.useState<ContrastChoice>(() =>
-    read(contrastKey, ["system", "normal", "more"] as const, defaultContrast),
+    read(contrastKey, ["system", "normal", "medium", "more"] as const, defaultContrast),
   );
   const [accent, setAccentState] = React.useState<AccentColor>(() => read(accentKey, ACCENT_COLORS, defaultAccent));
   const [systemMore, setSystemMore] = React.useState(systemWantsMore);
@@ -81,16 +80,13 @@ export function AppearanceProvider({
 
   React.useEffect(() => {
     const root = document.documentElement;
-    root.dataset.uiShape = shape;
     root.dataset.contrast = resolvedContrast;
     root.dataset.accent = accent;
-  }, [shape, resolvedContrast, accent]);
+  }, [resolvedContrast, accent]);
 
-  const setShape = React.useCallback((v: UiShape) => { setShapeState(v); write(storageKey, v); }, [storageKey]);
   const setContrast = React.useCallback((v: ContrastChoice) => { setContrastState(v); write(contrastKey, v); }, [contrastKey]);
   const setAccent = React.useCallback((v: AccentColor) => { setAccentState(v); write(accentKey, v); }, [accentKey]);
 
-  const shapeValue = React.useMemo(() => ({ shape, setShape }), [shape, setShape]);
   const contrastValue = React.useMemo(
     () => ({ contrast, resolvedContrast, setContrast }),
     [contrast, resolvedContrast, setContrast],
@@ -98,14 +94,8 @@ export function AppearanceProvider({
   const accentValue = React.useMemo(() => ({ accent, setAccent }), [accent, setAccent]);
 
   return (
-    <UiShapeContext.Provider value={shapeValue}>
-      <ContrastContext.Provider value={contrastValue}>
-        <AccentContext.Provider value={accentValue}>{children}</AccentContext.Provider>
-      </ContrastContext.Provider>
-    </UiShapeContext.Provider>
+    <ContrastContext.Provider value={contrastValue}>
+      <AccentContext.Provider value={accentValue}>{children}</AccentContext.Provider>
+    </ContrastContext.Provider>
   );
 }
-
-/** The Style-only name this provider had first; same component. */
-export const UiShapeProvider = AppearanceProvider;
-export type UiShapeProviderProps = AppearanceProviderProps;

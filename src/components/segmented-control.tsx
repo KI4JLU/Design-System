@@ -54,9 +54,8 @@ const SegmentedControl = React.forwardRef<
     ref={ref}
     role="group"
     className={cn(
-      // Radius follows the app-wide Style (rounded / pill); the lowest surface
-      // (white in light mode) keeps it legible on a tinted page.
-      "inline-flex overflow-hidden rounded-[var(--ui-radius-control)] border border-outline-variant bg-surface-container-lowest",
+      // A quiet track; the chosen segment is a raised chip on it.
+      "inline-flex gap-0.5 rounded-[var(--ui-radius-control)] bg-surface-container-low p-0.5",
       className,
     )}
     {...props}
@@ -71,21 +70,20 @@ const SegmentedControl = React.forwardRef<
           aria-pressed={active}
           onClick={() => onValueChange(option.value)}
           className={cn(
-            "font-label-sm text-label-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
-            // An icon segment is SQUARE (h-9 w-9), a text one is a padded
-            // pill-less box. Reusing the text padding for an icon would give a
-            // wide, off-centre button — the icon has no width of its own to
-            // balance the 16px sides.
-            // An icon + label segment keeps the text padding and centres the
-            // pair; h-9 matches the height a text segment gets from py-2.
+            "rounded-[calc(var(--ui-radius-control)-2px)] text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
+            // An icon segment is SQUARE (size-8), a text one is a padded box.
+            // Reusing the text padding for an icon would give a wide,
+            // off-centre button — the icon has no width of its own to balance
+            // the 12px sides. An icon + label segment keeps the text padding
+            // and centres the pair; all three are 32px tall.
             iconOnly
-              ? "flex h-9 w-9 items-center justify-center"
+              ? "flex size-8 items-center justify-center [&_svg]:size-[18px]"
               : option.icon
-                ? "inline-flex h-9 items-center justify-center gap-1.5 px-4"
-                : "px-4 py-2",
+                ? "inline-flex h-8 items-center justify-center gap-1.5 px-3"
+                : "h-8 px-3",
             active
-              ? "bg-primary text-on-primary"
-              : "text-on-surface-variant hover:bg-surface-container-high",
+              ? "bg-surface-container-lowest text-primary shadow-sm ring-1 ring-outline-variant"
+              : "text-on-surface-variant hover:text-on-surface",
           )}
         >
           {option.icon ?? null}

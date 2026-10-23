@@ -13,7 +13,6 @@ import {
   PromptInputSubmit,
 } from "./prompt-input";
 import { InputGroupAddon } from "./input-group";
-import type { PromptInputShape } from "./prompt-input-variants";
 
 const meta = {
   title: "Components/PromptInputAdaptiveTextarea",
@@ -30,12 +29,10 @@ type Story = StoryObj<typeof meta>;
  * between them and moves above them once it wraps.
  */
 function Composer({
-  shape,
   voice,
   placeholder = "Stelle eine Frage…",
   className = "mx-auto max-w-3xl",
 }: {
-  shape: PromptInputShape;
   voice?: boolean;
   placeholder?: string;
   className?: string;
@@ -44,7 +41,7 @@ function Composer({
   const [recording, setRecording] = useState(false);
   return (
     <div className={className}>
-      <PromptInput id="composer" shape={shape} onSubmit={() => setValue("")}>
+      <PromptInput id="composer" onSubmit={() => setValue("")}>
         <InputGroupAddon align="inline-start" className="absolute bottom-1 left-3 p-0">
           <PromptInputActionMenu>
             <PromptInputActionMenuTrigger className="size-10" aria-label="Anhängen" />
@@ -91,21 +88,14 @@ function Composer({
 
 export const ChatComposer: Story = {
   args: { value: "", onValueChange: undefined } as never,
-  render: () => <Composer shape="rounded" />,
-};
-
-/** `shape="pill"`: capsule frame, circular controls; falls back to the frame
- *  radius once the text wraps or files are attached. */
-export const PillComposer: Story = {
-  args: { value: "", onValueChange: undefined } as never,
-  render: () => <Composer shape="pill" />,
+  render: () => <Composer />,
 };
 
 /** With a speech-to-text provider wired: the idle send button becomes the
  *  voice trigger and turns back into the arrow as soon as there is a draft. */
 export const VoiceIdle: Story = {
   args: { value: "", onValueChange: undefined } as never,
-  render: () => <Composer shape="pill" voice />,
+  render: () => <Composer voice />,
 };
 
 /** A placeholder longer than the gap between the controls (a long topic name,
@@ -115,7 +105,6 @@ export const LongPlaceholder: Story = {
   args: { value: "", onValueChange: undefined } as never,
   render: () => (
     <Composer
-      shape="rounded"
       className="max-w-[420px]"
       placeholder="Stelle eine Frage zu Fachbereiche, Zentren und Einrichtungen…"
     />

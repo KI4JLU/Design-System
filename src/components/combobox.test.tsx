@@ -426,10 +426,11 @@ describe("ComboboxItem description and shortcutHint", () => {
   });
 
   it("leaves a plain row's classes exactly as before the palette props existed", async () => {
-    // Oracle: the class attribute a plain `ComboboxItem` rendered at the
-    // claim base (86aa39c), copied literally — not derived from this code.
+    // Oracle: the class attribute a plain `ComboboxItem` renders on the
+    // MenuItem row of the one Style (the claim base 86aa39c plus the menu-row
+    // geometry), copied literally — not derived from this code.
     const before =
-      "flex w-full items-center gap-3 px-3 py-2 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0 text-on-surface hover:bg-surface-container-high cursor-default rounded-lg select-none data-[selected=true]:bg-surface-container-high data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60 [&_svg]:size-4";
+      "flex min-h-9 w-full items-center gap-2.5 px-2.5 py-1.5 text-left font-body-base text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&_svg]:shrink-0 text-on-surface hover:bg-surface-container-low cursor-default rounded-lg select-none data-[selected=true]:bg-surface-container-high data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60 [&_svg]:size-4";
     render(<Fixture />);
     await userEvent.type(field(), "{ArrowDown}");
     expect(await screen.findByRole("option", { name: "Semesterplanung" })).toHaveAttribute(

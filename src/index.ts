@@ -73,6 +73,9 @@ export {
   type DropdownMenuItemProps,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "./components/dropdown-menu";
 export {
   ContextMenu,
@@ -131,6 +134,7 @@ export {
   SelectGroup,
   SelectValue,
   SelectTrigger,
+  type SelectTriggerProps,
   SelectContent,
   SelectLabel,
   SelectItem,
@@ -325,13 +329,11 @@ export {
   type BreadcrumbBackLabels,
 } from "./components/breadcrumb";
 export { Textarea, type TextareaProps } from "./components/textarea";
-/** App-wide appearance: Style (rounded / pill), contrast, accent colour. */
+/** App-wide appearance: contrast, accent colour. */
 export {
   AppearanceProvider,
-  UiShapeProvider,
   type AppearanceProviderProps,
-  type UiShapeProviderProps,
-} from "./components/ui-shape-provider";
+} from "./components/appearance-provider";
 export {
   useContrast,
   useAccent,
@@ -343,7 +345,6 @@ export {
   type AccentContextValue,
 } from "./components/appearance-context";
 export { AccentSwatch, type AccentSwatchProps } from "./components/accent-swatch";
-export { useUiShape, type UiShape, type UiShapeContextValue } from "./components/ui-shape-context";
 /** Side-panel building blocks: row card, selection bar, collapsed rail. */
 export {
   SidebarCard,
@@ -463,7 +464,6 @@ export * from "./components/prompt-input";
 export {
   promptInputFrameVariants,
   promptInputControlShape,
-  type PromptInputShape,
 } from "./components/prompt-input-variants";
 /** The column of a full-page chat: content, composer, pinned footer; centred while empty. */
 export { ChatStage, type ChatStageProps } from "./components/chat-stage";

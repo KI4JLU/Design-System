@@ -44,7 +44,7 @@ Bedienelemente stehen am Hauptbereich, nicht an den Fensterrändern. Getragen
 wird das von der **DOM-Reihenfolge** (nicht von einer `order-*`-Utility), damit
 Tab-Reihenfolge und Vorlesereihenfolge dem Bild entsprechen.
 
-Die Zeile ist `h-16` hoch — dieselbe Chrome-Einheit wie die Leiste von
+Die Zeile ist `h-14` hoch — dieselbe Chrome-Einheit wie die Leiste von
 `AppShellLayout`, so dass linke Kopfzeile,
 Hauptspalten-Leiste und rechte Kopfzeile auf einer Linie liegen. Die Höhe hängt
 an der Zeile, nicht am Knopf, also verschiebt ein höherer `header`-Knoten
@@ -128,7 +128,7 @@ ausgeklappten Zustand rendert, sieht den Ausklapp-Knopf nie.
 - **Kein Breiten-Übergang.** Dieselbe Breite wird auch per Maus gezogen; eine
   animierte Breite würde dem Zeiger nachlaufen.
 - **Die Schiene spiegelt die ausgeklappte Spalte senkrecht** (0.35.0). Sie baut
-  keinen eigenen Rhythmus, sondern dieselben drei Kästen: die `h-16`-Chrome-Zeile
+  keinen eigenen Rhythmus, sondern dieselben drei Kästen: die `h-14`-Chrome-Zeile
   für den Ausklapp-Knopf, darunter der scrollende Vorschau-Bereich mit der
   Polsterung, die ein Spaltenkörper mitbringt, darunter der ungepolsterte
   `footer`. Damit behält jedes Bedienelement beim Einklappen seine Höhe auf der

@@ -17,16 +17,33 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
+export interface SelectTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> {
+  /**
+   * `field` (default): the framed form field. `ghost`: no frame — the value
+   * and a chevron, a quiet fill on hover — for a settings row, where the row
+   * already says what the control is and a framed box would be noise.
+   */
+  variant?: "field" | "ghost";
+}
+
 const SelectTrigger = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  SelectTriggerProps
+>(({ className, children, variant = "field", ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
+    data-variant={variant}
     className={cn(
-      fieldVariants(),
-      // Follows the app-wide Style like a button (one line, like Input).
-      "rounded-[var(--ui-radius-control,var(--radius-field))]",
+      variant === "field"
+        ? fieldVariants()
+        : [
+            "h-9 w-auto px-2.5 text-sm text-on-surface outline-none transition-colors",
+            "hover:bg-surface-container-low data-[state=open]:bg-surface-container-low",
+            "focus-visible:ring-2 focus-visible:ring-focus-ring",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+          ],
+      "rounded-[var(--ui-radius-control)]",
       "flex items-center justify-between gap-2 text-left",
       "data-[placeholder]:text-on-surface-variant [&>span]:line-clamp-1",
       className,
@@ -50,13 +67,13 @@ const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "z-50 max-h-96 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-overlay",
+        "z-50 max-h-96 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest text-on-surface shadow-overlay",
         position === "popper" && "translate-y-1",
         className,
       )}
       {...props}
     >
-      <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
+      <SelectPrimitive.Viewport className="p-1.5">{children}</SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
@@ -82,8 +99,9 @@ const SelectItem = React.forwardRef<
     ref={ref}
     className={cn(
       menuItemVariants(),
-      "cursor-default justify-between rounded-lg select-none",
-      "data-[highlighted]:bg-surface-container-high data-[highlighted]:outline-none",
+      "cursor-default justify-between rounded-[var(--ui-radius-row)] select-none",
+      // The highlight fill is the focus indicator (as in DropdownMenu), so no ring.
+      "data-[highlighted]:bg-surface-container-low data-[highlighted]:outline-none focus-visible:ring-0",
       "data-[state=checked]:font-medium data-[state=checked]:text-primary",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-60",
       className,
@@ -104,7 +122,7 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-outline-variant", className)}
+    className={cn("mx-2.5 my-1.5 h-px bg-outline-variant", className)}
     {...props}
   />
 ));

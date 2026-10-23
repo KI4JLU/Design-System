@@ -3,16 +3,15 @@ import { cn } from "../lib/utils";
 import { ActionMenu, type ActionMenuItem } from "./action-menu";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
-import { sidebarCardVariants, sidebarControlShape, sidebarIconTileVariants } from "./sidebar-card-variants";
-import { useUiShape, type UiShape } from "./ui-shape-context";
+import { sidebarCardVariants, sidebarIconTileVariants } from "./sidebar-card-variants";
 
 export type SidebarCardAction = ActionMenuItem;
 export type SidebarSelectionTone = "default" | "destructive";
 
 export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, "title"> {
-  /** Leading glyph (an svg, or an emoji string), shown in the tinted tile. */
+  /** Leading glyph (an svg, or an emoji string), shown small and grey. */
   icon?: React.ReactNode;
-  /** A short type label instead of a glyph ("PDF", "DOCX"). Wins over `icon`. */
+  /** A short type label instead of a glyph ("PDF", "DOCX"), shown as a grey badge. Wins over `icon`. */
   iconText?: string;
   title: string;
   /**
@@ -56,14 +55,21 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
    * user sees what is about to go. Only matters in `selectionMode`.
    */
   selectionTone?: SidebarSelectionTone;
-  /** Default: the app-wide Style (`useUiShape`). */
-  shape?: UiShape;
   titleTestId?: string;
 }
 
-const titleClass = "block w-full truncate text-left text-sm font-medium text-on-surface";
+const titleClass = "block w-full truncate text-left text-sm text-on-surface";
 /** The same strength as a muted SidebarRailItem, so card and rail agree. */
 const mutedClass = "opacity-50";
+
+/** The row's ⋯ trigger: 26px, quiet, shown on hover / focus / open, always without hover. */
+const revealOnHover = cn(
+  "size-[26px] rounded-md text-on-surface-variant hover:text-on-surface",
+  "opacity-0 group-hover/sidebar-card:opacity-100 group-focus-within/sidebar-card:opacity-100",
+  "data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100",
+  // Open: no tinted box on the trigger — the ROW shows that its menu is open.
+  "data-[state=open]:bg-transparent data-[state=open]:text-on-surface",
+);
 
 /** A click that landed on one of the card's own controls — or on its portaled
  *  menu, whose React events still bubble through the card. */
@@ -73,8 +79,12 @@ const isControlClick = (e: React.MouseEvent) =>
   ) !== null;
 
 /**
- * The row card of a side panel — a chat in a history list, a source in a
- * sources list. Icon tile · title (+ meta) · extra · checkbox · actions menu.
+ * The row of a side panel — a chat in a history list, a source in a sources
+ * list. Icon · title (+ meta) · extra · checkbox · actions menu. A flat row:
+ * no border or shadow, a quiet fill on hover, a primary tint while active.
+ * The ⋯ menu stays out of sight until the row is hovered, holds keyboard
+ * focus or has the menu open — and is always shown where there is no hover
+ * (touch).
  *
  * The whole card is the pointer target; the title button is the keyboard
  * path, and clicks on the card's own controls are left to them. Without
@@ -87,12 +97,10 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     {
       icon, iconText, title, onOpen, meta, extra, actions, actionsLabel,
       active, selectable, selected = false, onSelectedChange, selectLabel,
-      selectionMode, muted, selectionTone = "default", shape: shapeProp, titleTestId, className, onClick, ...rest
+      selectionMode, muted, selectionTone = "default", titleTestId, className, onClick, ...rest
     },
     ref,
   ) => {
-    const uiShape = useUiShape().shape;
-    const shape = shapeProp ?? uiShape;
     const toggles = !!selectionMode && !!onSelectedChange;
     const activate = () => (toggles ? onSelectedChange?.(!selected) : onOpen?.());
     // Display-only: nothing happens on a click, so nothing may look clickable.
@@ -104,19 +112,16 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
       if (!interactive || e.defaultPrevented || isControlClick(e)) return;
       activate();
     };
-    const control = sidebarControlShape[shape];
 
     return (
       // Whole-plane click is a pointer convenience; the title button is the keyboard path.
       <li
         ref={ref}
         data-slot="sidebar-card"
-        data-shape={shape}
         data-static={onOpen ? undefined : ""}
         data-muted={muted ? "" : undefined}
         className={cn(
           sidebarCardVariants({
-            shape,
             state: selectionMode && selected
               ? (selectionTone === "destructive" ? "marked" : "active")
               : active ? "active" : "idle",
@@ -127,12 +132,8 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         onClick={planeClick}
         {...rest}
       >
-        <span aria-hidden="true" className={cn(sidebarIconTileVariants({ shape }), muted && mutedClass)}>
-          {iconText ? (
-            <span className="text-[8px] font-bold tracking-wide">{iconText}</span>
-          ) : (
-            icon
-          )}
+        <span aria-hidden="true" className={cn(sidebarIconTileVariants({ kind: iconText ? "text" : "icon" }), muted && mutedClass)}>
+          {iconText ?? icon}
         </span>
         <div className={cn("min-w-0 flex-1", muted && mutedClass)}>
           {titleIsButton ? (
@@ -161,6 +162,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         {!selectionMode && extra}
         {selectable && (
           <Checkbox
+            className="size-4 rounded-[4px]"
             tone={selectionMode ? selectionTone : "default"}
             checked={selected}
             onCheckedChange={(c) => onSelectedChange?.(c === true)}
@@ -171,7 +173,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
           <ActionMenu
             actions={actions}
             label={actionsLabel ? `${actionsLabel} ${title}` : title}
-            triggerClassName={control}
+            triggerClassName={revealOnHover}
           />
         )}
       </li>
@@ -187,26 +189,22 @@ export interface SidebarSelectionBarProps extends React.HTMLAttributes<HTMLDivEl
   cancelLabel?: string;
   /** Batch actions, right-aligned (icon buttons). */
   children?: React.ReactNode;
-  shape?: UiShape;
 }
 
 /** The bar a side panel shows while its cards are in selection mode. */
 const SidebarSelectionBar = React.forwardRef<HTMLDivElement, SidebarSelectionBarProps>(
-  ({ countLabel, onCancel, cancelLabel = "Abbrechen", children, shape: shapeProp, className, ...props }, ref) => {
-    const uiShape = useUiShape().shape;
-    const shape = shapeProp ?? uiShape;
+  ({ countLabel, onCancel, cancelLabel = "Abbrechen", children, className, ...props }, ref) => {
     return (
       <div
         ref={ref}
         role="toolbar"
         className={cn(
-          "flex items-center gap-1 border border-outline-variant bg-surface-container-lowest px-1 py-0.5",
-          shape === "pill" ? "rounded-full" : "rounded-xl",
+          "flex items-center gap-1 rounded-[var(--ui-radius-row)] bg-surface-container-low px-1 py-0.5",
           className,
         )}
         {...props}
       >
-        <Button variant="ghost" size="icon" className={sidebarControlShape[shape]} onClick={onCancel} aria-label={cancelLabel} title={cancelLabel}>
+        <Button variant="ghost" size="icon" onClick={onCancel} aria-label={cancelLabel} title={cancelLabel}>
           <span aria-hidden="true" className="text-base leading-none">×</span>
         </Button>
         <span className="flex-1 text-sm text-on-surface-variant" aria-live="polite">{countLabel}</span>
@@ -218,23 +216,25 @@ const SidebarSelectionBar = React.forwardRef<HTMLDivElement, SidebarSelectionBar
 SidebarSelectionBar.displayName = "SidebarSelectionBar";
 
 export interface SidebarCardListProps extends React.HTMLAttributes<HTMLUListElement> {
-  shape?: UiShape;
+  /**
+   * `badge`: every card's leading slot is as wide as a type badge (30px), so a
+   * list that mixes badges ("PDF") and glyphs (a feed icon) keeps its titles
+   * on one line. Default `icon`: the slot fits a 16px glyph.
+   */
+  iconSlot?: "icon" | "badge";
 }
 
-/** The `<ul>` for SidebarCards: spacing follows the app-wide Style (pills sit closer). */
+/** The `<ul>` for SidebarCards: flat rows, 1px apart. */
 const SidebarCardList = React.forwardRef<HTMLUListElement, SidebarCardListProps>(
-  ({ shape: shapeProp, className, ...props }, ref) => {
-    const uiShape = useUiShape().shape;
-    const shape = shapeProp ?? uiShape;
-    return (
-      <ul
-        ref={ref}
-        data-slot="sidebar-card-list"
-        className={cn("m-0 flex list-none flex-col p-0", shape === "pill" ? "gap-2" : "gap-2.5", className)}
-        {...props}
-      />
-    );
-  },
+  ({ iconSlot = "icon", className, ...props }, ref) => (
+    <ul
+      ref={ref}
+      data-slot="sidebar-card-list"
+      data-icon-slot={iconSlot}
+      className={cn("m-0 flex list-none flex-col gap-px p-0", className)}
+      {...props}
+    />
+  ),
 );
 SidebarCardList.displayName = "SidebarCardList";
 

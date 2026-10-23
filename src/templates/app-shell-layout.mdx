@@ -21,7 +21,7 @@ omits it and keeps the bar's geometry (see „The chrome bar" below).
 
 ```
 | left SidePanel column    | main column                                  | right column (optional)  |
-| header: logo + toggle    | bar h-16: pageLabel | search | headerActions | header: toggle + title   |
+| header: logo + toggle    | bar h-14: pageLabel | search | headerActions | header: toggle + title   |
 | nav … sidebarFooter      | <main> scrolls on its own                    | content … footer         |
 ```
 
@@ -104,13 +104,13 @@ component with a different fill; the shared story fixture that renders them is
 - **Without a label the centre is the same** — the overview context has no
   `pageLabel` (its content template renders the page's title), and its field
   sits on the bar's centre; `Overview` asserts it.
-- **The bar stays 64px high** — with label, search only, actions only, all,
+- **The bar stays 56px high** — with label, search only, actions only, all,
   and none:
 
 <Canvas of={AppShellLayoutStories.WithoutPageLabelOrActions} />
 
   That is a contract outside this repo: JustRAG places its toasts at
-  `top: 76px` (= 64 + 12) under this edge. A bar that collapsed once the last
+  `top: 68px` (= 56 + 12) under this edge. A bar that collapsed once the last
   prop was omitted would be a **breaking geometry change** for an unchanged
   call site. This story is the one that opts out of the search convention,
   explicitly (`search={null}`): it pins what an app gets when it omits every
@@ -156,8 +156,8 @@ component with a different fill; the shared story fixture that renders them is
   measure of a `Container`. The bar is not page content but **chrome between
   two `SidePanel`s**, so it takes the plain column measure.
 - **It is the bar's own measure, not a mirror of the column.** A
-  `SidePanel`'s `h-16` header row is `px-4` (16px), because its toggle sits on
-  the first control of the column body. The two insets are different on
+  `SidePanel`'s `h-14` header row is `px-2` (8px), like the `p-2` column body
+  under it. The two insets are different on
   purpose.
 - **The story's oracle is the token, not a number**:
   `BarInsetIsTheColumnGutter` measures `pageLabel.left − aside.right` against
