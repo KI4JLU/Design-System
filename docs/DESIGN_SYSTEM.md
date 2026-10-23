@@ -544,6 +544,8 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **0.61.1** — `RichTextEditor` and `PdfViewer` toolbars sit on `surface` (the chrome colour, `--p-gray-25` in light) instead of the page white, so a preview window's header rows read as one band above the document.
+
 - **0.61.0** — Additive props; visual changes to the dark palette, the canvas tokens, `CodeBlock` and the citation chip (KI-931 follow-ups from the JustRAG preview).
 
   - **Dark palette.** New primitives `--p-night-*`: neutrals #0e0e0e / #191919 / #1e1e1e / #272727 / #353535 / #3c3c3c and accent pairs (pink, orange, yellow, green, cyan — bright and deep — plus purple). Dark surfaces use them: background, surface, canvas and side panels #0e0e0e, `surface-container-lowest` (cards, menus, dialogs, fields) #191919, low #272727, container / high #353535–#3c3c3c, dividers #353535. Dark status colours: error #ff5b8a, success #a4dc7b, warning #ffd76f, info #6adde7 — each container a 28 % tint of its deep shade (#e84077, #009e6a, #ffd76f for warning, #008da6) on #0e0e0e, with the bright shade as text. Dark accents: teal → cyan, violet → purple, green, rose → pink, amber → orange; `on-primary` #1e1e1e, hover / active mix in white. Standard stays the JLU blue.

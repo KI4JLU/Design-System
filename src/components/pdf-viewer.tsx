@@ -219,7 +219,7 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
       >
         <div
           data-slot="pdf-viewer-toolbar"
-          className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface-container-lowest pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
+          className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
         >
           <Button variant="ghost" size="icon" aria-label={labels.previousPage} disabled={current <= 1} onClick={() => goTo(current - 1)}>
             <ChevronUp aria-hidden="true" className="size-4" />
