@@ -50,6 +50,12 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
    */
   muted?: boolean;
   /**
+   * A failure on this row (an ingest that failed): the row is tinted in the
+   * error colour and the message is its tooltip and accessible description —
+   * no extra line, so the row stays one line. A selection tint wins.
+   */
+  error?: string;
+  /**
    * What the selection is for. `destructive` = a delete selection: a ticked
    * card and its checkbox take the error colour instead of primary, so the
    * user sees what is about to go. Only matters in `selectionMode`.
@@ -62,9 +68,17 @@ const titleClass = "block w-full truncate text-left text-sm text-on-surface";
 /** The same strength as a muted SidebarRailItem, so card and rail agree. */
 const mutedClass = "opacity-50";
 
-/** The row's ⋯ trigger: 26px, quiet, shown on hover / focus / open, always without hover. */
+/**
+ * The row's trailing column: every trailing control — the ⋯ trigger, an
+ * `extra` button, the checkbox in its 32px box — and the selection bar's
+ * buttons are 32px wide, on the row's 4px end inset, so they share one centre
+ * line 20px from the edge.
+ */
+const trailingBox = "flex size-8 shrink-0 items-center justify-center";
+
+/** The row's ⋯ trigger: quiet, shown on hover / focus / open, always without hover. */
 const revealOnHover = cn(
-  "size-[26px] rounded-md text-on-surface-variant hover:text-on-surface",
+  "size-8 rounded-md text-on-surface-variant hover:text-on-surface",
   "opacity-0 group-hover/sidebar-card:opacity-100 group-focus-within/sidebar-card:opacity-100",
   "data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100",
   // Open: no tinted box on the trigger — the ROW shows that its menu is open.
@@ -97,7 +111,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     {
       icon, iconText, title, onOpen, meta, extra, actions, actionsLabel,
       active, selectable, selected = false, onSelectedChange, selectLabel,
-      selectionMode, muted, selectionTone = "default", titleTestId, className, onClick, ...rest
+      selectionMode, muted, error, selectionTone = "default", titleTestId, className, onClick, ...rest
     },
     ref,
   ) => {
@@ -107,6 +121,9 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     const interactive = toggles || !!onOpen;
     // The title is the keyboard path unless the checkbox already is one.
     const titleIsButton = !!onOpen || (toggles && !selectable);
+    // The error message describes the row's focusable controls (title, checkbox).
+    const errorId = React.useId();
+    const describedBy = error ? errorId : undefined;
     const planeClick = (e: React.MouseEvent<HTMLLIElement>) => {
       onClick?.(e);
       if (!interactive || e.defaultPrevented || isControlClick(e)) return;
@@ -120,11 +137,13 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         data-slot="sidebar-card"
         data-static={onOpen ? undefined : ""}
         data-muted={muted ? "" : undefined}
+        data-error={error ? "" : undefined}
+        title={error}
         className={cn(
           sidebarCardVariants({
             state: selectionMode && selected
               ? (selectionTone === "destructive" ? "marked" : "active")
-              : active ? "active" : "idle",
+              : active ? "active" : error ? "marked" : "idle",
             interactive,
           }),
           className,
@@ -143,6 +162,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               onClick={activate}
               title={title}
               aria-current={active ? "true" : undefined}
+              aria-describedby={describedBy}
               className={cn(titleClass, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
             >
               {title}
@@ -157,17 +177,20 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               {title}
             </span>
           )}
+          {error && <span id={errorId} className="sr-only">{error}</span>}
           <div data-slot="sidebar-card-meta">{meta}</div>
         </div>
-        {!selectionMode && extra}
         {selectable && (
-          <Checkbox
-            className="size-4 rounded-[4px]"
-            tone={selectionMode ? selectionTone : "default"}
-            checked={selected}
-            onCheckedChange={(c) => onSelectedChange?.(c === true)}
-            aria-label={selectLabel ? `${selectLabel} ${title}` : title}
-          />
+          <span className={trailingBox}>
+            <Checkbox
+              className="size-4 rounded-[4px]"
+              tone={selectionMode ? selectionTone : "default"}
+              checked={selected}
+              onCheckedChange={(c) => onSelectedChange?.(c === true)}
+              aria-label={selectLabel ? `${selectLabel} ${title}` : title}
+              aria-describedby={describedBy}
+            />
+          </span>
         )}
         {!selectionMode && actions && actions.length > 0 && (
           <ActionMenu
@@ -176,6 +199,9 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
             triggerClassName={revealOnHover}
           />
         )}
+        {/* Last: a visible extra (retry) holds the trailing column the
+            checkbox takes in selection mode, the hover-only ⋯ to its left. */}
+        {!selectionMode && extra}
       </li>
     );
   },
@@ -185,6 +211,8 @@ SidebarCard.displayName = "SidebarCard";
 export interface SidebarSelectionBarProps extends React.HTMLAttributes<HTMLDivElement> {
   /** e.g. "3 ausgewählt" */
   countLabel: string;
+  /** The list's `iconSlot`, so the ✕ sits on the cards' leading column and the count on their titles. */
+  iconSlot?: "icon" | "badge";
   onCancel: () => void;
   cancelLabel?: string;
   /** Batch actions, right-aligned (icon buttons). */
@@ -193,22 +221,35 @@ export interface SidebarSelectionBarProps extends React.HTMLAttributes<HTMLDivEl
 
 /** The bar a side panel shows while its cards are in selection mode. */
 const SidebarSelectionBar = React.forwardRef<HTMLDivElement, SidebarSelectionBarProps>(
-  ({ countLabel, onCancel, cancelLabel = "Abbrechen", children, className, ...props }, ref) => {
+  ({ countLabel, onCancel, cancelLabel = "Abbrechen", iconSlot = "icon", children, className, ...props }, ref) => {
+    // The cards' geometry (sidebarCardVariants): 10px start inset, the icon
+    // slot, a 10px gap, the title; trailing 32px controls on the 4px end
+    // inset — so ✕, count and batch buttons line up with tile, title and
+    // checkbox of the rows below.
     return (
       <div
         ref={ref}
         role="toolbar"
+        data-icon-slot={iconSlot}
         className={cn(
-          "flex items-center gap-1 rounded-[var(--ui-radius-row)] bg-surface-container-low px-1 py-0.5",
+          "flex min-h-9 items-center gap-2.5 rounded-[var(--ui-radius-row)] bg-surface-container-low py-0.5 pr-1 pl-2.5",
           className,
         )}
         {...props}
       >
-        <Button variant="ghost" size="icon" onClick={onCancel} aria-label={cancelLabel} title={cancelLabel}>
+        <Button
+          variant="ghost"
+          size="icon"
+          data-slot="sidebar-selection-cancel"
+          onClick={onCancel}
+          aria-label={cancelLabel}
+          title={cancelLabel}
+          className="-my-1 h-7 w-4 shrink-0 p-0 in-data-[icon-slot=badge]:w-[30px]"
+        >
           <span aria-hidden="true" className="text-base leading-none">×</span>
         </Button>
-        <span className="flex-1 text-sm text-on-surface-variant" aria-live="polite">{countLabel}</span>
-        {children}
+        <span className="min-w-0 flex-1 truncate text-sm text-on-surface-variant" aria-live="polite">{countLabel}</span>
+        <span className="flex shrink-0 items-center gap-0.5 [&>button]:size-8 [&>button]:p-0">{children}</span>
       </div>
     );
   },

@@ -103,6 +103,20 @@ describe("SidebarCard", () => {
     expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveClass("bg-error/10");
   });
 
+  // Oracle: the documented error signals — tint class by name, the native
+  // tooltip, the accessible description — and a selection tint winning.
+  it("error tints the row and carries the message as tooltip and description", () => {
+    const { container, rerender } = render(card({ error: "Zeitüberschreitung" }));
+    const li = container.querySelector("[data-slot=sidebar-card]")!;
+    expect(li).toHaveAttribute("data-error");
+    expect(li).toHaveAttribute("title", "Zeitüberschreitung");
+    expect(li).toHaveClass("bg-error/10");
+    expect(screen.getByText("Zeitüberschreitung")).toHaveClass("sr-only");
+    expect(screen.getByRole("button", { name: "Budget" })).toHaveAccessibleDescription("Zeitüberschreitung");
+    rerender(card({ error: "Zeitüberschreitung", selectable: true, selectionMode: true, selected: true, onSelectedChange: () => {} }));
+    expect(container.querySelector("[data-slot=sidebar-card]")).toHaveClass("bg-primary/10");
+  });
+
   it("without muted carries no data-muted and no dimming", () => {
     const { container } = render(card());
     expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveAttribute("data-muted");

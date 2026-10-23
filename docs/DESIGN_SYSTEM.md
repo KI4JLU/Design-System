@@ -544,6 +544,12 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **0.61.2** — Sidebar rows (JustRAG source list).
+
+  - **`SidebarCard` `error`** — a failed row is tinted in the error colour and carries the message as its tooltip and accessible description, without an extra line; a selection tint wins.
+  - **One trailing column.** The ⋯ trigger, an `extra` button and the checkbox (now in a 32px box) are 32px wide on the row's 4px end inset; a visible `extra` (retry) renders last, in the column the checkbox takes in selection mode.
+  - **`SidebarSelectionBar` lines up with the rows** — the cards' start inset, gap and icon slot (`iconSlot`, as on `SidebarCardList`): ✕ over the tiles, the count over the titles, 32px batch buttons over the checkboxes.
+
 - **0.61.1** — `RichTextEditor` and `PdfViewer` toolbars sit on `surface` (the chrome colour, `--p-gray-25` in light) instead of the page white, so a preview window's header rows read as one band above the document.
 
 - **0.61.0** — Additive props; visual changes to the dark palette, the canvas tokens, `CodeBlock` and the citation chip (KI-931 follow-ups from the JustRAG preview).
