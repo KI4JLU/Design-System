@@ -105,16 +105,35 @@ describe("SidebarCard", () => {
 
   // Oracle: the documented error signals — tint class by name, the native
   // tooltip, the accessible description — and a selection tint winning.
-  it("error tints the row and carries the message as tooltip and description", () => {
+  it("error tints the row and carries the message as its description", () => {
     const { container, rerender } = render(card({ error: "Zeitüberschreitung" }));
     const li = container.querySelector("[data-slot=sidebar-card]")!;
     expect(li).toHaveAttribute("data-error");
-    expect(li).toHaveAttribute("title", "Zeitüberschreitung");
     expect(li).toHaveClass("bg-error/10");
     expect(screen.getByText("Zeitüberschreitung")).toHaveClass("sr-only");
     expect(screen.getByRole("button", { name: "Budget" })).toHaveAccessibleDescription("Zeitüberschreitung");
     rerender(card({ error: "Zeitüberschreitung", selectable: true, selectionMode: true, selected: true, onSelectedChange: () => {} }));
     expect(container.querySelector("[data-slot=sidebar-card]")).toHaveClass("bg-primary/10");
+  });
+
+  // Oracle: the documented busy signals — aria-busy, the spinner in place of
+  // the type badge, the text as description — and error winning over busy.
+  it("busy swaps the tile for a spinner and describes the row", () => {
+    const { container, rerender } = render(card({ iconText: "PDF", busy: "3/4 Embeddings" }));
+    const li = container.querySelector("[data-slot=sidebar-card]")!;
+    expect(li).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByText("PDF")).toBeNull();
+    expect(li.querySelector(".animate-spin")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Budget" })).toHaveAccessibleDescription("3/4 Embeddings");
+    // A status change keeps the row mounted: focus on the title survives.
+    const titleButton = screen.getByRole("button", { name: "Budget" });
+    titleButton.focus();
+    rerender(card({ iconText: "PDF" }));
+    expect(screen.getByRole("button", { name: "Budget" })).toBe(titleButton);
+    expect(titleButton).toHaveFocus();
+    rerender(card({ iconText: "PDF", busy: "3/4 Embeddings", error: "Fehler" }));
+    expect(container.querySelector("[data-slot=sidebar-card]")).not.toHaveAttribute("aria-busy");
+    expect(screen.getByText("PDF")).toBeInTheDocument();
   });
 
   it("without muted carries no data-muted and no dimming", () => {
@@ -151,7 +170,8 @@ describe("SidebarCard", () => {
     const title = screen.getByTestId("title");
     expect(title.tagName).toBe("SPAN");
     expect(title).toHaveTextContent("Budget");
-    expect(title).toHaveAttribute("title", "Budget");
+    // No native tooltip: a row shows its full name in the app's own preview or tooltip.
+    expect(title).not.toHaveAttribute("title");
     expect(title).not.toHaveAttribute("tabindex");
 
     const item = screen.getByRole("listitem");

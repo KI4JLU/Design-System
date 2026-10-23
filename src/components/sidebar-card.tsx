@@ -1,8 +1,10 @@
 import * as React from "react";
+import { Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { ActionMenu, type ActionMenuItem } from "./action-menu";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { sidebarCardVariants, sidebarIconTileVariants } from "./sidebar-card-variants";
 
 export type SidebarCardAction = ActionMenuItem;
@@ -56,6 +58,12 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
    */
   error?: string;
   /**
+   * Work in progress on this row (an ingest running or queued): the leading
+   * tile becomes a spinner, and the text is its tooltip and accessible
+   * description — no status line. An `error` wins.
+   */
+  busy?: string;
+  /**
    * What the selection is for. `destructive` = a delete selection: a ticked
    * card and its checkbox take the error colour instead of primary, so the
    * user sees what is about to go. Only matters in `selectionMode`.
@@ -65,6 +73,8 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
 }
 
 const titleClass = "block w-full truncate text-left text-sm text-on-surface";
+/** The current row's title: primary text, medium weight — as an active NavItem. */
+const activeTextClass = "font-medium text-primary";
 /** The same strength as a muted SidebarRailItem, so card and rail agree. */
 const mutedClass = "opacity-50";
 
@@ -78,7 +88,8 @@ const trailingBox = "flex size-8 shrink-0 items-center justify-center";
 
 /** The row's ⋯ trigger: quiet, shown on hover / focus / open, always without hover. */
 const revealOnHover = cn(
-  "size-8 rounded-md text-on-surface-variant hover:text-on-surface",
+  // No fill of its own on hover: the row is already tinted, the glyph darkens.
+  "size-8 rounded-md text-on-surface-variant hover:bg-transparent hover:text-on-surface",
   "opacity-0 group-hover/sidebar-card:opacity-100 group-focus-within/sidebar-card:opacity-100",
   "data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100",
   // Open: no tinted box on the trigger — the ROW shows that its menu is open.
@@ -111,7 +122,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     {
       icon, iconText, title, onOpen, meta, extra, actions, actionsLabel,
       active, selectable, selected = false, onSelectedChange, selectLabel,
-      selectionMode, muted, error, selectionTone = "default", titleTestId, className, onClick, ...rest
+      selectionMode, muted, error, busy, selectionTone = "default", titleTestId, className, onClick, ...rest
     },
     ref,
   ) => {
@@ -123,14 +134,16 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
     const titleIsButton = !!onOpen || (toggles && !selectable);
     // The error message describes the row's focusable controls (title, checkbox).
     const errorId = React.useId();
-    const describedBy = error ? errorId : undefined;
+    const status = error ?? busy;
+    const describedBy = status ? errorId : undefined;
+    const spinning = !error && !!busy;
     const planeClick = (e: React.MouseEvent<HTMLLIElement>) => {
       onClick?.(e);
       if (!interactive || e.defaultPrevented || isControlClick(e)) return;
       activate();
     };
 
-    return (
+    const row = (
       // Whole-plane click is a pointer convenience; the title button is the keyboard path.
       <li
         ref={ref}
@@ -138,7 +151,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         data-static={onOpen ? undefined : ""}
         data-muted={muted ? "" : undefined}
         data-error={error ? "" : undefined}
-        title={error}
+        aria-busy={spinning || undefined}
         className={cn(
           sidebarCardVariants({
             state: selectionMode && selected
@@ -151,8 +164,8 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
         onClick={planeClick}
         {...rest}
       >
-        <span aria-hidden="true" className={cn(sidebarIconTileVariants({ kind: iconText ? "text" : "icon" }), muted && mutedClass)}>
-          {iconText ?? icon}
+        <span aria-hidden="true" className={cn(sidebarIconTileVariants({ kind: iconText && !spinning ? "text" : "icon" }), active && "text-primary", interactive && "group-hover/sidebar-card:text-primary", muted && mutedClass)}>
+          {spinning ? <Loader2 className="animate-spin motion-reduce:animate-none" /> : (iconText ?? icon)}
         </span>
         <div className={cn("min-w-0 flex-1", muted && mutedClass)}>
           {titleIsButton ? (
@@ -160,24 +173,22 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               type="button"
               data-testid={titleTestId}
               onClick={activate}
-              title={title}
               aria-current={active ? "true" : undefined}
               aria-describedby={describedBy}
-              className={cn(titleClass, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
+              className={cn(titleClass, active && activeTextClass, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
             >
               {title}
             </button>
           ) : (
             <span
               data-testid={titleTestId}
-              title={title}
               aria-current={active ? "true" : undefined}
-              className={titleClass}
+              className={cn(titleClass, active && activeTextClass)}
             >
               {title}
             </span>
           )}
-          {error && <span id={errorId} className="sr-only">{error}</span>}
+          {status && <span id={errorId} className="sr-only">{status}</span>}
           <div data-slot="sidebar-card-meta">{meta}</div>
         </div>
         {selectable && (
@@ -203,6 +214,16 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
             checkbox takes in selection mode, the hover-only ⋯ to its left. */}
         {!selectionMode && extra}
       </li>
+    );
+    // An error or a running job: the DS Tooltip on the row (the sr-only text
+    // above carries it for assistive tech; the tooltip is for the pointer).
+    // Always wrapped, closed while there is no status, so a job starting or
+    // finishing never remounts the row (focus, an open menu would be lost).
+    return (
+      <Tooltip open={status ? undefined : false}>
+        <TooltipTrigger asChild>{row}</TooltipTrigger>
+        {status && <TooltipContent side="bottom" align="start">{status}</TooltipContent>}
+      </Tooltip>
     );
   },
 );

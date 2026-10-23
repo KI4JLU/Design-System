@@ -548,6 +548,9 @@ Until then the git path carries us; keep the README's git section first.
 
   - **`SidebarCard` `error`** — a failed row is tinted in the error colour and carries the message as its tooltip and accessible description, without an extra line; a selection tint wins.
   - **One trailing column.** The ⋯ trigger, an `extra` button and the checkbox (now in a 32px box) are 32px wide on the row's 4px end inset; a visible `extra` (retry) renders last, in the column the checkbox takes in selection mode.
+  - **`SidebarCard` `busy`** — work in progress on a row: the leading tile becomes a spinner, the text (e.g. „3/4 Embeddings werden erzeugt") its tooltip and accessible description, no status line; `error` wins.
+  - **Status tooltip** — `error` / `busy` show in the DS `Tooltip` on the row (no native `title`); the row title no longer carries a native `title` either.
+  - **Current and hovered rows** — an `active` row's title and tile take the primary colour (medium weight), like an active `NavItem`; an openable row's tile turns primary on hover. The ⋯ trigger has no fill of its own on hover.
   - **`SidebarSelectionBar` lines up with the rows** — the cards' start inset, gap and icon slot (`iconSlot`, as on `SidebarCardList`): ✕ over the tiles, the count over the titles, 32px batch buttons over the checkboxes.
 
 - **0.61.1** — `RichTextEditor` and `PdfViewer` toolbars sit on `surface` (the chrome colour, `--p-gray-25` in light) instead of the page white, so a preview window's header rows read as one band above the document.
