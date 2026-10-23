@@ -13,6 +13,15 @@ export {
   type AppShellPanel,
   type AppShellPanelResize,
 } from "./components/app-shell";
+export {
+  Alert,
+  type AlertProps,
+  AlertTitle,
+  type AlertTitleProps,
+  AlertDescription,
+  AlertAction,
+} from "./components/alert";
+export { alertVariants, type AlertTone } from "./components/alert-variants";
 export { Avatar, type AvatarProps } from "./components/avatar";
 export { Badge, type BadgeProps } from "./components/badge";
 export { badgeVariants } from "./components/badge-variants";

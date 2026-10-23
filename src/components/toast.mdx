@@ -51,7 +51,7 @@ zweites Zuhause und der Stapel zerfällt.
 | `swipeDirection` | `ToastProvider` | `'right' \| 'left' \| 'up' \| 'down'` | Wischrichtung zum Schließen, Default `right`. |
 | `label` | `ToastViewport` | `string` | Zugänglicher Name der Region; `{hotkey}` wird durch die Taste ersetzt. Default `"Benachrichtigungen ({hotkey})"`. |
 | `hotkey` | `ToastViewport` | `string[]` | Taste, die den Fokus in den Viewport setzt. Default `["F8"]`. |
-| `variant` | `Toast` | `'neutral' \| 'success' \| 'error' \| 'warning' \| 'info'` | Status. Bestimmt Akzentkante, Icon, Standarddauer **und** die Dringlichkeit der Ansage. Default `neutral`. |
+| `variant` | `Toast` | `'neutral' \| 'success' \| 'error' \| 'warning' \| 'info'` | Status. Bestimmt Fläche und Textfarbe (wie `Alert`), Icon, Standarddauer **und** die Dringlichkeit der Ansage. Default `neutral`. |
 | `icon` | `Toast` | `ReactNode \| false` | Ersetzt oder unterdrückt das Status-Icon. |
 | `duration` | `Toast` | `number` | Anzeigedauer in ms. Ohne Angabe die Variantenzeit (siehe unten). `Infinity` = kein Auto-Dismiss. **`0` nicht** — siehe „Fallstricke". |
 | `type` | `Toast` | `'foreground' \| 'background'` | Übersteuert die Dringlichkeit der Ansage (`assertive` / `polite`). |
