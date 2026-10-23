@@ -489,7 +489,7 @@ function RichTextEditorInner({
         // Scrolls sideways when narrower than its controls, without showing a
         // scrollbar track under the 48px row (PdfViewer's toolbar has none).
         // Inline style: an app's unlayered global scrollbar rules would beat a utility.
-        className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-outline-variant bg-surface-container-lowest pl-2 pr-[var(--dialog-close-inset,0.5rem)] [&::-webkit-scrollbar]:hidden"
+        className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)] [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         {!readOnly && !isText && (
