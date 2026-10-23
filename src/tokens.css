@@ -380,10 +380,13 @@
   --color-warning-container: var(--p-amber-100);
   --color-on-warning-container: var(--p-amber-900);
 
-  --color-info: var(--p-teal-600);
+  /* Info is blue (the usual convention) — it was teal, which read as a second
+     green next to success. The light container is far from the saturated
+     primary, so an info box does not look like a button. */
+  --color-info: var(--p-blue-700);
   --color-on-info: var(--p-white);
-  --color-info-container: var(--p-teal-100);
-  --color-on-info-container: var(--p-teal-900);
+  --color-info-container: var(--p-blue-100);
+  --color-on-info-container: var(--p-blue-800);
 
   /* --------------------------------------------------------------------------
    * BRAND — Plattform-Wortmarke (Logo: „JLU [CampusAgents]").
@@ -511,10 +514,10 @@
     --color-warning-container: color-mix(in oklab, var(--p-night-yellow) 28%, var(--p-night-950));
     --color-on-warning-container: var(--p-night-yellow);
 
-    --color-info: var(--p-night-cyan);
+    --color-info: var(--p-blue-300);
     --color-on-info: var(--p-night-900);
-    --color-info-container: color-mix(in oklab, var(--p-night-cyan-deep) 28%, var(--p-night-950));
-    --color-on-info-container: var(--p-night-cyan);
+    --color-info-container: color-mix(in oklab, var(--p-blue-600) 28%, var(--p-night-950));
+    --color-on-info-container: var(--p-blue-300);
 
     /* Primary kehrt sich um: im Dunkeln ist die Primärfarbe ein HELLER Akzent
        mit dunkler Schrift darauf (M3). Vorher blieb --color-primary in beiden

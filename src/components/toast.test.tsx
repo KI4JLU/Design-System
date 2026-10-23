@@ -388,7 +388,7 @@ describe("Toast — status icon (WCAG 1.4.1, Use of Color)", () => {
 });
 
 describe("Toast — call-site overrides", () => {
-  it("merges className on the toast without dropping the variant's accent", async () => {
+  it("merges className on the toast without dropping the variant's surface", async () => {
     render(
       <Harness>
         <Toast variant="error" className="w-full">
@@ -398,7 +398,7 @@ describe("Toast — call-site overrides", () => {
     );
     const toast = screen.getByRole("listitem");
     expect(toast).toHaveClass("w-full");
-    expect(toast).toHaveClass("border-l-error");
+    expect(toast).toHaveClass("bg-error-container", "text-on-error-container");
   });
 
   it("lets the call site rename the dismiss button", async () => {

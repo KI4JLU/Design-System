@@ -178,7 +178,7 @@ const ToastTitle = React.forwardRef<
   <ToastPrimitive.Title
     ref={ref}
     className={cn(
-      "col-start-2 min-w-0 font-medium text-on-surface wrap-anywhere",
+      "col-start-2 min-w-0 font-medium wrap-anywhere",
       className,
     )}
     {...props}
@@ -194,7 +194,7 @@ const ToastDescription = React.forwardRef<
   <ToastPrimitive.Description
     ref={ref}
     className={cn(
-      "col-start-2 min-w-0 text-on-surface-variant wrap-anywhere",
+      "col-start-2 min-w-0 wrap-anywhere",
       className,
     )}
     {...props}
@@ -248,7 +248,7 @@ const ToastClose = React.forwardRef<
     aria-label="Schließen"
     className={cn(
       "col-start-3 row-start-1 -mr-1 -mt-1 ml-3 shrink-0 rounded p-1",
-      "text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface",
+      "text-current transition-colors hover:bg-current/10",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
       className,
     )}

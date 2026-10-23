@@ -1,4 +1,5 @@
 import { cva } from "class-variance-authority";
+import { alertToneSurfaces } from "./alert-variants";
 
 /**
  * Status vocabulary of a toast. Mirrors the `tone` set `Badge` already speaks,
@@ -29,10 +30,10 @@ export const TOAST_DURATIONS: Record<ToastVariant, number> = {
 };
 
 /**
- * Toast surface (cva). The look is JustRAG's `Toast.css` re-pointed onto our
- * tokens: a raised panel (`surface-container-lowest` + `outline-variant` +
- * `shadow-overlay`, the same trio every floating surface in this system uses)
- * with a 4px accent edge on the left in the variant's status color.
+ * Toast surface (cva). The same box as `Alert` — the tone's filled container
+ * pair from `alertToneSurfaces`, box radius, transparent 1px border (the frame
+ * in forced-colours mode) — lifted with `shadow-overlay` because it floats
+ * over the page. One look for every message box, inline or floating.
  *
  * Layout is a three-column grid — icon · content · close — with **zero column
  * gap**: the spacing lives on the icon's `mr-3` and the close button's `ml-3`
@@ -45,21 +46,15 @@ export const TOAST_DURATIONS: Record<ToastVariant, number> = {
 export const toastVariants = cva(
   [
     "pointer-events-auto grid grid-cols-[auto_1fr_auto] items-start gap-y-1",
-    "rounded-xl border border-outline-variant border-l-4 bg-surface-container-lowest",
-    "px-4 py-3 font-body-base text-sm text-on-surface shadow-overlay",
+    "rounded-[var(--ui-radius-box)] border border-transparent",
+    "px-4 py-3 font-body-base text-sm shadow-overlay",
     // Radix puts tabIndex={0} on the toast (F8 and Tab reach it), so it is a
     // focusable element and owes a visible focus indicator (WCAG 2.4.7).
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
   ],
   {
     variants: {
-      variant: {
-        neutral: "border-l-outline",
-        success: "border-l-success",
-        error: "border-l-error",
-        warning: "border-l-warning",
-        info: "border-l-info",
-      },
+      variant: alertToneSurfaces,
     },
     defaultVariants: {
       variant: "neutral",
@@ -68,19 +63,19 @@ export const toastVariants = cva(
 );
 
 /**
- * Status icon (cva). Same tone colors as `Badge`'s `text` appearance. The icon
+ * Status icon (cva). It takes the tone's text colour, as in `Alert`. The icon
  * is what keeps the variant from being conveyed by color alone (WCAG 1.4.1) —
  * it is decorative for assistive tech (`aria-hidden`) because the *message*
- * already says what happened.
+ * already says what happened. `variant` is kept for API compatibility.
  */
-export const toastIconVariants = cva("col-start-1 row-start-1 mr-3 mt-0.5 h-5 w-5 shrink-0", {
+export const toastIconVariants = cva("col-start-1 row-start-1 mr-3 h-5 w-5 shrink-0", {
   variants: {
     variant: {
-      neutral: "text-on-surface-variant",
-      success: "text-success",
-      error: "text-error",
-      warning: "text-warning",
-      info: "text-info",
+      neutral: "",
+      success: "",
+      error: "",
+      warning: "",
+      info: "",
     },
   },
   defaultVariants: {
