@@ -379,8 +379,8 @@ const panelRadius: Record<PanelField["shape"], string> = {
  * (`fieldVariants` default), drawn around field and list together.
  */
 const panelFrameState = (field: PanelField) => {
-  if (field.invalid) return field.focused ? "border-error ring-2 ring-error" : "border-error";
-  return field.focused ? "border-primary ring-2 ring-focus-ring" : "";
+  if (field.invalid) return field.focused ? "border-error ring-(length:--field-focus-halo) ring-error/10" : "border-error";
+  return field.focused ? "ring-(length:--field-focus-halo) ring-primary/10" : "";
 };
 
 /**

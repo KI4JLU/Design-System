@@ -361,7 +361,7 @@ export const Default: Story = {
       await expect(input).not.toHaveAttribute("data-panel");
       await settled(input);
       const style = getComputedStyle(input);
-      await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-primary)"));
+      await expect(style.borderTopColor).toBe(resolvedColor(canvasElement, "var(--color-outline-variant)"));
       await expect(corners(style)).toEqual(["9999px", "9999px", "9999px", "9999px"]);
       await expect(barHeight()).toBe("56px");
       // Back to its closed width.

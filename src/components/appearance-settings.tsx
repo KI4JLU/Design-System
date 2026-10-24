@@ -33,7 +33,6 @@ const DEFAULT_LABELS: AppearanceSettingsLabels = {
   themeDark: "Dunkel",
   themeSystem: "System",
   contrast: "Kontrast",
-  contrastDescription: "Mittel: grauer Hintergrund. Hoch: dazu deutliche Fokusrahmen und kräftigere Linien. „System“ folgt der Kontrasteinstellung des Geräts.",
   contrastSystem: "System",
   contrastNormal: "Standard",
   contrastMedium: "Mittel",

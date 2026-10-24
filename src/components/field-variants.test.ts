@@ -21,10 +21,10 @@ const ELEMENT_TO_FRAME: Record<string, string> = {
 };
 
 const STATE_TOKENS = [
-  "border-primary",
-  "ring-focus-ring",
+  "ring-(length:--field-focus-halo)",
+  "ring-primary/10",
   "border-error",
-  "ring-error",
+  "ring-error/10",
   "cursor-not-allowed",
   "opacity-60",
 ];

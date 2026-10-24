@@ -747,6 +747,17 @@ body {
   --color-canvas: var(--p-black);
 }
 
+/* Text-field focus halo (fieldVariants, InputGroup, Combobox panel): a field
+ * matches :focus-visible on every click, so `normal` draws none; `medium` and
+ * `more` show a 3px `primary/10` halo (`more` adds its outline on top). */
+:root {
+  --field-focus-halo: 0px;
+}
+[data-contrast="medium"],
+[data-contrast="more"] {
+  --field-focus-halo: 3px;
+}
+
 [data-contrast="more"] {
   --color-outline-variant: var(--color-outline);
   --color-on-surface-variant: var(--color-on-surface);

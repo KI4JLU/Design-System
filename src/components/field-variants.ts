@@ -20,6 +20,15 @@ const fieldBox = "w-full text-on-surface";
  * (e.g. a dialog's 56px header), typeset like the `DialogTitle` it stands in
  * for — `text-base font-semibold`, one line, truncated.
  *
+ * Focus: a text field matches `:focus-visible` on every click (the browser
+ * expects typing), so by default it shows NO focus cue beyond the caret. From
+ * contrast `medium` up, a halo in the sidebar's active-row tint (`primary/10`,
+ * as NavItem) appears around it — its width is `--field-focus-halo` (tokens.css:
+ * 0px at `normal`, 3px at `medium`/`more`). Never the strong `focus-ring` that
+ * keyboard-only controls use. `InputGroup` and the open `Combobox` panel draw
+ * the same halo; `data-contrast="more"` still
+ * forces the full outline.
+ *
  * Invalid state: `default` turns its border red. `inline` and `title` have no
  * border to colour, so `aria-invalid` turns their placeholder red instead — a
  * required field left empty is exactly when the placeholder is what shows.
@@ -29,14 +38,14 @@ export const fieldVariants = cva(
     `${fieldBox} outline-none transition-all`,
     "placeholder:text-on-surface-variant",
     "disabled:cursor-not-allowed disabled:opacity-60",
-    "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error",
+    "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error/10",
   ],
   {
     variants: {
       variant: {
         default: [
           `${framedFieldSurface} px-4 py-3`,
-          "focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-focus-ring",
+          "focus-visible:ring-(length:--field-focus-halo) focus-visible:ring-primary/10",
         ],
         inline:
           "rounded-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0 aria-[invalid=true]:placeholder:text-error",
@@ -67,7 +76,7 @@ export const fieldVariants = cva(
 export const fieldFrameClassName = [
   `${fieldBox} transition-all`,
   framedFieldSurface,
-  "has-[input:focus-visible]:border-primary has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-focus-ring",
-  "has-[input[aria-invalid=true]]:border-error has-[input[aria-invalid=true]:focus-visible]:ring-error",
+  "has-[input:focus-visible]:ring-(length:--field-focus-halo) has-[input:focus-visible]:ring-primary/10",
+  "has-[input[aria-invalid=true]]:border-error has-[input[aria-invalid=true]:focus-visible]:ring-error/10",
   "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60",
 ].join(" ");
