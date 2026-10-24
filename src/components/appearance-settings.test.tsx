@@ -55,13 +55,11 @@ async function choose(row: string, option: string) {
 // hand-written expected label strings. Nothing the component under test
 // returns is fed back into an assertion.
 describe("AppearanceSettings", () => {
-  it("names each Select by its row label (and describes it by the row description)", () => {
+  it("names each Select by its row label; no row carries a default description", () => {
     renderSettings();
     // Accessible name/description as dom-accessibility-api computes them.
     expect(screen.getByRole("combobox", { name: "Farbschema" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Kontrast" })).toHaveAccessibleDescription(
-      "Mittel: grauer Hintergrund. Hoch: dazu deutliche Fokusrahmen und kräftigere Linien. „System“ folgt der Kontrasteinstellung des Geräts.",
-    );
+    expect(screen.getByRole("combobox", { name: "Kontrast" })).not.toHaveAccessibleDescription();
     expect(screen.getByRole("combobox", { name: "Akzentfarbe" })).toBeInTheDocument();
     expect(screen.getAllByRole("combobox")).toHaveLength(3);
   });

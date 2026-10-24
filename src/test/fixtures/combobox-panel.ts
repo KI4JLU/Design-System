@@ -128,8 +128,9 @@ export const panelOf = (listbox: HTMLElement) => {
  * width; the field has no border, ring or shadow of its own, square bottom
  * corners and the panel's top radius; one divider on the field's bottom
  * border row; one outer radius; one shadow (`--shadow-overlay`) plus the
- * focus ring — `primary` border and `focus-ring` ring, or `error` for both
- * with `aria-invalid`; and the field under the panel's top still gets the
+ * focus halo — the resting `outline-variant` border plus a `primary/10` ring
+ * `--field-focus-halo` wide (0px, i.e. none, at contrast `normal`), or the
+ * `error` border and an `error/10` ring with `aria-invalid`; and the field under the panel's top still gets the
  * pointer.
  */
 export async function expectJoinedPanel(
@@ -169,7 +170,7 @@ export async function expectJoinedPanel(
   );
 
   // One border: the panel's, in the focused field's colour; the field's own is gone.
-  const border = resolvedColor(canvasElement, invalid ? "var(--color-error)" : "var(--color-primary)");
+  const border = resolvedColor(canvasElement, invalid ? "var(--color-error)" : "var(--color-outline-variant)");
   const panelStyle = getComputedStyle(panel);
   const frameStyle = getComputedStyle(frame);
   for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
@@ -190,8 +191,15 @@ export async function expectJoinedPanel(
   )) {
     await expect(panelLayers).toContain(layer);
   }
-  const ring = resolvedColor(canvasElement, invalid ? "var(--color-error)" : "var(--color-focus-ring)");
-  await expect(panelLayers.some((layer) => layer.startsWith(ring) && layer.endsWith("0px 0px 0px 2px"))).toBe(true);
+  const ring = resolvedColor(
+    canvasElement,
+    `color-mix(in oklab, ${invalid ? "var(--color-error)" : "var(--color-primary)"} 10%, transparent)`,
+  );
+  const halo = getComputedStyle(panel).getPropertyValue("--field-focus-halo").trim();
+  await expect(panelLayers.some((layer) => layer.startsWith(ring))).toBe(halo !== "0px");
+  if (halo !== "0px") {
+    await expect(panelLayers.some((layer) => layer.startsWith(ring) && layer.endsWith(`0px 0px 0px ${halo}`))).toBe(true);
+  }
 
   // The panel's top is a window: the pointer reaches the field, and the options.
   const hit = document.elementFromPoint(fieldBox.left + fieldBox.width / 2, fieldBox.top + fieldBox.height / 2);
