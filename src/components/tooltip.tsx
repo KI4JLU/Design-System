@@ -30,7 +30,12 @@ const Tooltip = (props: React.ComponentProps<typeof TooltipPrimitive.Root>) => (
   </TooltipProvider>
 );
 
-const TooltipTrigger = TooltipPrimitive.Trigger;
+/** `data-slot` lets `TitleTooltips` skip titles inside an explicit trigger. */
+const TooltipTrigger = React.forwardRef<
+  React.ComponentRef<typeof TooltipPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
+>((props, ref) => <TooltipPrimitive.Trigger ref={ref} data-slot="tooltip-trigger" {...props} />);
+TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
 
 export interface TooltipContentProps
   extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
