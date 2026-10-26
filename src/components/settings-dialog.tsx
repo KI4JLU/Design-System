@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Search, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useElementBox } from "../lib/use-element-box";
+import { useScrollFade } from "../lib/use-scroll-fade";
 import { Button } from "./button";
 import { Input } from "./input";
 import { NavItem } from "./nav-item";
@@ -15,6 +16,16 @@ export interface SettingsSection {
   icon?: React.ReactNode;
   /** Extra words the search matches (the rows' labels, synonyms). */
   keywords?: string[];
+  /**
+   * Label of the group this section belongs to, shown as a small grey heading
+   * over its row in the section column. A heading leads each run of
+   * consecutive sections with the same `group`, so keep a group's sections
+   * together in `sections`; a section without one sits loose, no heading. A
+   * search that matches nothing in a group drops its heading with it. With any
+   * group the column shows no title of its own — the group headings label it —
+   * and `title` stays the dialog's accessible name.
+   */
+  group?: string;
   content: React.ReactNode;
 }
 
@@ -94,13 +105,51 @@ function fitGeometry(
 }
 
 /**
+ * The section's scrolling content. Its own component so the fade hook runs when
+ * the dialog's content mounts (a closed Radix dialog renders none), and content
+ * that scrolls under the title fades out at the edge like the section column does.
+ */
+function SettingsContent({ section, children }: { section: string; children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  useScrollFade(ref);
+  // One scroll box serves every section, so a new section starts at its top instead of
+  // inheriting where the last one was scrolled to.
+  React.useLayoutEffect(() => {
+    if (ref.current) ref.current.scrollTop = 0;
+  }, [section]);
+  return (
+    <div
+      ref={ref}
+      data-slot="settings-dialog-content"
+      className="min-h-0 flex-1 overflow-y-auto px-8 pb-6 max-sm:px-4"
+    >
+      {/* The content's own column inside the scroller: a child with a fixed height keeps it and scrolls,
+          instead of shrinking to the box as a direct flex item of the scroller would. */}
+      <div className="flex flex-col">{children}</div>
+    </div>
+  );
+}
+
+/** Consecutive sections with the same `group`; ungrouped ones form runs without a label. */
+function groupRuns(sections: SettingsSection[]) {
+  const runs: { group?: string; sections: SettingsSection[] }[] = [];
+  for (const s of sections) {
+    const last = runs[runs.length - 1];
+    if (last && last.group === s.group) last.sections.push(s);
+    else runs.push({ group: s.group, sections: [s] });
+  }
+  return runs;
+}
+
+/**
  * The settings window: a left column with search and one row per section,
  * the chosen section on the right under its title, and the close button in
  * the top-right corner like every Dialog. Content is
  * the consumer's — build it from `SettingsRow`s.
  *
- * Search filters the sections by label and `keywords`; if the open section
- * drops out, the first match is shown. Radix dialog: focus trap, Escape and
+ * Sections with a `group` sit under a small grey heading for it. Search
+ * filters the sections by label and `keywords`; if the open section drops out,
+ * the first match is shown and `onValueChange` is called with it. Radix dialog: focus trap, Escape and
  * scroll lock included. Corner radius follows the app-wide Style.
  */
 function SettingsDialog({
@@ -127,6 +176,10 @@ function SettingsDialog({
   const smRadius = "sm:rounded-[var(--ui-radius-box)]";
   const [inner, setInner] = React.useState(sections[0]?.value);
   const [query, setQuery] = React.useState("");
+  const groupId = React.useId();
+  // With groups the headings label the column, so it carries no title of its
+  // own; without, `title` is the grey list label over the rows.
+  const grouped = sections.some((s) => s.group);
   const current = valueProp ?? inner;
   const select = (v: string) => {
     setInner(v);
@@ -138,6 +191,12 @@ function SettingsDialog({
     ? sections.filter((s) => [s.label, ...(s.keywords ?? [])].some((w) => w.toLocaleLowerCase().includes(q)))
     : sections;
   const shown = visible.find((s) => s.value === current) ?? visible[0];
+  // A search that drops the open section shows the first match; tell the caller, or it keeps working with
+  // the section that is no longer on screen (its data, its footer, its URL).
+  const shownValue = shown?.value;
+  React.useEffect(() => {
+    if (shownValue !== undefined && shownValue !== current) onValueChange?.(shownValue);
+  }, [shownValue, current, onValueChange]);
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -173,11 +232,12 @@ function SettingsDialog({
             // A shade off the content pane (surface vs. lowest), plus the rule.
             className="w-60 shrink-0 border-r border-outline-variant bg-surface max-sm:w-auto"
           >
-            {/* The column title is the dialog's own title, as the grey label
-                over the section rows (SidebarPanel's list label). */}
+            {/* The column title is the dialog's own title, as the grey label over
+                the section rows (SidebarPanel's list label); with groups the
+                headings do that job and there is none. */}
             <SidebarPanel
               fade={0}
-              title={title}
+              title={grouped ? undefined : title}
               head={(
                 <Input
                   type="search"
@@ -193,17 +253,36 @@ function SettingsDialog({
               )}
             >
               <div className="flex flex-col gap-0.5">
-                {visible.map((s) => (
-                  <NavItem
-                    key={s.value}
-                    type="button"
-                    active={s.value === shown?.value}
-                    onClick={() => select(s.value)}
-                  >
-                    {s.icon}
-                    <span>{s.label}</span>
-                  </NavItem>
-                ))}
+                {groupRuns(visible).map((run, i) => {
+                  const rows = run.sections.map((s) => (
+                    <NavItem
+                      key={s.value}
+                      type="button"
+                      active={s.value === shown?.value}
+                      onClick={() => select(s.value)}
+                    >
+                      {s.icon}
+                      <span>{s.label}</span>
+                    </NavItem>
+                  ));
+                  if (!run.group) return <React.Fragment key={run.sections[0].value}>{rows}</React.Fragment>;
+                  const labelId = `${groupId}-${i}`;
+                  return (
+                    <div
+                      key={run.sections[0].value}
+                      role="group"
+                      aria-labelledby={labelId}
+                      // Same label as SidebarPanel's list title (size, grey, inset). The first
+                      // group stands off the search by 16px; later groups, 10px (the title's margin).
+                      className="mt-4 flex flex-col gap-0.5 [&:not(:first-child)]:mt-2.5"
+                    >
+                      <div id={labelId} className="flex min-h-6 items-center px-2.5 text-[13px] font-medium text-outline">
+                        {run.group}
+                      </div>
+                      {rows}
+                    </div>
+                  );
+                })}
                 {visible.length === 0 && (
                   <p className="px-3 py-2 text-sm text-on-surface-variant">{emptyLabel}</p>
                 )}
@@ -211,19 +290,22 @@ function SettingsDialog({
             </SidebarPanel>
           </nav>
           <div className="flex min-w-0 flex-1 flex-col">
+            {/* The title stays put and only the content scrolls, so the scrollbar starts
+                under the title row (and the close button) instead of running up to the
+                dialog's top edge. The right padding keeps the title clear of the close button. */}
             <section
               aria-labelledby={shown ? `settings-section-${shown.value}` : undefined}
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-7 pb-6 max-sm:px-4"
+              className="flex min-h-0 flex-1 flex-col"
             >
               {shown && (
                 <>
                   <h2
                     id={`settings-section-${shown.value}`}
-                    className="m-0 pr-12 pb-2 text-[17px] font-semibold text-on-surface"
+                    className="m-0 shrink-0 pt-7 pr-20 pb-2 pl-8 text-[17px] font-semibold text-on-surface max-sm:pr-16 max-sm:pl-4"
                   >
                     {shown.label}
                   </h2>
-                  <div className="flex flex-col">{shown.content}</div>
+                  <SettingsContent section={shown.value}>{shown.content}</SettingsContent>
                 </>
               )}
             </section>
