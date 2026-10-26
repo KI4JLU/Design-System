@@ -5,7 +5,7 @@ import { Button } from "./button";
 import { DialogFooter } from "./dialog";
 import { ImageViewer } from "./image-viewer";
 import { Input } from "./input";
-import { PreviewDialog } from "./preview-dialog";
+import { PreviewBackLink, PreviewDialog } from "./preview-dialog";
 import { RichTextEditor } from "./rich-text-editor";
 
 const meta = {
@@ -99,19 +99,32 @@ export const WithTitleFieldAndFooter: Story = {
   ),
 };
 
-/** Opened from a list: the back link above the title. */
+/** Opened from a list: the back link leads the subheader (the viewer's toolbar), not the title. */
 export const WithBackLink: Story = {
   args: {
     icon: FileType,
     title: "CERT-Bund Meldung 2026-1042",
-    subtitle: "Markdown · nur Lesen",
-    back: { trail: ["Aktuelles (HRZ)"], onBack: () => {} },
+    subtitle: "RSS-Meldung · nur Lesen",
     onClose: () => {},
     children: null,
   },
   render: (args) => (
     <PreviewDialog {...args}>
-      <RichTextEditor bare plain readOnly count="none" className="min-h-0 flex-1" aria-label="Meldung" value="Ein Update für die Meldung." />
+      <RichTextEditor
+        bare
+        plain
+        readOnly
+        count="none"
+        className="min-h-0 flex-1"
+        aria-label="Meldung"
+        value="Ein Update für die Meldung."
+        toolbarStart={<PreviewBackLink back={{ trail: ["Aktuelles (HRZ)"], onBack: () => {} }} />}
+        toolbarEnd={downloadButton}
+      />
     </PreviewDialog>
   ),
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await expect(page.getByRole("button", { name: "Zurück zu Aktuelles (HRZ)" })).toBeInTheDocument();
+  },
 };

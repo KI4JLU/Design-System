@@ -48,6 +48,8 @@ export interface ImageViewerProps
   labels?: Partial<ImageViewerLabels>;
   /** Extra toolbar controls before copy and fullscreen (e.g. a download link). */
   toolbarEnd?: React.ReactNode;
+  /** Leads the toolbar, before the zoom controls (e.g. a preview's `PreviewBackLink`). */
+  toolbarStart?: React.ReactNode;
   onLoad?: (size: { width: number; height: number }) => void;
   onError?: () => void;
 }
@@ -91,7 +93,7 @@ async function toPngBlob(img: HTMLImageElement): Promise<Blob> {
 }
 
 const ImageViewer = React.forwardRef<HTMLDivElement, ImageViewerProps>(
-  ({ src, alt, labels: labelsProp, toolbarEnd, onLoad, onError, className, ...props }, ref) => {
+  ({ src, alt, labels: labelsProp, toolbarEnd, toolbarStart, onLoad, onError, className, ...props }, ref) => {
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
     const rootRef = React.useRef<HTMLDivElement | null>(null);
     const areaRef = React.useRef<HTMLDivElement | null>(null);
@@ -200,6 +202,7 @@ const ImageViewer = React.forwardRef<HTMLDivElement, ImageViewerProps>(
           data-slot="image-viewer-toolbar"
           className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
         >
+          {toolbarStart && <>{toolbarStart}<span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-outline-variant" /></>}
           <ViewerButton label={labels.zoomOut} disabled={!size || scale <= ZOOM_STEPS[0]} onClick={() => stepZoom(-1)} container={fullscreenEl}>
             <Minus aria-hidden="true" className={iconClass} />
           </ViewerButton>

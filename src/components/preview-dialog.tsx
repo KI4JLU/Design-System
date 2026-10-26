@@ -11,9 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog"
  * source's entries — uses it, so their headers cannot drift apart.
  *
  *  - `PreviewHeader` — the type icon on the `primary-fixed` tile, the title
- *    (or an input in its place), a one-line subtitle, an optional back link
- *    above the title and header actions on the close button's line. The
- *    right edge keeps the dialog's close button clear (`--dialog-close-*`).
+ *    (or an input in its place), a one-line subtitle and header actions on
+ *    the close button's line. The right edge keeps the dialog's close button
+ *    clear (`--dialog-close-*`).
+ *  - `PreviewBackLink` — the way back to the list a preview was opened from
+ *    ("‹ Aktuelles (HRZ)"). It leads the subheader: the viewer's toolbar
+ *    (`toolbarStart` of `PdfViewer`, `ImageViewer`, `RichTextEditor`), or a
+ *    `toolbar` row of the band, so it never pushes the title down.
  *  - `PreviewHeaderBand` — the header plus the rows that belong to it
  *    (sheet tabs, a sync strip), on the chrome surface (`bg-surface`). A
  *    dialog with its own frame renders it directly.
@@ -52,13 +56,36 @@ export interface PreviewHeaderProps {
   subtitle: React.ReactNode;
   /** Header actions on the close button's line (e.g. "In Confluence öffnen"). */
   actions?: React.ReactNode;
-  /** The way back to the list this preview was opened from, above the title. */
-  back?: PreviewBack;
+  /** The close button's label (read by `PreviewDialog`). */
   labels?: Partial<PreviewLabels>;
 }
 
-function PreviewHeader({ icon: Icon, title, titleTooltip, titleField, subtitle, actions, back, labels: labelsProp }: PreviewHeaderProps) {
-  const labels = { ...DEFAULT_LABELS, ...labelsProp };
+export interface PreviewBackLinkProps {
+  back: PreviewBack;
+  labels?: Partial<BreadcrumbBackLabels>;
+  className?: string;
+}
+
+/**
+ * The back link of a preview opened from a list, at the start of the
+ * subheader (a viewer's `toolbarStart`). Its chevron lines up with the
+ * header's type tile above it (8px toolbar inset + 12px = the header's 20px).
+ * It takes at most 40 % of the row and truncates a long trail, so the
+ * viewer's own controls always stay in view.
+ */
+function PreviewBackLink({ back, labels, className }: PreviewBackLinkProps) {
+  return (
+    <div data-slot="preview-back-link" className={cn("flex h-9 min-w-0 max-w-[40%] items-center pl-3 pr-1", className)}>
+      <BreadcrumbBack
+        trail={back.trail}
+        labels={{ nav: labels?.nav ?? DEFAULT_LABELS.nav, back: labels?.back ?? DEFAULT_LABELS.back }}
+        onClick={back.onBack}
+      />
+    </div>
+  );
+}
+
+function PreviewHeader({ icon: Icon, title, titleTooltip, titleField, subtitle, actions }: PreviewHeaderProps) {
   return (
     // The right edge keeps the dialog's close button clear, through its custom
     // property (Dialog `--dialog-close-reserve`), plus an 8px gap.
@@ -70,14 +97,6 @@ function PreviewHeader({ icon: Icon, title, titleTooltip, titleField, subtitle, 
         <Icon className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        {back && (
-          <BreadcrumbBack
-            className="mb-0.5"
-            trail={back.trail}
-            labels={{ nav: labels.nav, back: labels.back }}
-            onClick={back.onBack}
-          />
-        )}
         {titleField ? (
           <>
             <DialogTitle className="sr-only">{title}</DialogTitle>
@@ -89,8 +108,7 @@ function PreviewHeader({ icon: Icon, title, titleTooltip, titleField, subtitle, 
         <DialogDescription className="truncate text-xs">{subtitle}</DialogDescription>
       </div>
       {/* On the close button's line: a box as tall as the ✕, at its top
-          inset (Dialog `--dialog-close-*`), whatever the title column's
-          height (a back link above it makes the row taller). */}
+          inset (Dialog `--dialog-close-*`). */}
       {actions && (
         <div className="mt-[calc(var(--dialog-close-inset,18px)_-_1rem)] flex h-[var(--dialog-close-size,2.25rem)] shrink-0 items-center gap-2 self-start">
           {actions}
@@ -164,4 +182,4 @@ function PreviewDialog({
   );
 }
 
-export { PreviewDialog, PreviewHeader, PreviewHeaderBand };
+export { PreviewBackLink, PreviewDialog, PreviewHeader, PreviewHeaderBand };

@@ -144,7 +144,8 @@ export interface BreadcrumbBackProps
 /**
  * The back navigation of a sub-view: a leading chevron and the trail to the
  * parent level, as one link, in the primary colour. Sits above the view's
- * title (in a `DialogHeader`, before the `DialogTitle`).
+ * title (in a `DialogHeader`, before the `DialogTitle`); in a document
+ * preview it leads the subheader instead (`PreviewBackLink`).
  *
  * A dialog that uses it keeps its other exits consistent: "Abbrechen" and a
  * "Fertig" return to the parent view too; only the ✕ closes the dialog.

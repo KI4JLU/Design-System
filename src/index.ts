@@ -550,6 +550,7 @@ export { FilePreview, type FilePreviewProps } from "./components/file-preview";
 export { PdfViewer, type PdfViewerProps, type PdfViewerLabels } from "./components/pdf-viewer";
 export { ImageViewer, type ImageViewerProps, type ImageViewerLabels } from "./components/image-viewer";
 export {
+  PreviewBackLink,
   PreviewDialog,
   PreviewHeader,
   PreviewHeaderBand,
@@ -557,5 +558,6 @@ export {
   type PreviewHeaderProps,
   type PreviewHeaderBandProps,
   type PreviewBack,
+  type PreviewBackLinkProps,
   type PreviewLabels,
 } from "./components/preview-dialog";
