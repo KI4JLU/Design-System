@@ -548,6 +548,11 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **0.67.0** — Additive (JustRAG preview).
+
+  - **Feature: `Spinner variant="dots"`.** Three dots pulsing in turn (keyframes `spinner-dot`, token `--animate-spinner-dot`), still dimmed and still under reduced motion; same `role="status"` and label as the ring. For a reply being prepared in a chat. Story `Components/Spinner → Dots`.
+  - **Visual: `InlineCitationCardTrigger` shows the pointer cursor** on hover, like every other clickable control.
+
 - **0.66.0** — Preview back link in the subheader (JustRAG preview).
 
   - **Breaking (0.65.0 API only): `PreviewHeader` / `PreviewDialog` drop `back`.** The back link is `PreviewBackLink` now and leads the subheader: pass it as `toolbarStart` of the viewer, or first in a `toolbar` row. The title row keeps its height whether or not a preview was opened from a list. Story `Components/PreviewDialog → WithBackLink`.

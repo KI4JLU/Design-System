@@ -20,4 +20,13 @@ describe("Spinner", () => {
     expect(icon).toHaveClass("h-8", "w-8", "animate-spin");
     expect(icon).toHaveAttribute("aria-hidden", "true");
   });
+
+  it("renders three pulsing dots for variant=\"dots\", same status semantics", () => {
+    const { container } = render(<Spinner variant="dots" label="Antwort wird vorbereitet …" />);
+    expect(screen.getByRole("status")).toHaveTextContent("Antwort wird vorbereitet …");
+    expect(container.querySelector("svg")).toBeNull();
+    const dots = container.querySelectorAll('[data-slot="spinner-dot"]');
+    expect(dots).toHaveLength(3);
+    expect(dots[0]).toHaveClass("motion-safe:animate-spinner-dot");
+  });
 });

@@ -364,6 +364,14 @@
     to { background-position: 0% center; }
   }
 
+  /* `Spinner variant="dots"`: each dot brightens and lifts in turn (the
+   * component staggers them with animation-delay). */
+  --animate-spinner-dot: spinner-dot 1s ease-in-out infinite;
+  @keyframes spinner-dot {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-25%); }
+  }
+
   /* --------------------------------------------------------------------------
    * SEMANTISCHE STATUS-/FEEDBACK-TOKENS
    * Ersetzen die verstreuten `green-*` / `teal-*` / `amber-*` Utilities.
