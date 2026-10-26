@@ -410,6 +410,7 @@ export {
   TooltipContent,
   TooltipProvider,
 } from "./components/tooltip";
+export { TitleTooltips, type TitleTooltipsProps } from "./components/title-tooltips";
 export {
   ThemeProvider,
   useTheme,

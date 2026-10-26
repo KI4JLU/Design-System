@@ -49,6 +49,32 @@ Komponente, weil der eingebaute innere Provider gewinnt. Abweichungen
   einen `<span tabIndex={0}>` um den Button (siehe Story „DisabledTrigger"),
   sonst ist der Grund der Deaktivierung unerreichbar.
 
+## Catch-all für `title=`: `TitleTooltips`
+
+`<TitleTooltips />` einmal an der App-Wurzel gemountet zeigt für **jedes**
+Element mit nativem `title`-Attribut diesen Tooltip statt des Browser-Tooltips
+— auch für später hinzugekommene Titel, Fremd-Markup und Portale. Solange
+Zeiger oder Tastaturfokus auf dem Element liegen, wird der `title` geleert
+(Text in `data-title`) und danach zurückgeschrieben; ändert React ihn
+zwischendurch, gilt der neue Wert; leert oder entfernt React ihn, bleibt es dabei. Für
+Screenreader bleibt alles gleich: war der Titel der Name, wird er solange
+zum `aria-label`, sonst die Beschreibung (`aria-describedby`), sofern er nicht
+nur den Namen wiederholt. Der Zeiger darf auf den Tooltip wandern (150 ms
+Karenz); im Vollbild landet er im Vollbild-Element.
+
+- Nur Klartext (Zeilenumbrüche bleiben). Reichhaltige Inhalte brauchen
+  weiterhin einen expliziten `Tooltip`.
+- Macht nichts fokussierbar: ein `title` auf einem `span` bleibt für
+  Tastatur und Touch unerreichbar. Deaktivierte Buttons feuern keine
+  Pointer-Events (siehe oben).
+- Elemente in einem expliziten `TooltipTrigger` werden übersprungen;
+  `data-native-title` an einem Vorfahren schaltet den Catch-all für den
+  Teilbaum ab.
+- Ton: primär wie `Tooltip`; unter `[data-tooltip-tone="inverse"]`
+  (`Message` setzt es) die inverse Fläche wie bei `MessageAction`.
+
+Stories: `Components/TitleTooltips`.
+
 ## Do's & Don'ts
 
 - ✅ Icon-Buttons: `aria-label` bleibt der Name, der Tooltip beschreibt nur.
