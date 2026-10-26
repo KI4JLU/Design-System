@@ -54,6 +54,13 @@ describe("RichTextEditor", () => {
     expect(screen.getByText("3 Wörter | 14 Zeichen")).toBeInTheDocument();
   });
 
+  it("leaves the count to the caller with count=\"none\" and reports it", async () => {
+    const onCountChange = vi.fn();
+    renderEditor({ value: "eins zwei drei", count: "none", onCountChange });
+    expect(screen.queryByText("3 Wörter | 14 Zeichen")).not.toBeInTheDocument();
+    await waitFor(() => expect(onCountChange).toHaveBeenLastCalledWith({ words: 3, characters: 14 }));
+  });
+
   it("renders toolbarEnd and drops its frame when bare", () => {
     const { container } = renderEditor({ toolbarEnd: <button type="button">Laden</button>, bare: true });
     expect(screen.getByRole("toolbar")).toContainElement(screen.getByRole("button", { name: "Laden" }));

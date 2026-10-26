@@ -125,6 +125,14 @@ export interface RichTextEditorProps {
   readOnly?: boolean;
   /** Extra controls at the end of the toolbar, before fullscreen (like `PdfViewer`). */
   toolbarEnd?: React.ReactNode;
+  /**
+   * Where the word / character count goes: `toolbar` (default) shows it in
+   * the toolbar; `none` leaves it to the caller (e.g. a dialog footer), who
+   * reads it through `onCountChange`.
+   */
+  count?: "toolbar" | "none";
+  /** Called with the current word and character count whenever it changes. */
+  onCountChange?: (count: { words: number; characters: number }) => void;
   /** No border or radius of its own — the container frames it (a dialog). */
   bare?: boolean;
   /**
@@ -349,6 +357,8 @@ function RichTextEditorInner({
   format = "markdown",
   readOnly = false,
   toolbarEnd,
+  count = "toolbar",
+  onCountChange,
   bare = false,
   plain = false,
   className,
@@ -448,6 +458,15 @@ function RichTextEditorInner({
 
   const state = useToolbarState(editor, isText);
 
+  const words = state?.words ?? 0;
+  const characters = state?.characters ?? 0;
+  // The latest callback, so a caller's inline function does not re-fire the effect.
+  const onCountChangeRef = React.useRef(onCountChange);
+  React.useEffect(() => { onCountChangeRef.current = onCountChange; });
+  React.useEffect(() => {
+    onCountChangeRef.current?.({ words, characters });
+  }, [words, characters]);
+
   React.useEffect(() => {
     const onFullscreenChange = () =>
       setFullscreenEl(document.fullscreenElement === rootRef.current ? rootRef.current : null);
@@ -486,12 +505,20 @@ function RichTextEditorInner({
       <div
         role="toolbar"
         aria-label={labels.toolbar}
-        // Scrolls sideways when narrower than its controls, without showing a
-        // scrollbar track under the 48px row (PdfViewer's toolbar has none).
-        // Inline style: an app's unlayered global scrollbar rules would beat a utility.
-        className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none" }}
+        // The end group (undo/redo, toolbarEnd, copy, fullscreen) is pinned and
+        // ends at the dialog close button's right edge (`--dialog-close-inset`),
+        // like PdfViewer's; only the formatting controls and the count scroll
+        // sideways when the row is too narrow. A scrolling row would drop its
+        // end padding once it overflows, pushing the last button to the edge.
+        className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
       >
+        <div
+          data-slot="rich-text-editor-toolbar-scroll"
+          // No scrollbar track under the 48px row (PdfViewer's toolbar has none).
+          // Inline style: an app's unlayered global scrollbar rules would beat a utility.
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
         {!readOnly && !isText && (
           <>
             <ToolbarButton label={labels.heading1} active={state?.h1} onClick={() => chain().toggleHeading({ level: 1 }).run()}>
@@ -543,12 +570,15 @@ function RichTextEditorInner({
             </ToolbarButton>
           </>
         )}
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <span className="px-2 text-sm whitespace-nowrap tabular-nums text-on-surface-variant" aria-live="polite">
-            {labels.count
-              .replace("{words}", String(state?.words ?? 0))
-              .replace("{characters}", String(state?.characters ?? 0))}
-          </span>
+          {count === "toolbar" && (
+            <span className="ml-auto shrink-0 px-2 text-sm whitespace-nowrap tabular-nums text-on-surface-variant" aria-live="polite">
+              {labels.count
+                .replace("{words}", String(words))
+                .replace("{characters}", String(characters))}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
           {!readOnly && (
             <>
               <Separator />

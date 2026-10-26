@@ -548,3 +548,14 @@ export { preloadPdfjs, renderPdfFirstPage, setPdfWorkerSrc, type RenderPdfFirstP
 export { usePdfPreviewImage } from "./lib/use-pdf-preview";
 export { FilePreview, type FilePreviewProps } from "./components/file-preview";
 export { PdfViewer, type PdfViewerProps, type PdfViewerLabels } from "./components/pdf-viewer";
+export { ImageViewer, type ImageViewerProps, type ImageViewerLabels } from "./components/image-viewer";
+export {
+  PreviewDialog,
+  PreviewHeader,
+  PreviewHeaderBand,
+  type PreviewDialogProps,
+  type PreviewHeaderProps,
+  type PreviewHeaderBandProps,
+  type PreviewBack,
+  type PreviewLabels,
+} from "./components/preview-dialog";

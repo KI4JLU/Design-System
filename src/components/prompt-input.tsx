@@ -319,11 +319,55 @@ export function PromptInputAttachment({
   ...props
 }: PromptInputAttachmentProps) {
   const attachments = usePromptInputAttachments();
+  return (
+    <AttachmentChip
+      filename={data.filename || ""}
+      mediaType={data.mediaType}
+      url={data.url}
+      status={status}
+      statusMessage={statusMessage}
+      onRemove={() => attachments.remove(data.id)}
+      className={className}
+      {...props}
+    />
+  );
+}
 
-  const filename = data.filename || "";
+export type AttachmentChipProps = HTMLAttributes<HTMLDivElement> & {
+  filename: string;
+  mediaType?: string;
+  /** The file itself (blob:, data: or http(s)): an image's thumbnail and the
+   *  hover preview. Without it the chip shows the paperclip and the preview
+   *  the file glyph with its type badge. */
+  url?: string;
+  status?: PromptInputAttachmentStatus;
+  statusMessage?: string;
+  /** Shows the remove button (top right, on hover / focus). Absent: a
+   *  read-only chip, e.g. on a sent message. */
+  onRemove?: () => void;
+  /** Where the hover preview opens. Default `top`, clear of a composer below. */
+  previewSide?: "top" | "bottom" | "left" | "right";
+};
 
+/**
+ * A file chip: the type glyph or image thumbnail, the file name and a hover
+ * preview (`FilePreview`). The composer's attachments use it with a remove
+ * button (`PromptInputAttachment`); a sent message shows the same chips
+ * read-only, so an attachment looks the same before and after sending.
+ */
+export function AttachmentChip({
+  filename,
+  mediaType: fileType,
+  url,
+  className,
+  status,
+  statusMessage,
+  onRemove,
+  previewSide = "top",
+  ...props
+}: AttachmentChipProps) {
   const mediaType =
-    data.mediaType?.startsWith("image/") && data.url ? "image" : "file";
+    fileType?.startsWith("image/") && url ? "image" : "file";
   const isImage = mediaType === "image";
   const attachmentLabel = filename || (isImage ? "Image" : "Attachment");
   const statusText = status
@@ -331,12 +375,13 @@ export function PromptInputAttachment({
     : undefined;
   // A PDF's first page is rendered when the chip mounts, so the hover card
   // shows a ready bitmap instead of decoding the PDF while it opens.
-  const pdfImage = usePdfPreviewImage(data.url, data.mediaType);
+  const pdfImage = usePdfPreviewImage(url, fileType);
 
   return (
     <PromptInputHoverCard>
       <HoverCardTrigger asChild>
         <div
+          data-slot="attachment-chip"
           className={cn(
             "group relative flex h-8 cursor-pointer select-none items-center gap-1.5 border border-outline-variant px-1.5 font-medium text-sm transition-all hover:bg-surface-container-high hover:text-on-surface",
             status === "uploading" && "text-on-surface-variant",
@@ -344,7 +389,6 @@ export function PromptInputAttachment({
             promptInputControlShape,
             className,
           )}
-          key={data.id}
           aria-busy={status === "uploading" || undefined}
           data-status={status}
           {...props}
@@ -367,7 +411,7 @@ export function PromptInputAttachment({
                   alt={filename || "attachment"}
                   className="size-5 object-cover"
                   height={20}
-                  src={data.url}
+                  src={url}
                   width={20}
                 />
               ) : (
@@ -380,25 +424,27 @@ export function PromptInputAttachment({
 
           <span className="flex-1 truncate">{attachmentLabel}</span>
           {statusText && <span className="sr-only">{`: ${statusText}`}</span>}
-          <Button
-            aria-label="Remove attachment"
-            className="absolute -top-2 -right-2 z-10 size-5 cursor-pointer rounded-full border border-outline-variant bg-surface-container-lowest p-0 shadow-card opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [&>svg]:size-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              attachments.remove(data.id);
-            }}
-            type="button"
-            // JLU: removing is a delete action — red like every other (KI-915).
-            variant="ghost-destructive"
-          >
-            <XIcon />
-            <span className="sr-only">Remove</span>
-          </Button>
+          {onRemove && (
+            <Button
+              aria-label="Remove attachment"
+              className="absolute -top-2 -right-2 z-10 size-5 cursor-pointer rounded-full border border-outline-variant bg-surface-container-lowest p-0 shadow-card opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [&>svg]:size-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              type="button"
+              // JLU: removing is a delete action — red like every other (KI-915).
+              variant="ghost-destructive"
+            >
+              <XIcon />
+              <span className="sr-only">Remove</span>
+            </Button>
+          )}
         </div>
       </HoverCardTrigger>
-      {/* JLU: the preview opens above the chip, so it does not cover the
-          composer; Radix still flips it below when there is no room. */}
-      <PromptInputHoverCardContent className="w-auto p-2" side="top">
+      {/* JLU: the preview opens above the chip by default, so it does not
+          cover the composer; Radix still flips it when there is no room. */}
+      <PromptInputHoverCardContent className="w-auto p-2" side={previewSide}>
         {statusText && (
           <p
             className={cn(
@@ -415,7 +461,7 @@ export function PromptInputAttachment({
         {pdfImage !== undefined ? (
           <FilePreview filename={filename} loading={pdfImage === null} mediaType={pdfImage ? "image/png" : undefined} url={pdfImage ?? undefined} />
         ) : (
-          <FilePreview filename={filename} mediaType={data.mediaType} url={data.url} />
+          <FilePreview filename={filename} mediaType={fileType} url={url} />
         )}
       </PromptInputHoverCardContent>
     </PromptInputHoverCard>
