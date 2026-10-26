@@ -37,3 +37,14 @@ export const InButton: Story = {
     </div>
   ),
 };
+
+/** `variant="dots"`: three dots pulsing in turn — a reply being prepared in a chat. */
+export const Dots: Story = {
+  render: () => (
+    <div className="flex items-center gap-6 text-on-surface-variant">
+      <Spinner variant="dots" size="sm" label="Antwort wird vorbereitet …" />
+      <Spinner variant="dots" label="Antwort wird vorbereitet …" />
+      <Spinner variant="dots" size="lg" label="Antwort wird vorbereitet …" />
+    </div>
+  ),
+};
