@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { FileText } from "lucide-react";
-import { PreviewDialog } from "./preview-dialog";
+import { PreviewBackLink, PreviewDialog } from "./preview-dialog";
 
 describe("PreviewDialog", () => {
   it("names the dialog by its title and describes it by the subtitle", () => {
@@ -40,12 +40,11 @@ describe("PreviewDialog", () => {
         icon={FileText}
         title="Eintrag"
         subtitle="Markdown"
-        back={{ trail: ["Aktuelles (HRZ)"], onBack }}
         footer={<button type="button">Speichern</button>}
         labels={{ close: "Zu" }}
         onClose={onClose}
       >
-        <p />
+        <PreviewBackLink back={{ trail: ["Aktuelles (HRZ)"], onBack }} />
       </PreviewDialog>,
     );
     fireEvent.click(screen.getByRole("button", { name: /Aktuelles \(HRZ\)/ }));

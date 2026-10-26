@@ -125,6 +125,8 @@ export interface RichTextEditorProps {
   readOnly?: boolean;
   /** Extra controls at the end of the toolbar, before fullscreen (like `PdfViewer`). */
   toolbarEnd?: React.ReactNode;
+  /** Leads the toolbar, pinned before the formatting controls (e.g. a preview's `PreviewBackLink`). */
+  toolbarStart?: React.ReactNode;
   /**
    * Where the word / character count goes: `toolbar` (default) shows it in
    * the toolbar; `none` leaves it to the caller (e.g. a dialog footer), who
@@ -357,6 +359,7 @@ function RichTextEditorInner({
   format = "markdown",
   readOnly = false,
   toolbarEnd,
+  toolbarStart,
   count = "toolbar",
   onCountChange,
   bare = false,
@@ -512,6 +515,7 @@ function RichTextEditorInner({
         // end padding once it overflows, pushing the last button to the edge.
         className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
       >
+        {toolbarStart}
         <div
           data-slot="rich-text-editor-toolbar-scroll"
           // No scrollbar track under the 48px row (PdfViewer's toolbar has none).

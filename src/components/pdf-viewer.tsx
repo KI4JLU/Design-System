@@ -49,6 +49,8 @@ export interface PdfViewerProps
   labels?: Partial<PdfViewerLabels>;
   /** Extra toolbar controls, right-aligned (e.g. a download button). */
   toolbarEnd?: React.ReactNode;
+  /** Leads the toolbar, before the page controls (e.g. a preview's `PreviewBackLink`). */
+  toolbarStart?: React.ReactNode;
   onLoad?: (pageCount: number) => void;
   onError?: (err: unknown) => void;
   /**
@@ -67,7 +69,7 @@ const PAGE_GAP = 16;
 const SIDE_PAD = 24;
 
 const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
-  ({ src, initialPage = 1, labels: labelsProp, toolbarEnd, onLoad, onError, plain = false, className, ...props }, ref) => {
+  ({ src, initialPage = 1, labels: labelsProp, toolbarEnd, toolbarStart, onLoad, onError, plain = false, className, ...props }, ref) => {
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
     const scrollRef = React.useRef<HTMLDivElement | null>(null);
     const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -221,6 +223,7 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
           data-slot="pdf-viewer-toolbar"
           className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
         >
+          {toolbarStart && <>{toolbarStart}<span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-outline-variant" /></>}
           <Button variant="ghost" size="icon" aria-label={labels.previousPage} disabled={current <= 1} onClick={() => goTo(current - 1)}>
             <ChevronUp aria-hidden="true" className="size-4" />
           </Button>
