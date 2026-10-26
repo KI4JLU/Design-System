@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsDialog, SettingsRow } from "./settings-dialog";
 
@@ -31,6 +31,16 @@ describe("SettingsDialog", () => {
     expect(screen.getByText("Keine Treffer")).toBeInTheDocument();
   });
 
+  // Oracle: the section data handed in. A controlled caller (value + onValueChange) must hear that the search moved the
+  // dialog to another section, or it keeps loading and labelling the one that is gone.
+  it("calls onValueChange when a search drops the open section and shows the first match", async () => {
+    const onValueChange = vi.fn();
+    render(<SettingsDialog open onOpenChange={() => {}} sections={sections} value="general" onValueChange={onValueChange} />);
+    expect(onValueChange).not.toHaveBeenCalled();
+    await userEvent.type(screen.getByRole("searchbox", { name: "Einstellungen suchen" }), "mail");
+    expect(onValueChange).toHaveBeenCalledWith("profile");
+  });
+
   it("closes from its close button", async () => {
     const onOpenChange = vi.fn();
     render(<SettingsDialog open onOpenChange={onOpenChange} sections={sections} />);
@@ -43,6 +53,97 @@ describe("SettingsDialog", () => {
       <SettingsDialog open onOpenChange={() => {}} sections={sections} footer={<button type="button">Speichern</button>} />,
     );
     expect(screen.getByRole("button", { name: "Speichern" }).closest("[data-slot='settings-dialog-footer']")).not.toBeNull();
+  });
+
+  // Oracle: the `group` values handed in, and WAI-ARIA's group role.
+  describe("groups", () => {
+    const grouped = [
+      { value: "a", label: "Alpha", group: "Wissensbasen", keywords: ["eins"], content: <p>A</p> },
+      { value: "b", label: "Beta", group: "Wissensbasen", keywords: ["zwei"], content: <p>B</p> },
+      { value: "c", label: "Gamma", group: "System", keywords: ["drei"], content: <p>C</p> },
+      { value: "d", label: "Delta", content: <p>D</p> },
+    ];
+
+    it("puts one heading over each run of sections with the same group", () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={grouped} />);
+      const kbs = screen.getByRole("group", { name: "Wissensbasen" });
+      expect(within(kbs).getAllByRole("button").map((b) => b.textContent)).toEqual(["Alpha", "Beta"]);
+      const system = screen.getByRole("group", { name: "System" });
+      expect(within(system).getAllByRole("button").map((b) => b.textContent)).toEqual(["Gamma"]);
+      // The ungrouped section sits loose: in no group.
+      expect(screen.getAllByRole("group")).toHaveLength(2);
+      expect(screen.getByRole("button", { name: "Delta" }).closest("[role='group']")).toBeNull();
+    });
+
+    it("renders no group markup when no section has a group", () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={sections} />);
+      expect(screen.queryAllByRole("group")).toHaveLength(0);
+    });
+
+    it("drops the heading of a group the search no longer matches", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={grouped} />);
+      await userEvent.type(screen.getByRole("searchbox", { name: "Einstellungen suchen" }), "drei");
+      expect(screen.queryByRole("group", { name: "Wissensbasen" })).not.toBeInTheDocument();
+      expect(screen.getByRole("group", { name: "System" })).toBeInTheDocument();
+    });
+
+    it("repeats the heading when a group's sections are not adjacent", () => {
+      const split = [grouped[0], grouped[2], grouped[1]];
+      render(<SettingsDialog open onOpenChange={() => {}} sections={split} />);
+      expect(screen.getAllByRole("group", { name: "Wissensbasen" })).toHaveLength(2);
+    });
+
+    // Oracle: the dialog's `title` prop, which names the dialog and is shown nowhere.
+    it("shows no title in the column when there are groups, but still names the dialog", () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={grouped} title="Admin-Einstellungen" />);
+      expect(screen.getByRole("dialog", { name: "Admin-Einstellungen" })).toBeInTheDocument();
+      // Only the screen-reader title: no visible label over the search or the groups.
+      const nodes = screen.getAllByText("Admin-Einstellungen");
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0]).toHaveClass("sr-only");
+    });
+
+    it("keeps the grey list label (and a hidden dialog title) without groups", () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={sections} title="Admin-Einstellungen" />);
+      // The visible label and the screen-reader title: two nodes, as before groups existed.
+      expect(screen.getAllByText("Admin-Einstellungen")).toHaveLength(2);
+    });
+
+    it("still switches sections from inside a group", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={grouped} />);
+      await userEvent.click(screen.getByRole("button", { name: "Gamma" }));
+      expect(screen.getByRole("heading", { level: 2, name: "Gamma" })).toBeInTheDocument();
+    });
+  });
+
+  // Oracle: useScrollFade's contract (fade only where there is more to scroll to),
+  // with the scroll metrics jsdom lacks supplied by hand.
+  it("fades the content at the top once it has scrolled, and at the bottom while more follows", () => {
+    render(<SettingsDialog open onOpenChange={() => {}} sections={sections} />);
+    const content = document.querySelector<HTMLElement>('[data-slot="settings-dialog-content"]')!;
+    const metrics = (scrollTop: number) => {
+      Object.defineProperty(content, "scrollTop", { configurable: true, value: scrollTop });
+      Object.defineProperty(content, "clientHeight", { configurable: true, value: 100 });
+      Object.defineProperty(content, "scrollHeight", { configurable: true, value: 300 });
+      content.dispatchEvent(new Event("scroll"));
+    };
+    metrics(0);
+    expect(content.dataset.scrollFade).toBe("bottom");
+    metrics(80);
+    expect(content.dataset.scrollFade).toBe("top bottom");
+    metrics(200);
+    expect(content.dataset.scrollFade).toBe("top");
+  });
+
+  // Oracle: the developer's report of 2026-10-26 — switching sections kept the last section's
+  // scroll position. jsdom has no layout, so the scroll box is given a `scrollTop` that remembers it.
+  it("scrolls the content back to the top when another section is chosen", async () => {
+    render(<SettingsDialog open onOpenChange={() => {}} sections={sections} />);
+    const content = document.querySelector<HTMLElement>('[data-slot="settings-dialog-content"]')!;
+    let scrollTop = 120;
+    Object.defineProperty(content, "scrollTop", { configurable: true, get: () => scrollTop, set: (v: number) => { scrollTop = v; } });
+    await userEvent.click(screen.getByRole("button", { name: "Profil" }));
+    expect(scrollTop).toBe(0);
   });
 
   // Oracle for the geometry: the rule written out by hand per case — the box

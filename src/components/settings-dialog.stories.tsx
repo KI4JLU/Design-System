@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useRef, useState } from "react";
-import { Palette, Shield, SlidersHorizontal, Trash2, User } from "lucide-react";
+import { Activity, Database, Globe, Palette, Shield, SlidersHorizontal, Trash2, User, Users } from "lucide-react";
 import { expect, waitFor, within } from "storybook/test";
 import { SettingsDialog, SettingsRow } from "./settings-dialog";
 import { AppearanceSettings } from "./appearance-settings";
@@ -251,5 +251,108 @@ export const DeleteInFooter: Story = {
 
     await userEvent.click(inFooter.getByRole("button", { name: "Abbrechen" }));
     await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+  },
+};
+
+/**
+ * Groups: many sections, told apart by a small grey heading over each run
+ * (`group` on the section). The admin window of an app is the case — a flat
+ * list of ten rows says nothing about which belong together. Sections of one
+ * group stay together in `sections`; a search that matches nothing in a group
+ * hides its heading.
+ */
+function GroupsDemo() {
+  const [open, setOpen] = useState(false);
+  const row = (label: string) => <SettingsRow label={label} control={<span className="text-on-surface-variant">–</span>} />;
+  return (
+    <div className="p-6">
+      <Button onClick={() => setOpen(true)}>Admin öffnen</Button>
+      <SettingsDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Admin-Einstellungen"
+        size="xl"
+        sections={[
+          // Tall on purpose: the content scrolls, so the fade at its edge can be checked.
+          { value: "models", label: "KI-Modelle", group: "Konfiguration", icon: <SlidersHorizontal aria-hidden="true" />, content: Array.from({ length: 24 }, (_, i) => <div key={i}>{row(`Konfiguration ${i + 1}`)}</div>) },
+          // Tall as well: switching between two sections that both overflow is what shows the scroll reset.
+          { value: "auth", label: "Anmeldung", group: "Konfiguration", icon: <Shield aria-hidden="true" />, content: Array.from({ length: 24 }, (_, i) => <div key={i}>{row(`Anbieter ${i + 1}`)}</div>) },
+          { value: "overview", label: "KB-Übersicht", group: "Wissensbasen", icon: <Database aria-hidden="true" />, content: row("Wissensbasen") },
+          { value: "public", label: "Öffentliche KBs", group: "Wissensbasen", icon: <Globe aria-hidden="true" />, keywords: ["global"], content: row("Veröffentlicht") },
+          { value: "users", label: "Benutzer", group: "Nutzer", icon: <Users aria-hidden="true" />, content: row("Konten") },
+          { value: "health", label: "System-Health", group: "Betrieb", icon: <Activity aria-hidden="true" />, content: row("Warteschlangen") },
+        ]}
+      />
+    </div>
+  );
+}
+
+export const Groups: Story = {
+  args: { open: false, onOpenChange: () => {}, sections: [] },
+  render: () => <GroupsDemo />,
+  // ORACLE: the browser — the heading's computed size and colour against the
+  // `--color-outline` token resolved on a probe element, its inset against the
+  // rows', and the roles the dialog exposes.
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const body = page(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Admin öffnen" }));
+    const dialog = await body.findByRole("dialog", { name: "Admin-Einstellungen" });
+    const inDialog = within(dialog);
+
+    // No title of its own in the column: the first thing in it is the search.
+    const title = inDialog.getByText("Admin-Einstellungen");
+    await expect(title).toHaveClass("sr-only");
+    // The section scrolls under its title, not up to the dialog's top edge: the
+    // scroll box starts at or below the heading, so the scrollbar does too.
+    const heading = inDialog.getByRole("heading", { level: 2, name: "KI-Modelle" });
+    const scroller = dialog.querySelector<HTMLElement>('[data-slot="settings-dialog-content"]');
+    if (!scroller) throw new Error("SettingsDialog rendered no content box");
+    await expect(getComputedStyle(scroller).overflowY).toBe("auto");
+    await expect(scroller.getBoundingClientRect().top).toBeGreaterThanOrEqual(heading.getBoundingClientRect().bottom);
+    await expect(heading.getBoundingClientRect().top).toBeGreaterThan(dialog.getBoundingClientRect().top);
+
+    // Content that has scrolled under the title fades out there (a mask, not an overlay).
+    // At rest: no top fade (nothing is under the title yet), a bottom one (more follows).
+    await waitFor(() => expect(scroller.dataset.scrollFade).toBe("bottom"));
+    scroller.scrollTop = 120;
+    await waitFor(() => expect(scroller.dataset.scrollFade).toContain("top"));
+    await expect(getComputedStyle(scroller).maskImage).not.toBe("none");
+    scroller.scrollTop = 0;
+    await waitFor(() => expect(scroller.dataset.scrollFade ?? "").not.toContain("top"));
+
+    // A new section starts at the top, not where the last one was scrolled to.
+    scroller.scrollTop = 200;
+    await expect(scroller.scrollTop).toBeGreaterThan(0);
+    await userEvent.click(inDialog.getByRole("button", { name: "Anmeldung" }));
+    // The other section overflows too, so 0 here is the reset, not the browser clamping a short section.
+    const box = () => dialog.querySelector<HTMLElement>('[data-slot="settings-dialog-content"]')!;
+    await waitFor(() => expect(box().scrollHeight).toBeGreaterThan(box().clientHeight));
+    await expect(box().scrollTop).toBe(0);
+    await userEvent.click(inDialog.getByRole("button", { name: "KI-Modelle" }));
+
+    // …and the first group stands off the search by at least 16px.
+    const searchBox = inDialog.getByRole("searchbox").getBoundingClientRect();
+    await expect(inDialog.getByRole("group", { name: "Konfiguration" }).getBoundingClientRect().top - searchBox.bottom)
+      .toBeGreaterThanOrEqual(16);
+
+    // One labelled group per run, its rows inside it, in order.
+    const kbs = inDialog.getByRole("group", { name: "Wissensbasen" });
+    await expect(within(kbs).getAllByRole("button").map((b) => b.textContent)).toEqual(["KB-Übersicht", "Öffentliche KBs"]);
+    await expect(inDialog.getAllByRole("group")).toHaveLength(4);
+
+    // The label reads as the sidebar's list title does: 13px, outline grey,
+    // and its text starts where the rows' content starts (same box edge, same inset).
+    const label = inDialog.getByText("Wissensbasen");
+    await expect(getComputedStyle(label).fontSize).toBe("13px");
+    await expect(getComputedStyle(label).color).toBe(resolvedColor(canvasElement, "var(--color-outline)"));
+    const row = within(kbs).getByRole("button", { name: "KB-Übersicht" });
+    await expect(label.getBoundingClientRect().left).toBe(row.getBoundingClientRect().left);
+    await expect(getComputedStyle(label).paddingLeft).toBe(getComputedStyle(row).paddingLeft);
+
+    // Searching drops the headings of groups with no match.
+    await userEvent.type(inDialog.getByRole("searchbox"), "global");
+    await expect(inDialog.queryByRole("group", { name: "Konfiguration" })).toBeNull();
+    await expect(inDialog.getByRole("group", { name: "Wissensbasen" })).toBeVisible();
+    await expect(inDialog.getAllByRole("group")).toHaveLength(1);
   },
 };

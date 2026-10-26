@@ -18,6 +18,34 @@ mit — **`AppearanceSettings`**.
 
 <Canvas of={SettingsDialogStories.Default} />
 
+## Gruppen
+
+Hat das Fenster viele Abschnitte, sagt eine flache Liste nicht, welche
+zusammengehören (das Admin-Fenster einer App hat ein Dutzend). `group` am
+Abschnitt setzt eine kleine graue Überschrift über jeden Block aufeinander
+folgender Abschnitte mit demselben Wert — in der Schrift des Listentitels der
+Seitenleiste, als `role="group"`, benannt nach der Überschrift.
+
+<Canvas of={SettingsDialogStories.Groups} />
+
+```tsx
+sections={[
+  { value: "models", label: "KI-Modelle", group: "Konfiguration", content: … },
+  { value: "auth", label: "Anmeldung", group: "Konfiguration", content: … },
+  { value: "overview", label: "KB-Übersicht", group: "Wissensbasen", content: … },
+]}
+```
+
+- **Titel.** Sobald ein Abschnitt eine `group` hat, zeigt die Spalte keinen
+  eigenen Titel mehr: das graue Listenlabel entfällt, damit es nicht über der
+  ersten Gruppenüberschrift steht. `title` bleibt der Name des Fensters für
+  Screenreader. Ohne Gruppen bleibt alles wie bisher.
+- **Zusammenhalten.** Die Überschrift steht vor jedem Block; liegen die
+  Abschnitte einer Gruppe nicht nebeneinander, erscheint sie mehrfach.
+- **Ohne `group`** steht ein Abschnitt lose, ohne Überschrift — Fenster, die
+  `group` nicht nutzen, sehen aus wie bisher.
+- **Suche:** eine Gruppe ohne Treffer verliert ihre Überschrift mit.
+
 ## `AppearanceSettings` — der Abschnitt „Darstellung"
 
 Drei `SettingsRow`s, jede mit einem DS-`Select`, jede direkt an den Provider
