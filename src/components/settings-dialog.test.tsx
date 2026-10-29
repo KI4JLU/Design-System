@@ -1,3 +1,4 @@
+import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -203,6 +204,58 @@ describe("SettingsDialog", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog.style.getPropertyValue("--settings-fit-top")).toBe("16px");
     expect(dialog.style.getPropertyValue("--settings-fit-height")).toBe("868px");
+  });
+
+  // A page loaded with the dialog already open (a deep link) mounts the dialog in the same commit as the
+  // element its `fitTo` ref points at — an ancestor, whose ref React attaches only after the dialog's own
+  // layout effects ran. It must still fit to that box, not fall back to the unfitted xl window.
+  it("fits to a fitTo ancestor mounted in the same commit", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1600 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 1000 });
+    const proto = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      return (this.dataset.area !== undefined ? { left: 300, top: 0, width: 1200, height: 900 } : proto.call(this)) as DOMRect;
+    };
+    try {
+      function Page() {
+        const area = React.useRef<HTMLDivElement>(null);
+        return (
+          <div ref={area} data-area="">
+            <SettingsDialog open onOpenChange={() => {}} sections={sections} size="xl" fitTo={area} />
+          </div>
+        );
+      }
+      render(<Page />);
+      const dialog = screen.getByRole("dialog");
+      expect(dialog).toHaveAttribute("data-fitted");
+      expect(dialog.style.getPropertyValue("--settings-fit-left")).toBe("316px");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = proto;
+    }
+  });
+
+  it("maximizes and restores from its toggle, ignoring fitTo while maximized", async () => {
+    const onMaximizedChange = vi.fn();
+    const area = document.createElement("div");
+    area.getBoundingClientRect = () => ({ left: 300, top: 0, width: 1200, height: 900 }) as DOMRect;
+    render(
+      <SettingsDialog open onOpenChange={() => {}} sections={sections} size="xl" fitTo={{ current: area }} maximizable onMaximizedChange={onMaximizedChange} />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("data-fitted");
+    await userEvent.click(screen.getByRole("button", { name: "Maximieren" }));
+    expect(onMaximizedChange).toHaveBeenLastCalledWith(true);
+    expect(dialog).toHaveAttribute("data-maximized");
+    expect(dialog).not.toHaveAttribute("data-fitted");
+    await userEvent.click(screen.getByRole("button", { name: "Wiederherstellen" }));
+    expect(onMaximizedChange).toHaveBeenLastCalledWith(false);
+    expect(dialog).not.toHaveAttribute("data-maximized");
+    expect(dialog).toHaveAttribute("data-fitted");
+  });
+
+  it("shows no maximize toggle unless maximizable", () => {
+    render(<SettingsDialog open onOpenChange={() => {}} sections={sections} />);
+    expect(screen.queryByRole("button", { name: "Maximieren" })).not.toBeInTheDocument();
   });
 
   it("never grows wider than the window less its gutters", () => {

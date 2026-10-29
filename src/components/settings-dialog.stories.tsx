@@ -75,6 +75,8 @@ export const Default: Story = {
  * `size="xl"` + `fitTo` + `footer`: an editor that is saved explicitly. From
  * `sm` it covers the content column (here the box right of the fake sidebar),
  * below `sm` the whole screen; the overlay still disables the sidebar.
+ * `maximizable` adds the toggle next to the close button that lets it fill
+ * the window.
  */
 function WorkspaceDemo() {
   const [open, setOpen] = useState(false);
@@ -92,6 +94,7 @@ function WorkspaceDemo() {
         title="Thema-Einstellungen"
         size="xl"
         fitTo={area}
+        maximizable
         sections={[
           {
             value: "behavior",

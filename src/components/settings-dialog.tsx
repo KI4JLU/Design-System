@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Search, X } from "lucide-react";
+import { Maximize2, Minimize2, Search, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useElementBox } from "../lib/use-element-box";
 import { useScrollFade } from "../lib/use-scroll-fade";
@@ -64,6 +64,17 @@ export interface SettingsDialogProps {
    * Omit it for settings that apply as they change.
    */
   footer?: React.ReactNode;
+  /**
+   * Shows a maximize toggle next to the close button: maximized, the dialog
+   * fills the window (1rem inside it from `sm`, full screen below), whatever
+   * `size` and `fitTo` say. For editors with long forms or wide tables.
+   */
+  maximizable?: boolean;
+  /** Controlled maximized state; omit for uncontrolled (starts restored). */
+  maximized?: boolean;
+  onMaximizedChange?: (maximized: boolean) => void;
+  maximizeLabel?: string;
+  restoreLabel?: string;
 }
 
 const xlClasses = cn(
@@ -76,6 +87,12 @@ const fittedClasses = cn(
   "sm:top-[var(--settings-fit-top)] sm:left-[var(--settings-fit-left)]",
   "sm:h-[var(--settings-fit-height)] sm:w-[var(--settings-fit-width)]",
   "sm:translate-x-0 sm:translate-y-0",
+);
+
+// Maximized: the window, 1rem inside it from `sm` (FIT_GUTTER), full screen below.
+const maximizedClasses = cn(
+  "top-0 left-0 h-dvh w-full",
+  "sm:top-4 sm:left-4 sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:border",
 );
 
 /** Gap between a fitted dialog and the edges of its box (and the window). */
@@ -165,10 +182,21 @@ function SettingsDialog({
   size = "default",
   fitTo,
   footer,
+  maximizable = false,
+  maximized: maximizedProp,
+  onMaximizedChange,
+  maximizeLabel = "Maximieren",
+  restoreLabel = "Wiederherstellen",
 }: SettingsDialogProps) {
+  const [innerMaximized, setInnerMaximized] = React.useState(false);
+  const maximized = maximizable && (maximizedProp ?? innerMaximized);
+  const toggleMaximized = () => {
+    setInnerMaximized(!maximized);
+    onMaximizedChange?.(!maximized);
+  };
   // Measured only while open: a dialog mounted closed would otherwise keep the
   // box from mount time, wherever the page has scrolled since.
-  const box = useElementBox(open && size === "xl" ? fitTo : undefined);
+  const box = useElementBox(open && size === "xl" && !maximized ? fitTo : undefined);
   // Re-rendered on every re-measure, which a window resize triggers too.
   const fit = box && fitGeometry(box, { width: window.innerWidth, height: window.innerHeight });
   // The box radius; full screen below `sm` has no corners.
@@ -206,6 +234,7 @@ function SettingsDialog({
           data-slot="settings-dialog"
           data-size={size}
           data-fitted={fit ? "" : undefined}
+          data-maximized={maximized ? "" : undefined}
           aria-describedby={undefined}
           style={
             fit
@@ -219,7 +248,9 @@ function SettingsDialog({
           }
           className={cn(
             "fixed z-50 flex overflow-hidden border-outline-variant bg-surface-container-lowest text-on-surface shadow-modal focus:outline-none",
-            size === "xl"
+            maximized
+              ? cn(maximizedClasses, smRadius)
+              : size === "xl"
               ? cn(xlClasses, fit && fittedClasses, smRadius)
               : cn("top-1/2 left-1/2 h-[min(640px,88dvh)] w-[min(900px,94vw)] -translate-x-1/2 -translate-y-1/2 border", radius),
           )}
@@ -301,7 +332,10 @@ function SettingsDialog({
                 <>
                   <h2
                     id={`settings-section-${shown.value}`}
-                    className="m-0 shrink-0 pt-7 pr-20 pb-2 pl-8 text-[17px] font-semibold text-on-surface max-sm:pr-16 max-sm:pl-4"
+                    className={cn(
+                      "m-0 shrink-0 pt-7 pb-2 pl-8 text-[17px] font-semibold text-on-surface max-sm:pl-4",
+                      maximizable ? "pr-28 max-sm:pr-24" : "pr-20 max-sm:pr-16",
+                    )}
                   >
                     {shown.label}
                   </h2>
@@ -318,12 +352,27 @@ function SettingsDialog({
               </div>
             )}
           </div>
-          {/* Top-right, like every Dialog's close. */}
-          <DialogPrimitive.Close asChild>
-            <Button variant="ghost" size="icon" className="absolute top-4 right-4" aria-label={closeLabel} title={closeLabel}>
-              <X aria-hidden="true" className="size-5" />
-            </Button>
-          </DialogPrimitive.Close>
+          {/* Top-right, like every Dialog's close; the maximize toggle sits just before it. */}
+          <div className="absolute top-4 right-4 flex items-center gap-1">
+            {maximizable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={maximized ? restoreLabel : maximizeLabel}
+                title={maximized ? restoreLabel : maximizeLabel}
+                onClick={toggleMaximized}
+              >
+                {maximized
+                  ? <Minimize2 aria-hidden="true" className="size-5" />
+                  : <Maximize2 aria-hidden="true" className="size-5" />}
+              </Button>
+            )}
+            <DialogPrimitive.Close asChild>
+              <Button variant="ghost" size="icon" aria-label={closeLabel} title={closeLabel}>
+                <X aria-hidden="true" className="size-5" />
+              </Button>
+            </DialogPrimitive.Close>
+          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

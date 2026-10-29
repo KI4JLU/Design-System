@@ -11,12 +11,28 @@ import * as React from "react";
  * flashes at its fallback geometry. Later ones wait a frame: setting state
  * straight from the observer re-lays out inside the same tick ("ResizeObserver
  * loop completed with undelivered notifications").
+ *
+ * A target that has no element yet is looked up once more before paint: an
+ * ancestor mounted in the same commit (a page loaded with its dialog already
+ * open) gets its ref only after this hook's layout effect ran.
  */
 export function useElementBox(target: React.RefObject<HTMLElement | null> | undefined): DOMRect | null {
   const [box, setBox] = React.useState<DOMRect | null>(null);
+  // A state update from a layout effect re-renders before paint, by when every ref of the commit is attached.
+  const [attempt, retry] = React.useReducer((n: number) => n + 1, 0);
+  const retried = React.useRef(false);
   React.useLayoutEffect(() => {
     const el = target?.current;
-    if (!el) return;
+    if (!el) {
+      if (target && !retried.current) {
+        retried.current = true;
+        retry();
+      } else if (!target) {
+        retried.current = false;
+      }
+      return;
+    }
+    retried.current = false;
     const measure = () => setBox(el.getBoundingClientRect());
     measure();
     let frame = 0;
@@ -35,6 +51,6 @@ export function useElementBox(target: React.RefObject<HTMLElement | null> | unde
       window.removeEventListener("resize", remeasure);
       window.removeEventListener("scroll", remeasure, { capture: true });
     };
-  }, [target]);
+  }, [target, attempt]);
   return target ? box : null;
 }
