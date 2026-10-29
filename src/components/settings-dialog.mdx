@@ -46,6 +46,20 @@ sections={[
   `group` nicht nutzen, sehen aus wie bisher.
 - **Suche:** eine Gruppe ohne Treffer verliert ihre Überschrift mit.
 
+## Maximieren
+
+`maximizable` setzt links neben den Schließen-Button einen Umschalter
+(„Maximieren" / „Wiederherstellen"): maximiert füllt das Fenster den
+Bildschirm — ab `sm` 1rem nach innen, darunter randlos —, gleich was `size`
+und `fitTo` sagen. Gedacht für Editoren mit langen Formularen oder breiten
+Tabellen. Ohne `maximized` merkt sich das Fenster den Zustand selbst (startet
+normal); mit `maximized` + `onMaximizedChange` hält ihn die App, etwa um ihn
+über Sitzungen zu behalten.
+
+```tsx
+<SettingsDialog size="xl" fitTo={area} maximizable … />
+```
+
 ## `AppearanceSettings` — der Abschnitt „Darstellung"
 
 Drei `SettingsRow`s, jede mit einem DS-`Select`, jede direkt an den Provider
