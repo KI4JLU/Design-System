@@ -12,20 +12,33 @@ import { cn } from "../lib/utils";
  * keyboard users.
  * `accent` — left primary accent border (step/callout cards).
  * Both compose freely with each other and the sub-parts.
+ *
+ * `variant="discover"` — the catalog card of a topic or collection: a
+ * `CardCover` band across the top (its colour is the caller's, e.g. a
+ * gradient), then a `CardHeader` holding a `CardMeta` line, a larger
+ * `CardTitle` and the `CardDescription`. The parts read the variant from the
+ * card (`data-variant`), so a call site writes no sizes of its own.
  */
+export type CardVariant = "default" | "discover";
+
 export interface CardProps extends React.ComponentProps<"div"> {
   /** Hover highlight for clickable cards — recolors the border, no movement. */
   interactive?: boolean;
   /** Left primary accent border (steps, callouts). */
   accent?: boolean;
+  /** `discover`: cover band + meta line + large title (catalog cards). */
+  variant?: CardVariant;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, interactive = false, accent = false, ...props }, ref) => (
+  ({ className, interactive = false, accent = false, variant = "default", ...props }, ref) => (
     <div
       ref={ref}
+      data-slot="card"
+      data-variant={variant}
       className={cn(
-        "rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-card",
+        "group/card rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-card",
+        variant === "discover" && "flex flex-col overflow-hidden",
         interactive && "transition-colors hover:border-primary",
         accent && "border-l-4 border-l-primary",
         className,
@@ -36,9 +49,36 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 );
 Card.displayName = "Card";
 
+/**
+ * The cover band of a `discover` card: decorative, full width, flush with the
+ * card's top corners (the card clips it). Its colour comes from the caller —
+ * `style={{ backgroundImage: … }}` or a `bg-*` class; without one it is a
+ * neutral surface.
+ */
+const CardCover = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      aria-hidden="true"
+      data-slot="card-cover"
+      className={cn("h-24 shrink-0 bg-surface-container-high bg-cover", className)}
+      {...props}
+    />
+  ),
+);
+CardCover.displayName = "CardCover";
+
 const CardHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex flex-col gap-1.5 p-6", className)} {...props} />
+    <div
+      ref={ref}
+      className={cn(
+        "flex flex-col gap-1.5 p-6",
+        "group-data-[variant=discover]/card:flex-1 group-data-[variant=discover]/card:gap-3 group-data-[variant=discover]/card:px-7 group-data-[variant=discover]/card:pb-7 group-data-[variant=discover]/card:pt-5",
+        className,
+      )}
+      {...props}
+    />
   ),
 );
 CardHeader.displayName = "CardHeader";
@@ -73,6 +113,7 @@ const CardTitle = React.forwardRef<HTMLDivElement, CardTitleProps>(
         ref={ref}
         className={cn(
           "m-0 font-headline-md text-headline-md font-semibold text-on-surface",
+          "group-data-[variant=discover]/card:text-display-lg group-data-[variant=discover]/card:leading-tight",
           className,
         )}
         {...props}
@@ -86,12 +127,32 @@ const CardDescription = React.forwardRef<HTMLDivElement, React.ComponentProps<"d
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("text-sm text-on-surface-variant", className)}
+      className={cn(
+        "text-sm text-on-surface-variant",
+        "group-data-[variant=discover]/card:mt-1 group-data-[variant=discover]/card:text-body-base",
+        className,
+      )}
       {...props}
     />
   ),
 );
 CardDescription.displayName = "CardDescription";
+
+/**
+ * One line of facts above a `discover` card's title — a category pill, a
+ * count, a date — wrapping when it does not fit. Separators are the caller's.
+ */
+const CardMeta = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-meta"
+      className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-on-surface-variant", className)}
+      {...props}
+    />
+  ),
+);
+CardMeta.displayName = "CardMeta";
 
 const CardContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
@@ -107,4 +168,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+export { Card, CardCover, CardHeader, CardMeta, CardTitle, CardDescription, CardContent, CardFooter };

@@ -9,6 +9,13 @@ describe("ActionMenu", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it("draws its trigger as a ghost button unless a variant is given", () => {
+    const { rerender } = render(<ActionMenu actions={[{ label: "A", onSelect: vi.fn() }]} label="Aktionen" />);
+    expect(screen.getByRole("button", { name: "Aktionen" })).not.toHaveClass("bg-primary");
+    rerender(<ActionMenu actions={[{ label: "A", onSelect: vi.fn() }]} label="Aktionen" variant="default" />);
+    expect(screen.getByRole("button", { name: "Aktionen" })).toHaveClass("bg-primary");
+  });
+
   it("opens the menu and runs the chosen action", async () => {
     const onRename = vi.fn();
     render(
@@ -38,5 +45,22 @@ describe("ActionMenu", () => {
     await userEvent.click(screen.getByRole("button", { name: "Aktionen" }));
     const item = await screen.findByRole("menuitem", { name: "Einstellungen (Admin)" });
     expect(item.lastElementChild).toHaveTextContent("Admin");
+  });
+
+  it("ends an item that leaves the page in a decorative arrow", async () => {
+    render(
+      <ActionMenu
+        label="Aktionen"
+        actions={[
+          { label: "Umbenennen…", onSelect: vi.fn() },
+          { label: "Einstellungen", opensPage: true, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Aktionen" }));
+    const item = await screen.findByRole("menuitem", { name: "Einstellungen" });
+    expect(item.lastElementChild).toHaveAttribute("data-testid", "action-menu-opens-page");
+    expect(item.lastElementChild).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("menuitem", { name: "Umbenennen…" }).querySelector('[data-testid="action-menu-opens-page"]')).toBeNull();
   });
 });

@@ -188,3 +188,51 @@ describe("SegmentedControl", () => {
     });
   });
 });
+
+// Oracle: NavItem's active/inactive tokens (nav-item-variants.ts) — the nav
+// variant reuses them, so a mode choice reads like the sidebar.
+describe("SegmentedControl variant=nav", () => {
+  it("has no track and marks the chosen segment like an active NavItem", () => {
+    render(
+      <SegmentedControl
+        variant="nav"
+        aria-label="Chat-Start"
+        value="input"
+        onValueChange={() => undefined}
+        options={[{ value: "input", label: "Eingabefeld" }, { value: "upload", label: "Datei-Upload" }]}
+      />,
+    );
+    const group = screen.getByRole("group", { name: "Chat-Start" });
+    expect(group.className).not.toContain("bg-surface-container-low");
+    expect(screen.getByRole("button", { name: "Eingabefeld" })).toHaveClass("bg-primary/10", "text-primary", "font-medium");
+    expect(screen.getByRole("button", { name: "Datei-Upload" })).toHaveClass("hover:bg-primary/5", "hover:text-primary");
+  });
+});
+
+describe("SegmentedControl variant=tile", () => {
+  it("draws equal framed tiles, icon above a visible label, the chosen one primary", async () => {
+    const onValueChange = vi.fn();
+    render(
+      <SegmentedControl
+        variant="tile"
+        aria-label="Startet mit"
+        value="input"
+        onValueChange={onValueChange}
+        options={[
+          { value: "input", label: "Eingabefeld", icon: <List aria-hidden="true" /> },
+          { value: "file", label: "Datei", icon: <LayoutGrid aria-hidden="true" /> },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "Startet mit" })).toHaveClass("grid", "auto-cols-fr");
+    const chosen = screen.getByRole("button", { name: "Eingabefeld" });
+    expect(chosen).toHaveAttribute("aria-pressed", "true");
+    expect(chosen).toHaveClass("flex-col", "border-primary", "bg-primary/10");
+    // The label stays visible although the option has an icon.
+    expect(screen.getByText("Datei")).not.toHaveClass("sr-only");
+    // …and wraps rather than being cut off in a narrow tile.
+    expect(screen.getByText("Datei")).not.toHaveClass("truncate");
+    await userEvent.click(screen.getByRole("button", { name: "Datei" }));
+    expect(onValueChange).toHaveBeenCalledWith("file");
+  });
+});
