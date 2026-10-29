@@ -46,7 +46,10 @@ export { buttonGroupVariants } from "./components/button-group-variants";
 export {
   Card,
   type CardProps,
+  type CardVariant,
+  CardCover,
   CardHeader,
+  CardMeta,
   CardTitle,
   type CardTitleProps,
   CardDescription,
@@ -193,6 +196,29 @@ export {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "./components/collapsible";
+export {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "./components/accordion";
+export {
+  Carousel,
+  type CarouselProps,
+  CarouselContent,
+  type CarouselContentProps,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+  CarouselDots,
+  type CarouselDotsProps,
+} from "./components/carousel";
+export {
+  useCarousel,
+  useCarouselSlides,
+  type CarouselApi,
+  type CarouselSlides,
+} from "./components/carousel-context";
 export {
   Reasoning,
   type ReasoningProps,
@@ -354,6 +380,8 @@ export {
   type AccentContextValue,
 } from "./components/appearance-context";
 export { AccentSwatch, type AccentSwatchProps } from "./components/accent-swatch";
+export { ColorField, type ColorFieldProps } from "./components/color-field";
+export { normalizeHex } from "./lib/hex-color";
 /** Side-panel building blocks: row card, selection bar, collapsed rail. */
 export {
   SidebarCard,

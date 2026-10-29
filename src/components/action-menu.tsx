@@ -1,8 +1,8 @@
 import * as React from "react";
-import { Check, MoreHorizontal } from "lucide-react";
+import { ArrowUpRight, Check, MoreHorizontal } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Badge } from "./badge";
-import { Button } from "./button";
+import { Button, type ButtonProps } from "./button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +35,12 @@ export interface ActionMenuItem {
    * administrators see. Part of the item's accessible name.
    */
   badge?: string;
+  /**
+   * The item leaves the current page (e.g. opens the topic on its settings):
+   * a trailing ↗. Items that open a dialog and keep the page end in „…" in
+   * their label instead.
+   */
+  opensPage?: boolean;
 }
 
 export interface ActionMenuProps {
@@ -43,6 +49,12 @@ export interface ActionMenuProps {
   label: string;
   /** Classes for the trigger button (size, shape). */
   triggerClassName?: string;
+  /**
+   * The trigger's Button variant; `ghost` by default. Another one makes it
+   * the menu half of a split button (ButtonGroup), e.g. `default` beside a
+   * primary action.
+   */
+  variant?: ButtonProps["variant"];
   align?: "start" | "center" | "end";
 }
 
@@ -59,7 +71,7 @@ export function ActionMenu(props: ActionMenuProps) {
   return <ActionMenuDropdown {...props} />;
 }
 
-function ActionMenuDropdown({ actions, label, triggerClassName, align = "end" }: ActionMenuProps) {
+function ActionMenuDropdown({ actions, label, triggerClassName, variant = "ghost", align = "end" }: ActionMenuProps) {
   // Closed by a click elsewhere, the menu does not hand focus back to its
   // trigger: the user has moved on, and a returned focus would draw the
   // trigger's focus ring and keep its host's focus-driven extras (a hover
@@ -69,7 +81,7 @@ function ActionMenuDropdown({ actions, label, triggerClassName, align = "end" }:
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={cn("shrink-0", triggerClassName)} aria-label={label}>
+        <Button variant={variant} size="icon" className={cn("shrink-0", triggerClassName)} aria-label={label}>
           <MoreHorizontal aria-hidden="true" className="size-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -123,6 +135,7 @@ function ActionMenuItems({ actions }: { actions: ActionMenuItem[] }) {
               {a.label}
               {a.badge && <Badge className="ml-auto">{a.badge}</Badge>}
               {a.checked && <Check aria-hidden="true" className="ml-auto !size-4" />}
+              {a.opensPage && <ArrowUpRight aria-hidden="true" data-testid="action-menu-opens-page" className="ml-auto !size-4 text-on-surface-variant" />}
             </DropdownMenuItem>
           )}
         </React.Fragment>

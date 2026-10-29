@@ -1,6 +1,6 @@
 {
   "name": "@ki4jlu/design-system",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "description": "JLU design system: design tokens, light/dark theming, and shared React UI components for JLU projects — consumed as a dependency for a unified look and feel.",
   "type": "module",
   "license": "UNLICENSED",
@@ -41,11 +41,12 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "pdfjs-dist": "^6.3.289"
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@radix-ui/react-accordion": "^1.3.1",
     "@radix-ui/react-checkbox": "^1.3.7",
     "@radix-ui/react-collapsible": "^1.1.16",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -82,6 +83,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "embla-carousel-react": "^8.6.0",
+    "embla-carousel-wheel-gestures": "^8.1.0",
     "lucide-react": "^1.21.0",
     "nanoid": "^5.1.16",
     "tailwind-merge": "^3.6.0",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Card, CardTitle } from "./card";
+import { Card, CardCover, CardDescription, CardHeader, CardMeta, CardTitle } from "./card";
 
 describe("Card", () => {
   it("renders the plain surface without interactive/accent classes", () => {
@@ -27,6 +27,46 @@ describe("Card", () => {
     render(<Card interactive accent data-testid="card" />);
     const card = screen.getByTestId("card");
     expect(card).toHaveClass("hover:border-primary", "border-l-primary");
+  });
+});
+
+/**
+ * Oracle: the discover-card mockup (JustRAG „Entdecken", 27.10.2026) — a
+ * cover band flush with the card's top, then meta line, large title and
+ * description. jsdom applies no Tailwind, so the contract pinned here is the
+ * one the parts share: the card states its variant, it clips the band, and the
+ * band is decorative.
+ */
+describe("Card variant=discover", () => {
+  it("marks the variant and clips the cover band", () => {
+    render(
+      <Card variant="discover" data-testid="card">
+        <CardCover data-testid="cover" style={{ backgroundImage: "linear-gradient(red, blue)" }} />
+        <CardHeader>
+          <CardMeta>309 Dokumente</CardMeta>
+          <CardTitle>Personalrecht kompakt</CardTitle>
+          <CardDescription>Beantwortet Fragen …</CardDescription>
+        </CardHeader>
+      </Card>,
+    );
+    const card = screen.getByTestId("card");
+    expect(card).toHaveAttribute("data-variant", "discover");
+    expect(card).toHaveClass("overflow-hidden", "group/card");
+    const cover = screen.getByTestId("cover");
+    expect(cover).toHaveAttribute("aria-hidden", "true");
+    expect(cover.style.backgroundImage).toContain("linear-gradient");
+    expect(card.firstElementChild).toBe(cover);
+  });
+
+  it("enlarges the title only inside a discover card", () => {
+    render(<CardTitle>Widget A</CardTitle>);
+    expect(screen.getByText("Widget A")).toHaveClass("group-data-[variant=discover]/card:text-display-lg");
+  });
+
+  it("is the default variant otherwise", () => {
+    render(<Card data-testid="card" />);
+    expect(screen.getByTestId("card")).toHaveAttribute("data-variant", "default");
+    expect(screen.getByTestId("card").className).not.toContain("overflow-hidden");
   });
 });
 

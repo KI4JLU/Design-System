@@ -16,6 +16,13 @@ export interface FileDropzoneProps extends Omit<React.HTMLAttributes<HTMLDivElem
    * the keyboard path for a dropzone that stays on screen.
    */
   onBrowse?: () => void;
+  /**
+   * `surface` (default): the card surface, so an empty panel's dropzone
+   * stands out. `translucent`: a see-through fill that lets a coloured
+   * background (a page glow) show through, tinted with the accent colour on
+   * hover and while files hover over it.
+   */
+  variant?: "surface" | "translucent";
 }
 
 /**
@@ -26,7 +33,7 @@ export interface FileDropzoneProps extends Omit<React.HTMLAttributes<HTMLDivElem
  * (`--ui-radius-box`).
  */
 const FileDropzone = React.forwardRef<HTMLDivElement, FileDropzoneProps>(
-  ({ onFiles, title, hint, icon, onBrowse, className, ...props }, ref) => {
+  ({ onFiles, title, hint, icon, onBrowse, variant = "surface", className, ...props }, ref) => {
     const [over, setOver] = React.useState(false);
     const depth = React.useRef(0);
     return (
@@ -34,6 +41,7 @@ const FileDropzone = React.forwardRef<HTMLDivElement, FileDropzoneProps>(
         ref={ref}
         data-slot="file-dropzone"
         data-over={over || undefined}
+        data-variant={variant}
         {...(onBrowse && {
           role: "button",
           tabIndex: 0,
@@ -48,11 +56,14 @@ const FileDropzone = React.forwardRef<HTMLDivElement, FileDropzoneProps>(
         className={cn(
           // Resting state: the card surface (white in light mode) with the highlight
           // border, so an empty panel's dropzone stands out; hovering files tint it.
-          "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary bg-surface-container-lowest p-6 text-center text-on-surface-variant transition-colors",
+          "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary p-6 text-center text-on-surface-variant transition-colors",
           "rounded-[var(--ui-radius-box,var(--radius-xl))]",
-          "data-[over]:bg-primary/10 data-[over]:text-primary",
+          variant === "translucent"
+            ? "bg-surface-container-lowest/40 hover:bg-primary/10 data-[over]:bg-primary/15 data-[over]:text-primary"
+            : "bg-surface-container-lowest data-[over]:bg-primary/10 data-[over]:text-primary",
           onBrowse &&
-            "cursor-pointer hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+            "cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+          onBrowse && variant === "surface" && "hover:bg-primary/5",
           className,
         )}
         onDragEnter={(e) => {

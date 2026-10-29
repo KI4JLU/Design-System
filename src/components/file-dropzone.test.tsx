@@ -69,3 +69,20 @@ describe("useWindowFileDrag", () => {
     expect(result.current).toBe(false);
   });
 });
+
+// Oracle: the developer's request (27.10.2026) — translucent at rest so a
+// glow shows through, the accent colour (primary) on hover.
+describe("FileDropzone variant=translucent", () => {
+  it("is see-through at rest and takes the accent colour on hover", () => {
+    render(<FileDropzone variant="translucent" title="Hochladen" onFiles={() => undefined} data-testid="zone" />);
+    const zone = screen.getByTestId("zone");
+    expect(zone).toHaveClass("bg-surface-container-lowest/40", "hover:bg-primary/10");
+    expect(zone.className).not.toMatch(/(^| )bg-surface-container-lowest( |$)/);
+  });
+
+  it("keeps the opaque surface by default", () => {
+    render(<FileDropzone title="Hochladen" onFiles={() => undefined} data-testid="zone" />);
+    expect(screen.getByTestId("zone")).toHaveClass("bg-surface-container-lowest");
+  });
+});
+
