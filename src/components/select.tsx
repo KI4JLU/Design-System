@@ -23,8 +23,13 @@ export interface SelectTriggerProps
    * `field` (default): the framed form field. `ghost`: no frame — the value
    * and a chevron, a quiet fill on hover — for a settings row, where the row
    * already says what the control is and a framed box would be noise.
+   * `editable`: edit in place, as `Input`/`Textarea` `variant="editable"` —
+   * the value keeps the look of the text around it (font, size, colour are
+   * inherited), a dashed `currentColor` outline marks it as editable, and the
+   * chevron scales with the text. For a pick inside a heading block or on a
+   * gradient (e.g. a category under a title).
    */
-  variant?: "field" | "ghost";
+  variant?: "field" | "ghost" | "editable";
 }
 
 const SelectTrigger = React.forwardRef<
@@ -37,22 +42,36 @@ const SelectTrigger = React.forwardRef<
     className={cn(
       variant === "field"
         ? fieldVariants()
-        : [
-            "h-9 w-auto px-2.5 text-sm text-on-surface outline-none transition-colors",
-            "hover:bg-surface-container-low data-[state=open]:bg-surface-container-low",
-            "focus-visible:ring-2 focus-visible:ring-focus-ring",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-          ],
+        : variant === "editable"
+          ? [
+              // The text outline of fieldVariants' `editable`, on a button.
+              "w-auto p-0 text-inherit transition-[outline-color]",
+              "outline-1 outline-offset-4 outline-dashed outline-current/30 hover:outline-current/60",
+              "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-current data-[state=open]:outline-solid data-[state=open]:outline-current",
+              "disabled:cursor-not-allowed disabled:opacity-60 disabled:outline-transparent",
+            ]
+          : [
+              "h-9 w-auto px-2.5 text-sm text-on-surface outline-none transition-colors",
+              "hover:bg-surface-container-low data-[state=open]:bg-surface-container-low",
+              "focus-visible:ring-2 focus-visible:ring-focus-ring",
+              "disabled:cursor-not-allowed disabled:opacity-60",
+            ],
       "rounded-[var(--ui-radius-control)]",
-      "flex items-center justify-between gap-2 text-left",
-      "data-[placeholder]:text-on-surface-variant [&>span]:line-clamp-1",
+      variant === "editable"
+        ? "inline-flex items-center gap-1 text-left data-[placeholder]:opacity-60 [&>span]:line-clamp-1"
+        : "flex items-center justify-between gap-2 text-left data-[placeholder]:text-on-surface-variant [&>span]:line-clamp-1",
       className,
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-on-surface-variant" />
+      <ChevronDown
+        aria-hidden
+        className={
+          variant === "editable" ? "size-[1em] shrink-0" : "h-4 w-4 shrink-0 text-on-surface-variant"
+        }
+      />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
