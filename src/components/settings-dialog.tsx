@@ -153,9 +153,11 @@ function matchRanges(el: Element, q: string): Range[] {
  * no matching row). A section without a single matching row is left whole rather than
  * blanked. Every occurrence in the section's text is highlighted — rows, but also lists,
  * tables and headings — with the CSS Custom Highlight API where the browser has it.
- * Returns the number of matching rows.
+ * Returns the hits that keep the section listed: matching rows, or else text occurrences.
  */
 function applySearch(root: HTMLElement, q: string, filter: boolean): number {
+  // A section counts as a hit through any visible text, not only its rows: content without
+  // SettingsRows (a list, a table, a history) keeps the section listed too.
   let hits = 0;
   for (const row of root.querySelectorAll<HTMLElement>('[data-slot="settings-row"]')) {
     const parts = row.querySelectorAll('[data-slot="settings-row-label"], [data-slot="settings-row-description"]');
@@ -164,12 +166,18 @@ function applySearch(root: HTMLElement, q: string, filter: boolean): number {
     if (hit) hits++;
   }
   root.toggleAttribute("data-filtering", Boolean(q) && filter && hits > 0);
+  const ranges = q ? matchRanges(root, q) : [];
   if (typeof CSS !== "undefined" && "highlights" in CSS && typeof Highlight !== "undefined") {
-    const ranges = q ? matchRanges(root, q) : [];
     if (ranges.length) CSS.highlights.set(HIGHLIGHT, new Highlight(...ranges));
     else CSS.highlights.delete(HIGHLIGHT);
   }
-  return hits;
+  // Only text the reader can see counts (not a `hidden` note, not a native select's options);
+  // without `checkVisibility` (jsdom) every text counts.
+  const seen = ranges.filter((r) => {
+    const el = r.startContainer.parentElement;
+    return !el || typeof el.checkVisibility !== "function" || el.checkVisibility();
+  });
+  return Math.max(hits, seen.length);
 }
 
 /**

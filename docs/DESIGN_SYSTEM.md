@@ -551,6 +551,10 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
+- **0.71.1** — Fix (JustRAG settings windows).
+
+  - **Fix: `SettingsDialog` search keeps a section listed by any text hit.** A section without `SettingsRow`s (a version history, a list) dropped out of the open search 400ms after a query that only matched its text; now any visible occurrence counts as a hit (filtering still goes by rows only).
+
 - **0.71.0** — Additive (JustRAG settings windows).
 
   - **Feature: `SettingsDialog` row search.** The search also matches the open section's `SettingsRow`s (label and description): hits are drawn with the CSS Custom Highlight API (`::highlight(settings-search)`, warning-container colours), and unless the query names the section itself, everything in it that is not a matching row is hidden (rules in `tokens.css`). A section with no matching row stays whole; the open section stays listed while its rows match, and counts as a miss only after 400ms without a matching row (time for rows that content opens or loads for the search). `SettingsRow` marks its parts with `data-slot="settings-row-label"` / `"settings-row-description"`. New `useSettingsSearch()` (`{ query, filtering }`) lets content open parts that are not rendered (closed Collapsibles) while filtering; `data-search-keep` keeps an element (a group heading) visible as long as its container is — `PanelSection`'s title row carries it.

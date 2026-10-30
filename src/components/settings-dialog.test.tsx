@@ -97,6 +97,14 @@ describe("SettingsDialog", () => {
       expect(screen.queryByText("Keine Treffer")).not.toBeInTheDocument();
     });
 
+    // A section without rows (a history, a list) keeps its place through any text that holds the query.
+    it("keeps the open section listed by plain text hits", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={[{ value: "log", label: "Verlauf", content: <p>Gespeichert von Ada Lovelace</p> }, ...sections]} />);
+      await userEvent.type(screen.getByRole("searchbox"), "lovelace");
+      await new Promise((r) => setTimeout(r, 500));
+      expect(screen.getByRole("heading", { level: 2, name: "Verlauf" })).toBeInTheDocument();
+    });
+
     it("looks at the rows afresh when a search is repeated", async () => {
       const one = (rows: React.ReactNode) => [{ value: "only", label: "Einzig", content: rows }];
       const { rerender } = render(<SettingsDialog open onOpenChange={() => {}} sections={one(<SettingsRow label="Alpha" />)} />);
