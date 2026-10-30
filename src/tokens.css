@@ -775,3 +775,26 @@ body {
   outline: 3px solid var(--color-focus-ring) !important;
   outline-offset: 2px !important;
 }
+
+/* ==========================================================================
+ * SettingsDialog row search. While the search has text, the open section's
+ * SettingsRows are matched against it (label and description): the match is
+ * drawn with the CSS Custom Highlight API (no DOM change), and when the query
+ * does not name the section itself, everything in the section that is not a
+ * matching row, nor holds or sits inside one, is hidden — headings, intros and
+ * cards included. A section with no matching row is shown whole. An element
+ * marked `data-search-keep` (a group's heading) stays as long as its
+ * container does.
+ * ========================================================================== */
+::highlight(settings-search) {
+  background-color: var(--color-warning-container);
+  color: var(--color-on-warning-container);
+}
+
+[data-slot="settings-dialog-content"][data-filtering] [data-search-miss],
+[data-slot="settings-dialog-content"][data-filtering]
+  :not([data-slot="settings-row"]):not([data-search-keep]):not([data-search-keep] *):not(:has([data-slot="settings-row"]:not([data-search-miss]))):not(
+    [data-slot="settings-row"]:not([data-search-miss]) *
+  ) {
+  display: none;
+}
