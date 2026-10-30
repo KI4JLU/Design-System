@@ -81,7 +81,9 @@ const PanelSection = React.forwardRef<HTMLElement, PanelSectionProps>(
         )}
         {...props}
       >
-        <div className="flex min-h-8 items-center justify-between gap-3">
+        {/* `data-search-keep`: inside a SettingsDialog whose search shows some of this section's rows,
+            the title stays as their heading (tokens.css). */}
+        <div data-search-keep="" className="flex min-h-8 items-center justify-between gap-3">
           <h3 id={id} className="m-0 text-base font-semibold text-on-surface">{title}</h3>
           {aside && <div className="text-xs tabular-nums text-on-surface-variant">{aside}</div>}
         </div>

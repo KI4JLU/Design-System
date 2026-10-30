@@ -1,6 +1,7 @@
 import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import { useSettingsSearch } from "./settings-search-context";
 import userEvent from "@testing-library/user-event";
 import { SettingsDialog, SettingsRow } from "./settings-dialog";
 
@@ -24,12 +25,13 @@ describe("SettingsDialog", () => {
   it("filters sections by label and keywords, falling back to the first match", async () => {
     render(<SettingsDialog open onOpenChange={() => {}} sections={sections} />);
     await userEvent.type(screen.getByRole("searchbox", { name: "Einstellungen suchen" }), "mail");
-    expect(screen.queryByRole("button", { name: "Allgemein" })).not.toBeInTheDocument();
+    // The open section's rows hold no „mail": once that settles, it drops out for the first match.
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Allgemein" })).not.toBeInTheDocument());
     expect(screen.getByRole("heading", { level: 2, name: "Profil" })).toBeInTheDocument();
 
     await userEvent.clear(screen.getByRole("searchbox"));
     await userEvent.type(screen.getByRole("searchbox"), "xyz");
-    expect(screen.getByText("Keine Treffer")).toBeInTheDocument();
+    expect(await screen.findByText("Keine Treffer")).toBeInTheDocument();
   });
 
   // Oracle: the section data handed in. A controlled caller (value + onValueChange) must hear that the search moved the
@@ -39,7 +41,105 @@ describe("SettingsDialog", () => {
     render(<SettingsDialog open onOpenChange={() => {}} sections={sections} value="general" onValueChange={onValueChange} />);
     expect(onValueChange).not.toHaveBeenCalled();
     await userEvent.type(screen.getByRole("searchbox", { name: "Einstellungen suchen" }), "mail");
-    expect(onValueChange).toHaveBeenCalledWith("profile");
+    await waitFor(() => expect(onValueChange).toHaveBeenCalledWith("profile"));
+  });
+
+  // Oracle: the rows' own text as handed in. Search marks rows on the DOM; tokens.css hides the misses
+  // while `data-filtering` is set (jsdom applies no stylesheet, so the attributes are what is checked).
+  describe("row search", () => {
+    const rowSections = [
+      {
+        value: "models",
+        label: "KI-Modelle",
+        keywords: ["Fast-Tier"],
+        content: (
+          <>
+            <h3>Modelle pro Aufgabe</h3>
+            <SettingsRow label="CRAG: Grader-Modell" description="Leer = Standard-Chat-Modell" />
+            <SettingsRow label="Globaler Fast-Tier-Default" description="Deployment-weiter Default" />
+          </>
+        ),
+      },
+      { value: "fast", label: "Fast-Tier", content: <SettingsRow label="Anderes" /> },
+    ];
+    const row = (label: string) => screen.getByText(label).closest("[data-slot='settings-row']")!;
+    const scroller = () => document.querySelector("[data-slot='settings-dialog-content']")!;
+
+    it("marks the rows without the query and filters the section", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={rowSections} />);
+      await userEvent.type(screen.getByRole("searchbox"), "fast-tier");
+      expect(row("Globaler Fast-Tier-Default")).not.toHaveAttribute("data-search-miss");
+      expect(row("CRAG: Grader-Modell")).toHaveAttribute("data-search-miss");
+      expect(scroller()).toHaveAttribute("data-filtering");
+    });
+
+    it("matches descriptions too", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={rowSections} />);
+      await userEvent.type(screen.getByRole("searchbox"), "standard-chat");
+      expect(row("CRAG: Grader-Modell")).not.toHaveAttribute("data-search-miss");
+      expect(row("Globaler Fast-Tier-Default")).toHaveAttribute("data-search-miss");
+    });
+
+    // Content that renders a part only for the search (a closed group opened from an effect) gets its rows
+    // after the dialog's first pass: the open section must not count as a miss before they are there.
+    it("keeps the open section while rows opened for the search mount", async () => {
+      function LateGroup() {
+        const { filtering } = useSettingsSearch();
+        const [open, setOpen] = React.useState(false);
+        React.useEffect(() => setOpen(filtering), [filtering]);
+        return open ? <SettingsRow label="Spät geladen" description="nur im Beitrag" /> : <p>zu</p>;
+      }
+      render(<SettingsDialog open onOpenChange={() => {}} sections={[{ value: "late", label: "Später", content: <LateGroup /> }, ...sections]} />);
+      await userEvent.type(screen.getByRole("searchbox"), "beitrag");
+      expect(await screen.findByText("Spät geladen")).toBeInTheDocument();
+      await new Promise((r) => setTimeout(r, 500));
+      expect(screen.getByRole("heading", { level: 2, name: "Später" })).toBeInTheDocument();
+      expect(screen.queryByText("Keine Treffer")).not.toBeInTheDocument();
+    });
+
+    it("looks at the rows afresh when a search is repeated", async () => {
+      const one = (rows: React.ReactNode) => [{ value: "only", label: "Einzig", content: rows }];
+      const { rerender } = render(<SettingsDialog open onOpenChange={() => {}} sections={one(<SettingsRow label="Alpha" />)} />);
+      await userEvent.type(screen.getByRole("searchbox"), "zebra");
+      expect(await screen.findByText("Keine Treffer")).toBeInTheDocument();
+      await userEvent.clear(screen.getByRole("searchbox"));
+      rerender(<SettingsDialog open onOpenChange={() => {}} sections={one(<SettingsRow label="Zebra" />)} />);
+      await userEvent.type(screen.getByRole("searchbox"), "zebra");
+      await new Promise((r) => setTimeout(r, 500));
+      expect(screen.getByRole("heading", { level: 2, name: "Einzig" })).toBeInTheDocument();
+    });
+
+    it("keeps a section whole when the query names it, or no row matches", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={rowSections} value="fast" />);
+      await userEvent.type(screen.getByRole("searchbox"), "fast-tier");
+      expect(scroller()).not.toHaveAttribute("data-filtering");
+    });
+
+    it("clears the marks with the query", async () => {
+      render(<SettingsDialog open onOpenChange={() => {}} sections={rowSections} />);
+      await userEvent.type(screen.getByRole("searchbox"), "fast-tier");
+      await userEvent.clear(screen.getByRole("searchbox"));
+      expect(row("CRAG: Grader-Modell")).not.toHaveAttribute("data-search-miss");
+      expect(scroller()).not.toHaveAttribute("data-filtering");
+    });
+
+    it("highlights every hit through the CSS Custom Highlight API", async () => {
+      const set = vi.fn();
+      const highlights = { set, delete: vi.fn() };
+      vi.stubGlobal("CSS", { highlights });
+      vi.stubGlobal("Highlight", class { ranges: Range[]; constructor(...r: Range[]) { this.ranges = r; } });
+      try {
+        render(<SettingsDialog open onOpenChange={() => {}} sections={rowSections} />);
+        await userEvent.type(screen.getByRole("searchbox"), "modell");
+        const last = set.mock.calls.at(-1)!;
+        expect(last[0]).toBe("settings-search");
+        // Every occurrence in the section, rows or not: „Modelle pro Aufgabe", „Grader-Modell",
+        // „Standard-Chat-Modell" (the heading is highlighted too, though it is no row).
+        expect((last[1] as { ranges: Range[] }).ranges.map((r) => r.toString())).toEqual(["Modell", "Modell", "Modell"]);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
   });
 
   it("closes from its close button", async () => {
@@ -84,7 +184,7 @@ describe("SettingsDialog", () => {
     it("drops the heading of a group the search no longer matches", async () => {
       render(<SettingsDialog open onOpenChange={() => {}} sections={grouped} />);
       await userEvent.type(screen.getByRole("searchbox", { name: "Einstellungen suchen" }), "drei");
-      expect(screen.queryByRole("group", { name: "Wissensbasen" })).not.toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole("group", { name: "Wissensbasen" })).not.toBeInTheDocument());
       expect(screen.getByRole("group", { name: "System" })).toBeInTheDocument();
     });
 

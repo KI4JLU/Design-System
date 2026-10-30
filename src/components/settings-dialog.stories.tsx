@@ -352,9 +352,10 @@ export const Groups: Story = {
     await expect(label.getBoundingClientRect().left).toBe(row.getBoundingClientRect().left);
     await expect(getComputedStyle(label).paddingLeft).toBe(getComputedStyle(row).paddingLeft);
 
-    // Searching drops the headings of groups with no match.
+    // Searching drops the headings of groups with no match — the open section (Konfiguration's
+    // KI-Modelle) once its rows have had their moment to match.
     await userEvent.type(inDialog.getByRole("searchbox"), "global");
-    await expect(inDialog.queryByRole("group", { name: "Konfiguration" })).toBeNull();
+    await waitFor(() => expect(inDialog.queryByRole("group", { name: "Konfiguration" })).toBeNull());
     await expect(inDialog.getByRole("group", { name: "Wissensbasen" })).toBeVisible();
     await expect(inDialog.getAllByRole("group")).toHaveLength(1);
   },

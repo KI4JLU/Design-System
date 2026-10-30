@@ -46,6 +46,35 @@ sections={[
   `group` nicht nutzen, sehen aus wie bisher.
 - **Suche:** eine Gruppe ohne Treffer verliert ihre Überschrift mit.
 
+## Suche in den Einstellungen
+
+Die Suche oben links findet nicht nur Abschnitte (nach `label` und
+`keywords`), sondern im offenen Abschnitt auch die einzelnen `SettingsRow`s:
+Beschriftung und Beschreibung jeder Zeile werden durchsucht.
+
+- **Treffer** werden markiert, überall im Abschnitt — auch in Listen,
+  Tabellen und Überschriften (CSS Custom Highlight API, der Text selbst bleibt
+  unverändert). Gefiltert wird nur nach Zeilen.
+- **Alles andere wird ausgeblendet:** Zeilen ohne Treffer, aber auch
+  Überschriften, Einleitungen und Karten, die keine passende Zeile enthalten.
+  Die Regeln stehen in `tokens.css`.
+- **Nennt die Suche den Abschnitt selbst** („Agenten"), bleibt er ganz
+  sichtbar; nur markiert wird.
+- **Kein Treffer in den Zeilen:** der Abschnitt bleibt ganz, statt leer zu
+  erscheinen. Der offene Abschnitt bleibt in der Liste, solange seine Zeilen
+  passen, auch wenn Name und `keywords` nicht passen — andere Abschnitte
+  findet die Suche weiterhin nur über Name und `keywords`, weil nur der offene
+  Abschnitt gerendert ist.
+
+Jede gerenderte `SettingsRow` im Fenster nimmt teil. Zwei Hilfen für den Inhalt:
+
+- **`useSettingsSearch()`** liefert `{ query, filtering }`. Zeilen in nicht
+  gerenderten Teilen (zugeklappte `Collapsible`s) findet die Suche nicht —
+  solche Teile öffnet der Inhalt, solange `filtering` gilt; Teile ohne Treffer
+  blendet das Fenster aus.
+- **`data-search-keep`** an einer Gruppenüberschrift hält sie sichtbar, solange
+  ihr Container sichtbar ist. `PanelSection` setzt es an ihrer Titelzeile.
+
 ## Maximieren
 
 `maximizable` setzt links neben den Schließen-Button einen Umschalter
