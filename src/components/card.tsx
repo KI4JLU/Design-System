@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../lib/utils";
+import { cardAccentStyle, cardSurfaceClassName } from "./card-variants";
 
 /**
  * Shared card surface. Replaces the repeated
@@ -10,37 +11,45 @@ import { cn } from "../lib/utils";
  * border takes the primary color, so the card stays put (no translate) and
  * nothing around it shifts. Combine with a focusable child (link/button) for
  * keyboard users.
- * `accent` — left primary accent border (step/callout cards).
- * Both compose freely with each other and the sub-parts.
+ * `accent` — left accent border (step/callout cards, list rows): the
+ * `accentColor`, primary without one.
+ * `accentColor` — the card's own colour (a category's, a role's), any CSS
+ * colour; the parts below draw with it. Unset, they stay neutral.
+ * `tint` — the accent colour faded in from the left edge over the card's
+ * surface (a list row's quiet colour cue). No tint without an `accentColor`.
  *
- * `variant="discover"` — the catalog card of a topic or collection: a
- * `CardCover` band across the top (its colour is the caller's, e.g. a
- * gradient), then a `CardHeader` holding a `CardMeta` line, a larger
- * `CardTitle` and the `CardDescription`. The parts read the variant from the
- * card (`data-variant`), so a call site writes no sizes of its own.
+ * The hairline card (developer mockup „Hairline", 30.10.2026): a `CardBand`
+ * on top — title and the card's own controls on a faint tint of the accent
+ * colour — closed by a `CardHairline`, a 2px rule in the accent colour that
+ * can carry one item (a category badge, an icon tile) centred on it; then
+ * `CardContent` and a `CardFooter` pinned to the bottom. Without an
+ * `accentColor` the band has no tint and the rule is the neutral outline
+ * colour. The parts carry their own sizes, so a call site writes none.
  */
-export type CardVariant = "default" | "discover";
-
 export interface CardProps extends React.ComponentProps<"div"> {
   /** Hover highlight for clickable cards — recolors the border, no movement. */
   interactive?: boolean;
-  /** Left primary accent border (steps, callouts). */
+  /** Left accent border (steps, callouts, list rows) in `accentColor`, else primary. */
   accent?: boolean;
-  /** `discover`: cover band + meta line + large title (catalog cards). */
-  variant?: CardVariant;
+  /** The card's colour (any CSS colour) for the band tint, the hairline and `accent`/`tint`. */
+  accentColor?: string;
+  /** The accent colour faded in from the left edge. Needs `accentColor`. */
+  tint?: boolean;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, interactive = false, accent = false, variant = "default", ...props }, ref) => (
+  ({ className, interactive = false, accent = false, accentColor, tint = false, style, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="card"
-      data-variant={variant}
+      style={cardAccentStyle(accentColor, style)}
       className={cn(
-        "group/card rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface shadow-card",
-        variant === "discover" && "flex flex-col overflow-hidden",
+        cardSurfaceClassName,
         interactive && "transition-colors hover:border-primary",
-        accent && "border-l-4 border-l-primary",
+        accent && "border-l-4 border-l-[var(--card-accent,var(--color-primary))]",
+        // An unset --card-accent makes the whole gradient invalid: no tint.
+        tint &&
+          "bg-[linear-gradient(90deg,color-mix(in_oklab,var(--card-accent)_9%,var(--color-surface-container-lowest)),var(--color-surface-container-lowest)_45%)]",
         className,
       )}
       {...props}
@@ -50,35 +59,64 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = "Card";
 
 /**
- * The cover band of a `discover` card: decorative, full width, flush with the
- * card's top corners (the card clips it). Its colour comes from the caller —
- * `style={{ backgroundImage: … }}` or a `bg-*` class; without one it is a
- * neutral surface.
+ * The top of a hairline card: the title (`CardTitle`) and the card's own
+ * controls (a favorite star, an `ActionMenu`) in one row, on a faint tint of
+ * the card's accent colour that fades out to the right. Flush with the card's
+ * top corners. A `CardTitle` in it takes the band's size (18px, two lines at
+ * most) and the free width; the controls sit at the end.
  */
-const CardCover = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      aria-hidden="true"
-      data-slot="card-cover"
-      className={cn("h-24 shrink-0 bg-surface-container-high bg-cover", className)}
-      {...props}
-    />
-  ),
-);
-CardCover.displayName = "CardCover";
-
-const CardHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
+      data-slot="card-band"
       className={cn(
-        "flex flex-col gap-1.5 p-6",
-        "group-data-[variant=discover]/card:flex-1 group-data-[variant=discover]/card:gap-3 group-data-[variant=discover]/card:px-7 group-data-[variant=discover]/card:pb-7 group-data-[variant=discover]/card:pt-5",
+        "flex min-h-16 shrink-0 items-center gap-1 rounded-t-[inherit] px-5 py-3.5",
+        // An unset --card-accent makes the whole gradient invalid: no tint.
+        "bg-[linear-gradient(105deg,color-mix(in_oklab,var(--card-accent)_16%,transparent),transparent_70%)]",
+        "*:data-[slot=card-title]:line-clamp-2 *:data-[slot=card-title]:min-w-0 *:data-[slot=card-title]:flex-1 *:data-[slot=card-title]:font-sans *:data-[slot=card-title]:text-lg *:data-[slot=card-title]:leading-snug",
         className,
       )}
       {...props}
     />
+  ),
+);
+CardBand.displayName = "CardBand";
+
+/**
+ * The rule under a `CardBand`: 2px in the card's accent colour (without one
+ * `cardNeutralAccent`, a quiet grey), full width. Its children — one item: a category badge, an
+ * icon tile — sit centred on it at the content's left inset; give them an
+ * opaque background so the rule does not run through them. The item's lower
+ * half takes room in the flow, so the content below starts clear of it; an
+ * empty rule keeps the room of a badge, so a grid of cards with and without
+ * one lines up.
+ */
+const CardHairline = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-hairline"
+      className={cn(
+        // Room for a badge-sized item even without one, so the content of
+        // cards with and without an item starts at the same height in a grid.
+        "relative flex min-h-6.5 shrink-0 px-5 pb-1",
+        "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:-translate-y-1/2 before:bg-[var(--card-accent,color-mix(in_oklab,var(--color-outline)_35%,transparent))]",
+        className,
+      )}
+      {...props}
+    >
+      {children != null && children !== false && (
+        <div className="relative flex -translate-y-1/2 items-center gap-2">{children}</div>
+      )}
+    </div>
+  ),
+);
+CardHairline.displayName = "CardHairline";
+
+const CardHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex flex-col gap-1.5 p-6", className)} {...props} />
   ),
 );
 CardHeader.displayName = "CardHeader";
@@ -99,6 +137,8 @@ CardHeader.displayName = "CardHeader";
  * user-agent margin, but as an `<h1>`–`<h6>` it does, and a consuming app that
  * reverts element margins in `@layer base` would otherwise push the title
  * apart from its description.
+ *
+ * In a `CardBand` the title takes the band's size (see there).
  */
 export interface CardTitleProps extends React.ComponentProps<"div"> {
   /** Render the single child element instead of a `div` (e.g. an `<h1>`). */
@@ -111,11 +151,8 @@ const CardTitle = React.forwardRef<HTMLDivElement, CardTitleProps>(
     return (
       <Comp
         ref={ref}
-        className={cn(
-          "m-0 font-headline-md text-headline-md font-semibold text-on-surface",
-          "group-data-[variant=discover]/card:text-display-lg group-data-[variant=discover]/card:leading-tight",
-          className,
-        )}
+        data-slot="card-title"
+        className={cn("m-0 font-headline-md text-headline-md font-semibold text-on-surface", className)}
         {...props}
       />
     );
@@ -125,22 +162,14 @@ CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "text-sm text-on-surface-variant",
-        "group-data-[variant=discover]/card:mt-1 group-data-[variant=discover]/card:text-body-base",
-        className,
-      )}
-      {...props}
-    />
+    <div ref={ref} className={cn("text-sm text-on-surface-variant", className)} {...props} />
   ),
 );
 CardDescription.displayName = "CardDescription";
 
 /**
- * One line of facts above a `discover` card's title — a category pill, a
- * count, a date — wrapping when it does not fit. Separators are the caller's.
+ * One line of facts — a count, a date, a category — wrapping when it does not
+ * fit (e.g. a catalog card's footer). Separators are the caller's.
  */
 const CardMeta = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
@@ -154,18 +183,40 @@ const CardMeta = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
 );
 CardMeta.displayName = "CardMeta";
 
+/**
+ * The card's body. In a hairline card (one with a `CardBand`) it takes the
+ * band's side inset (20px) and grows, so the `CardFooter` sits at the bottom.
+ */
 const CardContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+    <div
+      ref={ref}
+      data-slot="card-content"
+      className={cn(
+        "p-6 pt-0",
+        "group-has-[>[data-slot=card-band]]/card:flex-1 group-has-[>[data-slot=card-band]]/card:px-5 group-has-[>[data-slot=card-band]]/card:pb-4",
+        className,
+      )}
+      {...props}
+    />
   ),
 );
 CardContent.displayName = "CardContent";
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />
+    <div
+      ref={ref}
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center p-6 pt-0",
+        "group-has-[>[data-slot=card-band]]/card:mt-auto group-has-[>[data-slot=card-band]]/card:gap-2 group-has-[>[data-slot=card-band]]/card:px-5 group-has-[>[data-slot=card-band]]/card:pb-4",
+        className,
+      )}
+      {...props}
+    />
   ),
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardCover, CardHeader, CardMeta, CardTitle, CardDescription, CardContent, CardFooter };
+export { Card, CardBand, CardHairline, CardHeader, CardMeta, CardTitle, CardDescription, CardContent, CardFooter };

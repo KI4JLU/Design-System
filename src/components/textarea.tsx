@@ -7,7 +7,8 @@ import { fieldVariants } from "./field-variants";
  * Shared multiline text field. Mirrors <Input> styling (tokens, focus ring,
  * `aria-invalid` validation optics) via the shared fieldVariants.
  * `variant="inline"` is the borderless in-flow field for composers inside
- * Cards; min-height and the resize handle only make sense on the framed
+ * Cards; `variant="editable"` edits a paragraph in place, keeping its look,
+ * and grows with its content. Min-height and the resize handle only make sense on the framed
  * default variant, so they are applied conditionally.
  */
 export interface TextareaProps

@@ -29,6 +29,18 @@ const fieldBox = "w-full text-on-surface";
  * the same halo; `data-contrast="more"` still
  * forces the full outline.
  *
+ * `editable` — edit in place: the field keeps the look of the text it stands
+ * in for (a page title, a dropzone label, a description on a gradient). Font,
+ * size, line height, alignment and colour are inherited from where it sits —
+ * set them on the element around the field, as around the text it replaces,
+ * so className stays layout-only; a dashed outline in `currentColor`, offset from the
+ * text, says it can be edited — so it reads on any gradient and on a plain
+ * surface. Hover strengthens the outline, focus makes it solid; the
+ * placeholder is the text colour at reduced opacity. A textarea grows with
+ * its content (`field-sizing: content`); `w-full` stays, an `<input>` that
+ * should hug its text takes `w-auto`. A `readOnly` field drops the outline at
+ * rest — it is text then — but keeps the focus outline.
+ *
  * Invalid state: `default` turns its border red. `inline` and `title` have no
  * border to colour, so `aria-invalid` turns their placeholder red instead — a
  * required field left empty is exactly when the placeholder is what shows.
@@ -51,6 +63,14 @@ export const fieldVariants = cva(
           "rounded-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0 aria-[invalid=true]:placeholder:text-error",
         title:
           "truncate rounded-none border-0 bg-transparent p-0 text-base font-semibold focus-visible:ring-0 aria-[invalid=true]:placeholder:text-error",
+        editable: [
+          // Preflight inherits font and colour; text-align a field resets in the UA sheet.
+          "resize-none rounded-[var(--ui-radius-control)] border-0 bg-transparent p-0 text-inherit [text-align:inherit] field-sizing-content focus-visible:ring-0",
+          "outline-1 outline-offset-4 outline-dashed outline-current/30 hover:outline-current/60",
+          "focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-current",
+          "read-only:not-focus-visible:outline-transparent",
+          "placeholder:text-current placeholder:opacity-60",
+        ],
       },
     },
     defaultVariants: {

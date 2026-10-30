@@ -8,7 +8,8 @@ import { fieldVariants } from "./field-variants";
  * `w-full ... border-outline-variant rounded-lg focus:ring-2 ...` snippets.
  * Honors `aria-invalid` for accessible validation styling.
  * `variant="inline"` is the borderless in-flow field for in-row editing
- * (e.g. an editable rule inside a list row) — styles live in
+ * (e.g. an editable rule inside a list row); `variant="editable"` edits a
+ * piece of text in place, keeping its look — styles live in
  * ./field-variants, shared with Textarea.
  * `leadingIcon` renders a decorative icon inside the field (the search-field
  * pattern: absolutely positioned icon + left padding). The icon carries no
@@ -41,7 +42,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           fieldVariants({ variant }),
           // A one-line field follows the app-wide Style like a button
           // (Textarea keeps the field radius — a capsule does not fit a box).
-          variant !== "inline" && variant !== "title" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
+          variant !== "inline" && variant !== "title" && variant !== "editable" && "rounded-[var(--ui-radius-control,var(--radius-field))]",
           leadingIcon && "pl-10",
           shortcutHint && "pr-16",
           className,

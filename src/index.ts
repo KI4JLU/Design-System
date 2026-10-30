@@ -46,8 +46,8 @@ export { buttonGroupVariants } from "./components/button-group-variants";
 export {
   Card,
   type CardProps,
-  type CardVariant,
-  CardCover,
+  CardBand,
+  CardHairline,
   CardHeader,
   CardMeta,
   CardTitle,
@@ -56,6 +56,15 @@ export {
   CardContent,
   CardFooter,
 } from "./components/card";
+export { cardAccentStyle, cardNeutralAccent } from "./components/card-variants";
+/** A card the user picks: a radio in a SelectableCardGroup, a toggle on its own. */
+export {
+  SelectableCard,
+  SelectableCardGroup,
+  type SelectableCardProps,
+  type SelectableCardGroupProps,
+} from "./components/selectable-card";
+export { selectableCardClassName } from "./components/selectable-card-variants";
 export { ChatBubble, type ChatBubbleProps } from "./components/chat-bubble";
 export { chatBubbleVariants } from "./components/chat-bubble-variants";
 export { Checkbox, type CheckboxProps, type CheckboxTone } from "./components/checkbox";
@@ -399,7 +408,7 @@ export { ActionMenu, type ActionMenuItem, type ActionMenuProps } from "./compone
 /** File drop target, and the window-wide "files are being dragged" signal that reveals it. */
 export { FileDropzone, type FileDropzoneProps } from "./components/file-dropzone";
 export { useWindowFileDrag } from "./lib/use-window-file-drag";
-export { categoryColor, CATEGORY_COLOR_COUNT } from "./lib/category-color";
+export { categoryColor, categoryTone, CATEGORY_COLOR_COUNT, CATEGORY_PALETTE } from "./lib/category-color";
 export { SidebarRail, SidebarRailItem, type SidebarRailItemProps } from "./components/sidebar-rail";
 export { SidebarScrollArea, type SidebarScrollAreaProps } from "./components/sidebar-scroll-area";
 /** One frame for both side columns: fixed head + the list that scrolls. */

@@ -588,21 +588,55 @@ body {
 }
 
 /* ==========================================================================
- * Category palette — colour-coding for user-made categories (filter chips,
- * tags). Nine hues, the same in light and dark: they are swatches and tints
- * next to on-surface text, never a text colour. `categoryColor(key)` picks one
- * stably by key.
+ * Category palette — colour-coding for categories (filter chips, pills, the
+ * hairline cards' tint and rule, the start page's glow). Nine hues; they are
+ * swatches and tints next to on-surface text, never a text colour.
+ * `categoryColor(key)` picks one stably by key.
+ *
+ * Dark mode dims them (developer, 30.10.2026): each hue mixed with the dark
+ * card surface at `--category-strength` (70 %), so it keeps its identity but
+ * no longer glares on the dark background. Mixed with the surface rather than
+ * black, so the dimmed hue stays clean instead of turning muddy. A category
+ * with its own colour (any CSS colour) goes through the same mix with
+ * `categoryTone(color)`, so it dims exactly like a palette one.
  * ========================================================================== */
 :root {
-  --color-category-1: #ee4589;
-  --color-category-2: #15b99c;
-  --color-category-3: #92d32b;
-  --color-category-4: #f48b16;
-  --color-category-5: #facf37;
-  --color-category-6: #3897e8;
-  --color-category-7: #30b9f6;
-  --color-category-8: #b46ef7;
-  --color-category-9: #31c4cb;
+  --category-strength: 100%;
+  /* A large soft glow in a category's colour (a topic's start page): how much
+     of the colour it carries. Lower in dark mode, where the same tint glares. */
+  --category-glow-strength: 30%;
+  --p-category-1: #ee4589;
+  --p-category-2: #15b99c;
+  --p-category-3: #92d32b;
+  --p-category-4: #f48b16;
+  --p-category-5: #facf37;
+  --p-category-6: #3897e8;
+  --p-category-7: #30b9f6;
+  --p-category-8: #b46ef7;
+  --p-category-9: #31c4cb;
+  --color-category-1: var(--p-category-1);
+  --color-category-2: var(--p-category-2);
+  --color-category-3: var(--p-category-3);
+  --color-category-4: var(--p-category-4);
+  --color-category-5: var(--p-category-5);
+  --color-category-6: var(--p-category-6);
+  --color-category-7: var(--p-category-7);
+  --color-category-8: var(--p-category-8);
+  --color-category-9: var(--p-category-9);
+}
+
+[data-theme="dark"] {
+  --category-strength: 70%;
+  --category-glow-strength: 16%;
+  --color-category-1: color-mix(in oklab, var(--p-category-1) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-2: color-mix(in oklab, var(--p-category-2) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-3: color-mix(in oklab, var(--p-category-3) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-4: color-mix(in oklab, var(--p-category-4) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-5: color-mix(in oklab, var(--p-category-5) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-6: color-mix(in oklab, var(--p-category-6) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-7: color-mix(in oklab, var(--p-category-7) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-8: color-mix(in oklab, var(--p-category-8) var(--category-strength), var(--color-surface-container-lowest));
+  --color-category-9: color-mix(in oklab, var(--p-category-9) var(--category-strength), var(--color-surface-container-lowest));
 }
 
 /* ==========================================================================
