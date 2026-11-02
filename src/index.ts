@@ -373,7 +373,7 @@ export {
   type BreadcrumbBackLabels,
 } from "./components/breadcrumb";
 export { Textarea, type TextareaProps } from "./components/textarea";
-/** App-wide appearance: contrast, accent colour. */
+/** App-wide appearance: contrast, accent colour, colours. */
 export {
   AppearanceProvider,
   type AppearanceProviderProps,
@@ -381,15 +381,18 @@ export {
 export {
   useContrast,
   useAccent,
+  useColors,
   ACCENT_COLORS,
   type AccentColor,
+  type ColorsChoice,
   type ContrastChoice,
   type ResolvedContrast,
   type ContrastContextValue,
   type AccentContextValue,
+  type ColorsContextValue,
 } from "./components/appearance-context";
 export { AccentSwatch, type AccentSwatchProps } from "./components/accent-swatch";
-export { ColorField, type ColorFieldProps } from "./components/color-field";
+export { ColorField, type ColorFieldLabels, type ColorFieldProps } from "./components/color-field";
 export { normalizeHex } from "./lib/hex-color";
 /** Side-panel building blocks: row card, selection bar, collapsed rail. */
 export {
@@ -408,7 +411,8 @@ export { ActionMenu, type ActionMenuItem, type ActionMenuProps } from "./compone
 /** File drop target, and the window-wide "files are being dragged" signal that reveals it. */
 export { FileDropzone, type FileDropzoneProps } from "./components/file-dropzone";
 export { useWindowFileDrag } from "./lib/use-window-file-drag";
-export { categoryColor, categoryTone, CATEGORY_COLOR_COUNT, CATEGORY_PALETTE } from "./lib/category-color";
+export { categoryColor, categoryTone, CATEGORY_COLOR_COUNT, CATEGORY_PALETTE, COLOR_PRESETS } from "./lib/category-color";
+export { legibleColor, onColor } from "./lib/legible-color";
 export { SidebarRail, SidebarRailItem, type SidebarRailItemProps } from "./components/sidebar-rail";
 export { SidebarScrollArea, type SidebarScrollAreaProps } from "./components/sidebar-scroll-area";
 /** One frame for both side columns: fixed head + the list that scrolls. */

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CATEGORY_COLOR_COUNT, CATEGORY_PALETTE, categoryColor, categoryTone } from "./category-color";
+import { legibleColor } from "./legible-color";
 
 describe("categoryColor", () => {
   it("is stable per key", () => {
@@ -27,9 +28,9 @@ describe("categoryColor", () => {
 // Oracle: tokens.css — a free colour dims exactly like the palette, through
 // --category-strength toward the card surface.
 describe("categoryTone", () => {
-  it("mixes the colour toward the card surface at the category strength", () => {
+  it("mixes the legible colour toward the card surface at the category strength", () => {
     expect(categoryTone("#d4380d")).toBe(
-      "color-mix(in oklab, #d4380d var(--category-strength, 100%), var(--color-surface-container-lowest))",
+      `color-mix(in oklab, ${legibleColor("#d4380d")} var(--category-strength, 100%), var(--color-surface-container-lowest))`,
     );
   });
 });

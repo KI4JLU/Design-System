@@ -1,7 +1,15 @@
 import * as React from "react";
 import { useTheme, type Theme } from "../theme/ThemeContext";
 import { AccentSwatch } from "./accent-swatch";
-import { ACCENT_COLORS, useAccent, useContrast, type AccentColor, type ContrastChoice } from "./appearance-context";
+import {
+  ACCENT_COLORS,
+  useAccent,
+  useColors,
+  useContrast,
+  type AccentColor,
+  type ColorsChoice,
+  type ContrastChoice,
+} from "./appearance-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { SettingsRow } from "./settings-dialog";
 
@@ -25,6 +33,11 @@ export interface AppearanceSettingsLabels {
   accentDescription?: React.ReactNode;
   /** One name per accent family; a partial map overrides only the names it carries. */
   accents: Record<AccentColor, string>;
+  /** Row label of the colours. Default "Farben". */
+  colors: string;
+  colorsDescription?: React.ReactNode;
+  colorsSystem: string;
+  colorsReduced: string;
 }
 
 const DEFAULT_LABELS: AppearanceSettingsLabels = {
@@ -46,6 +59,9 @@ const DEFAULT_LABELS: AppearanceSettingsLabels = {
     rose: "Rosé",
     amber: "Bernstein",
   },
+  colors: "Farben",
+  colorsSystem: "System",
+  colorsReduced: "Reduziert",
 };
 
 export interface AppearanceSettingsProps {
@@ -105,9 +121,9 @@ function Choice<T extends string>({
 }
 
 /**
- * The appearance rows of a settings window — colour scheme, contrast and
- * accent colour — each wired to the provider that owns that preference:
- * `useTheme` (ThemeProvider), `useContrast` / `useAccent` (AppearanceProvider). Choosing a value calls the provider's setter, so the
+ * The appearance rows of a settings window — colour scheme, contrast,
+ * accent colour and colours — each wired to the provider that owns that preference:
+ * `useTheme` (ThemeProvider), `useContrast` / `useAccent` / `useColors` (AppearanceProvider). Choosing a value calls the provider's setter, so the
  * provider persists it and mirrors it to `<html>` exactly as it does for any
  * other caller; this component holds no state of its own.
  *
@@ -124,11 +140,12 @@ function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
   const { theme, setTheme } = useTheme();
   const { contrast, setContrast } = useContrast();
   const { accent, setAccent } = useAccent();
+  const { colors, setColors } = useColors();
   const id = React.useId();
   const ids = (row: string) => ({ label: `${id}-${row}`, description: `${id}-${row}-description` });
 
   const row = (
-    key: "theme" | "contrast" | "accent",
+    key: "theme" | "contrast" | "accent" | "colors",
     description: React.ReactNode,
     control: (labelId: string, descriptionId?: string) => React.ReactNode,
   ) => {
@@ -188,6 +205,18 @@ function AppearanceSettings({ labels: labelsProp }: AppearanceSettingsProps) {
               {labels.accents[a]}
             </span>,
           ] as const)}
+        />
+      ))}
+      {row("colors", labels.colorsDescription, (labelId, descriptionId) => (
+        <Choice<ColorsChoice>
+          labelId={labelId}
+          descriptionId={descriptionId}
+          value={colors}
+          onChange={setColors}
+          options={[
+            ["system", labels.colorsSystem],
+            ["reduced", labels.colorsReduced],
+          ]}
         />
       ))}
     </>

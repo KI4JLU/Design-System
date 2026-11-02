@@ -23,8 +23,9 @@ import { cardAccentStyle, cardSurfaceClassName } from "./card-variants";
  * colour — closed by a `CardHairline`, a 2px rule in the accent colour that
  * can carry one item (a category badge, an icon tile) centred on it; then
  * `CardContent` and a `CardFooter` pinned to the bottom. Without an
- * `accentColor` the band has no tint and the rule is the neutral outline
- * colour. The parts carry their own sizes, so a call site writes none.
+ * `accentColor` the band takes a grey tint (the outline colour) and the rule
+ * the neutral outline colour. The parts carry their own sizes, so a call site
+ * writes none.
  */
 export interface CardProps extends React.ComponentProps<"div"> {
   /** Hover highlight for clickable cards — recolors the border, no movement. */
@@ -61,7 +62,9 @@ Card.displayName = "Card";
 /**
  * The top of a hairline card: the title (`CardTitle`) and the card's own
  * controls (a favorite star, an `ActionMenu`) in one row, on a faint tint of
- * the card's accent colour that fades out to the right. Flush with the card's
+ * the card's accent colour (grey without one) that fades out to the right — solid at raised
+ * contrast (`data-contrast` `medium` or `more`), none with reduced colours
+ * (`data-colors="reduced"`). Flush with the card's
  * top corners. A `CardTitle` in it takes the band's size (18px, two lines at
  * most) and the free width; the controls sit at the end.
  */
@@ -72,8 +75,14 @@ const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
       data-slot="card-band"
       className={cn(
         "flex min-h-16 shrink-0 items-center gap-1 rounded-t-[inherit] px-5 py-3.5",
-        // An unset --card-accent makes the whole gradient invalid: no tint.
-        "bg-[linear-gradient(105deg,color-mix(in_oklab,var(--card-accent)_16%,transparent),transparent_70%)]",
+        // Without a --card-accent the tint is grey: the outline colour.
+        "bg-[linear-gradient(105deg,color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent),transparent_70%)]",
+        // Raised contrast (`medium`, and `more`, which includes it): the same
+        // tint, solid instead of fading out.
+        "in-data-[contrast=medium]:bg-none in-data-[contrast=more]:bg-none",
+        "in-data-[contrast=medium]:bg-[color:color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent)] in-data-[contrast=more]:bg-[color:color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent)]",
+        // Reduced colours (`data-colors`): no tint at all, at any contrast.
+        "in-data-[colors=reduced]:bg-none! in-data-[colors=reduced]:bg-transparent!",
         "*:data-[slot=card-title]:line-clamp-2 *:data-[slot=card-title]:min-w-0 *:data-[slot=card-title]:flex-1 *:data-[slot=card-title]:font-sans *:data-[slot=card-title]:text-lg *:data-[slot=card-title]:leading-snug",
         className,
       )}

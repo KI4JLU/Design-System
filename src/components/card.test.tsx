@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Card, CardBand, CardContent, CardFooter, CardHairline, CardTitle } from "./card";
+import { legibleColor, onColor } from "../lib/legible-color";
 
 describe("Card", () => {
   it("renders the plain surface without interactive/accent classes", () => {
@@ -39,16 +40,18 @@ describe("Card", () => {
  * pinned by the `Components/Card` stories.
  */
 describe("Card hairline parts", () => {
-  it("hands accentColor to the parts as --card-accent", () => {
+  it("hands accentColor to the parts as --card-accent, made legible, with its on-colour", () => {
     render(<Card accentColor="rgb(1, 2, 3)" data-testid="card" style={{ width: 10 }} />);
     const card = screen.getByTestId("card");
-    expect(card.style.getPropertyValue("--card-accent")).toBe("rgb(1, 2, 3)");
+    expect(card.style.getPropertyValue("--card-accent")).toBe(legibleColor("rgb(1, 2, 3)"));
+    expect(card.style.getPropertyValue("--card-on-accent")).toBe(onColor("var(--card-accent)"));
     expect(card.style.width).toBe("10px");
   });
 
   it("sets no --card-accent without a colour", () => {
     render(<Card data-testid="card" />);
     expect(screen.getByTestId("card").style.getPropertyValue("--card-accent")).toBe("");
+    expect(screen.getByTestId("card").style.getPropertyValue("--card-on-accent")).toBe("");
   });
 
   it("draws the rule in the accent colour, neutral as the fallback", () => {

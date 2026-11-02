@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Plus } from "lucide-react";
+import { legibleColor } from "../lib/legible-color";
 import { cn } from "../lib/utils";
 import { filterChipVariants } from "./filter-chips-variants";
 
@@ -50,7 +51,8 @@ export interface FilterChipsOption {
   /**
    * Colour-codes the chip: a leading dot, and the active state is tinted in it
    * instead of `primary`. Any CSS colour; `categoryColor(id)` gives a stable
-   * one from the category palette. The label stays `on-surface` for contrast.
+   * one from the category palette. The label stays `on-surface` for contrast;
+   * a colour that would vanish on the surface is inverted (`legibleColor`).
    */
   color?: string;
 }
@@ -93,6 +95,7 @@ const FilterChips = React.forwardRef<HTMLDivElement, FilterChipsProps>(
     >
       {options.map((option) => {
         const active = option.value === value;
+        const color = option.color && legibleColor(option.color);
         return (
           <button
             key={option.value}
@@ -103,24 +106,24 @@ const FilterChips = React.forwardRef<HTMLDivElement, FilterChipsProps>(
             onClick={() => onValueChange(option.value)}
             className={cn(
               filterChipVariants({ kind: "filter", active }),
-              option.color && active && "text-on-surface",
+              color && active && "text-on-surface",
             )}
             style={
-              option.color && active
+              color && active
                 ? {
-                    borderColor: option.color,
-                    backgroundColor: `color-mix(in srgb, ${option.color} 18%, var(--color-surface-container-lowest))`,
+                    borderColor: color,
+                    backgroundColor: `color-mix(in srgb, ${color} 18%, var(--color-surface-container-lowest))`,
                   }
                 : undefined
             }
           >
             {option.icon}
-            {option.color && (
+            {color && (
               <span
                 data-slot="filter-chip-dot"
                 aria-hidden="true"
                 className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: option.color }}
+                style={{ backgroundColor: color }}
               />
             )}
             {option.label}

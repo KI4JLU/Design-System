@@ -1,7 +1,7 @@
 import * as React from "react";
 
 /**
- * The two appearance preferences, held by `AppearanceProvider` and mirrored
+ * The appearance preferences, held by `AppearanceProvider` and mirrored
  * to `<html>`:
  *
  * - **Contrast** (`data-contrast`): `system` follows the OS — increased
@@ -15,9 +15,16 @@ import * as React from "react";
  *   (tokens.css).
  * - **Accent** (`data-accent`): the primary colour family; `standard` is the
  *   JLU blue. Every `primary` token follows it in light and dark.
+ * - **Colours** (`data-colors`): `system` is the design's colour as drawn,
+ *   `reduced` takes the decorative colour away — a card's header (`CardBand`)
+ *   loses its tint; an app drops its own decorative colour (a glow) the same
+ *   way (`in-data-[colors=reduced]:…`). The colour that carries meaning stays:
+ *   a card's rule, its badges, the accent.
  */
 export type ContrastChoice = "system" | "normal" | "medium" | "more";
 export type ResolvedContrast = "normal" | "medium" | "more";
+
+export type ColorsChoice = "system" | "reduced";
 
 export const ACCENT_COLORS = ["standard", "teal", "violet", "green", "rose", "amber"] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];
@@ -34,8 +41,14 @@ export interface AccentContextValue {
   setAccent: (accent: AccentColor) => void;
 }
 
+export interface ColorsContextValue {
+  colors: ColorsChoice;
+  setColors: (colors: ColorsChoice) => void;
+}
+
 export const ContrastContext = React.createContext<ContrastContextValue | null>(null);
 export const AccentContext = React.createContext<AccentContextValue | null>(null);
+export const ColorsContext = React.createContext<ColorsContextValue | null>(null);
 
 /** Outside an AppearanceProvider: follow the system, read-only. */
 export function useContrast(): ContrastContextValue {
@@ -47,4 +60,9 @@ export function useContrast(): ContrastContextValue {
 /** Outside an AppearanceProvider: the standard accent, read-only. */
 export function useAccent(): AccentContextValue {
   return React.useContext(AccentContext) ?? { accent: "standard", setAccent: () => {} };
+}
+
+/** Outside an AppearanceProvider: the design's colours, read-only. */
+export function useColors(): ColorsContextValue {
+  return React.useContext(ColorsContext) ?? { colors: "system", setColors: () => {} };
 }
