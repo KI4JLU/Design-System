@@ -601,6 +601,11 @@ body {
  * `categoryTone(color)`, so it dims exactly like a palette one.
  * ========================================================================== */
 :root {
+  /* A free colour (a role's, a category's) too close to the card surface is
+     inverted (`legibleColor`, src/lib/legible-color.ts): OKLCH lightness above
+     the first limit or below the second. Light: white-ish flips to dark. */
+  --legible-flip-above: 0.9;
+  --legible-flip-below: -1;
   --category-strength: 100%;
   /* A large soft glow in a category's colour (a topic's start page): how much
      of the colour it carries. Lower in dark mode, where the same tint glares. */
@@ -626,6 +631,9 @@ body {
 }
 
 [data-theme="dark"] {
+  /* Dark: black-ish flips to light; white stays. */
+  --legible-flip-above: 2;
+  --legible-flip-below: 0.32;
   --category-strength: 70%;
   --category-glow-strength: 16%;
   --color-category-1: color-mix(in oklab, var(--p-category-1) var(--category-strength), var(--color-surface-container-lowest));

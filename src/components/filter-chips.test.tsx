@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Star } from "lucide-react";
 import { FilterChips } from "./filter-chips";
+import { legibleColor } from "../lib/legible-color";
 
 /**
  * Oracles, all outside the component:
@@ -143,9 +144,9 @@ describe("FilterChips colour-coding", () => {
     );
     const dots = container.querySelectorAll<HTMLElement>('[data-slot="filter-chip-dot"]');
     expect(dots).toHaveLength(2);
-    expect(dots[0].style.backgroundColor).toBe("rgb(238, 69, 137)");
+    expect(dots[0].style.backgroundColor).toBe(legibleColor("rgb(238, 69, 137)"));
     const [lehre, forschung] = screen.getAllByRole("button");
-    expect(lehre.style.borderColor).toBe("rgb(238, 69, 137)");
+    expect(lehre.style.borderColor).toBe(legibleColor("rgb(238, 69, 137)"));
     expect(forschung.style.borderColor).toBe("");
   });
 });

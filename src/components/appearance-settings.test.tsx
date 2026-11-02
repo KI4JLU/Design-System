@@ -61,7 +61,20 @@ describe("AppearanceSettings", () => {
     expect(screen.getByRole("combobox", { name: "Farbschema" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Kontrast" })).not.toHaveAccessibleDescription();
     expect(screen.getByRole("combobox", { name: "Akzentfarbe" })).toBeInTheDocument();
-    expect(screen.getAllByRole("combobox")).toHaveLength(3);
+    expect(screen.getByRole("combobox", { name: "Farben" })).toBeInTheDocument();
+    expect(screen.getAllByRole("combobox")).toHaveLength(4);
+  });
+
+  it("colours: „Reduziert“ writes data-colors=reduced and persists it", async () => {
+    renderSettings();
+    const trigger = screen.getByRole("combobox", { name: "Farben" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const listbox = await screen.findByRole("listbox");
+    expect(within(listbox).getAllByRole("option").map((o) => o.textContent)).toEqual(["System", "Reduziert"]);
+    await userEvent.click(within(listbox).getByRole("option", { name: "Reduziert" }));
+    expect(document.documentElement.dataset.colors).toBe("reduced");
+    expect(window.localStorage.getItem("ui-shape-colors")).toBe("reduced");
   });
 
   it("choosing „Dunkel“ makes ThemeProvider write data-theme=dark and persist it", async () => {

@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { legibleColor, onColor } from "../lib/legible-color";
 
 /**
  * Shared by `Card` and `SelectableCard`. Kept in its own module (see
@@ -16,14 +17,19 @@ export const cardSurfaceClassName =
 
 /**
  * The card's `style` with its accent colour as `--card-accent`, the custom
- * property `CardBand`, `CardHairline`, `accent` and `tint` read. Without a
- * colour the property stays unset and they fall back to neutral.
+ * property `CardBand`, `CardHairline`, `accent` and `tint` read — through
+ * `legibleColor`, so a colour that would vanish on the card (white on light,
+ * black on dark) is inverted. `--card-on-accent` is black or white, whichever
+ * reads on it (an icon tile in the card's colour). Without a colour both stay
+ * unset and the parts fall back to neutral.
  */
 export const cardAccentStyle = (
   accentColor: string | undefined,
   style?: React.CSSProperties,
 ): React.CSSProperties | undefined =>
-  accentColor ? ({ ...style, "--card-accent": accentColor } as React.CSSProperties) : style;
+  accentColor
+    ? ({ ...style, "--card-accent": legibleColor(accentColor), "--card-on-accent": onColor("var(--card-accent)") } as React.CSSProperties)
+    : style;
 
 /**
  * The neutral rule colour — a hairline card without a colour of its own, a

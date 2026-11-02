@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { FileText, MessageSquare, RefreshCw, Clock, Star, User } from "lucide-react";
 import {
   Card,
@@ -112,7 +113,7 @@ const topics = [
  * The hairline card (developer mockup „Hairline", 30.10.2026) as a topic tile:
  * `CardBand` (title, star, ⋯ on a faint tint of `accentColor`), `CardHairline`
  * with the category on the rule, the meta block, and a `CardFooter` at the
- * bottom. Without a category the card has no `accentColor`: no tint, a grey rule.
+ * bottom. Without a category the card has no `accentColor`: a grey tint and rule.
  */
 export const Hairline: Story = {
   render: () => (
@@ -140,6 +141,137 @@ export const Hairline: Story = {
       ))}
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    // Without an accentColor the band is grey (the outline colour), not bare:
+    // an unresolved colour would make the gradient invalid (`none`).
+    const neutral = within(canvasElement).getByText("Startseite E2E").closest("[data-slot=card]")!;
+    await expect(getComputedStyle(neutral.querySelector("[data-slot=card-band]")!).backgroundImage).toContain("linear-gradient");
+  },
+};
+
+const LEGIBLE_SAMPLES = [
+  { name: "Weiß", color: "#FFFFFF" },
+  { name: "Schwarz", color: "#000000" },
+  { name: "Gelb", color: "#FACF37" },
+  { name: "Blau", color: "#0056B3" },
+];
+
+/** OKLCH lightness of a computed colour (browsers report `oklch(...)` for these). */
+const lightness = (css: string) => Number(/oklch\(([\d.e-]+)/.exec(css)?.[1] ?? NaN);
+
+/**
+ * A free colour that would vanish on the card is inverted (`legibleColor`):
+ * white turns black on the light card, black turns white on the dark one; the
+ * icon tile's glyph is black or white, whichever reads (`--card-on-accent`).
+ */
+export const LegibleAccent: Story = {
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {(["light", "dark"] as const).map((theme) => (
+        <div key={theme} data-theme={theme} data-testid={theme} className="grid grid-cols-4 gap-4 rounded-xl bg-surface p-4">
+          {LEGIBLE_SAMPLES.map((s) => (
+            <Card key={s.name} accentColor={s.color} data-testid={`${theme}-${s.name}`}>
+              <CardBand><CardTitle>{s.name}</CardTitle></CardBand>
+              <CardHairline>
+                <span
+                  data-testid={`${theme}-${s.name}-tile`}
+                  className="flex size-9 items-center justify-center rounded-[var(--ui-radius-tile)] bg-[var(--card-accent)] text-[var(--card-on-accent)] ring-4 ring-surface-container-lowest"
+                >
+                  <User aria-hidden="true" className="size-[18px]" />
+                </span>
+              </CardHairline>
+              <CardContent className="text-sm text-on-surface-variant">{s.color}</CardContent>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const rule = (id: string) =>
+      lightness(getComputedStyle(c.getByTestId(id).querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor);
+    // onColor resolves to `color(srgb-linear 1 1 1)` (white) or `… 0 0 0` (black).
+    const glyph = (id: string) => Number(getComputedStyle(c.getByTestId(`${id}-tile`)).color.match(/srgb-linear ([\d.]+)/)?.[1]);
+    // White on the light card: inverted to black, with a white glyph.
+    await expect(rule("light-Weiß")).toBeLessThan(0.1);
+    await expect(glyph("light-Weiß")).toBe(1);
+    // Black on the dark card: inverted to white, with a black glyph.
+    await expect(rule("dark-Schwarz")).toBeGreaterThan(0.9);
+    await expect(glyph("dark-Schwarz")).toBe(0);
+    // Colours that read stay as they are; yellow takes a black glyph.
+    await expect(rule("light-Schwarz")).toBeLessThan(0.01);
+    await expect(rule("dark-Weiß")).toBeGreaterThan(0.99);
+    await expect(rule("light-Blau")).toBeCloseTo(0.47, 1);
+    await expect(rule("light-Gelb")).toBeCloseTo(0.87, 1);
+    await expect(glyph("light-Gelb")).toBe(0);
+    await expect(glyph("light-Blau")).toBe(1);
+  },
+};
+
+/**
+ * Raised contrast (`data-contrast` `medium` or `more`, AppearanceProvider):
+ * the band's tint is solid instead of a gradient.
+ */
+export const HairlineContrast: Story = {
+  render: () => (
+    <div className="grid max-w-4xl grid-cols-3 gap-6">
+      {(["normal", "medium", "more"] as const).map((contrast) => (
+        <div key={contrast} data-contrast={contrast} className="flex flex-col gap-2">
+          <span className="text-sm text-on-surface-variant">{contrast}</span>
+          <Card accentColor="#EE4589" data-testid={`card-${contrast}`}>
+            <CardBand><CardTitle>Einführung in die Statistik</CardTitle></CardBand>
+            <CardHairline />
+            <CardContent className="text-sm text-on-surface-variant">Kontrast: {contrast}</CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const band = (contrast: string) =>
+      getComputedStyle(c.getByTestId(`card-${contrast}`).querySelector("[data-slot=card-band]")!);
+    await expect(band("normal").backgroundImage).toContain("linear-gradient");
+    await expect(band("normal").backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    for (const contrast of ["medium", "more"]) {
+      await expect(band(contrast).backgroundImage).toBe("none");
+      // The card's colour, solid: not transparent.
+      await expect(band(contrast).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    }
+  },
+};
+
+/**
+ * Reduced colours (`data-colors="reduced"`, AppearanceProvider): the band has
+ * no tint at any contrast; the rule keeps the card's colour.
+ */
+export const HairlineReducedColors: Story = {
+  render: () => (
+    <div data-colors="reduced" className="grid max-w-4xl grid-cols-2 gap-6">
+      {(["normal", "medium"] as const).map((contrast) => (
+        <div key={contrast} data-contrast={contrast} className="flex flex-col gap-2">
+          <span className="text-sm text-on-surface-variant">{contrast}</span>
+          <Card accentColor="#EE4589" data-testid={`card-${contrast}`}>
+            <CardBand><CardTitle>Einführung in die Statistik</CardTitle></CardBand>
+            <CardHairline />
+            <CardContent className="text-sm text-on-surface-variant">Farben: reduziert</CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    for (const contrast of ["normal", "medium"]) {
+      const card = c.getByTestId(`card-${contrast}`);
+      const band = getComputedStyle(card.querySelector("[data-slot=card-band]")!);
+      await expect(band.backgroundImage).toBe("none");
+      await expect(band.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+      // The rule keeps the colour.
+      await expect(getComputedStyle(card.querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    }
+  },
 };
 
 /** The catalog card („Entdecken"): the same parts, a description and the facts line. */

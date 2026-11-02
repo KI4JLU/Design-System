@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppearanceProvider } from "./appearance-provider";
-import { useAccent, useContrast } from "./appearance-context";
+import { useAccent, useColors, useContrast } from "./appearance-context";
 
 // A controllable matchMedia: `more` decides whether the OS asks for contrast.
 let more = false;
@@ -68,5 +68,36 @@ describe("AppearanceProvider contrast + accent", () => {
 
     render(<AppearanceProvider><Probe /></AppearanceProvider>);
     expect(screen.getByText("medium/medium/standard")).toBeInTheDocument();
+  });
+});
+
+function ColorsProbe() {
+  const { colors, setColors } = useColors();
+  return (
+    <>
+      <p>{`colors:${colors}`}</p>
+      <button type="button" onClick={() => setColors("reduced")}>reduced</button>
+    </>
+  );
+}
+
+// Oracle: the click and localStorage — `system` is the design's colour, the default.
+describe("AppearanceProvider colours", () => {
+  it("defaults to `system` and applies and remembers `reduced`", async () => {
+    const { unmount } = render(<AppearanceProvider><ColorsProbe /></AppearanceProvider>);
+    expect(screen.getByText("colors:system")).toBeInTheDocument();
+    expect(document.documentElement.dataset.colors).toBe("system");
+    await userEvent.click(screen.getByRole("button", { name: "reduced" }));
+    expect(document.documentElement.dataset.colors).toBe("reduced");
+    expect(window.localStorage.getItem("ui-shape-colors")).toBe("reduced");
+    unmount();
+
+    render(<AppearanceProvider><ColorsProbe /></AppearanceProvider>);
+    expect(screen.getByText("colors:reduced")).toBeInTheDocument();
+  });
+
+  it("reads as `system` outside a provider", () => {
+    render(<ColorsProbe />);
+    expect(screen.getByText("colors:system")).toBeInTheDocument();
   });
 });

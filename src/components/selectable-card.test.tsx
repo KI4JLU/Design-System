@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { SelectableCard, SelectableCardGroup } from "./selectable-card";
 import { CardTitle } from "./card";
+import { legibleColor } from "../lib/legible-color";
 
 /*
  * Oracle: the WAI-ARIA patterns the card claims — a radio group (one checked
@@ -85,7 +86,7 @@ describe("SelectableCard in a group", () => {
         <SelectableCard value="x" accentColor="rgb(1, 2, 3)">X</SelectableCard>
       </SelectableCardGroup>,
     );
-    expect(screen.getByRole("radio").style.getPropertyValue("--card-accent")).toBe("rgb(1, 2, 3)");
+    expect(screen.getByRole("radio").style.getPropertyValue("--card-accent")).toBe(legibleColor("rgb(1, 2, 3)"));
   });
 });
 
