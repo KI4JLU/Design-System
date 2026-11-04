@@ -86,6 +86,13 @@ export {
   AlertDialogTrigger,
 } from "./components/alert-dialog";
 export {
+  NoticeDialog,
+  NoticeDialogLink,
+  type NoticeDialogLinkItem,
+  type NoticeDialogLinkProps,
+  type NoticeDialogProps,
+} from "./components/notice-dialog";
+export {
   Dialog,
   DialogPortal,
   DialogOverlay,
