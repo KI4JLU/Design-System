@@ -21,7 +21,7 @@ export {
   AlertDescription,
   AlertAction,
 } from "./components/alert";
-export { alertVariants, type AlertTone } from "./components/alert-variants";
+export { alertVariants, type AlertLayout, type AlertTone } from "./components/alert-variants";
 export { Avatar, type AvatarProps } from "./components/avatar";
 export { Badge, type BadgeProps } from "./components/badge";
 export { badgeVariants } from "./components/badge-variants";

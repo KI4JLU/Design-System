@@ -32,6 +32,67 @@ describe("Alert", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Speichern fehlgeschlagen");
   });
 
+  it("marks its layout, box by default and banner on request", () => {
+    const { container, rerender } = render(
+      <Alert>
+        <AlertDescription>Hinweis</AlertDescription>
+      </Alert>,
+    );
+    expect(container.firstElementChild).toHaveAttribute("data-layout", "box");
+    rerender(
+      <Alert layout="banner" tone="warning">
+        <AlertDescription>Wartung</AlertDescription>
+        <AlertAction>
+          <Button>Mehr</Button>
+        </AlertAction>
+      </Alert>,
+    );
+    expect(container.firstElementChild).toHaveAttribute("data-layout", "banner");
+    // Same content, no role: the banner is still a static notice by default.
+    expect(container.firstElementChild).not.toHaveAttribute("role");
+    expect(screen.getByRole("button", { name: "Mehr" })).toBeInTheDocument();
+  });
+
+  it("gives a banner the tone's solid colour and a pill its container", () => {
+    const { container, rerender } = render(
+      <Alert tone="error" layout="banner">
+        <AlertTitle>Dienst nicht verfügbar</AlertTitle>
+        <AlertDescription>Wir arbeiten an der Behebung.</AlertDescription>
+      </Alert>,
+    );
+    const root = container.firstElementChild!;
+    expect(root).toHaveClass("bg-error", "text-on-error", "justify-center", "text-center");
+    expect(root).not.toHaveClass("bg-error-container");
+    expect(root).toHaveAttribute("data-flow", "inline");
+
+    rerender(
+      <Alert tone="warning" layout="pill">
+        <AlertDescription>x</AlertDescription>
+      </Alert>,
+    );
+    expect(container.firstElementChild).toHaveClass(
+      "bg-warning-container",
+      "border-warning/40",
+      "w-fit",
+    );
+
+    rerender(<Alert>x</Alert>);
+    expect(container.firstElementChild).not.toHaveAttribute("data-flow");
+  });
+
+  it("keeps a description's paragraphs inline in a banner", () => {
+    render(
+      <Alert layout="banner">
+        <AlertDescription>
+          <p>Erster Satz.</p>
+          <p>Zweiter Satz.</p>
+        </AlertDescription>
+      </Alert>,
+    );
+    const description = screen.getByText("Erster Satz.").parentElement!;
+    expect(description.className).toContain("[[data-flow=inline]_&_p]:inline");
+  });
+
   it("applies the tone's container tokens", () => {
     const { container } = render(<Alert tone="warning">x</Alert>);
     expect(container.firstElementChild).toHaveClass(
