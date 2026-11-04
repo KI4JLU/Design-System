@@ -72,6 +72,20 @@ export { CodeBlock, type CodeBlockProps } from "./components/code-block";
 export { Container, type ContainerProps } from "./components/container";
 export { containerVariants } from "./components/container-variants";
 export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./components/alert-dialog";
+export {
   Dialog,
   DialogPortal,
   DialogOverlay,
