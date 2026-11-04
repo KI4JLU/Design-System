@@ -3,6 +3,7 @@ import { composeStories } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
 import { ChatStage } from "../components/chat-stage";
 import { Logo } from "../components/logo";
@@ -978,5 +979,109 @@ export const HandleHasNoLayoutWidth: Story = {
     await expect(main.getBoundingClientRect().left).toBe(
       column.getBoundingClientRect().right,
     );
+  },
+};
+
+/**
+ * **`notice`: the system banner, at the top of the frame, full width.** A
+ * warning `Alert` with `layout="banner"`, a close button and an inline action.
+ *
+ * `play` (Chromium, 1280px), oracles in brackets:
+ * 1. the banner is reachable as a named `region` [ARIA landmark + name];
+ * 2. it starts at the frame's top edge and spans the frame's full width,
+ *    over the nav column too [the layout boxes];
+ * 3. the nav column and the bar start where it ends — it pushes, it does not
+ *    cover [the boxes];
+ * 4. one line is slim, at most 40px [the design brief];
+ * 5. the bar is still 56px [the published contract].
+ */
+export const WithSystemNotice: Story = {
+  render: () => (
+    <AppShellFixture
+      context="overview"
+      search={<ShellSearch />}
+      notice={
+        <Alert tone="error" layout="banner" live="assertive">
+          <AlertTitle>Dienst nicht verfügbar</AlertTitle>
+          <AlertDescription>Wir arbeiten an der Behebung.</AlertDescription>
+          <AlertAction>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 font-semibold text-current underline"
+              asChild
+            >
+              <a href="#status">Status ansehen</a>
+            </Button>
+          </AlertAction>
+        </Alert>
+      }
+    >
+      <SectionedGridPage />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const region = await canvas.findByRole("region", { name: "Systemmeldung" });
+    const notice = region.getBoundingClientRect();
+    // The frame is the region's parent: the region is its first row.
+    const frame = region.parentElement!.getBoundingClientRect();
+    const header = bar(canvasElement).getBoundingClientRect();
+    const column = canvas
+      .getByRole("complementary", { name: "Hauptnavigation" })
+      .getBoundingClientRect();
+
+    await expect(notice.top).toBeCloseTo(frame.top, 0);
+    await expect(notice.left).toBeCloseTo(frame.left, 0);
+    await expect(notice.width).toBeCloseTo(frame.width, 0);
+    await expect(column.top).toBeCloseTo(notice.bottom, 0);
+    await expect(header.top).toBeCloseTo(notice.bottom, 0);
+    await expect(notice.height).toBeLessThanOrEqual(40);
+    // The message (icon + text) is centred in the band.
+    const text = within(region)
+      .getByText("Dienst nicht verfügbar")
+      .parentElement!.getBoundingClientRect();
+    const icon = region.querySelector("svg")!.getBoundingClientRect();
+    await expect((icon.left + text.right) / 2).toBeCloseTo(
+      notice.left + notice.width / 2,
+      -1,
+    );
+  },
+};
+
+/**
+ * Reduced operation: a small `Alert layout="pill"` in the `status` slot,
+ * floating at the top centre of the main area — over the page, which neither
+ * moves nor reflows.
+ */
+export const WithSystemStatus: Story = {
+  render: () => (
+    <AppShellFixture
+      context="overview"
+      search={<ShellSearch />}
+      status={
+        <Alert tone="warning" layout="pill" live="polite" onDismiss={() => {}}>
+          <AlertTitle>Hohe Auslastung</AlertTitle>
+          <AlertDescription>Antworten können länger dauern.</AlertDescription>
+        </Alert>
+      }
+    >
+      <SectionedGridPage />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const pill = await canvas.findByRole("status");
+    const box = pill.getBoundingClientRect();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    const header = bar(canvasElement).getBoundingClientRect();
+
+    // Top centre of the main area, just under the bar.
+    await expect(box.top).toBeCloseTo(main.top + 12, 0);
+    await expect(header.bottom).toBeCloseTo(main.top, 0);
+    await expect(box.left + box.width / 2).toBeCloseTo(main.left + main.width / 2, -1);
+    // As wide as its text, not the column.
+    await expect(box.width).toBeLessThan(main.width / 2);
+    await expect(within(pill).getByRole("button", { name: "Schließen" })).toBeVisible();
   },
 };

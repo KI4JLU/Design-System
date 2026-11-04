@@ -649,6 +649,78 @@ describe("AppShell — every node is mounted once", () => {
   });
 });
 
+/**
+ * `notice` (KI-936). Oracles: the ARIA `region` role (a `section` with an
+ * accessible name), `compareDocumentPosition` for bar → notice → page, and
+ * the consumer's own text.
+ */
+describe("AppShell — notice", () => {
+  it.each([
+    ["desktop", true, "page"],
+    ["below lg, main area", false, "page"],
+    ["below lg, a side column", false, "nav"],
+  ] as const)("comes first, above the bar and the area on screen (%s)", (_name, isDesktop, activeMobileTab) => {
+    stubViewport(isDesktop);
+    const { container } = renderShell({ notice: <p>Wartung am Freitag</p>, activeMobileTab });
+
+    const region = screen.getByRole("region", { name: "Systemmeldung" });
+    expect(region).toHaveTextContent("Wartung am Freitag");
+    expect(precedes(region, screen.getByRole("banner"))).toBe(true);
+    const area =
+      activeMobileTab === "page"
+        ? screen.getByRole("main")
+        : screen.getByRole("complementary", { name: "Navigationsspalte" });
+    expect(precedes(region, area)).toBe(true);
+    // The frame's own first child: inside nothing, so it spans the frame.
+    expect(container.firstElementChild?.firstElementChild).toBe(region);
+  });
+
+  it("spans the side columns on a wide screen instead of sitting in one", () => {
+    stubViewport(true);
+    renderShell({ notice: <p>Wartung</p> });
+    const region = screen.getByRole("region", { name: "Systemmeldung" });
+    for (const column of screen.getAllByRole("complementary")) {
+      expect(column).not.toContainElement(region);
+      expect(precedes(region, column)).toBe(true);
+    }
+  });
+
+  it("does not remount the columns when a notice appears", () => {
+    stubViewport(true);
+    const { rerender } = renderShell();
+    const main = screen.getByRole("main");
+    rerender(
+      <AppShell
+        topBar={<span>Anwendung</span>}
+        left={leftPanel()}
+        right={rightPanel()}
+        mobileTabs={TABS}
+        activeMobileTab="page"
+        onMobileTabChange={() => {}}
+        mobileTabBarLabel="Bereichswechsel"
+        notice={<p>Wartung</p>}
+      >
+        <p>Inhalt</p>
+      </AppShell>,
+    );
+    // Same node: the region was added above, nothing below was rebuilt.
+    expect(screen.getByRole("main")).toBe(main);
+  });
+
+  it("takes the consumer's name for the region", () => {
+    stubViewport(true);
+    renderShell({ notice: <p>Wartung</p>, noticeLabel: "Hinweis des Betriebs" });
+    expect(screen.getByRole("region", { name: "Hinweis des Betriebs" })).toBeInTheDocument();
+  });
+
+  it("renders no region when no notice is given", () => {
+    stubViewport(true);
+    const { container } = renderShell();
+    expect(screen.queryByRole("region")).toBeNull();
+    expect(container.querySelector("section")).toBeNull();
+  });
+});
+
 describe("AppShell — narrow-screen arrangement", () => {
   it.each([
     ["nav", "Navigationsspalte"],

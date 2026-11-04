@@ -200,6 +200,20 @@ export interface AppShellLayoutProps
    * column each time the view came back.
    */
   showRight?: boolean;
+  /**
+   * Forwarded to `AppShell` verbatim: a message for everyone (typically an
+   * `Alert`), under the chrome bar and above the page content, across the
+   * main column, on every screen and in both arrangements. Omitted, nothing
+   * renders. See `AppShellProps.notice`.
+   */
+  notice?: AppShellProps["notice"];
+  /** Accessible name of the region around `notice`. Default „Systemmeldung". */
+  noticeLabel?: AppShellProps["noticeLabel"];
+  /**
+   * A floating status message at the top centre of the main area (reduced
+   * operation). See `AppShellProps.status`.
+   */
+  status?: AppShellProps["status"];
 }
 
 const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
@@ -220,6 +234,9 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
       leftResize,
       rightPanel,
       showRight,
+      notice,
+      noticeLabel,
+      status,
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
@@ -462,6 +479,9 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
            `true` default applies and no call site written before 0.37.0
            changes. */
         showRight={showRight}
+        notice={notice}
+        noticeLabel={noticeLabel}
+        status={status}
         mobileTabs={mobileTabs}
         activeMobileTab={activeMobileTab}
         onMobileTabChange={onMobileTabChange}

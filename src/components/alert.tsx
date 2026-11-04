@@ -2,7 +2,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from "lucide-react";
 import { cn } from "../lib/utils";
-import { alertVariants, type AlertTone } from "./alert-variants";
+import { alertVariants, type AlertLayout, type AlertTone } from "./alert-variants";
 
 /** No default icon for `neutral` — like `Toast`, there is no status to signal. */
 const TONE_ICONS: Record<
@@ -16,6 +16,8 @@ const TONE_ICONS: Record<
   error: CircleX,
 };
 
+const ICON_SIZE = "[&_svg]:h-5 [&_svg]:w-5";
+
 const LIVE_ROLES = {
   off: undefined,
   polite: "status",
@@ -25,6 +27,15 @@ const LIVE_ROLES = {
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Status the alert reports: fill, text colour and default icon. */
   tone?: AlertTone;
+  /**
+   * `box` (default): a rounded block in the page. `banner`: a solid,
+   * full-width, centred row of app chrome for `AppShell`'s `notice` slot
+   * (outage, maintenance). `pill`: a small floating message for `AppShell`'s
+   * `status` slot (reduced operation). In `banner` and `pill` the title, the
+   * text and an `AlertAction` flow on one line — „**Titel** · Text Aktion" —
+   * and wrap on a narrow screen.
+   */
+  layout?: AlertLayout;
   /**
    * Whether the alert is a live region. `off` (default): a static notice, no
    * role. `polite`: `role="status"`. `assertive`: `role="alert"`.
@@ -69,6 +80,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
     {
       className,
       tone = "neutral",
+      layout = "box",
       live = "off",
       icon,
       onDismiss,
@@ -86,29 +98,58 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         <FallbackIcon aria-hidden="true" />
       ) : null;
 
+    const hasIcon = iconNode != null && iconNode !== false;
+
     return (
       <div
         ref={ref}
         role={LIVE_ROLES[live]}
-        className={cn(alertVariants({ tone }), className)}
+        data-layout={layout}
+        data-flow={layout === "box" ? undefined : "inline"}
+        className={cn(
+          alertVariants({ tone, layout }),
+          // Symmetric room for the pinned close button keeps the text centred.
+          layout === "banner" && onDismiss && "px-12",
+          className,
+        )}
         {...props}
       >
-        {iconNode != null && iconNode !== false ? (
-          <span
-            aria-hidden="true"
-            className="flex h-5 shrink-0 items-center [&_svg]:h-5 [&_svg]:w-5"
-          >
+        {hasIcon && layout !== "banner" ? (
+          <span aria-hidden="true" className={cn("flex h-5 shrink-0 items-center", ICON_SIZE)}>
             {iconNode}
           </span>
         ) : null}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
+        <div
+          className={cn(
+            "min-w-0",
+            // Inline flow: title, text and action are inline boxes, so a
+            // long message wraps like a sentence (and stays centred in a
+            // banner) instead of breaking into columns.
+            layout === "box" ? "flex flex-1 flex-col gap-1" : "block",
+          )}
+        >
+          {/* In a banner the icon is part of the centred line: wrapped on a
+              narrow screen, it stays with the text instead of at the edge. */}
+          {hasIcon && layout === "banner" ? (
+            <span
+              aria-hidden="true"
+              className={cn("mr-2 inline-flex h-5 items-center align-text-bottom", ICON_SIZE)}
+            >
+              {iconNode}
+            </span>
+          ) : null}
+          {children}
+        </div>
         {onDismiss ? (
           <button
             type="button"
             aria-label={dismissLabel}
             onClick={onDismiss}
             className={cn(
-              "-my-0.5 -mr-1 shrink-0 rounded-action p-1 text-current transition-colors hover:bg-current/10",
+              "shrink-0 rounded-action p-1 text-current transition-colors hover:bg-current/10",
+              layout === "banner"
+                ? "absolute top-1/2 right-3 -translate-y-1/2"
+                : "-my-0.5 -mr-1",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
             )}
           >
@@ -137,7 +178,10 @@ const AlertTitle = React.forwardRef<HTMLDivElement, AlertTitleProps>(
     return (
       <Comp
         ref={ref}
-        className={cn("m-0 font-semibold wrap-anywhere", className)}
+        className={cn(
+          "m-0 font-semibold wrap-anywhere [[data-flow=inline]_&]:inline",
+          className,
+        )}
         {...props}
       />
     );
@@ -157,6 +201,11 @@ const AlertDescription = React.forwardRef<
     ref={ref}
     className={cn(
       "m-0 wrap-anywhere [&_a]:underline [&_a]:underline-offset-2 [&_p]:m-0 [&_p+p]:mt-2",
+      // Inline flow (banner, pill): „**Titel** · Text" — the dot only when
+      // something (the title) precedes the text.
+      "[[data-flow=inline]_&]:inline [[data-flow=inline]_*+&]:before:mx-1.5 [[data-flow=inline]_*+&]:before:content-['·']",
+      // …and so do its paragraphs: one sentence after the other, not blocks.
+      "[[data-flow=inline]_&_p]:inline [[data-flow=inline]_&_p+p]:mt-0 [[data-flow=inline]_&_p+p]:before:content-['_']",
       className,
     )}
     {...props}
@@ -176,7 +225,12 @@ const AlertAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("mt-2 flex flex-wrap items-center gap-2", className)}
+    // Inline flow (banner, pill): the actions follow the text on its line.
+    className={cn(
+      "mt-2 flex flex-wrap items-center gap-2",
+      "[[data-flow=inline]_&]:mt-0 [[data-flow=inline]_&]:ml-3 [[data-flow=inline]_&]:inline-flex [[data-flow=inline]_&]:align-baseline",
+      className,
+    )}
     {...props}
   />
 ));

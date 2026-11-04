@@ -222,6 +222,39 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * landmark.
    */
   mainLabel?: string;
+  /**
+   * A system banner for everyone on every screen of the app — maintenance, an
+   * outage, a service in test operation (typically an `Alert` with
+   * `layout="banner"`). Rendered at the **top of the frame, full width** —
+   * above the columns and above `topBar`, in **both** arrangements — and in
+   * the flow: it pushes the whole frame down rather than covering anything.
+   * A system state is about the app, not about one column or one area, so it
+   * is not placed inside any of them (inside the main column it was narrower
+   * on a workspace screen than on an overview, and read as a card in the
+   * page). It never scrolls away.
+   *
+   * The slot is the frame's, the message is the app's: what it says, whether
+   * it can be closed and where that is remembered stay with the consumer.
+   * Omitted (or falsy), nothing renders — no landmark, no spacing.
+   */
+  notice?: React.ReactNode;
+  /**
+   * Accessible name of the `region` landmark around `notice`. Default
+   * „Systemmeldung". Named because an unnamed `section` is no landmark, and
+   * content outside every landmark is unreachable by landmark navigation.
+   */
+  noticeLabel?: string;
+  /**
+   * A small status message about reduced operation — high load, a degraded
+   * service (typically an `Alert` with `layout="pill"`). It **floats** at the
+   * top centre of the main area, over the page and without moving it, and
+   * stays there while the page scrolls. Less prominent than `notice`, which is
+   * for an outage or maintenance; the app picks one by severity.
+   *
+   * The message brings its own live-region role (`Alert live="polite"`), so
+   * the slot adds no landmark. Omitted (or falsy), nothing renders.
+   */
+  status?: React.ReactNode;
   /** Tabs of the narrow-screen bar, each declaring which area it shows. */
   mobileTabs: MobilePaneTab[];
   /**
@@ -245,6 +278,9 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       showRight = true,
       topBar,
       mainLabel,
+      notice,
+      noticeLabel = "Systemmeldung",
+      status,
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
@@ -284,6 +320,40 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       <header className="flex h-14 shrink-0 items-center">
         {topBar}
       </header>
+    ) : null;
+
+    /*
+      The notice region, the frame's first row. No inset of its own: the
+      banner is chrome edge to edge (`Alert layout="banner"` brings its own
+      padding), not a card in the page. `shrink-0` keeps a long page from
+      squeezing it.
+    */
+    const noticeRegion = notice ? (
+      <section
+        aria-label={noticeLabel}
+        data-slot="app-shell-notice"
+        className="shrink-0"
+      >
+        {notice}
+      </section>
+    ) : null;
+
+    /*
+      The floating status layer, the first child of `<main>`: `sticky` keeps it
+      at the top of the main area while the page scrolls, `h-0` lets it take
+      no room (the message overflows it downwards), so the page under it
+      neither moves nor reflows. The layer lets clicks through; the message
+      itself takes them; a long message wraps at 48rem instead of spanning a
+      wide column. Keeping the slot in front of `children` — null or not —
+      never remounts the page.
+    */
+    const statusLayer = status ? (
+      <div
+        data-slot="app-shell-status"
+        className="pointer-events-none sticky top-3 z-20 flex h-0 shrink-0 justify-center overflow-visible px-4"
+      >
+        <div className="pointer-events-auto h-fit max-w-[min(100%,48rem)]">{status}</div>
+      </div>
     ) : null;
 
     /*
@@ -355,6 +425,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           )}
           {...props}
         >
+          {noticeRegion}
           {bar}
           {panel ? (
             <aside
@@ -367,6 +438,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             </aside>
           ) : (
             <main aria-label={mainLabel} className={PANE_FILL} style={MOBILE_PANE_STYLE}>
+              {statusLayer}
               {children}
             </main>
           )}
@@ -389,36 +461,45 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           // height. With `min-h-dvh` the heights inside resolve against the
           // content, and a long page would push the columns past the viewport
           // instead of scrolling the main area.
-          "flex h-dvh overflow-hidden bg-canvas text-on-surface",
+          //
+          // A column (`flex-col`) of two rows: the notice region, then the
+          // row of columns. The row is there with or without a notice, so a
+          // notice appearing or going away never remounts the columns (their
+          // scroll positions, a half-typed message).
+          "flex h-dvh flex-col overflow-hidden bg-canvas text-on-surface",
           className,
         )}
         {...props}
       >
-        {/* Column, then its separator: the handle sits on the edge that faces
-            the content, which is the right edge of a left column and the left
-            edge of a right one — carried by DOM order, so tab order matches
-            the visual one. */}
-        {left && (
-          <>
-            {column(left, "left", leftPaneId)}
-            {handle(left, "left", leftPaneId)}
-          </>
-        )}
-        {/* `app-shell-content`: the bar plus `<main>` — the region a
-            page-sized dialog covers (`SettingsDialog` `fitTo`). */}
-        <div data-slot="app-shell-content" className="flex min-w-0 flex-1 flex-col">
-          {bar}
-          <main aria-label={mainLabel} className={PANE_FILL}>
-            {children}
-          </main>
+        {noticeRegion}
+        <div data-slot="app-shell-row" className="flex min-h-0 flex-1">
+          {/* Column, then its separator: the handle sits on the edge that faces
+              the content, which is the right edge of a left column and the left
+              edge of a right one — carried by DOM order, so tab order matches
+              the visual one. */}
+          {left && (
+            <>
+              {column(left, "left", leftPaneId)}
+              {handle(left, "left", leftPaneId)}
+            </>
+          )}
+          {/* `app-shell-content`: the bar plus `<main>` — the region a
+              page-sized dialog covers (`SettingsDialog` `fitTo`). */}
+          <div data-slot="app-shell-content" className="flex min-w-0 flex-1 flex-col">
+            {bar}
+            <main aria-label={mainLabel} className={PANE_FILL}>
+              {statusLayer}
+              {children}
+            </main>
+          </div>
+          {/* `showRight` gates the DESKTOP arrangement only — see the prop. */}
+          {right && showRight && (
+            <>
+              {handle(right, "right", rightPaneId)}
+              {column(right, "right", rightPaneId)}
+            </>
+          )}
         </div>
-        {/* `showRight` gates the DESKTOP arrangement only — see the prop. */}
-        {right && showRight && (
-          <>
-            {handle(right, "right", rightPaneId)}
-            {column(right, "right", rightPaneId)}
-          </>
-        )}
       </div>
     );
   },

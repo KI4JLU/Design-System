@@ -78,6 +78,9 @@ component with a different fill; the shared story fixture that renders them is
 | `leftResize` | `AppShellPanel["resize"]` | — | Makes the left column draggable (`minWidth`, `maxWidth`, `onWidthChange`, `label` — all or nothing). Omitted, no separator. |
 | `rightPanel` | `AppShellPanel` | — | Second column on the right, passed whole (the shape `AppShell.left`/`.right` take), `resize` included. Omitted, no landmark and no rail. |
 | `showRight` | `boolean` | — | `false` takes `rightPanel` out of the **desktop** arrangement **without** touching its `isOpen`, and is ignored below `lg`. Forwarded to `AppShell`. Hide a column per view with this instead of dropping `rightPanel` (that destroys its collapse state). |
+| `notice` | `ReactNode` | — | The system banner, typically `Alert layout="banner"`: the frame's first row, full width over the columns, above the bar, in both arrangements. Pushes the frame down. Omitted, nothing renders. |
+| `noticeLabel` | `string` | — | Accessible name of the `region` around `notice` (default „Systemmeldung"). |
+| `status` | `ReactNode` | — | A floating status message, typically `Alert layout="pill"`: top centre of the main area, over the page (which does not move), stays while the page scrolls. Omitted, nothing renders. |
 | `mobileTabs` | `MobilePaneTab[]` | ✅ | Tabs of the narrow arrangement, each with `pane: "left" \| "main" \| "right"`. |
 | `activeMobileTab` | `string` | ✅ | Id of the current tab — the **only** input that decides which area shows below `lg`. |
 | `onMobileTabChange` | `(id: string) => void` | ✅ | A tab was tapped. |
@@ -235,6 +238,37 @@ for the same thing. `content`, `header`, `footer`, `label`, `isOpen`,
 `collapsedPreview` and `resize`. The workspace context above
 (`ChatWorkspace`) is the case: sources on the right, with a `collapsedPreview`
 rail of one icon per source.
+
+## System messages
+
+The more serious the problem, the more prominent the message. The frame has
+two places for a system state; the app picks one by severity.
+
+**`notice` — outage or maintenance.** The frame's **first row**: top of the
+viewport, **full width** (over the side columns too), above the chrome bar, in
+both arrangements. It is in the flow, so it pushes the whole frame down and
+covers nothing, and it never scrolls away. It is wrapped in a named `region`
+(`noticeLabel`, default „Systemmeldung") so landmark navigation reaches it.
+Hang in an `Alert` with `layout="banner"`: the tone's **solid** colour, no
+radius, a slim centred row (36–40px for one line), „**Titel** · Text Aktion"
+on one line that wraps on a narrow screen. Red (`error`) with
+`live="assertive"` (`role="alert"`) — rare by design.
+
+<Canvas of={AppShellLayoutStories.WithSystemNotice} />
+
+**`status` — reduced operation.** High load, a degraded service. A small
+`Alert` with `layout="pill"` floats at the **top centre of the main area**,
+over the page, which neither moves nor reflows; it stays while the page
+scrolls. The tone's container fill, a tinted border, the overlay shadow, as
+wide as its text. `live="polite"` (`role="status"`), usually closable.
+
+<Canvas of={AppShellLayoutStories.WithSystemStatus} />
+
+The frame renders the slots; whether a message can be closed, and where that
+is remembered, is the app's decision — `Alert`'s `onDismiss` plus the app's
+own storage. One-off failures of a single request belong in a `Toast`, and an
+error about one element (a message, a source row) belongs inline at that
+element — not here.
 
 ## Resizable columns
 
