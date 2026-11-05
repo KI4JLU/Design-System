@@ -50,6 +50,17 @@ describe("MessageScroller", () => {
     expect(screen.getByRole("region", { name: "Nachrichten" })).toBeInTheDocument();
   });
 
+  // Oracle: the registry's scroll-fade-b, as a mask gated on the primitive's
+  // own "more content below" state (jsdom applies no mask, so the class is
+  // what can be checked).
+  it("fades the viewport out at its lower edge only while more content lies below", () => {
+    const { container } = render(<Transcript />);
+    const viewport = container.querySelector('[data-slot="message-scroller-viewport"]');
+    expect(viewport?.className).toContain(
+      "[&[data-scrollable~=end]]:[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_3rem),transparent)]",
+    );
+  });
+
   it("accepts a custom label", () => {
     render(<Transcript label="Zur neuesten Antwort" />);
     expect(screen.getByText("Zur neuesten Antwort")).toBeInTheDocument();

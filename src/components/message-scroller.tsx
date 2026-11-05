@@ -26,7 +26,10 @@ import { Button, type ButtonProps } from "./button";
  * Deviations from the shadcn registry file: its project-specific utilities
  * (`scroll-fade-b`, `scrollbar-thin`, `scrollbar-gutter-stable`) are written
  * as plain CSS properties, and the jump button is this library's `Button`
- * with a German screen-reader label.
+ * with a German screen-reader label. `scroll-fade-b` is a mask on the
+ * viewport that fades the transcript out at its lower edge while there is
+ * more to scroll to (the primitive's `data-scrollable` contains `end`), so
+ * the content does not end in a hard cut above the composer.
  */
 
 function MessageScrollerProvider(
@@ -64,6 +67,8 @@ function MessageScrollerViewport({
       className={cn(
         "size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain [contain:content] [scrollbar-gutter:stable] [scrollbar-width:thin]",
         "data-autoscrolling:[scrollbar-color:transparent_transparent] data-pending-scroll:invisible",
+        // scroll-fade-b: only while more content lies below.
+        "[&[data-scrollable~=end]]:[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_3rem),transparent)]",
         className,
       )}
       {...props}
