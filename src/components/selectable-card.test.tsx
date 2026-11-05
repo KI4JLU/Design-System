@@ -118,4 +118,27 @@ describe("SelectableCard on its own", () => {
     const { container } = render(<SelectableCard>Karte</SelectableCard>);
     expect(container.firstElementChild).toHaveAttribute("data-slot", "selectable-card");
   });
+
+  // Oracle: the slot contract — the foot's control, like the corner's, is a
+  // sibling of the pick target: clicking it does not toggle the card.
+  it("keeps the footer action outside the pick target", async () => {
+    const user = userEvent.setup();
+    const onUse = vi.fn();
+    const onSelectedChange = vi.fn();
+    render(
+      <SelectableCard footerAction={<button type="button" onClick={onUse}>Verwenden</button>} onSelectedChange={onSelectedChange}>
+        Karte
+      </SelectableCard>,
+    );
+    const use = screen.getByRole("button", { name: "Verwenden" });
+    expect(screen.getByRole("button", { name: "Karte" })).not.toContainElement(use);
+    await user.click(use);
+    expect(onUse).toHaveBeenCalledOnce();
+    expect(onSelectedChange).not.toHaveBeenCalled();
+  });
+
+  it("marks its selected look for the styles", () => {
+    render(<SelectableCard selectedLook="outline" selected>Karte</SelectableCard>);
+    expect(screen.getByRole("button", { name: "Karte" })).toHaveAttribute("data-look", "outline");
+  });
 });

@@ -25,6 +25,12 @@ import { selectableCardClassName } from "./selectable-card-variants";
  * split button — placed in the top-right corner as a SIBLING of the pick
  * target, never inside it: clicking it does not pick the card, and it is its
  * own tab stop after the card. Leave the card's content room for it.
+ * `footerAction` is the same for a control centred at the card's foot (e.g.
+ * a primary „Use" shown on hover); it lies over the card too, so leave room
+ * at the foot or show it in place of what is there.
+ *
+ * `selectedLook`: "fill" (default) — the tinted pick; "outline" — a dotted
+ * border only, for a pick that previews rather than chooses.
  */
 export type SelectableCardGroupProps = React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>;
 
@@ -51,7 +57,18 @@ interface SelectableCardBaseProps
   accentColor?: string;
   /** The card's own controls (e.g. an `ActionMenu`), top-right, outside the pick target. */
   action?: React.ReactNode;
-  /** Classes for the wrapper that holds the card and its `action` (only rendered with `action`). */
+  /**
+   * A control centred at the card's foot, outside the pick target. It lies over
+   * the card, like `action`: leave the card's content room for it at the foot.
+   */
+  footerAction?: React.ReactNode;
+  /** How the selected card shows: tinted with a ring ("fill", default) or a dotted border only ("outline"). */
+  selectedLook?: "fill" | "outline";
+  /**
+   * Classes for the wrapper that holds the card and its controls (only
+   * rendered with `action` or `footerAction`). The controls sit in the
+   * wrapper's corner and foot, so size such a card here, not on the card.
+   */
   wrapperClassName?: string;
 }
 
@@ -72,6 +89,8 @@ const SelectableCard = React.forwardRef<HTMLButtonElement, SelectableCardProps>(
       accentColor,
       style,
       action,
+      footerAction,
+      selectedLook = "fill",
       value,
       selected,
       onSelectedChange,
@@ -88,6 +107,7 @@ const SelectableCard = React.forwardRef<HTMLButtonElement, SelectableCardProps>(
         ref={ref}
         value={value ?? ""}
         data-slot="selectable-card"
+        data-look={selectedLook}
         style={cardAccentStyle(accentColor, style)}
         className={classes}
         onClick={onClick}
@@ -101,6 +121,7 @@ const SelectableCard = React.forwardRef<HTMLButtonElement, SelectableCardProps>(
         type="button"
         aria-pressed={!!selected}
         data-slot="selectable-card"
+        data-look={selectedLook}
         style={cardAccentStyle(accentColor, style)}
         className={classes}
         onClick={(event) => {
@@ -112,13 +133,20 @@ const SelectableCard = React.forwardRef<HTMLButtonElement, SelectableCardProps>(
         {children}
       </button>
     );
-    if (!action) return card;
+    if (!action && !footerAction) return card;
     return (
       <div data-slot="selectable-card-wrapper" className={cn("relative flex", wrapperClassName)}>
         {card}
-        <div data-slot="selectable-card-action" className="absolute top-2 right-2 flex items-center">
-          {action}
-        </div>
+        {action && (
+          <div data-slot="selectable-card-action" className="absolute top-2 right-2 flex items-center">
+            {action}
+          </div>
+        )}
+        {footerAction && (
+          <div data-slot="selectable-card-footer-action" className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+            <div className="pointer-events-auto">{footerAction}</div>
+          </div>
+        )}
       </div>
     );
   },

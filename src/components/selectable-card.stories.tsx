@@ -137,6 +137,50 @@ export const HairlineRoles: Story = {
   },
 };
 
+/**
+ * A pick that previews rather than chooses: `selectedLook="outline"` draws
+ * only a dotted primary border, no tint and no ring. `footerAction` centres
+ * a control at the card's foot, outside the pick target (here „Verwenden").
+ */
+export const PreviewPick: Story = {
+  render: function Render() {
+    const [value, setValue] = useState("test");
+    return (
+      <SelectableCardGroup aria-label="Rolle" value={value} onValueChange={setValue} className="max-w-3xl grid-cols-3">
+        {[
+          { value: "test", name: "Test", text: "Durchsucht die bereitgestellten Quellen.", color: "#2f5ea8", icon: <MessageSquare /> },
+          { value: "verwaltung", name: "Verwaltung", text: "Beantwortet Fragen zu Ordnungen und Fristen.", color: "#8b5cf6", icon: <MessagesSquare /> },
+          { value: "daten", name: "Datenanalyse", text: "Prüft hochgeladene Dokumente.", color: "#3fa96b", icon: <Upload /> },
+        ].map((role) => (
+          <SelectableCard
+            key={role.value}
+            value={role.value}
+            accentColor={role.color}
+            selectedLook="outline"
+            className="aspect-[3/4]"
+            footerAction={<button type="button" className="rounded-action bg-primary px-3 py-1.5 text-label-sm text-on-primary">Verwenden</button>}
+          >
+            <CardBand />
+            <CardHairline>
+              <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-lg bg-[var(--card-accent)] text-white ring-4 ring-surface-container-lowest [&_svg]:size-[18px]">
+                {role.icon}
+              </span>
+            </CardHairline>
+            <CardContent className="flex flex-col gap-1">
+              <CardTitle className="text-base leading-snug">{role.name}</CardTitle>
+              <CardDescription className="line-clamp-3">{role.text}</CardDescription>
+            </CardContent>
+          </SelectableCard>
+        ))}
+      </SelectableCardGroup>
+    );
+  },
+  play: async ({ canvas }) => {
+    const picked = canvas.getByRole("radio", { name: /Test/ });
+    await waitFor(() => expect(getComputedStyle(picked).borderTopStyle).toBe("dotted"));
+  },
+};
+
 /** A disabled card keeps its place and cannot be picked. */
 export const Disabled: Story = {
   render: () => (
