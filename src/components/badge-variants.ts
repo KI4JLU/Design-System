@@ -7,7 +7,9 @@ import { cva } from "class-variance-authority";
  */
 export const badgeFilledTones = {
   neutral: "bg-surface-container-high text-on-surface-variant",
-  primary: "bg-primary-container text-on-primary-container",
+  // The accent's light tint (as a nav row's active state), not the solid
+  // accent: a badge is a status, and a solid pill reads as a button.
+  primary: "bg-primary/10 text-primary",
   secondary: "bg-secondary-container text-on-secondary-container",
   success: "bg-success-container text-on-success-container",
   warning: "bg-warning-container text-on-warning-container",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Card, CardBand, CardContent, CardFooter, CardHairline, CardTitle } from "./card";
 import { legibleColor, onColor } from "../lib/legible-color";
+import { cardGlowColor } from "./card-variants";
 
 describe("Card", () => {
   it("renders the plain surface without interactive/accent classes", () => {
@@ -45,6 +46,7 @@ describe("Card hairline parts", () => {
     const card = screen.getByTestId("card");
     expect(card.style.getPropertyValue("--card-accent")).toBe(legibleColor("rgb(1, 2, 3)"));
     expect(card.style.getPropertyValue("--card-on-accent")).toBe(onColor("var(--card-accent)"));
+    expect(card.style.getPropertyValue("--card-glow")).toBe(cardGlowColor("var(--card-accent)"));
     expect(card.style.width).toBe("10px");
   });
 
@@ -52,11 +54,24 @@ describe("Card hairline parts", () => {
     render(<Card data-testid="card" />);
     expect(screen.getByTestId("card").style.getPropertyValue("--card-accent")).toBe("");
     expect(screen.getByTestId("card").style.getPropertyValue("--card-on-accent")).toBe("");
+    expect(screen.getByTestId("card").style.getPropertyValue("--card-glow")).toBe("");
   });
 
-  it("draws the rule in the accent colour, neutral as the fallback", () => {
+  it("draws the rule in the accent colour, the card's border colour as the fallback", () => {
     render(<CardHairline data-testid="rule" />);
-    expect(screen.getByTestId("rule").className).toContain("before:bg-[var(--card-accent,color-mix(in_oklab,var(--color-outline)_35%,transparent))]");
+    const cls = screen.getByTestId("rule").className;
+    expect(cls).toContain("before:border-t-[color:var(--card-accent,var(--color-outline-variant))]");
+    // The fill (the rule's second pixel) only with an accent colour: 1px neutral, 2px coloured.
+    expect(cls).toContain("before:bg-[var(--card-accent,transparent)]");
+  });
+
+  it("lights the band with the card's glow, the primary colour as the fallback", () => {
+    render(<CardBand data-testid="band" />);
+    const cls = screen.getByTestId("band").className;
+    expect(cls).toContain("[--band-glow:var(--card-glow,color-mix(in_oklch,var(--color-primary)_44%,transparent))]");
+    expect(cls).toContain("var(--card-glow-strength)");
+    // No grey: the outline colour is not in the band's tint any more.
+    expect(cls).not.toContain("linear-gradient(105deg");
   });
 
   it("renders an item on the rule only when given one", () => {

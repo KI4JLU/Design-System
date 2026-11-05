@@ -111,9 +111,10 @@ const topics = [
 
 /**
  * The hairline card (developer mockup „Hairline", 30.10.2026) as a topic tile:
- * `CardBand` (title, star, ⋯ on a faint tint of `accentColor`), `CardHairline`
+ * `CardBand` (title, star, ⋯ lit by a glow of `accentColor`), `CardHairline`
  * with the category on the rule, the meta block, and a `CardFooter` at the
- * bottom. Without a category the card has no `accentColor`: a grey tint and rule.
+ * bottom. Without a category the card has no `accentColor`: a faint primary
+ * glow and a 1px rule in the border colour.
  */
 export const Hairline: Story = {
   render: () => (
@@ -142,10 +143,70 @@ export const Hairline: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // Without an accentColor the band is grey (the outline colour), not bare:
-    // an unresolved colour would make the gradient invalid (`none`).
+    // Without an accentColor the band still glows (in the primary colour), not
+    // bare: an unresolved colour would make the gradient invalid (`none`).
     const neutral = within(canvasElement).getByText("Startseite E2E").closest("[data-slot=card]")!;
-    await expect(getComputedStyle(neutral.querySelector("[data-slot=card-band]")!).backgroundImage).toContain("linear-gradient");
+    await expect(getComputedStyle(neutral.querySelector("[data-slot=card-band]")!).backgroundImage).toContain("radial-gradient");
+    // Its rule is 1px in the border colour: the fill under the top border stays empty.
+    await expect(getComputedStyle(neutral.querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  },
+};
+
+const GLOW_TOPICS = [
+  { name: "Rollen-Test", category: "Verwaltung", color: "#1E3A8A" },
+  { name: "Neuer Test", category: "HRZ", color: "#4A8FE7" },
+  { name: "FAQ Test 3", category: "KI", color: "#E5B000" },
+  { name: "Startseite E2E", category: null, color: undefined },
+];
+
+/**
+ * The glow (developer mockup, 05.11.2026), light and dark side by side: the
+ * band is the card's own surface, lit from the rule's lower left in the
+ * card's colour, and the rule glows softly. A dark colour (navy) glows in its
+ * lighter self (`cardGlowColor`); a card without a colour glows faintly in the
+ * primary colour over a 1px rule.
+ */
+export const HairlineGlow: Story = {
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {(["light", "dark"] as const).map((theme) => (
+        <div key={theme} data-theme={theme} className="grid grid-cols-4 gap-6 rounded-xl bg-background p-6">
+          {GLOW_TOPICS.map((topic) => (
+            <Card key={topic.name} accentColor={topic.color} interactive data-testid={`${theme}-${topic.name}`}>
+              <CardBand>
+                <CardTitle>{topic.name}</CardTitle>
+                <Button variant="ghost" size="icon" aria-label="Zu Favoriten hinzufügen">
+                  <Star aria-hidden="true" className="size-4" />
+                </Button>
+              </CardBand>
+              <CardHairline>{topic.category && <CategoryPill name={topic.category} />}</CardHairline>
+              <CardContent className="flex flex-col gap-1 text-sm text-on-surface-variant">
+                <span className="flex items-center gap-2"><Clock aria-hidden="true" className="size-4" /> Genutzt <b className="text-on-surface">vor 7 Tagen</b></span>
+              </CardContent>
+              <CardFooter>
+                <Badge tone="neutral" className="ml-auto"><User aria-hidden="true" className="size-3" /> Privat</Badge>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const band = (id: string) => getComputedStyle(c.getByTestId(id).querySelector("[data-slot=card-band]")!);
+    const rule = (id: string) => getComputedStyle(c.getByTestId(id).querySelector("[data-slot=card-hairline]")!, "::before");
+    for (const theme of ["light", "dark"]) {
+      for (const topic of GLOW_TOPICS) {
+        // Never a grey bar: the band's own colour is transparent, the glow is an image.
+        await expect(band(`${theme}-${topic.name}`).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        await expect(band(`${theme}-${topic.name}`).backgroundImage).toContain("radial-gradient");
+      }
+      // A coloured rule glows; the neutral one does not.
+      await expect(rule(`${theme}-Neuer Test`).boxShadow).not.toBe("none");
+      // (a transparent shadow serialises as `rgba(0, 0, 0, 0) …` or `oklch(… / 0) …`).
+      await expect(rule(`${theme}-Startseite E2E`).boxShadow).toMatch(/^(none|rgba\(0, 0, 0, 0\)|oklch\([^)]*\/ 0\))/);
+    }
   },
 };
 
@@ -211,7 +272,7 @@ export const LegibleAccent: Story = {
 
 /**
  * Raised contrast (`data-contrast` `medium` or `more`, AppearanceProvider):
- * the band's tint is solid instead of a gradient.
+ * the band's tint is solid instead of a glow.
  */
 export const HairlineContrast: Story = {
   render: () => (
@@ -232,7 +293,7 @@ export const HairlineContrast: Story = {
     const c = within(canvasElement);
     const band = (contrast: string) =>
       getComputedStyle(c.getByTestId(`card-${contrast}`).querySelector("[data-slot=card-band]")!);
-    await expect(band("normal").backgroundImage).toContain("linear-gradient");
+    await expect(band("normal").backgroundImage).toContain("radial-gradient");
     await expect(band("normal").backgroundColor).toBe("rgba(0, 0, 0, 0)");
     for (const contrast of ["medium", "more"]) {
       await expect(band(contrast).backgroundImage).toBe("none");

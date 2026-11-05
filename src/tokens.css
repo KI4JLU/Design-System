@@ -589,7 +589,7 @@ body {
 
 /* ==========================================================================
  * Category palette — colour-coding for categories (filter chips, pills, the
- * hairline cards' tint and rule, the start page's glow). Nine hues; they are
+ * hairline cards' glow and rule, the start page's glow). Nine hues; they are
  * swatches and tints next to on-surface text, never a text colour.
  * `categoryColor(key)` picks one stably by key.
  *
@@ -645,6 +645,31 @@ body {
   --color-category-7: color-mix(in oklab, var(--p-category-7) var(--category-strength), var(--color-surface-container-lowest));
   --color-category-8: color-mix(in oklab, var(--p-category-8) var(--category-strength), var(--color-surface-container-lowest));
   --color-category-9: color-mix(in oklab, var(--p-category-9) var(--category-strength), var(--color-surface-container-lowest));
+}
+
+/* ==========================================================================
+ * Card glow — the light a hairline card's colour casts (developer mockup,
+ * 05.11.2026). The header (`CardBand`) stays the card's own surface; the
+ * colour comes as a radial glow from the rule's lower left that fades into
+ * transparency, and the rule (`CardHairline`) carries a soft halo. Stronger
+ * in dark mode. A card without a colour glows in the primary colour at 44 %
+ * of the strength, with no wash and no halo (see `CardBand`).
+ *   glow-strength       — the glow at its brightest point
+ *   glow-wash           — a faint fill from the left edge under the glow
+ *   rule-glow-blur/-strength — the halo above the rule
+ * ========================================================================== */
+:root {
+  --card-glow-strength: 8%;
+  --card-glow-wash: 3%;
+  --card-rule-glow-blur: 6px;
+  --card-rule-glow-strength: 22%;
+}
+
+[data-theme="dark"] {
+  --card-glow-strength: 16%;
+  --card-glow-wash: 5%;
+  --card-rule-glow-blur: 10px;
+  --card-rule-glow-strength: 45%;
 }
 
 /* ==========================================================================
