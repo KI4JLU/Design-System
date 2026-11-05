@@ -18,21 +18,22 @@ import { cardAccentStyle, cardSurfaceClassName } from "./card-variants";
  * `tint` — the accent colour faded in from the left edge over the card's
  * surface (a list row's quiet colour cue). No tint without an `accentColor`.
  *
- * The hairline card (developer mockup „Hairline", 30.10.2026): a `CardBand`
- * on top — title and the card's own controls on a faint tint of the accent
- * colour — closed by a `CardHairline`, a 2px rule in the accent colour that
+ * The hairline card (developer mockup „Hairline", 30.10.2026; glow
+ * 05.11.2026): a `CardBand` on top — title and the card's own controls on the
+ * card's own surface, lit by a soft glow of the accent colour rising from the
+ * rule — closed by a `CardHairline`, a 2px rule in the accent colour that
  * can carry one item (a category badge, an icon tile) centred on it; then
  * `CardContent` and a `CardFooter` pinned to the bottom. Without an
- * `accentColor` the band takes a grey tint (the outline colour) and the rule
- * the neutral outline colour. The parts carry their own sizes, so a call site
- * writes none.
+ * `accentColor` the band takes a fainter glow in the primary colour and the
+ * rule is a 1px line in the card's border colour. Never a grey band. The
+ * parts carry their own sizes, so a call site writes none.
  */
 export interface CardProps extends React.ComponentProps<"div"> {
   /** Hover highlight for clickable cards — recolors the border, no movement. */
   interactive?: boolean;
   /** Left accent border (steps, callouts, list rows) in `accentColor`, else primary. */
   accent?: boolean;
-  /** The card's colour (any CSS colour) for the band tint, the hairline and `accent`/`tint`. */
+  /** The card's colour (any CSS colour) for the band glow, the hairline and `accent`/`tint`. */
   accentColor?: string;
   /** The accent colour faded in from the left edge. Needs `accentColor`. */
   tint?: boolean;
@@ -61,10 +62,14 @@ Card.displayName = "Card";
 
 /**
  * The top of a hairline card: the title (`CardTitle`) and the card's own
- * controls (a favorite star, an `ActionMenu`) in one row, on a faint tint of
- * the card's accent colour (grey without one) that fades out to the right — solid at raised
- * contrast (`data-contrast` `medium` or `more`), none with reduced colours
- * (`data-colors="reduced"`). Flush with the card's
+ * controls (a favorite star, an `ActionMenu`) in one row. The band is the
+ * card's own surface, never a grey bar; the colour comes as light from the
+ * rule below — a radial glow from the lower left that fades into transparency,
+ * over a faint wash from the left edge — in `--card-glow` (the accent colour
+ * lifted, `cardGlowColor`), at `--card-glow-strength` (tokens.css, stronger in
+ * dark mode). Without an accent colour: the primary colour at 44 % of that, no
+ * wash. A solid tint at raised contrast (`data-contrast` `medium` or `more`),
+ * none with reduced colours (`data-colors="reduced"`). Flush with the card's
  * top corners. A `CardTitle` in it takes the band's size (18px, two lines at
  * most) and the free width; the controls sit at the end.
  */
@@ -75,8 +80,10 @@ const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
       data-slot="card-band"
       className={cn(
         "flex min-h-16 shrink-0 items-center gap-1 rounded-t-[inherit] px-5 py-3.5",
-        // Without a --card-accent the tint is grey: the outline colour.
-        "bg-[linear-gradient(105deg,color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent),transparent_70%)]",
+        // The glow colour: the card's, or the primary colour, fainter. Mixed
+        // in OKLCH into transparency, so it never turns grey on the way out.
+        "[--band-glow:var(--card-glow,color-mix(in_oklch,var(--color-primary)_44%,transparent))]",
+        "bg-[radial-gradient(75%_110%_at_18%_100%,color-mix(in_oklch,var(--band-glow)_var(--card-glow-strength),transparent),transparent_72%),linear-gradient(90deg,color-mix(in_oklch,var(--card-glow,transparent)_var(--card-glow-wash),transparent),transparent_80%)]",
         // Raised contrast (`medium`, and `more`, which includes it): the same
         // tint, solid instead of fading out.
         "in-data-[contrast=medium]:bg-none in-data-[contrast=more]:bg-none",
@@ -93,8 +100,10 @@ const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
 CardBand.displayName = "CardBand";
 
 /**
- * The rule under a `CardBand`: 2px in the card's accent colour (without one
- * `cardNeutralAccent`, a quiet grey), full width. Its children — one item: a category badge, an
+ * The rule under a `CardBand`: 2px, solid, in the card's accent colour, with a
+ * soft halo of its glow rising into the band (none with reduced colours);
+ * without an accent colour a 1px line in the card's border colour, no halo.
+ * Full width. Its children — one item: a category badge, an
  * icon tile — sit centred on it at the content's left inset; give them an
  * opaque background so the rule does not run through them. The item's lower
  * half takes room in the flow, so the content below starts clear of it; an
@@ -110,7 +119,15 @@ const CardHairline = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"
         // Room for a badge-sized item even without one, so the content of
         // cards with and without an item starts at the same height in a grid.
         "relative flex min-h-6.5 shrink-0 px-5 pb-1",
-        "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:-translate-y-1/2 before:bg-[var(--card-accent,color-mix(in_oklab,var(--color-outline)_35%,transparent))]",
+        // A 2px box across the top edge (offset, not translated, so it stays
+        // on whole pixels): its top border and its fill in the accent colour,
+        // or only the border — 1px — in the card's border colour without one.
+        "before:absolute before:inset-x-0 before:-top-px before:h-0.5 before:border-t before:border-solid",
+        "before:border-t-[color:var(--card-accent,var(--color-outline-variant))] before:bg-[var(--card-accent,transparent)]",
+        // The halo, clipped to the rule's width and to above it: light rising
+        // into the band, not spilling past the card's edges or into the content.
+        "before:[box-shadow:0_0_var(--card-rule-glow-blur)_0_color-mix(in_oklch,var(--card-glow,transparent)_var(--card-rule-glow-strength),transparent)] before:[clip-path:inset(-16px_0_0_0)]",
+        "in-data-[colors=reduced]:before:[box-shadow:none]",
         className,
       )}
       {...props}
