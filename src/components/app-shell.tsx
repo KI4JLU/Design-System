@@ -253,8 +253,18 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    *
    * The message brings its own live-region role (`Alert live="polite"`), so
    * the slot adds no landmark. Omitted (or falsy), nothing renders.
+   *
+   * `statusPosition` moves it to the bottom end of the main area.
    */
   status?: React.ReactNode;
+  /**
+   * Where `status` floats. `top` (default): centred at the top of the main
+   * area (`Alert layout="pill"`). `bottom-end`: a card in the bottom-right
+   * corner of the main area, up to 24rem wide — full width on a narrow
+   * screen, above the tab bar (`Alert layout="toast"`). Either way it covers
+   * the page without moving it; the corner never reaches over a side column.
+   */
+  statusPosition?: "top" | "bottom-end";
   /** Tabs of the narrow-screen bar, each declaring which area it shows. */
   mobileTabs: MobilePaneTab[];
   /**
@@ -281,6 +291,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       notice,
       noticeLabel = "Systemmeldung",
       status,
+      statusPosition = "top",
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
@@ -291,6 +302,27 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     ref,
   ) => {
     const isDesktop = useIsDesktop();
+
+    /*
+      The main area's height, for the corner card's cap (see `cornerLayer`).
+      Measured only while a corner card is shown; without ResizeObserver
+      (jsdom) the card keeps its viewport-based fallback cap.
+    */
+    const mainRef = React.useRef<HTMLElement>(null);
+    const [mainHeight, setMainHeight] = React.useState<number | null>(null);
+    const measureMain = Boolean(status) && statusPosition === "bottom-end";
+    React.useLayoutEffect(() => {
+      const el = mainRef.current;
+      if (!measureMain || !el || typeof ResizeObserver === "undefined") {
+        setMainHeight(null);
+        return;
+      }
+      const observer = new ResizeObserver(() => setMainHeight(el.clientHeight));
+      observer.observe(el);
+      setMainHeight(el.clientHeight);
+      return () => observer.disconnect();
+      // A narrow screen mounts a new <main> when its tab comes back.
+    }, [measureMain, isDesktop, activeMobileTab]);
 
     /*
       Ids for the two columns, so a handle's `aria-controls` can name the
@@ -347,12 +379,47 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       wide column. Keeping the slot in front of `children` — null or not —
       never remounts the page.
     */
-    const statusLayer = status ? (
+    const statusLayer = status && statusPosition === "top" ? (
       <div
         data-slot="app-shell-status"
+        data-position="top"
         className="pointer-events-none sticky top-3 z-20 flex h-0 shrink-0 justify-center overflow-visible px-4"
       >
         <div className="pointer-events-auto h-fit max-w-[min(100%,48rem)]">{status}</div>
+      </div>
+    ) : null;
+
+    /*
+      The corner layer, a row of no height right under `<main>`: the card hangs
+      from its top edge upwards (`bottom-full`), so it sits on the main area's
+      bottom edge whatever is below — the frame's edge on a desktop, the tab
+      bar on a narrow screen — and needs no knowledge of either's height. Not
+      inside `<main>`, which scrolls: there an absolute box would scroll away
+      with the page. The layer lets clicks through to the page; only the card
+      takes them.
+
+      The card's holder is capped at the main area's own height (measured, so
+      a banner that wraps or a zoomed bar shrink it too) less the 16px insets,
+      and scrolls beyond that, so its title and close button stay reachable on
+      a short screen. The holder is the scroller, so it takes the card's
+      radius and overlay shadow itself: the card's own shadow is clipped by
+      the scroller, the holder's is not.
+    */
+    const cornerLayer = status && statusPosition === "bottom-end" ? (
+      <div
+        data-slot="app-shell-status"
+        data-position="bottom-end"
+        className="pointer-events-none relative z-20 h-0 shrink-0"
+      >
+        <div className="absolute inset-x-0 bottom-full flex justify-end p-4">
+          <div
+            data-slot="app-shell-status-scroller"
+            className="pointer-events-auto max-h-[calc(100dvh-9.25rem)] w-full overflow-y-auto rounded-[var(--ui-radius-box)] shadow-overlay sm:max-w-sm"
+            style={mainHeight != null ? { maxHeight: Math.max(mainHeight - 32, 0) } : undefined}
+          >
+            {status}
+          </div>
+        </div>
       </div>
     ) : null;
 
@@ -437,11 +504,13 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
               {panel.footer && <div className="shrink-0">{panel.footer}</div>}
             </aside>
           ) : (
-            <main aria-label={mainLabel} className={PANE_FILL} style={MOBILE_PANE_STYLE}>
+            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL} style={MOBILE_PANE_STYLE}>
               {statusLayer}
               {children}
             </main>
           )}
+          {/* With the main area only: a side column has the screen to itself. */}
+          {!panel && cornerLayer}
           <BottomTabBar
             items={mobileTabs}
             activeId={activeMobileTab}
@@ -487,10 +556,11 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
               page-sized dialog covers (`SettingsDialog` `fitTo`). */}
           <div data-slot="app-shell-content" className="flex min-w-0 flex-1 flex-col">
             {bar}
-            <main aria-label={mainLabel} className={PANE_FILL}>
+            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
               {children}
             </main>
+            {cornerLayer}
           </div>
           {/* `showRight` gates the DESKTOP arrangement only — see the prop. */}
           {right && showRight && (

@@ -721,6 +721,58 @@ describe("AppShell — notice", () => {
   });
 });
 
+/**
+ * `status` + `statusPosition`. Oracles: document order (the corner layer is
+ * after `<main>`, not inside the scrolling page; the top layer is main's first
+ * child), the tab bar's `navigation` landmark, and `data-position`.
+ */
+describe("AppShell — status position", () => {
+  it("floats at the top of the main area by default", () => {
+    stubViewport(true);
+    renderShell({ status: <p>Hohe Auslastung</p> });
+    const layer = screen.getByText("Hohe Auslastung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    expect(layer).toHaveAttribute("data-position", "top");
+    expect(screen.getByRole("main").firstElementChild).toBe(layer);
+  });
+
+  it("sits under the main area at bottom-end, outside the scrolling page and the side columns", () => {
+    stubViewport(true);
+    renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });
+    const layer = screen.getByText("Wartung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    expect(layer).toHaveAttribute("data-position", "bottom-end");
+    expect(screen.getByRole("main")).not.toContainElement(layer);
+    expect(precedes(screen.getByRole("main"), layer)).toBe(true);
+    for (const column of screen.getAllByRole("complementary")) {
+      expect(column).not.toContainElement(layer);
+    }
+  });
+
+  it("stays above the tab bar below lg, and only with the main area", () => {
+    stubViewport(false);
+    const { rerender } = renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });
+    const layer = screen.getByText("Wartung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    expect(precedes(screen.getByRole("main"), layer)).toBe(true);
+    expect(precedes(layer, screen.getByRole("navigation", { name: "Bereichswechsel" }))).toBe(true);
+
+    rerender(
+      <AppShell
+        topBar={<span>Anwendung</span>}
+        left={leftPanel()}
+        right={rightPanel()}
+        mobileTabs={TABS}
+        activeMobileTab="nav"
+        onMobileTabChange={() => {}}
+        mobileTabBarLabel="Bereichswechsel"
+        status={<p>Wartung</p>}
+        statusPosition="bottom-end"
+      >
+        <p>Inhalt</p>
+      </AppShell>,
+    );
+    expect(screen.queryByText("Wartung")).toBeNull();
+  });
+});
+
 describe("AppShell — narrow-screen arrangement", () => {
   it.each([
     ["nav", "Navigationsspalte"],

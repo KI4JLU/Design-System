@@ -17,8 +17,14 @@ export type AlertTone = "neutral" | "info" | "success" | "warning" | "error";
  * `pill`: a small floating message for `AppShell`'s `status` slot — reduced
  * operation („Hohe Auslastung"). The tone's container fill with a tinted
  * border and the overlay shadow, as wide as its text; title · text inline.
+ *
+ * `toast`: a floating card for `AppShell`'s `status` slot at
+ * `statusPosition="bottom-end"` — a standing message that looks like a
+ * `Toast` but stays until it is closed. The pill's surface (container fill,
+ * tinted border, overlay shadow) with the box's flow: title over text,
+ * actions on their own row, as wide as the slot.
  */
-export type AlertLayout = "box" | "banner" | "pill";
+export type AlertLayout = "box" | "banner" | "pill" | "toast";
 
 /**
  * Alert surface (cva); `alertToneSurfaces` is shared with `Toast`, so an
@@ -53,6 +59,7 @@ export const alertVariants = cva(
         banner:
           "relative w-full items-center justify-center gap-2 rounded-none border-x-0 border-t-0 py-2 text-center",
         pill: "w-fit max-w-full items-center gap-2 rounded-[var(--ui-radius-box)] py-2 text-left shadow-overlay",
+        toast: "w-full items-start rounded-[var(--ui-radius-box)] py-3 text-left shadow-overlay",
       },
     },
     compoundVariants: [
@@ -68,6 +75,12 @@ export const alertVariants = cva(
       { layout: "pill", tone: "success", class: "border-success/40" },
       { layout: "pill", tone: "warning", class: "border-warning/40" },
       { layout: "pill", tone: "error", class: "border-error/40" },
+      // Toast: framed like the pill, so the two floating layouts match.
+      { layout: "toast", tone: "neutral", class: "border-outline-variant" },
+      { layout: "toast", tone: "info", class: "border-info/40" },
+      { layout: "toast", tone: "success", class: "border-success/40" },
+      { layout: "toast", tone: "warning", class: "border-warning/40" },
+      { layout: "toast", tone: "error", class: "border-error/40" },
     ],
     defaultVariants: {
       tone: "neutral",

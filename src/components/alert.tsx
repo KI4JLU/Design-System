@@ -33,7 +33,8 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
    * (outage, maintenance). `pill`: a small floating message for `AppShell`'s
    * `status` slot (reduced operation). In `banner` and `pill` the title, the
    * text and an `AlertAction` flow on one line — „**Titel** · Text Aktion" —
-   * and wrap on a narrow screen.
+   * and wrap on a narrow screen. `toast`: a floating card for the `status`
+   * slot at the bottom end, laid out like `box`.
    */
   layout?: AlertLayout;
   /**
@@ -99,13 +100,15 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
       ) : null;
 
     const hasIcon = iconNode != null && iconNode !== false;
+    // Title over text, actions on their own row; banner and pill run inline.
+    const blockFlow = layout === "box" || layout === "toast";
 
     return (
       <div
         ref={ref}
         role={LIVE_ROLES[live]}
         data-layout={layout}
-        data-flow={layout === "box" ? undefined : "inline"}
+        data-flow={blockFlow ? undefined : "inline"}
         className={cn(
           alertVariants({ tone, layout }),
           // Symmetric room for the pinned close button keeps the text centred.
@@ -125,15 +128,19 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
             // Inline flow: title, text and action are inline boxes, so a
             // long message wraps like a sentence (and stays centred in a
             // banner) instead of breaking into columns.
-            layout === "box" ? "flex flex-1 flex-col gap-1" : "block",
+            blockFlow ? "flex flex-1 flex-col gap-1" : "block",
           )}
         >
           {/* In a banner the icon is part of the centred line: wrapped on a
-              narrow screen, it stays with the text instead of at the edge. */}
+              narrow screen, it stays with the text instead of at the edge.
+              One line tall (`1lh`) and aligned to the line's top, so it is
+              centred on the first line of text, whatever the font's metrics
+              (`text-bottom` sat it 1.5px high). */}
           {hasIcon && layout === "banner" ? (
             <span
               aria-hidden="true"
-              className={cn("mr-2 inline-flex h-5 items-center align-text-bottom", ICON_SIZE)}
+              data-slot="alert-icon"
+              className={cn("mr-2 inline-flex h-[1lh] items-center align-top", ICON_SIZE)}
             >
               {iconNode}
             </span>
@@ -202,8 +209,9 @@ const AlertDescription = React.forwardRef<
     className={cn(
       "m-0 wrap-anywhere [&_a]:underline [&_a]:underline-offset-2 [&_p]:m-0 [&_p+p]:mt-2",
       // Inline flow (banner, pill): „**Titel** · Text" — the dot only when
-      // something (the title) precedes the text.
-      "[[data-flow=inline]_&]:inline [[data-flow=inline]_*+&]:before:mx-1.5 [[data-flow=inline]_*+&]:before:content-['·']",
+      // a title precedes the text. Not after the banner's icon, which sits
+      // in the same line: without a title the text follows it directly.
+      "[[data-flow=inline]_&]:inline [[data-flow=inline]_:not([data-slot=alert-icon])+&]:before:mx-1.5 [[data-flow=inline]_:not([data-slot=alert-icon])+&]:before:content-['·']",
       // …and so do its paragraphs: one sentence after the other, not blocks.
       "[[data-flow=inline]_&_p]:inline [[data-flow=inline]_&_p+p]:mt-0 [[data-flow=inline]_&_p+p]:before:content-['_']",
       className,

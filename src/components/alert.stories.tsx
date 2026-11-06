@@ -227,3 +227,45 @@ export const InFormDialog: Story = {
     );
   },
 };
+
+/**
+ * Banner and pill run title · text on one line; the dot belongs between a
+ * title and the text. A banner without a title has its icon right before the
+ * text in that line — and no dot after it. Oracle: the computed `::before`
+ * content of each description.
+ */
+export const InlineSeparator: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      <Alert tone="info" layout="banner" data-testid="untitled">
+        <AlertDescription>Dieses Angebot befindet sich im Testbetrieb.</AlertDescription>
+      </Alert>
+      <Alert tone="info" layout="banner" data-testid="titled">
+        <AlertTitle>Testbetrieb</AlertTitle>
+        <AlertDescription>Antworten können Fehler enthalten.</AlertDescription>
+      </Alert>
+      <Alert tone="warning" layout="pill" data-testid="pill">
+        <AlertDescription>Antworten können länger dauern.</AlertDescription>
+      </Alert>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dot = (text: string) =>
+      getComputedStyle(canvas.getByText(text), "::before").content;
+    await expect(dot("Dieses Angebot befindet sich im Testbetrieb.")).not.toContain("·");
+    await expect(dot("Antworten können Fehler enthalten.")).toContain("·");
+    await expect(dot("Antworten können länger dauern.")).not.toContain("·");
+
+    // The banner's icon is centred on the text's first line. Oracle: the
+    // line box of the text's first glyph run (a Range over its text node).
+    for (const id of ["untitled", "titled"]) {
+      const banner = canvas.getByTestId(id);
+      const icon = banner.querySelector("svg")!.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(banner.querySelector("[data-flow=inline] > div")!.lastElementChild!.firstChild!);
+      const line = range.getClientRects()[0];
+      await expect(icon.top + icon.height / 2).toBeCloseTo(line.top + line.height / 2, 0);
+    }
+  },
+};
