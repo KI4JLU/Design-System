@@ -1085,3 +1085,85 @@ export const WithSystemStatus: Story = {
     await expect(within(pill).getByRole("button", { name: "Schließen" })).toBeVisible();
   },
 };
+
+/**
+ * The same slot at `statusPosition="bottom-end"`: an `Alert layout="toast"`
+ * card in the main area's bottom-right corner, up to 24rem wide — over the
+ * page, which neither moves nor reflows, and clear of the side column.
+ */
+export const WithSystemStatusBottomEnd: Story = {
+  render: () => (
+    <AppShellFixture
+      context="overview"
+      search={<ShellSearch />}
+      statusPosition="bottom-end"
+      status={
+        <Alert tone="warning" layout="toast" live="polite" onDismiss={() => {}}>
+          <AlertTitle>Wartung angekündigt</AlertTitle>
+          <AlertDescription>
+            Am Freitag zwischen 18 und 20 Uhr ist der Dienst nicht erreichbar.
+          </AlertDescription>
+        </Alert>
+      }
+    >
+      <SectionedGridPage />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const card = await canvas.findByRole("status");
+    const box = card.getBoundingClientRect();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+
+    // Bottom-right of the main area, 16px in from both edges.
+    await expect(box.bottom).toBeCloseTo(main.bottom - 16, 0);
+    await expect(box.right).toBeCloseTo(main.right - 16, 0);
+    await expect(box.left).toBeGreaterThanOrEqual(main.left);
+    // 24rem at most.
+    await expect(box.width).toBeLessThanOrEqual(384);
+    await expect(within(card).getByRole("button", { name: "Schließen" })).toBeVisible();
+  },
+};
+
+/**
+ * A corner card taller than the screen: it is capped below the bar and scrolls
+ * in itself, so its title and close button can still be reached.
+ */
+export const WithSystemStatusBottomEndTall: Story = {
+  render: () => (
+    <AppShellFixture
+      context="overview"
+      search={<ShellSearch />}
+      statusPosition="bottom-end"
+      status={
+        <Alert tone="info" layout="toast" live="polite" onDismiss={() => {}}>
+          <AlertTitle>Hinweis</AlertTitle>
+          <AlertDescription>
+            {Array.from({ length: 40 }, (_, i) => (
+              <p key={i}>Zeile {i + 1} eines sehr langen Hinweises.</p>
+            ))}
+          </AlertDescription>
+        </Alert>
+      }
+    >
+      <SectionedGridPage />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const card = await canvas.findByRole("status");
+    const scroller = card.parentElement!;
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    const header = bar(canvasElement).getBoundingClientRect();
+
+    await expect(scroller).toHaveAttribute("data-slot", "app-shell-status-scroller");
+    const box = scroller.getBoundingClientRect();
+    // Inside the main area with its 16px insets: below the bar, above the edge.
+    await expect(header.bottom).toBeLessThanOrEqual(main.top + 1);
+    await expect(box.top).toBeCloseTo(main.top + 16, 0);
+    await expect(box.bottom).toBeCloseTo(main.bottom - 16, 0);
+    // Scrolls in itself, and takes the pointer (its scrollbar is usable).
+    await expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+    await expect(getComputedStyle(scroller).pointerEvents).toBe("auto");
+    await expect(within(card).getByRole("button", { name: "Schließen" })).toBeInTheDocument();
+  },
+};

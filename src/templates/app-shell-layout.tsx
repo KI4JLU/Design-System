@@ -210,10 +210,13 @@ export interface AppShellLayoutProps
   /** Accessible name of the region around `notice`. Default „Systemmeldung". */
   noticeLabel?: AppShellProps["noticeLabel"];
   /**
-   * A floating status message at the top centre of the main area (reduced
-   * operation). See `AppShellProps.status`.
+   * A floating status message over the main area (reduced operation), at the
+   * top centre or — `statusPosition="bottom-end"` — in the bottom-right
+   * corner. See `AppShellProps.status`.
    */
   status?: AppShellProps["status"];
+  /** Where `status` floats. Default `top`. See `AppShellProps.statusPosition`. */
+  statusPosition?: AppShellProps["statusPosition"];
 }
 
 const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
@@ -237,6 +240,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
       notice,
       noticeLabel,
       status,
+      statusPosition,
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
@@ -482,6 +486,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
         notice={notice}
         noticeLabel={noticeLabel}
         status={status}
+        statusPosition={statusPosition}
         mobileTabs={mobileTabs}
         activeMobileTab={activeMobileTab}
         onMobileTabChange={onMobileTabChange}

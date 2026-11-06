@@ -80,6 +80,22 @@ describe("Alert", () => {
     expect(container.firstElementChild).not.toHaveAttribute("data-flow");
   });
 
+  // The corner card: the pill's floating surface, the box's flow (title over
+  // text, no inline run).
+  it("gives a toast the pill's surface and the box's flow", () => {
+    const { container } = render(
+      <Alert tone="warning" layout="toast">
+        <AlertTitle>Wartung</AlertTitle>
+        <AlertDescription>Heute ab 18 Uhr.</AlertDescription>
+      </Alert>,
+    );
+    const root = container.firstElementChild!;
+    expect(root).toHaveAttribute("data-layout", "toast");
+    expect(root).not.toHaveAttribute("data-flow");
+    expect(root).toHaveClass("bg-warning-container", "border-warning/40", "shadow-overlay", "w-full", "items-start");
+    expect(screen.getByText("Wartung").parentElement).toHaveClass("flex-col");
+  });
+
   it("keeps a description's paragraphs inline in a banner", () => {
     render(
       <Alert layout="banner">
