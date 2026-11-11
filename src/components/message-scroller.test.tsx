@@ -61,6 +61,19 @@ describe("MessageScroller", () => {
     );
   });
 
+  // Oracle: the same rule mirrored — the primitive's "content above" state
+  // (`start`) fades the upper edge, and both states together fade both.
+  it("fades the upper edge while content lies above, and both edges in between", () => {
+    const { container } = render(<Transcript />);
+    const viewport = container.querySelector('[data-slot="message-scroller-viewport"]');
+    expect(viewport?.className).toContain(
+      "[&[data-scrollable~=start]]:[mask-image:linear-gradient(to_bottom,transparent,#000_3rem)]",
+    );
+    expect(viewport?.className).toContain(
+      "[&[data-scrollable~=start][data-scrollable~=end]]:[mask-image:linear-gradient(to_bottom,transparent,#000_3rem,#000_calc(100%_-_3rem),transparent)]",
+    );
+  });
+
   it("accepts a custom label", () => {
     render(<Transcript label="Zur neuesten Antwort" />);
     expect(screen.getByText("Zur neuesten Antwort")).toBeInTheDocument();

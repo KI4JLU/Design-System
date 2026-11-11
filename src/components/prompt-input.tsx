@@ -383,7 +383,7 @@ export function AttachmentChip({
         <div
           data-slot="attachment-chip"
           className={cn(
-            "group relative flex h-8 cursor-pointer select-none items-center gap-1.5 border border-outline-variant px-1.5 font-medium text-sm transition-all hover:bg-surface-container-high hover:text-on-surface",
+            "group relative flex h-8 cursor-pointer select-none items-center gap-1.5 border border-outline-variant px-1.5 font-medium text-sm transition-all hover:bg-hover hover:text-on-surface",
             status === "uploading" && "text-on-surface-variant",
             status === "error" && "border-error text-error hover:text-error",
             promptInputControlShape,
@@ -1447,7 +1447,7 @@ export const PromptInputSelectTrigger = ({
   <SelectTrigger
     className={cn(
       "border-none bg-transparent font-medium text-on-surface-variant shadow-none transition-colors",
-      "hover:bg-surface-container-high hover:text-on-surface aria-expanded:bg-surface-container-high aria-expanded:text-on-surface",
+      "hover:bg-hover hover:text-on-surface aria-expanded:bg-hover aria-expanded:text-on-surface",
       className,
     )}
     {...props}
@@ -1558,7 +1558,7 @@ export const PromptInputTabItem = ({
 }: PromptInputTabItemProps) => (
   <div
     className={cn(
-      "flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-container-high",
+      "flex items-center gap-2 px-3 py-2 text-xs hover:bg-hover",
       className,
     )}
     {...props}

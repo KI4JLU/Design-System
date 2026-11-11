@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { TITLEBAR_HEIGHT, useTitlebar } from "../lib/use-titlebar";
 import { cn } from "../lib/utils";
 
 /**
@@ -47,15 +48,38 @@ export interface TooltipContentProps
   container?: HTMLElement | null;
 }
 
+type CollisionPadding = TooltipContentProps["collisionPadding"];
+
+/** The call site's padding with its top raised to at least `top`. */
+function withTop(padding: CollisionPadding, top: number): CollisionPadding {
+  if (typeof padding === "number") {
+    return { top: Math.max(padding, top), right: padding, bottom: padding, left: padding };
+  }
+  return { ...padding, top: Math.max(padding?.top ?? 0, top) };
+}
+
 const TooltipContent = React.forwardRef<
   React.ComponentRef<typeof TooltipPrimitive.Content>,
   TooltipContentProps
->(({ className, sideOffset = 6, container, ...props }, ref) => (
+>(({ className, sideOffset = 6, container, collisionPadding, ...props }, ref) => {
+  /*
+    Under a hidden title bar (`<html data-titlebar>`, Storybook „Native
+    shell") the window's top row holds the window controls and drags the
+    window: a hint that lands there covers the controls and cannot be told
+    from chrome. So that row counts as outside the viewport for every tooltip
+    — Radix flips or shifts the hint out of it — whatever side the call site
+    asked for. Enforced here, in the one component every tooltip renders
+    through (`TitleTooltips` included), so no call site has to remember it.
+  */
+  const titlebar = useTitlebar() !== null;
+  const padding = titlebar ? withTop(collisionPadding, TITLEBAR_HEIGHT) : collisionPadding;
+  return (
   <TooltipPrimitive.Portal container={container ?? undefined}>
     <TooltipPrimitive.Content
       ref={ref}
       data-slot="tooltip-content"
       sideOffset={sideOffset}
+      collisionPadding={padding}
       className={cn(
         "z-50 max-w-72 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-balance text-on-primary shadow-overlay",
         className,
@@ -63,7 +87,8 @@ const TooltipContent = React.forwardRef<
       {...props}
     />
   </TooltipPrimitive.Portal>
-));
+  );
+});
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

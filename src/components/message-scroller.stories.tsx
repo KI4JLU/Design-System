@@ -10,6 +10,7 @@ import {
 } from "./message-scroller";
 import { Button } from "./button";
 import { Shimmer } from "./shimmer";
+import { expect } from "storybook/test";
 
 const meta = {
   title: "Components/MessageScroller",
@@ -32,6 +33,13 @@ const seed: Turn[] = Array.from({ length: 12 }, (_, i) => ({
 
 /** Send a turn and watch the answer stream in; scroll up mid-stream to release the follow. */
 export const Streaming: Story = {
+  play: async ({ canvasElement }) => {
+    // The jump button is a circle: as wide as tall, its radius at least half of that.
+    const button = canvasElement.querySelector("[data-slot='message-scroller-button']") as HTMLElement;
+    const box = button.getBoundingClientRect();
+    await expect(box.width).toBeCloseTo(box.height, 0);
+    await expect(parseFloat(getComputedStyle(button).borderTopLeftRadius)).toBeGreaterThanOrEqual(box.height / 2);
+  },
   render: function Render() {
     const [turns, setTurns] = React.useState(seed);
     const [busy, setBusy] = React.useState(false);

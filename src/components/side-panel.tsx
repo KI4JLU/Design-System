@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -7,7 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
-import { SIDE_PANEL_RAIL_WIDTH, sidePanelVariants } from "./side-panel-variants";
+import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH, sidePanelVariants } from "./side-panel-variants";
 import { SidebarCollapsedContext } from "./sidebar-context";
 
 /**
@@ -87,11 +88,29 @@ export interface SidePanelProps extends React.HTMLAttributes<HTMLElement> {
    * `SIDE_PANEL_RAIL_WIDTH` (60px) wide.
    */
   footer?: React.ReactNode;
+  /**
+   * This pane is the top-left corner of a window whose title bar the host
+   * hides (`<html data-titlebar>`, see Storybook „Native shell"), so its
+   * header row is the window's title bar: the row starts after the window
+   * controls (`--titlebar-inset-start`), so the brand stands right beside
+   * them and the toggle at the pane's far edge, as on the web. Collapsed, the
+   * rail takes the page's colour. `AppShell` sets it for its left column
+   * under that attribute, and never on the web.
+   */
+  titlebarInset?: boolean;
+  /**
+   * Where the collapsed rail's expand toggle renders instead of in the rail.
+   * Under a hidden title bar the rail starts below the window's title row, so
+   * the frame around it (`AppShell`) hands over a place in that row; the
+   * toggle stays this pane's control (label, `aria-expanded`,
+   * `aria-controls`). Without it the toggle is in the rail, as on the web.
+   */
+  railToggleContainer?: HTMLElement | null;
   children: React.ReactNode;
 }
 
-/** The collapse / expand toggle: a 36px ghost square, 20px icon, the same in both places. */
-const toggleClass = "size-9 shrink-0 p-0 text-on-surface-variant [&_svg]:size-5";
+/** The collapse / expand toggle — shared with `AppShell`'s title-bar toggle. */
+const toggleClass = PANE_TOGGLE_CLASS;
 
 const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
   (
@@ -106,6 +125,8 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
       header,
       collapsedPreview,
       footer,
+      titlebarInset = false,
+      railToggleContainer,
       className,
       style,
       children,
@@ -159,13 +180,30 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
       <Button
         variant="ghost"
         size="icon"
-        className={cn(toggleClass, side === "left" ? "mr-1 ml-auto" : "ml-0.5")}
+        className={cn(
+          toggleClass,
+          side === "left" ? "mr-1 ml-auto" : "ml-0.5",
+        )}
         aria-label={collapseLabel}
         aria-expanded={true}
         aria-controls={bodyId}
         onClick={onCollapse}
       >
         <CollapseIcon className="h-5 w-5" aria-hidden />
+      </Button>
+    );
+
+    const expandToggle = (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={toggleClass}
+        aria-label={expandLabel}
+        aria-expanded={false}
+        aria-controls={bodyId}
+        onClick={onExpand}
+      >
+        <ExpandIcon className="h-5 w-5" aria-hidden />
       </Button>
     );
 
@@ -179,7 +217,16 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
         // Merged, not spread over: a consumer adding an unrelated style (a
         // z-index, say) must not silently drop the width.
         style={{ width: isOpen ? width : SIDE_PANEL_RAIL_WIDTH, ...style }}
-        className={cn(sidePanelVariants({ side }), className)}
+        className={cn(
+          sidePanelVariants({ side }),
+          // Under a hidden title bar the bar above carries the brand and the
+          // toggle while this pane is collapsed; the rail that is left reads
+          // as part of the page, so it takes the page's colour.
+          titlebarInset && !isOpen && "bg-canvas",
+          className,
+        )}
+        data-slot="side-panel"
+        data-side={side}
         {...props}
       >
         {!isOpen && (
@@ -199,23 +246,22 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
           // rather than an `mt-auto` child of the scroll box because it would
           // otherwise ride off the end of a long preview strip — and it is the
           // sign-out route, the one thing in the rail that must stay reachable.
-          <div className="flex min-h-0 flex-1 flex-col items-center">
+          // `data-tooltip-side`: the rail stands against the window's edge, so
+          // a `title` hint on one of its icons opens into the page
+          // (`TitleTooltips`), like `NavItem`'s own tooltip does.
+          <div
+            data-tooltip-side={side === "left" ? "right" : "left"}
+            className="flex min-h-0 flex-1 flex-col items-center"
+          >
             {/* The same `h-14` row the expanded header uses, so the toggle is
                 one control that stays put rather than two that nearly line up.
                 The height is the ROW's, not the button's — exactly as below. */}
-            <div className="flex h-14 shrink-0 items-center justify-center">
-              {/* The same toggle as the expanded header's: one control in two placements. */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={toggleClass}
-                aria-label={expandLabel}
-                aria-expanded={false}
-                aria-controls={bodyId}
-                onClick={onExpand}
-              >
-                <ExpandIcon className="h-5 w-5" aria-hidden />
-              </Button>
+            <div data-app-region="drag" className="flex h-14 shrink-0 items-center justify-center">
+              {/* The same toggle as the expanded header's: one control in two
+                  placements — or three: under a hidden title bar the frame
+                  hands over a place in the window's title row, and this row
+                  stays as the empty spacer that keeps the icons below it. */}
+              {railToggleContainer ? createPortal(expandToggle, railToggleContainer) : expandToggle}
             </div>
             {/* `py-2` is the rail's counterpart to the padding a pane body
                 brings with it (`p-2` on `AppShellLayout`'s nav), which is what
@@ -270,7 +316,17 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
             `SidePanel` → `ToggleAlignsWithBodyControl`, whose expectation is
             read off the body control's own rect.
           */}
-          <div className="flex h-14 shrink-0 items-center gap-1.5 px-2">
+          <div
+            // The window's top row: it drags the window where the host hides
+            // the title bar. The inset is added to the row's own 8px, so the
+            // row is unchanged while the token is 0.
+            data-app-region="drag"
+            data-titlebar-inset={titlebarInset && isOpen ? "start" : undefined}
+            className={cn(
+              "flex h-14 shrink-0 items-center gap-1.5 px-2",
+              titlebarInset && "pl-[max(0.5rem,var(--titlebar-inset-start))]",
+            )}
+          >
             {/* The toggle sits on the edge that FACES THE CONTENT, in both
                 directions: a left pane's row reads [header … toggle], a right
                 pane's [toggle … header]. DOM order carries it — on a right
@@ -288,7 +344,12 @@ const SidePanel = React.forwardRef<HTMLElement, SidePanelProps>(
                 collapsed rail carries no title — only the expand button,
                 `collapsedPreview` and the pinned `footer`. */}
             {isOpen && header && (
-              <span className={cn("flex min-w-0 flex-1 items-center gap-stack-sm", side === "left" && "pl-2.5")}>
+              <span className={cn("flex min-w-0 flex-1 items-center gap-stack-sm", side === "left" && (titlebarInset
+                // Beside the window controls the brand needs no inset of its
+                // own; without them (full screen) it takes the 10px it has on
+                // the web, on the line of the rows below.
+                ? "pl-[max(0px,calc(0.625rem-var(--titlebar-inset-start)))]"
+                : "pl-2.5"))}>
                 {header}
               </span>
             )}

@@ -105,12 +105,12 @@ const SidebarRailItem = React.forwardRef<HTMLButtonElement, SidebarRailItemProps
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
           "[&>svg]:size-[18px]",
           variant === "action"
-            ? "rounded-[var(--ui-radius-row)] text-on-surface hover:bg-surface-container-low [&>svg]:size-[18px]"
+            ? "rounded-[var(--ui-radius-row)] text-on-surface hover:bg-hover [&>svg]:size-[18px]"
             : cn(
                 "rounded-[var(--ui-radius-row)]",
                 active
                   ? "bg-primary/10 text-primary"
-                  : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface focus-visible:bg-surface-container-low",
+                  : "text-on-surface-variant hover:bg-hover hover:text-on-surface focus-visible:bg-hover",
               ),
           muted && "opacity-50",
           className,

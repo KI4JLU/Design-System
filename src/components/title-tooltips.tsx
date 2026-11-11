@@ -60,7 +60,8 @@ type Active = {
 };
 
 type Tone = "primary" | "inverse";
-type Tip = { text: string; rect: DOMRect; tone: Tone; container: HTMLElement | null };
+type Side = "top" | "right" | "bottom" | "left";
+type Tip = { text: string; rect: DOMRect; tone: Tone; side: Side | undefined; container: HTMLElement | null };
 
 /** Grace period for the pointer to cross from the element onto the tooltip. */
 const LEAVE_GRACE_MS = 150;
@@ -68,6 +69,14 @@ const LEAVE_GRACE_MS = 150;
 /** `data-tooltip-tone="inverse"` on an ancestor (e.g. `Message`) switches to
  * the inverse surface, for places where a primary tooltip would sit on a
  * primary surface and disappear. */
+/** `data-tooltip-side` on an ancestor names the side hints open on there —
+ * a collapsed rail against the window's edge sets it, so its hints open into
+ * the page instead of over the rows above. */
+function sideOf(el: HTMLElement): Side | undefined {
+  const side = el.closest("[data-tooltip-side]")?.getAttribute("data-tooltip-side");
+  return side === "top" || side === "right" || side === "bottom" || side === "left" ? side : undefined;
+}
+
 function toneOf(el: HTMLElement): Tone {
   return el.closest("[data-tooltip-tone]")?.getAttribute("data-tooltip-tone") === "inverse"
     ? "inverse"
@@ -319,6 +328,7 @@ export function TitleTooltips({ delayDuration = 0 }: TitleTooltipsProps) {
           text: active.text,
           rect: active.el.getBoundingClientRect(),
           tone: toneOf(active.el),
+          side: sideOf(active.el),
           container: document.fullscreenElement instanceof HTMLElement ? document.fullscreenElement : null,
         });
         setOpen(true);
@@ -484,6 +494,7 @@ export function TitleTooltips({ delayDuration = 0 }: TitleTooltipsProps) {
         <TooltipContent
           container={container}
           data-title-tooltip=""
+          side={tip?.side}
           className={cn(
             "whitespace-pre-line",
             tip?.tone === "inverse" && "bg-inverse-surface text-inverse-on-surface",

@@ -194,3 +194,66 @@ describe("ThemeProvider (controlled)", () => {
     expect(screen.getByTestId("resolved")).toHaveTextContent("light");
   });
 });
+
+/**
+ * `onThemeApplied` (KI-998): what a native host mirrors to its window. The
+ * oracle is that use — the host has to learn the stored choice at start, every
+ * later choice, and an OS switch while on "system".
+ */
+describe("ThemeProvider onThemeApplied", () => {
+  it("reports the stored choice on mount", () => {
+    mockMatchMedia(false);
+    window.localStorage.setItem("theme", "dark");
+    const onThemeApplied = vi.fn();
+    render(
+      <ThemeProvider onThemeApplied={onThemeApplied}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(onThemeApplied).toHaveBeenCalledExactlyOnceWith("dark", "dark");
+  });
+
+  it("reports a new choice", async () => {
+    mockMatchMedia(true);
+    const onThemeApplied = vi.fn();
+    render(
+      <ThemeProvider onThemeApplied={onThemeApplied}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(onThemeApplied).toHaveBeenLastCalledWith("system", "dark");
+    await userEvent.click(screen.getByRole("button", { name: "set-light" }));
+    expect(onThemeApplied).toHaveBeenLastCalledWith("light", "light");
+    expect(onThemeApplied).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports an OS switch while on system", () => {
+    const os = mockMatchMedia(false);
+    const onThemeApplied = vi.fn();
+    render(
+      <ThemeProvider onThemeApplied={onThemeApplied}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    os.setDark(true);
+    expect(onThemeApplied).toHaveBeenLastCalledWith("system", "dark");
+  });
+
+  it("does not report again when only the callback changes", () => {
+    mockMatchMedia(false);
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender } = render(
+      <ThemeProvider theme="dark" onThemeApplied={first}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    rerender(
+      <ThemeProvider theme="dark" onThemeApplied={second}>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).not.toHaveBeenCalled();
+  });
+});

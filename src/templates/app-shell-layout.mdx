@@ -270,6 +270,15 @@ own storage. One-off failures of a single request belong in a `Toast`, and an
 error about one element (a message, a source row) belongs inline at that
 element — not here.
 
+## Native shell (Electron)
+
+With `<html data-shell="native">` the side columns let the window's OS
+material through, and with `<html data-titlebar="inset">` the top row drags
+the window and keeps clear of the window controls. Both are set by the host;
+without them the frame is unchanged. Host setup and behaviour: „Native shell".
+
+<Canvas of={AppShellLayoutStories.NativeShell} />
+
 ## Resizable columns
 
 <Canvas of={AppShellLayoutStories.WithResizableColumns} />

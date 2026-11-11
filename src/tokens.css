@@ -226,6 +226,22 @@
    * column always sits on `surface`, a second colour beside its content.) */
   --color-canvas: var(--p-white);
   --color-sidebar: var(--p-white);
+  /* What AppShell's root paints behind its columns: the canvas on the web,
+   * transparent in a native shell (see "Native shell" below), where the
+   * window's OS material shows through the side panels. */
+  --color-window: var(--color-canvas);
+
+  /* Hover fills — the one standard for a control's hover background: ONE
+   * tone step above the surface the control stands on, never more.
+   *   hover        — on a plain surface (the canvas, a card, a panel, a
+   *                  menu): a ghost button, a nav row, a list row, a chip.
+   *   hover-raised — on a surface that is itself the hover tone already: a
+   *                  control inside a hovered row, a tab on its grey strip.
+   * Use these, not a `surface-container-*` step picked by eye — that is how
+   * one control ended up three steps heavier than the one beside it.
+   * (Selection and keyboard highlight are not hover and keep their own.) */
+  --color-hover: var(--color-surface-container-low);
+  --color-hover-raised: var(--color-surface-container);
   --color-surface-container: var(--p-gray-150);
   --color-surface-container-high: var(--p-gray-175);
   --color-surface-container-highest: var(--p-gray-200);
@@ -841,6 +857,88 @@ body {
 [data-contrast="more"] :focus-visible {
   outline: 3px solid var(--color-focus-ring) !important;
   outline-offset: 2px !important;
+}
+
+/* ==========================================================================
+ * Native shell — an Electron host showing the OS window material (macOS
+ * vibrancy, Windows 11 Mica) through AppShell. Opt-in attributes on <html>,
+ * all set by the host's preload; without them nothing here applies.
+ *
+ *   data-host="desktop"   — the page runs in the desktop app at all, on any
+ *     platform. Shows what is marked `data-desktop-only`.
+ *   data-shell="native"   — the window is transparent: html, body and
+ *     AppShell's root paint nothing, the side panels a tint over the material,
+ *     the main column stays the opaque canvas. Contrast `more` keeps the
+ *     opaque colours.
+ *   data-titlebar="inset" — the host hides the title bar and the window
+ *     controls sit in the top-left corner (macOS `hiddenInset`): the frame's
+ *     top row is the window's title bar. It drags the window, starts after
+ *     the controls, and carries the sidebar toggle right beside them.
+ *     `hidden` is the same arrangement without controls (full screen).
+ *
+ * Host setup: Storybook „Native shell".
+ * ========================================================================== */
+:root {
+  /* Width the window controls take in the top-left corner. */
+  --titlebar-inset-start: 0px;
+  /* How much of the panel colour covers the material. More reads calmer and
+   * raises text contrast, less shows more of the wallpaper. */
+  --shell-sidebar-tint: 40%;
+}
+
+/* What only the desktop app offers — the hint of a shortcut a browser keeps
+ * for itself, say — is marked `data-desktop-only` and shows only where the
+ * host says it is one (`<html data-host="desktop">`, on every platform, with
+ * or without a material). `revert-layer` hands the element back to whatever
+ * its own classes say. */
+[data-desktop-only] {
+  display: none;
+}
+html[data-host="desktop"] [data-desktop-only] {
+  display: revert-layer;
+}
+
+html[data-shell="native"],
+html[data-shell="native"] body {
+  background-color: transparent;
+}
+[data-shell="native"]:not([data-contrast="more"]) {
+  --color-window: transparent;
+  --color-sidebar: color-mix(in srgb, var(--p-white) var(--shell-sidebar-tint), transparent);
+}
+[data-shell="native"][data-theme="dark"]:not([data-contrast="more"]) {
+  --color-sidebar: color-mix(in srgb, var(--p-night-950) var(--shell-sidebar-tint), transparent);
+}
+
+/* The navigation column behaves like native chrome: no text cursor, no
+ * selectable labels. Fields inside stay editable. */
+[data-shell="native"] [data-slot="side-panel"][data-side="left"] {
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[data-shell="native"] [data-slot="side-panel"][data-side="left"] :is(input, textarea, [contenteditable]) {
+  cursor: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+[data-titlebar="inset"] {
+  /* Wide enough for the larger controls of current macOS, with the same
+   * breathing room after them as before the first icon of a native toolbar.
+   * A host with other controls sets its own value on <html>. */
+  --titlebar-inset-start: 100px;
+}
+[data-titlebar] [data-app-region="drag"] {
+  -webkit-app-region: drag;
+}
+[data-titlebar] [data-app-region="drag"] :is(
+  a[href], button, input, select, textarea, summary, label,
+  [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="switch"],
+  [role="checkbox"], [role="combobox"], [role="searchbox"], [role="textbox"],
+  [tabindex]:not([tabindex="-1"]), [contenteditable], [data-app-region="no-drag"]
+) {
+  -webkit-app-region: no-drag;
 }
 
 /* ==========================================================================

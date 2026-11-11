@@ -13,7 +13,7 @@ export const menuItemVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-on-surface hover:bg-surface-container-low",
+        default: "text-on-surface hover:bg-hover",
         destructive: "text-error hover:bg-error/10",
       },
       selected: {

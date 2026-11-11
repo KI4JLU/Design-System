@@ -763,3 +763,31 @@ describe("AppShellLayout — below lg", () => {
     expect(onMobileTabChange).toHaveBeenCalledWith("nav");
   });
 });
+
+/**
+ * `bar={false}`. Oracle: the `banner` landmark (HTML-AAM: a `header` outside
+ * sectioning content) — „no bar" is „no banner", read through the role, not a
+ * class — and the prop's own contract: the view has no bar in either
+ * arrangement, and by default every view has one.
+ */
+describe("AppShellLayout — bar", () => {
+  it.each([
+    ["a wide screen", true],
+    ["a narrow screen", false],
+  ] as const)("has the bar by default on %s", (_name, isDesktop) => {
+    stubViewport(isDesktop);
+    renderLayout();
+    expect(screen.getByRole("banner")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["a wide screen", true],
+    ["a narrow screen", false],
+  ] as const)("has no bar at all on %s when the view opts out", (_name, isDesktop) => {
+    stubViewport(isDesktop);
+    renderLayout({ bar: false });
+    expect(screen.queryByRole("banner")).toBeNull();
+    // The page is still there, as the one main landmark.
+    expect(screen.getByRole("main")).toHaveTextContent("Inhalt");
+  });
+});

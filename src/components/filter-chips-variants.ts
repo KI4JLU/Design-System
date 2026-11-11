@@ -44,7 +44,7 @@ export const filterChipVariants = cva(
       active: {
         true: "border-primary bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-surface-container-lowest))] text-primary",
         false:
-          "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface",
+          "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-hover hover:text-on-surface",
       },
     },
     defaultVariants: { kind: "filter", active: false },

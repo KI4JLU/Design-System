@@ -52,7 +52,7 @@ const SelectTrigger = React.forwardRef<
             ]
           : [
               "h-9 w-auto px-2.5 text-sm text-on-surface outline-none transition-colors",
-              "hover:bg-surface-container-low data-[state=open]:bg-surface-container-low",
+              "hover:bg-hover data-[state=open]:bg-hover",
               "focus-visible:ring-2 focus-visible:ring-focus-ring",
               "disabled:cursor-not-allowed disabled:opacity-60",
             ],

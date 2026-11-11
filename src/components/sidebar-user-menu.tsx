@@ -50,7 +50,7 @@ function SidebarUserMenu({ initials, name, role, children }: SidebarUserMenuProp
             "min-w-0 transition-colors active:scale-100",
             // A row like the ones above it: row radius, quiet hover, and the
             // primary tint while the menu is open (ghost's data-state=open).
-            "rounded-[var(--ui-radius-row)] hover:bg-surface-container-low",
+            "rounded-[var(--ui-radius-row)] hover:bg-hover",
             // Expanded: the rows' 10px inset, so the avatar starts on the
             // rows' icon edge.
             !collapsed && cn("h-auto w-full justify-start font-body-base", sidebarRowInset),

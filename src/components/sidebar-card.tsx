@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
+import { useRovingRows } from "../lib/use-roving-rows";
 import { cn } from "../lib/utils";
 import { ActionMenu, type ActionMenuItem } from "./action-menu";
 import { Button } from "./button";
@@ -96,6 +97,36 @@ const revealOnHover = cn(
   "data-[state=open]:bg-transparent data-[state=open]:text-on-surface",
 );
 
+/**
+ * The ⋯ trigger of a row with nothing else trailing: out of the flow, over
+ * the end of the title, so a hidden control reserves no room and the title
+ * runs to the row's edge. It has no fill of its own — the title fades out
+ * under it instead (`titleFadesUnderMenu`) — and takes one only while the
+ * pointer is on it or its menu is open. Same place as in the flow: 32px wide
+ * on the row's 4px end inset. Without hover (touch) the trigger is always
+ * visible, so it stays in the flow there and the title ends before it.
+ */
+const overTitle = cn(
+  "absolute top-1/2 right-1 -translate-y-1/2",
+  // On a hovered row, which has the hover tone itself: the raised hover.
+  "hover:bg-hover-raised data-[state=open]:bg-hover-raised",
+  "[@media(hover:none)]:static [@media(hover:none)]:translate-y-0",
+);
+
+/**
+ * The title of such a row, while its ⋯ trigger shows (row hovered, focus
+ * inside it, menu open): it fades to nothing over the stretch the trigger
+ * stands on, so the glyph never sits on text. A mask, so it works on any row
+ * colour. Only where there is hover — on touch the trigger is in the flow.
+ */
+// Written out in full three times: Tailwind finds class names by scanning the
+// source text, so a name assembled from parts would compile to nothing.
+const titleFadesUnderMenu = cn(
+  "[@media(hover:hover)]:group-hover/sidebar-card:[mask-image:linear-gradient(to_right,#000_calc(100%_-_3.75rem),transparent_calc(100%_-_2rem))]",
+  "[@media(hover:hover)]:group-focus-within/sidebar-card:[mask-image:linear-gradient(to_right,#000_calc(100%_-_3.75rem),transparent_calc(100%_-_2rem))]",
+  "[@media(hover:hover)]:group-has-[>button[data-state=open]]/sidebar-card:[mask-image:linear-gradient(to_right,#000_calc(100%_-_3.75rem),transparent_calc(100%_-_2rem))]",
+);
+
 /** A click that landed on one of the card's own controls — or on its portaled
  *  menu, whose React events still bubble through the card. */
 const isControlClick = (e: React.MouseEvent) =>
@@ -143,11 +174,15 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
       activate();
     };
 
+    // The ⋯ alone at the row's end lies over the title (see `overTitle`);
+    // beside a checkbox or an `extra` it keeps its place in the trailing column.
+    const menuOverTitle = !selectionMode && !!actions?.length && !extra && !selectable;
     const row = (
       // Whole-plane click is a pointer convenience; the title button is the keyboard path.
       <li
         ref={ref}
         data-slot="sidebar-card"
+        data-menu={menuOverTitle ? "over-title" : undefined}
         data-static={onOpen ? undefined : ""}
         data-muted={muted ? "" : undefined}
         data-error={error ? "" : undefined}
@@ -159,6 +194,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               : active ? "active" : error ? "marked" : "idle",
             interactive,
           }),
+          menuOverTitle && "relative",
           className,
         )}
         onClick={planeClick}
@@ -175,7 +211,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               onClick={activate}
               aria-current={active ? "true" : undefined}
               aria-describedby={describedBy}
-              className={cn(titleClass, active && activeTextClass, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
+              className={cn(titleClass, active && activeTextClass, menuOverTitle && titleFadesUnderMenu, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring")}
             >
               {title}
             </button>
@@ -183,7 +219,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
             <span
               data-testid={titleTestId}
               aria-current={active ? "true" : undefined}
-              className={cn(titleClass, active && activeTextClass)}
+              className={cn(titleClass, active && activeTextClass, menuOverTitle && titleFadesUnderMenu)}
             >
               {title}
             </span>
@@ -207,7 +243,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
           <ActionMenu
             actions={actions}
             label={actionsLabel ? `${actionsLabel} ${title}` : title}
-            triggerClassName={revealOnHover}
+            triggerClassName={cn(revealOnHover, menuOverTitle && overTitle)}
           />
         )}
         {/* Last: a visible extra (retry) holds the trailing column the
@@ -286,18 +322,39 @@ export interface SidebarCardListProps extends React.HTMLAttributes<HTMLUListElem
   iconSlot?: "icon" | "badge";
 }
 
-/** The `<ul>` for SidebarCards: flat rows, 1px apart. */
+/**
+ * The `<ul>` for SidebarCards: flat rows, 1px apart.
+ *
+ * **One Tab stop, arrow keys inside** (`useRovingRows`): `↑`/`↓` move between
+ * the rows, `←`/`→` between a row's own controls, `Home`/`End` to the ends,
+ * `Tab` leaves the list. Several lists that read as one (a history grouped by
+ * day) sit inside an element marked `data-sidebar-card-groups`: the whole is
+ * then one Tab stop and `↑`/`↓` run across all of them.
+ */
 const SidebarCardList = React.forwardRef<HTMLUListElement, SidebarCardListProps>(
-  ({ iconSlot = "icon", className, ...props }, ref) => (
-    <ul
-      ref={ref}
-      data-slot="sidebar-card-list"
-      data-icon-slot={iconSlot}
-      className={cn("m-0 flex list-none flex-col gap-px p-0", className)}
-      {...props}
-    />
-  ),
+  ({ iconSlot = "icon", className, onFocus, onKeyDown, ...props }, ref) => {
+    const roving = useRovingRows<HTMLUListElement>();
+    React.useImperativeHandle(ref, () => roving.ref.current as HTMLUListElement, [roving.ref]);
+    return (
+      <ul
+        ref={roving.ref}
+        data-slot="sidebar-card-list"
+        data-icon-slot={iconSlot}
+        className={cn("m-0 flex list-none flex-col gap-px p-0", className)}
+        onFocus={(e) => {
+          onFocus?.(e);
+          roving.onFocus(e);
+        }}
+        onKeyDown={(e) => {
+          onKeyDown?.(e);
+          roving.onKeyDown(e);
+        }}
+        {...props}
+      />
+    );
+  },
 );
 SidebarCardList.displayName = "SidebarCardList";
+
 
 export { SidebarCard, SidebarCardList, SidebarSelectionBar };

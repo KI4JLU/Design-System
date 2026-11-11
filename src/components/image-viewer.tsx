@@ -208,7 +208,7 @@ const ImageViewer = React.forwardRef<HTMLDivElement, ImageViewerProps>(
           </ViewerButton>
           <button
             type="button"
-            className="min-w-14 rounded-action px-2 py-1 text-sm tabular-nums text-on-surface-variant hover:bg-surface-container-high"
+            className="min-w-14 rounded-action px-2 py-1 text-sm tabular-nums text-on-surface-variant hover:bg-hover"
             onClick={() => setZoom(null)}
             title={labels.fit}
             aria-label={`${labels.fit} (${Math.round(scale * 100)}%)`}

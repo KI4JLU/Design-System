@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SidebarCard, SidebarSelectionBar } from "./sidebar-card";
+import { SidebarCard, SidebarCardList, SidebarSelectionBar } from "./sidebar-card";
 import { SidebarRailItem } from "./sidebar-rail";
 import { SidebarAction } from "./sidebar-action";
 beforeEach(() => {
@@ -148,7 +148,7 @@ describe("SidebarCard", () => {
     await userEvent.tab();
     expect(title).toHaveFocus();
     expect(screen.getByRole("listitem")).not.toHaveAttribute("data-static");
-    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer", "hover:bg-surface-container-low");
+    expect(screen.getByRole("listitem")).toHaveClass("cursor-pointer", "hover:bg-hover");
   });
 
   it("without onOpen, the title is plain text: no button, not focusable, no click affordance", async () => {
@@ -177,7 +177,7 @@ describe("SidebarCard", () => {
     const item = screen.getByRole("listitem");
     expect(item).toHaveAttribute("data-static", "");
     expect(item).toHaveClass("cursor-default");
-    expect(item).not.toHaveClass("cursor-pointer", "hover:bg-surface-container-low");
+    expect(item).not.toHaveClass("cursor-pointer", "hover:bg-hover");
 
     // A click on the card reaches the consumer's onClick and nothing else.
     await userEvent.click(item);
@@ -446,6 +446,126 @@ describe("SidebarAction", () => {
     render(<SidebarAction icon={<svg />} variant="default">Neuer Chat</SidebarAction>);
     const button = screen.getByRole("button", { name: "Neuer Chat" });
     expect(button).toHaveClass("text-on-primary");
-    expect(button).not.toHaveClass("text-on-surface", "hover:bg-surface-container-low");
+    expect(button).not.toHaveClass("text-on-surface", "hover:bg-hover");
+  });
+});
+
+/**
+ * Keyboard navigation (`useRovingRows`). Oracle: the WAI-ARIA APG's roving
+ * tabindex — a composite widget is ONE Tab stop, arrow keys move inside it,
+ * and exactly one of its elements has `tabindex="0"` at any time — plus the
+ * card's own promise that every control of a row stays reachable.
+ */
+describe("SidebarCardList — keyboard navigation", () => {
+  const menu = [{ label: "Umbenennen", onSelect: () => {} }];
+  const rows = (
+    <>
+      <SidebarCard title="Alpha" onOpen={() => {}} actions={menu} actionsLabel="Aktionen für" />
+      <SidebarCard title="Beta" onOpen={() => {}} actions={menu} actionsLabel="Aktionen für" active />
+      <SidebarCard title="Gamma" onOpen={() => {}} actions={menu} actionsLabel="Aktionen für" />
+    </>
+  );
+  const title = (name: string) => screen.getByRole("button", { name });
+  const tabStops = (root: HTMLElement) =>
+    Array.from(root.querySelectorAll<HTMLElement>("button, a, input")).filter((el) => el.tabIndex === 0);
+
+  it("is one Tab stop: the current row's title, the active row first", async () => {
+    const { container } = render(
+      <>
+        <button type="button">davor</button>
+        <SidebarCardList>{rows}</SidebarCardList>
+        <button type="button">danach</button>
+      </>,
+    );
+    const list = container.querySelector("ul")!;
+    expect(tabStops(list)).toEqual([title("Beta")]);
+    await userEvent.tab();
+    await userEvent.tab();
+    expect(title("Beta")).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "danach" })).toHaveFocus();
+  });
+
+  it("moves between rows with the arrow keys, Home and End, without wrapping", async () => {
+    render(<SidebarCardList>{rows}</SidebarCardList>);
+    title("Beta").focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(title("Gamma")).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(title("Gamma")).toHaveFocus();
+    await userEvent.keyboard("{Home}");
+    expect(title("Alpha")).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(title("Alpha")).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    expect(title("Gamma")).toHaveFocus();
+  });
+
+  it("reaches a row's own controls with the right and left arrow", async () => {
+    render(<SidebarCardList>{rows}</SidebarCardList>);
+    title("Alpha").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("button", { name: "Aktionen für Alpha" })).toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(title("Alpha")).toHaveFocus();
+  });
+
+  it("keeps the Tab stop on the row that last had focus", async () => {
+    const { container } = render(<SidebarCardList>{rows}</SidebarCardList>);
+    title("Beta").focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(tabStops(container.querySelector("ul")!)).toEqual([title("Gamma")]);
+  });
+
+  // A Radix checkbox inside a <form> renders a hidden proxy <input> beside
+  // its button; it is not a control a user can be on.
+  it("skips a checkbox's hidden form input", async () => {
+    render(
+      <form>
+        <SidebarCardList>
+          <SidebarCard title="Quelle" onOpen={() => {}} selectable selectLabel="Auswählen" actions={menu} actionsLabel="Aktionen für" />
+        </SidebarCardList>
+      </form>,
+    );
+    title("Quelle").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("checkbox", { name: "Auswählen Quelle" })).toHaveFocus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("button", { name: "Aktionen für Quelle" })).toHaveFocus();
+  });
+
+  // A list in a collapsed pane is mounted but hidden; opening the pane does
+  // not render the list again.
+  it("is one Tab stop the moment a hidden list is shown, without rendering again", () => {
+    const { container } = render(
+      <div hidden data-testid="pane">
+        <SidebarCardList>{rows}</SidebarCardList>
+      </div>,
+    );
+    screen.getByTestId("pane").hidden = false;
+    expect(tabStops(container.querySelector("ul")!)).toEqual([title("Beta")]);
+  });
+
+  it("runs through the rows of several lists as one inside `data-sidebar-card-groups`", async () => {
+    const { container } = render(
+      <ul data-sidebar-card-groups="">
+        <li>
+          <SidebarCardList>
+            <SidebarCard title="Heute 1" onOpen={() => {}} />
+            <SidebarCard title="Heute 2" onOpen={() => {}} />
+          </SidebarCardList>
+        </li>
+        <li>
+          <SidebarCardList>
+            <SidebarCard title="Gestern 1" onOpen={() => {}} />
+          </SidebarCardList>
+        </li>
+      </ul>,
+    );
+    expect(tabStops(container)).toEqual([title("Heute 1")]);
+    title("Heute 1").focus();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    expect(title("Gestern 1")).toHaveFocus();
+    expect(tabStops(container)).toEqual([title("Gestern 1")]);
   });
 });

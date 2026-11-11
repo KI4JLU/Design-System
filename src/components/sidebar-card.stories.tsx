@@ -192,3 +192,60 @@ export const NotOpenable: Story = {
     await expect(canvas.getByRole("button", { name: "a.pdf" })).toHaveFocus();
   },
 };
+
+/**
+ * Das ⋯-Menü reserviert keinen Platz: Steht am Zeilenende sonst nichts, läuft
+ * der Titel bis zum Rand, und der Auslöser liegt bei Hover, Fokus oder
+ * offenem Menü als deckender Chip über dem Titelende. Neben einer Checkbox
+ * oder einem `extra` bleibt er in der Spalte.
+ */
+export const MenuOverTitle: Story = {
+  args: { title: "" },
+  render: () => (
+    <ul className="flex w-64 flex-col gap-px">
+      <SidebarCard
+        title="Fasse die wichtigsten Punkte aus allen hochgeladenen Quellen zusammen"
+        icon={<MessageSquare />}
+        onOpen={() => {}}
+        actions={actions}
+        actionsLabel="Aktionen für"
+      />
+      <SidebarCard
+        title="Fasse die wichtigsten Punkte aus allen hochgeladenen Quellen zusammen"
+        icon={<MessageSquare />}
+        onOpen={() => {}}
+      />
+    </ul>
+  ),
+  play: async ({ canvas }) => {
+    const [withMenu, plain] = canvas.getAllByRole("listitem");
+    const titleOf = (row: HTMLElement) =>
+      (row.querySelector("button:not([aria-haspopup])") as HTMLElement).getBoundingClientRect();
+    const trigger = canvas.getByRole("button", { name: /^Aktionen für/ });
+    // The title is as wide as in a row without a menu: nothing is reserved.
+    await expect(titleOf(withMenu).width).toBeCloseTo(titleOf(plain).width, 0);
+    // The trigger lies over the title's end, in the row's trailing place.
+    const box = trigger.getBoundingClientRect();
+    const row = withMenu.getBoundingClientRect();
+    await expect(box.right).toBeCloseTo(row.right - 4, 0);
+    await expect(box.left).toBeLessThan(titleOf(withMenu).right);
+    await expect((box.top + box.bottom) / 2).toBeCloseTo((row.top + row.bottom) / 2, 0);
+    // At rest: the trigger hidden, the title unmasked.
+    const titleEl = withMenu.querySelector("button:not([aria-haspopup])") as HTMLElement;
+    const transparent = "rgba(0, 0, 0, 0)";
+    await expect(getComputedStyle(trigger).opacity).toBe("0");
+    await expect(getComputedStyle(titleEl).maskImage).toBe("none");
+    // While the row has focus: the trigger shows without a fill of its own,
+    // and the title fades out under it.
+    trigger.focus();
+    await waitFor(() => expect(getComputedStyle(trigger).opacity).toBe("1"));
+    await expect(getComputedStyle(titleEl).maskImage).toContain("linear-gradient");
+    // …without a fill: that comes only with the pointer on the trigger itself
+    // (`:hover`, which a simulated pointer cannot set — not asserted here).
+    await expect(getComputedStyle(trigger).backgroundColor).toBe(transparent);
+    // A row without a menu never masks its title.
+    const plainTitle = plain.querySelector("button") as HTMLElement;
+    plainTitle.focus();
+    await expect(getComputedStyle(plainTitle).maskImage).toBe("none");
+  },
+};
