@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import * as React from "react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SidebarCard, SidebarCardList, SidebarSelectionBar } from "./sidebar-card";
 import { SidebarRailItem } from "./sidebar-rail";
@@ -515,6 +516,29 @@ describe("SidebarCardList — keyboard navigation", () => {
     title("Beta").focus();
     await userEvent.keyboard("{ArrowDown}");
     expect(tabStops(container.querySelector("ul")!)).toEqual([title("Gamma")]);
+  });
+
+  // Rows that come and go inside a child with its own state: the list itself
+  // does not render again.
+  it("stays one Tab stop when rows change without the list rendering again", async () => {
+    let setNames: (names: string[]) => void = () => {};
+    const Rows = () => {
+      const [names, set] = React.useState(["Alpha", "Beta"]);
+      setNames = set;
+      return names.map((name) => (
+        <SidebarCard key={name} title={name} onOpen={() => {}} actions={menu} actionsLabel="Aktionen für" />
+      ));
+    };
+    const { container } = render(<SidebarCardList><Rows /></SidebarCardList>);
+    const list = container.querySelector("ul")!;
+    expect(tabStops(list)).toEqual([title("Alpha")]);
+
+    act(() => setNames(["Alpha", "Beta", "Gamma"]));
+    await waitFor(() => expect(tabStops(list)).toEqual([title("Alpha")]));
+
+    // The row holding the Tab stop goes: the list must keep an entry point.
+    act(() => setNames(["Beta", "Gamma"]));
+    await waitFor(() => expect(tabStops(list)).toEqual([title("Beta")]));
   });
 
   // A Radix checkbox inside a <form> renders a hidden proxy <input> beside

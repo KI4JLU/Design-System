@@ -93,6 +93,18 @@ export function useRovingRows<T extends HTMLElement>() {
     apply();
   });
 
+  // And between renders: a child with its own state adds or removes rows
+  // without this list rendering again. New controls would keep their default
+  // tab stop, and a removed current row would leave the list with none.
+  // Only the tree is watched, not attributes, so `apply` does not feed itself.
+  React.useEffect(() => {
+    const scope = scopeOf();
+    if (!scope || typeof MutationObserver === "undefined") return;
+    const observer = new MutationObserver(() => apply());
+    observer.observe(scope, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [apply]);
+
   const onFocus = React.useCallback(
     (event: React.FocusEvent<T>) => {
       const scope = scopeOf();
