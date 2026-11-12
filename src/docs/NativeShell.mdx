@@ -15,7 +15,7 @@ nothing changes, so the same build runs on the web.
 | Attribute | Set it when | Effect |
 |---|---|---|
 | `data-host="desktop"` | always, in the desktop app, on every platform | elements marked `data-desktop-only` show; on the web they are not rendered visibly |
-| `data-shell="native"` | the window has a material | `html`, `body` and the frame paint nothing; the side columns paint a tint over the material; the main column stays the opaque canvas |
+| `data-shell="native"` | the window has a material | `html`, `body`, the frame and the side columns paint nothing, so the OS material shows; the main column stays the opaque canvas |
 | `data-titlebar="inset"` | the title bar is hidden and the window controls sit top-left (macOS `hiddenInset`) | the frame's top row is the window's title bar: window controls, sidebar toggle, brand and chrome bar in one row that drags the window |
 | `data-titlebar="hidden"` | the same window in full screen, where macOS hides the controls | the same arrangement without the room for the controls |
 
@@ -220,16 +220,15 @@ ipcRenderer.on("native-shell:fullscreen", (_event, isFullScreen) => {
 
 ## What the frame does
 
-**Colours.** `--color-window` is what `AppShell`'s root paints: the canvas on
-the web, `transparent` under `data-shell="native"`. `--color-sidebar` becomes
-the panel colour mixed into transparency by `--shell-sidebar-tint` (40%):
-white in the light scheme, the dark panel colour in the dark one. The tint
-moves the material towards the panel colour, so text contrast on it is never
-lower than on the bare material. Raise the token for a calmer column, lower it
-to show more of the wallpaper.
+**Colours.** Under `data-shell="native"` both `--color-window` (what
+`AppShell`'s root paints) and `--color-sidebar` are `transparent`. The side
+columns add nothing of their own to the material: no tint, in either scheme.
 
-**Contrast `more` stays opaque.** The window and side-column colours are not
-overridden there.
+**Transparency is the OS's to decide.** How much of the wallpaper shows
+through, and whether any does, follows the OS — macOS „Reduce transparency"
+turns the material solid, as it does for every native app. The design system
+has no setting of its own for it, and its contrast setting does not make the
+side columns opaque.
 
 **A narrow window stays opaque.** Below `lg` the frame shows one area at a
 time and paints the canvas behind it.

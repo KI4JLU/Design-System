@@ -1233,7 +1233,7 @@ const alphaOf = (color: string): number => {
 
 /**
  * A native shell (`<html data-shell="native" data-titlebar="inset">`): the
- * frame paints nothing, the side column a tint over the window's material,
+ * frame and the side column paint nothing, so the window's material shows,
  * the main column the opaque canvas. The column's header row starts after the
  * window controls and the top row drags the window. See „Native shell".
  */
@@ -1251,11 +1251,9 @@ export const NativeShell: Story = {
     const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
     const frame = content.parentElement!.parentElement!;
 
-    // Frame transparent, side column translucent, main column opaque.
+    // Frame and side column transparent, main column opaque.
     await expect(alphaOf(getComputedStyle(frame).backgroundColor)).toBe(0);
-    const tint = alphaOf(getComputedStyle(column).backgroundColor);
-    await expect(tint).toBeGreaterThan(0);
-    await expect(tint).toBeLessThan(1);
+    await expect(alphaOf(getComputedStyle(column).backgroundColor)).toBe(0);
     await expect(alphaOf(getComputedStyle(content).backgroundColor)).toBe(1);
     await expect(alphaOf(getComputedStyle(document.body).backgroundColor)).toBe(0);
 

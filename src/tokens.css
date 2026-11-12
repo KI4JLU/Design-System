@@ -867,9 +867,8 @@ body {
  *   data-host="desktop"   — the page runs in the desktop app at all, on any
  *     platform. Shows what is marked `data-desktop-only`.
  *   data-shell="native"   — the window is transparent: html, body and
- *     AppShell's root paint nothing, the side panels a tint over the material,
- *     the main column stays the opaque canvas. Contrast `more` keeps the
- *     opaque colours.
+ *     AppShell's root and the side panels paint nothing, so the OS material
+ *     shows as the OS draws it; the main column stays the opaque canvas.
  *   data-titlebar="inset" — the host hides the title bar and the window
  *     controls sit in the top-left corner (macOS `hiddenInset`): the frame's
  *     top row is the window's title bar. It drags the window, starts after
@@ -881,9 +880,6 @@ body {
 :root {
   /* Width the window controls take in the top-left corner. */
   --titlebar-inset-start: 0px;
-  /* How much of the panel colour covers the material. More reads calmer and
-   * raises text contrast, less shows more of the wallpaper. */
-  --shell-sidebar-tint: 40%;
 }
 
 /* What only the desktop app offers — the hint of a shortcut a browser keeps
@@ -902,12 +898,13 @@ html[data-shell="native"],
 html[data-shell="native"] body {
   background-color: transparent;
 }
-[data-shell="native"]:not([data-contrast="more"]) {
+/* The side panels add nothing of their own to the material — no tint, in
+ * either scheme, and no opaque exception for a contrast setting. The material
+ * is the OS's: how much shows through, and whether any does (macOS „Reduce
+ * transparency"), is decided there, as for every native app. */
+[data-shell="native"] {
   --color-window: transparent;
-  --color-sidebar: color-mix(in srgb, var(--p-white) var(--shell-sidebar-tint), transparent);
-}
-[data-shell="native"][data-theme="dark"]:not([data-contrast="more"]) {
-  --color-sidebar: color-mix(in srgb, var(--p-night-950) var(--shell-sidebar-tint), transparent);
+  --color-sidebar: transparent;
 }
 
 /* The navigation column behaves like native chrome: no text cursor, no
