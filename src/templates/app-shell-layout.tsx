@@ -207,6 +207,20 @@ export interface AppShellLayoutProps
    * renders. See `AppShellProps.notice`.
    */
   notice?: AppShellProps["notice"];
+  /**
+   * Window-level controls (history back/forward) for the title bar of a
+   * native shell; nothing renders on the web. See
+   * `AppShellProps.titlebarControls`.
+   */
+  titlebarControls?: AppShellProps["titlebarControls"];
+  /**
+   * `false`: this view has no chrome bar — not on a wide screen, not on a
+   * narrow one. The page starts at the top of the main column, and
+   * `pageLabel`, `search` and `headerActions` have nowhere to render, so do
+   * not pass them. For a view whose navigation and search live in the left
+   * column. Default `true`.
+   */
+  bar?: boolean;
   /** Accessible name of the region around `notice`. Default „Systemmeldung". */
   noticeLabel?: AppShellProps["noticeLabel"];
   /**
@@ -238,6 +252,8 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
       rightPanel,
       showRight,
       notice,
+      titlebarControls,
+      bar = true,
       noticeLabel,
       status,
       statusPosition,
@@ -256,7 +272,8 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
     // a different composition, not the same one with utilities on top.
     const isDesktop = useIsDesktop();
 
-    /* A `<p>`, deliberately, and not a heading: this bar is chrome — it names
+    /* A `<p>` for words — a `<div>` for a node, which may be a breadcrumb,
+       and a `<p>` may not hold its `nav` — deliberately, and never a heading: this bar is chrome — it names
        the current location, while the page's heading belongs to the content
        template hung in as `children` (see `docs/COMPONENT_GUIDELINES.md` →
        „Page headings: who owns them"). An `<h1>` here would collide with the
@@ -273,10 +290,14 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        is one of two equal halves, so a label longer than its half has to clip
        instead of pushing the centred `search` off the bar's centre. The
        accessible text is unchanged — clipping is visual. */
+    const LabelTag = typeof pageLabel === "string" ? "p" : "div";
     const label = pageLabel ? (
-      <p className="m-0 truncate font-headline-md text-headline-md-mobile font-bold text-on-surface md:text-headline-md">
+      <LabelTag
+        data-slot="app-shell-page-label"
+        className="m-0 truncate font-headline-md text-headline-md-mobile font-bold text-on-surface md:text-headline-md"
+      >
         {pageLabel}
-      </p>
+      </LabelTag>
     ) : null;
 
     /* The narrow bar's right-hand region — the wide bar builds its own below,
@@ -418,7 +439,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
     return (
       <AppShell
         ref={ref}
-        topBar={isDesktop ? wideBar : narrowBar}
+        topBar={!bar ? undefined : isDesktop ? wideBar : narrowBar}
         left={{
           /* THE NAV MOVES INTO THE RAIL WHEN THE COLUMN COLLAPSES; it is not
              rendered in both places, and it is not dropped.
@@ -484,6 +505,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
            changes. */
         showRight={showRight}
         notice={notice}
+        titlebarControls={titlebarControls}
         noticeLabel={noticeLabel}
         status={status}
         statusPosition={statusPosition}

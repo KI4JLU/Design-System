@@ -30,7 +30,7 @@ export const navItemVariants = cva(
       },
       active: {
         true: "",
-        false: "text-on-surface hover:bg-surface-container-low [&_svg]:text-on-surface-variant",
+        false: "text-on-surface hover:bg-hover [&_svg]:text-on-surface-variant",
       },
       collapsed: {
         true: "justify-center [&>*:not(svg)]:hidden",

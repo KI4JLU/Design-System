@@ -35,12 +35,19 @@ export interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   /** Accessible name of the built-in close ("X") button. Default "Schließen". */
   closeLabel?: string;
+  /**
+   * Render the built-in close ("X") button. Default `true`. `false` only for
+   * a dialog that is one field and its results — a command palette — where
+   * Escape and a click outside are the way out and a button would sit on the
+   * field. A dialog with content to read keeps its button.
+   */
+  showClose?: boolean;
 }
 
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, closeLabel = "Schließen", ...props }, ref) => (
+>(({ className, children, closeLabel = "Schließen", showClose = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -62,7 +69,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
       {/* 36px, its centre 36px from the top — on the title's line (24px inset + half its 24px line). */}
-      <DialogPrimitive.Close
+      {showClose && <DialogPrimitive.Close
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
           "absolute top-[var(--dialog-close-inset)] right-[var(--dialog-close-inset)] size-[var(--dialog-close-size)] p-0 text-on-surface-variant active:scale-100 [&_svg]:size-5",
@@ -70,7 +77,7 @@ const DialogContent = React.forwardRef<
         aria-label={closeLabel}
       >
         <X aria-hidden="true" />
-      </DialogPrimitive.Close>
+      </DialogPrimitive.Close>}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));

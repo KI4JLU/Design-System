@@ -40,7 +40,7 @@ const FADE = 24;
 const controlClass = cn(
   "inline-flex size-8 items-center justify-center text-on-surface-variant transition-colors",
   "rounded-[var(--ui-radius-control,var(--radius-action))]",
-  "hover:bg-surface-container-high hover:text-on-surface",
+  "hover:bg-hover hover:text-on-surface",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
   "disabled:pointer-events-none disabled:opacity-40 [&>svg]:size-[18px]",
 );
@@ -206,7 +206,7 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
                 className={cn(
                   // A chip: a pill, like the composer above it.
                   "inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-2 text-left text-[13px] text-on-surface-variant transition-colors",
-                  "hover:bg-surface-container-low hover:text-on-surface",
+                  "hover:bg-hover hover:text-on-surface",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                   "disabled:pointer-events-none disabled:opacity-40",
                   "[&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-primary",

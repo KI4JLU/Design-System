@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useLayoutEffect, type ReactNode } from "react";
 import { composeStories } from "@storybook/react-vite";
-import { expect, waitFor, within } from "storybook/test";
-import { LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import { ChevronLeft, ChevronRight, LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
@@ -116,7 +117,7 @@ function measureWorkspaceBar(canvasElement: HTMLElement) {
   const titleEl = q.getByText(WORKSPACE_TITLE);
   return {
     row: header.getBoundingClientRect(),
-    label: (titleEl.closest("p") as HTMLElement).getBoundingClientRect(),
+    label: (titleEl.closest("[data-slot='app-shell-page-label']") as HTMLElement).getBoundingClientRect(),
     back: q.getByRole("button", { name: "Zurück zur Übersicht" }).getBoundingClientRect(),
     title: titleEl.getBoundingClientRect(),
     field: q.getByRole("searchbox", { name: WORKSPACE_SEARCH }).getBoundingClientRect(),
@@ -201,7 +202,7 @@ export const Overview: Story = {
     await expect(field.left).toBeGreaterThan(row.left);
     await expect(field.right).toBeLessThan(row.right);
     // Kein Label-Element, nicht nur kein Text: die Zeile enthält keinen Absatz.
-    await expect(bar(canvasElement).querySelector("p")).toBeNull();
+    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
 
     const body = page(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: /Jamie Lee/ }));
@@ -432,7 +433,7 @@ export const WithoutPageLabelOrActions: Story = {
     await expectBarHeight(canvasElement);
     // Leer heißt leer: die Zeile trägt keinen Text und keinen Absatz.
     await expect(bar(canvasElement).textContent).toBe("");
-    await expect(bar(canvasElement).querySelector("p")).toBeNull();
+    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
   },
 };
 
@@ -1165,5 +1166,310 @@ export const WithSystemStatusBottomEndTall: Story = {
     await expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
     await expect(getComputedStyle(scroller).pointerEvents).toBe("auto");
     await expect(within(card).getByRole("button", { name: "Schließen" })).toBeInTheDocument();
+  },
+};
+
+/**
+ * Stands in for the Electron host of „Native shell": sets the two `<html>`
+ * attributes the preload would set, paints a backdrop where the OS material
+ * would be, and draws three dots where macOS puts the window controls.
+ */
+/**
+ * History buttons as an app would hang them into `titlebarControls`. The
+ * native stories also pass the small logo, as the reference consumer does:
+ * the header row's minimum width is sized for it.
+ */
+const historyControls = (
+  <>
+    <Button variant="ghost" size="icon" aria-label="Zurück">
+      <ChevronLeft size={20} aria-hidden="true" />
+    </Button>
+    <Button variant="ghost" size="icon" aria-label="Vor">
+      <ChevronRight size={20} aria-hidden="true" />
+    </Button>
+  </>
+);
+
+function NativeShellHost({
+  children,
+  titlebar = "inset",
+}: {
+  children: ReactNode;
+  /** `hidden`: full screen, where the window controls are gone. */
+  titlebar?: "inset" | "hidden";
+}) {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.shell = "native";
+    root.dataset.titlebar = titlebar;
+    return () => {
+      delete root.dataset.shell;
+      delete root.dataset.titlebar;
+    };
+  }, [titlebar]);
+  return (
+    <div className="relative bg-linear-to-br from-primary-container via-tertiary-container to-secondary-container">
+      {titlebar === "inset" && (
+        <div
+          aria-hidden="true"
+          data-slot="window-controls"
+          className="pointer-events-none absolute top-5.5 left-4.75 z-30 flex gap-2"
+        >
+          <span className="size-3 rounded-full bg-on-surface-variant/50" />
+          <span className="size-3 rounded-full bg-on-surface-variant/50" />
+          <span className="size-3 rounded-full bg-on-surface-variant/50" />
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+/** Alpha of a computed colour: 1 for `rgb(…)`, the last component otherwise. */
+const alphaOf = (color: string): number => {
+  const match = /(?:\/|,)\s*([\d.]+)\)$/.exec(color);
+  return color.startsWith("rgb(") || !match ? 1 : Number(match[1]);
+};
+
+/**
+ * A native shell (`<html data-shell="native" data-titlebar="inset">`): the
+ * frame and the side column paint nothing, so the window's material shows,
+ * the main column the opaque canvas. The column's header row starts after the
+ * window controls and the top row drags the window. See „Native shell".
+ */
+export const NativeShell: Story = {
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture context="overview" search={<ShellSearch />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+        <SectionedGridPage />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
+    const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
+    const frame = content.parentElement!.parentElement!;
+
+    // Frame and side column transparent, main column opaque.
+    await expect(alphaOf(getComputedStyle(frame).backgroundColor)).toBe(0);
+    await expect(alphaOf(getComputedStyle(column).backgroundColor)).toBe(0);
+    await expect(alphaOf(getComputedStyle(content).backgroundColor)).toBe(1);
+    await expect(alphaOf(getComputedStyle(document.body).backgroundColor)).toBe(0);
+
+    // One title-bar row: window controls, the brand right beside them, the
+    // toggle at the column's far edge.
+    const headerRow = column.querySelector("[data-titlebar-inset='start']") as HTMLElement;
+    await expect(getComputedStyle(headerRow).paddingLeft).toBe("100px");
+    const controls = canvasElement
+      .querySelector("[data-slot='window-controls']")!
+      .getBoundingClientRect();
+    const toggle = within(headerRow).getByRole("button", { name: "Navigation einklappen" });
+    const toggleBox = toggle.getBoundingClientRect();
+    const brand = headerRow.firstElementChild!.firstElementChild!.getBoundingClientRect();
+    await expect(brand.left).toBeCloseTo(controls.left - 19 + 100, 0);
+    await expect(toggleBox.left).toBeGreaterThanOrEqual(brand.right);
+    await expect(column.getBoundingClientRect().right - toggleBox.right).toBeLessThanOrEqual(16);
+    // The app's window controls stand in the column, between brand and toggle.
+    const back = within(headerRow).getByRole("button", { name: "Zurück" }).getBoundingClientRect();
+    const forward = within(headerRow).getByRole("button", { name: "Vor" }).getBoundingClientRect();
+    await expect(back.left).toBeGreaterThanOrEqual(brand.right);
+    await expect(forward.right).toBeLessThanOrEqual(toggleBox.left);
+    // Right-aligned: directly before the toggle, not after the brand.
+    await expect(toggleBox.left - forward.right).toBeLessThanOrEqual(12);
+    // Nothing reaches under the window controls, and everything shares one centre line.
+    const mid = (box: DOMRect) => (box.top + box.bottom) / 2;
+    for (const box of [brand, back, forward, toggleBox]) {
+      await expect(box.left).toBeGreaterThanOrEqual(controls.right);
+      await expect(mid(box)).toBeCloseTo(mid(controls), 0);
+    }
+    // …on one line with the controls and the chrome bar.
+    const rowBox = headerRow.getBoundingClientRect();
+    await expect(rowBox.top).toBeCloseTo(frame.getBoundingClientRect().top, 0);
+    await expect(bar(canvasElement).getBoundingClientRect().top).toBeCloseTo(rowBox.top, 0);
+    await expect((controls.top + controls.bottom) / 2).toBeCloseTo((rowBox.top + rowBox.bottom) / 2, 0);
+
+    // Labels in the column are not selectable; it is the navigation.
+    await expect(getComputedStyle(column).userSelect).toBe("none");
+
+    // The row drags the window, its button does not.
+    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
+    await expect(region(headerRow)).toBe("drag");
+    await expect(region(bar(canvasElement))).toBe("drag");
+    await expect(region(toggle)).toBe("no-drag");
+  },
+};
+
+/**
+ * Full screen (`data-titlebar="hidden"`): the window controls are gone, so
+ * the brand stands at the column's left edge, on the line of the rows below
+ * it, as on the web. The arrangement of the row stays.
+ */
+export const NativeShellFullScreen: Story = {
+  render: () => (
+    <NativeShellHost titlebar="hidden">
+      <AppShellFixture context="overview" search={<ShellSearch />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+        <SectionedGridPage />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas }) => {
+    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
+    const headerRow = column.querySelector("[data-titlebar-inset='start']") as HTMLElement;
+    const brand = headerRow.firstElementChild!.firstElementChild!.getBoundingClientRect();
+    // 8px row inset + the brand's own 10px: where it stands on the web.
+    await expect(brand.left - column.getBoundingClientRect().left).toBeCloseTo(18, 0);
+    // The row is otherwise the same: controls, then the toggle at the far edge.
+    const toggle = within(headerRow).getByRole("button", { name: "Navigation einklappen" }).getBoundingClientRect();
+    const back = within(headerRow).getByRole("button", { name: "Zurück" }).getBoundingClientRect();
+    const forward = within(headerRow).getByRole("button", { name: "Vor" }).getBoundingClientRect();
+    await expect(back.left).toBeGreaterThanOrEqual(brand.right);
+    await expect(toggle.left).toBeGreaterThanOrEqual(forward.right);
+    // The arrows stay right-aligned, beside the toggle, with the brand moved left.
+    await expect(toggle.left - forward.right).toBeLessThanOrEqual(12);
+  },
+};
+
+/**
+ * A collapsed column does not reach into the title bar: the bar spans the
+ * window's full width and carries the column's toggle where it stands while
+ * expanded; the rail starts below.
+ */
+export const NativeShellCollapsed: Story = {
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture
+        context="overview"
+        search={<ShellSearch />}
+        leftOpen={false}
+        titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}
+      >
+        <SectionedGridPage />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const header = bar(canvasElement);
+    const toggle = await within(header).findByRole("button", { name: "Navigation ausklappen" });
+    const expand = toggle.getBoundingClientRect();
+    const controls = canvasElement
+      .querySelector("[data-slot='window-controls']")!
+      .getBoundingClientRect();
+    const headerBox = header.getBoundingClientRect();
+    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
+    const frameLeft = column.getBoundingClientRect().left;
+
+    // The bar is the whole title row: from the window's edge, opaque, over the rail.
+    await expect(headerBox.left).toBeCloseTo(frameLeft, 0);
+    await expect(alphaOf(getComputedStyle(header).backgroundColor)).toBe(1);
+    const corner = document.elementFromPoint(frameLeft + 4, headerBox.bottom - 4);
+    await expect(header.contains(corner)).toBe(true);
+    // The rail's own content starts below it.
+    const firstIcon = column.querySelector("a, button") as HTMLElement;
+    await expect(firstIcon.getBoundingClientRect().top).toBeGreaterThanOrEqual(headerBox.bottom);
+
+    // The brand stays where it stands while expanded: right after the controls.
+    const brand = header.querySelector("[data-slot='app-shell-brand']")!.getBoundingClientRect();
+    await expect(brand.left).toBeCloseTo(controls.left - 19 + 100, 0);
+    // The toggle follows it, on the bar's centre line.
+    await expect(expand.left).toBeGreaterThanOrEqual(brand.right);
+    await expect((expand.top + expand.bottom) / 2).toBeCloseTo((headerBox.top + headerBox.bottom) / 2, 0);
+    // The rail that is left has the page's colour.
+    const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
+    await expect(getComputedStyle(column).backgroundColor).toBe(getComputedStyle(content).backgroundColor);
+    // It takes the click, and does not drag the window.
+    const hit = document.elementFromPoint(
+      (expand.left + expand.right) / 2,
+      (expand.top + expand.bottom) / 2,
+    );
+    await expect(hit?.closest("button")).toBe(toggle);
+    await expect(getComputedStyle(toggle).getPropertyValue("-webkit-app-region")).toBe("no-drag");
+    // Then the app's window controls, then the bar's own content.
+    const forward = within(header).getByRole("button", { name: "Vor" }).getBoundingClientRect();
+    await expect(within(header).getByRole("button", { name: "Zurück" }).getBoundingClientRect().left).toBeGreaterThanOrEqual(expand.right);
+    const search = within(header).getByRole("searchbox");
+    await expect(search.getBoundingClientRect().left).toBeGreaterThan(forward.right);
+  },
+};
+
+/**
+ * Under a hidden title bar the right column floats: a card over the main
+ * area, below the bar, opened by the last control of the title row.
+ */
+export const NativeShellWorkspace: Story = {
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+        <ChatPage />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const header = bar(canvasElement);
+    const headerBox = header.getBoundingClientRect();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    const pane = await canvas.findByRole("complementary", { name: "Quellen" });
+    const box = pane.getBoundingClientRect();
+    // Over the main area, which keeps its full width up to the window's edge.
+    await expect(main.right).toBeCloseTo(headerBox.right, 0);
+    await expect(box.top).toBeGreaterThanOrEqual(headerBox.bottom);
+    await expect(box.right).toBeLessThan(main.right);
+    await expect(box.left).toBeGreaterThan(main.left);
+    await expect(box.bottom).toBeLessThan(main.bottom);
+    // An opaque card, in front of the page.
+    await expect(alphaOf(getComputedStyle(pane).backgroundColor)).toBe(1);
+    const hit = document.elementFromPoint(box.left + 24, box.top + 24);
+    await expect(pane.contains(hit)).toBe(true);
+    // Its toggle is the title row's last control, and closes it.
+    const toggle = within(header).getByRole("button", { name: "Quellen einklappen" });
+    await expect(toggle.getBoundingClientRect().right).toBeCloseTo(headerBox.right - 8, 0);
+    // The same control as the left column's toggle: one box, one icon size.
+    const leftToggle = canvas.getByRole("button", { name: "Verlauf einklappen" });
+    const iconOf = (button: HTMLElement) => button.querySelector("svg")!.getBoundingClientRect();
+    await expect(iconOf(toggle).width).toBe(20);
+    await expect(iconOf(toggle).width).toBe(iconOf(leftToggle).width);
+    await expect(toggle.getBoundingClientRect().width).toBe(leftToggle.getBoundingClientRect().width);
+    await userEvent.click(toggle);
+    await waitFor(() => expect(pane).not.toBeVisible());
+    await userEvent.click(within(header).getByRole("button", { name: "Quellen ausklappen" }));
+    await waitFor(() => expect(pane).toBeVisible());
+  },
+};
+
+/**
+ * Under a hidden title bar the first row is the window's title bar, so a
+ * notice is the frame's last row: full width at the bottom of the window.
+ */
+export const NativeShellWithNotice: Story = {
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture
+        context="overview"
+        search={<ShellSearch />}
+        notice={
+          <Alert tone="info" layout="banner" live="polite">
+            <AlertDescription>Dieses Angebot befindet sich im Testbetrieb.</AlertDescription>
+          </Alert>
+        }
+      >
+        <SectionedGridPage />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const region = await canvas.findByRole("region", { name: "Systemmeldung" });
+    const notice = region.getBoundingClientRect();
+    const frame = region.parentElement!.getBoundingClientRect();
+    const header = bar(canvasElement).getBoundingClientRect();
+    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" }).getBoundingClientRect();
+    // Title bar on top, one row: column header and chrome bar start at the frame's edge.
+    await expect(column.top).toBeCloseTo(frame.top, 0);
+    await expect(header.top).toBeCloseTo(frame.top, 0);
+    // Notice at the bottom, full width, under the columns and the page.
+    await expect(notice.bottom).toBeCloseTo(frame.bottom, 0);
+    await expect(notice.left).toBeCloseTo(frame.left, 0);
+    await expect(notice.width).toBeCloseTo(frame.width, 0);
+    await expect(column.bottom).toBeCloseTo(notice.top, 0);
+    await expect(canvas.getByRole("main").getBoundingClientRect().bottom).toBeCloseTo(notice.top, 0);
   },
 };

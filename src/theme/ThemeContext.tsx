@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -62,6 +63,15 @@ export interface ThemeProviderProps {
    */
   onThemeChange?: (theme: Theme) => void;
   /**
+   * Called every time the provider applies a theme to `<html data-theme>`:
+   * on mount, when the choice changes and, on "system", when the OS switches.
+   * Unlike `onThemeChange` it also reports the stored choice at start, which
+   * is what a native host needs to keep its window material on the same
+   * scheme — Electron: `nativeTheme.themeSource = theme` (see Storybook
+   * „Native shell").
+   */
+  onThemeApplied?: (theme: Theme, resolvedTheme: ResolvedTheme) => void;
+  /**
    * Uncontrolled mode only: the localStorage key for persisting the choice.
    * Default "theme". Keep it in sync with the no-flash script in index.html.
    */
@@ -72,8 +82,14 @@ export function ThemeProvider({
   children,
   theme: controlledTheme,
   onThemeChange,
+  onThemeApplied,
   storageKey = THEME_STORAGE_KEY,
 }: ThemeProviderProps) {
+  // Read through a ref: a new callback identity must not re-apply the theme.
+  const onThemeAppliedRef = useRef(onThemeApplied);
+  useEffect(() => {
+    onThemeAppliedRef.current = onThemeApplied;
+  });
   const isControlled = controlledTheme !== undefined;
   const [uncontrolledTheme, setUncontrolledTheme] = useState<Theme>(() =>
     isControlled ? "system" : readStoredTheme(storageKey),
@@ -105,6 +121,7 @@ export function ThemeProvider({
       const r = resolve(theme);
       setResolvedTheme(r);
       document.documentElement.dataset.theme = r;
+      onThemeAppliedRef.current?.(theme, r);
     };
     apply();
     if (theme !== "system") return;

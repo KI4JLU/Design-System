@@ -45,8 +45,8 @@ export const sidebarCardVariants = cva(
     // has moved into the menu), so the row the menu belongs to stays marked —
     // grey, never the primary tint an active row has.
     compoundVariants: [
-      { state: "idle", interactive: true, class: "hover:bg-surface-container-low" },
-      { state: "idle", class: "has-[>button[data-state=open]]:bg-surface-container-low" },
+      { state: "idle", interactive: true, class: "hover:bg-hover" },
+      { state: "idle", class: "has-[>button[data-state=open]]:bg-hover" },
     ],
     defaultVariants: { state: "idle", interactive: true },
   },

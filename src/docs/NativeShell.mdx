@@ -1,0 +1,296 @@
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as AppShellLayoutStories from "../templates/app-shell-layout.stories";
+
+<Meta title="Native shell" />
+
+# Native shell
+
+An Electron host can show the OS window material — macOS vibrancy, Windows 11
+Mica — through the side columns of `AppShell`. The material is the window's:
+the `BrowserWindow` creates it, the design system only stops painting over it.
+
+Two attributes on `<html>`, both set by the host's preload. Without them
+nothing changes, so the same build runs on the web.
+
+| Attribute | Set it when | Effect |
+|---|---|---|
+| `data-host="desktop"` | always, in the desktop app, on every platform | elements marked `data-desktop-only` show; on the web they are not rendered visibly |
+| `data-shell="native"` | the window has a material | `html`, `body`, the frame and the side columns paint nothing, so the OS material shows; the main column stays the opaque canvas |
+| `data-titlebar="inset"` | the title bar is hidden and the window controls sit top-left (macOS `hiddenInset`) | the frame's top row is the window's title bar: window controls, sidebar toggle, brand and chrome bar in one row that drags the window |
+| `data-titlebar="hidden"` | the same window in full screen, where macOS hides the controls | the same arrangement without the room for the controls |
+
+They are separate because they are separate facts: Windows 11 has Mica with
+its standard title bar, so it sets the first and not the second.
+
+<Canvas of={AppShellLayoutStories.NativeShell} />
+
+The story stands in for the host: a gradient where the material would be,
+three dots where macOS puts the window controls.
+
+## Host setup
+
+### Main process
+
+```js
+const hasMaterial =
+  process.platform === "darwin" ||
+  (process.platform === "win32" && isWindows11()); // build 22621 or later
+
+const win = new BrowserWindow({
+  backgroundColor: "#00000000",
+  // macOS
+  vibrancy: "sidebar",
+  visualEffectState: "followWindow",
+  titleBarStyle: "hiddenInset",
+  trafficLightPosition: { x: 19, y: 22 },
+  // Windows 11
+  backgroundMaterial: "mica",
+  webPreferences: {
+    preload: path.join(__dirname, "preload.js"),
+    additionalArguments: hasMaterial ? ["--native-shell"] : [],
+  },
+});
+```
+
+`trafficLightPosition` centres the controls in the frame's 56px top row; the
+inset tokens below assume it. Linux and Windows 10 have no material: leave the
+flag off there and the app renders opaque, as on the web.
+
+### Preload
+
+```js
+const { contextBridge, ipcRenderer } = require("electron");
+
+function mark() {
+  const root = document.documentElement;
+  root.dataset.host = "desktop";
+  if (process.argv.includes("--native-shell")) root.dataset.shell = "native";
+  if (process.platform === "darwin") {
+    // Ask, do not assume: a page loaded or reloaded while the window is in
+    // full screen has no window controls to keep clear of.
+    const isFullScreen = ipcRenderer.sendSync("native-shell:is-fullscreen");
+    root.dataset.titlebar = isFullScreen ? "hidden" : "inset";
+  }
+}
+// The preload can run before <html> exists.
+if (document.documentElement) mark();
+else {
+  new MutationObserver((_, observer) => {
+    if (!document.documentElement) return;
+    observer.disconnect();
+    mark();
+  }).observe(document, { childList: true });
+}
+
+contextBridge.exposeInMainWorld("nativeShell", {
+  setTheme: (theme) => ipcRenderer.send("native-shell:theme", theme),
+  // The app's name, for the icon (see „App icon").
+  setAppName: (name) => ipcRenderer.send("native-shell:app-name", name),
+  // Menu commands: one narrow subscription each, returning its unsubscribe.
+  onNewChat: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("native-shell:new-chat", listener);
+    return () => ipcRenderer.removeListener("native-shell:new-chat", listener);
+  },
+});
+```
+
+Setting the attributes here, before the page's own scripts, avoids a first
+frame with an opaque window.
+
+### Theme sync
+
+The material follows the OS scheme, the app follows the user's choice. A user
+who picks „Hell" on a dark system would get a light UI on dark material, so
+the host mirrors the choice to the window:
+
+```tsx
+<ThemeProvider onThemeApplied={(theme) => window.nativeShell?.setTheme(theme)}>
+```
+
+```js
+ipcMain.on("native-shell:theme", (_event, theme) => {
+  if (["system", "light", "dark"].includes(theme)) nativeTheme.themeSource = theme;
+});
+```
+
+`onThemeApplied(theme, resolvedTheme)` fires on mount, on every new choice and
+when the OS switches while the choice is „System" — unlike `onThemeChange`,
+which only reports a requested change. `theme` is `light | dark | system`,
+exactly what `nativeTheme.themeSource` takes.
+
+### Menu shortcuts
+
+A browser keeps some shortcuts for itself (⌘N opens a window), so the website
+cannot offer them; the desktop app can. They are menu items of the host, which
+tell the page what was chosen:
+
+```js
+Menu.setApplicationMenu(Menu.buildFromTemplate([
+  { role: "appMenu" },
+  {
+    label: "Ablage",
+    submenu: [
+      {
+        label: "Neuer Chat",
+        accelerator: "CmdOrCtrl+N",
+        click: () => BrowserWindow.getFocusedWindow()?.webContents.send("native-shell:new-chat"),
+      },
+      { role: "close" },
+    ],
+  },
+  { role: "editMenu" },
+  { role: "viewMenu" },
+  { role: "windowMenu" },
+]));
+```
+
+The app subscribes through the bridge — `window.nativeShell?.onNewChat(...)`,
+which does nothing on the web — and shows the shortcut's hint in an element
+marked `data-desktop-only`, so it appears in the desktop app only, without the
+app asking where it runs.
+
+### App icon
+
+The app's icon is the **first letter of the system's name** — „R" for „RAG",
+„A" for „Atlas" — in white on the design system's default accent colour
+(`--color-primary` of the standard accent, light scheme: `#0056b3`). The
+drawing is the one JLU Campus uses: a 512 square with a 96 corner radius and a
+bold 300px letter.
+
+```js
+// 512 square. `inset`: the transparent margin around the tile.
+const appIconSvg = (letter, { mac }) => {
+  const inset = mac ? 50 : 0;
+  const tile = 512 - 2 * inset;
+  const scale = tile / 512;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">` +
+    `<rect x="${inset}" y="${inset}" width="${tile}" height="${tile}" rx="${mac ? 92.5 : 96}" fill="#0056b3"/>` +
+    `<text x="256" y="${inset + 350 * scale}" fill="white" font-family="Arial, Helvetica, sans-serif" ` +
+    `font-size="${300 * scale}" font-weight="bold" text-anchor="middle">${letter}</text></svg>`
+  );
+};
+```
+
+**macOS needs the margin.** Apple's icon grid puts the tile on 824 of 1024
+pixels with a 185 corner radius, and the dock draws an app's icon as it is: a
+full-bleed tile sits larger than every neighbour, with squarer corners. So on
+macOS the same drawing is inset by that margin; Windows, Linux and the web
+keep the full-bleed tile.
+
+The name is a setting of the deployment, so the icon has two sources, drawn by
+that one function:
+
+- **In the package** (Finder, the installer, the dock before the app runs): a
+  build step renders `build/icon.png` from the deployment's
+  `APP_NAME_PRODUCT`. A packaged icon cannot change afterwards.
+- **While running**: the app reports the configured name
+  (`window.nativeShell?.setAppName(systemName)`), and the host redraws the
+  dock or window icon when the letter differs — an admin renaming the system
+  does not need a new build to see it.
+
+The host takes only the first letter or digit of what the page sends, checks
+it is a short string, and draws the icon itself; the page never supplies an
+image.
+
+### Full screen
+
+macOS hides the window controls in full screen. Switch the attribute to
+`hidden` while it lasts: the arrangement stays, the room for the controls
+goes.
+
+```js
+win.on("enter-full-screen", () => win.webContents.send("native-shell:fullscreen", true));
+win.on("leave-full-screen", () => win.webContents.send("native-shell:fullscreen", false));
+```
+
+```js
+// main: the state at load time, for the preload's `mark()`
+ipcMain.on("native-shell:is-fullscreen", (event) => {
+  event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false;
+});
+```
+
+```js
+ipcRenderer.on("native-shell:fullscreen", (_event, isFullScreen) => {
+  document.documentElement.dataset.titlebar = isFullScreen ? "hidden" : "inset";
+});
+```
+
+## What the frame does
+
+**Colours.** Under `data-shell="native"` both `--color-window` (what
+`AppShell`'s root paints) and `--color-sidebar` are `transparent`. The side
+columns add nothing of their own to the material: no tint, in either scheme.
+
+**Transparency is the OS's to decide.** How much of the wallpaper shows
+through, and whether any does, follows the OS — macOS „Reduce transparency"
+turns the material solid, as it does for every native app. The design system
+has no setting of its own for it, and its contrast setting does not make the
+side columns opaque.
+
+**A narrow window stays opaque.** Below `lg` the frame shows one area at a
+time and paints the canvas behind it.
+
+**Pages outside `AppShell` paint their own background.** `body` is transparent
+under the flag, so a login screen that relied on it shows the bare material.
+
+**The first row is the title bar.** Under `data-titlebar` the left column's
+header row starts after the window controls (`--titlebar-inset-start`, 100px)
+so the brand stands right beside them; the toggle keeps its place at the
+column's far edge. Without a
+left column, and in a narrow window, the chrome bar starts after the controls
+instead; a shell without a `topBar` gets an empty 56px row in its place.
+
+**Window controls of the app.** `titlebarControls` (`AppShell`,
+`AppShellLayout`) takes the buttons a desktop window needs and a browser
+brings itself — history back and forward. They open the chrome bar (after the
+sidebar toggle, when the bar carries it) and render only under
+`data-titlebar`.
+
+**The right column floats.** Under `data-titlebar` the right column is a card
+over the main area, below the bar, as wide as the column's `width`; the main
+area keeps the window's full width. Its toggle is the last control of the
+title row. Closed, the card is hidden but stays mounted; there is no rail and
+no resize handle. A narrow window shows it as its own area, as on the web.
+
+<Canvas of={AppShellLayoutStories.NativeShellWorkspace} />
+
+**A collapsed column leaves the title bar, the brand does not.** The chrome
+bar then spans the window's full width, opaque, and carries the column's
+`header` — in the place it has while expanded — followed by the column's
+toggle. The rail starts below the title row and takes the page's colour.
+
+<Canvas of={AppShellLayoutStories.NativeShellCollapsed} />
+
+**A notice sits at the bottom.** On the web `notice` is the frame's first
+row, full width. Under `data-titlebar` that row is the title bar, so the
+notice becomes the frame's last row instead: full width at the bottom of the
+window, in the flow, never scrolling away. In a narrow window it sits directly
+above the tab bar.
+
+<Canvas of={AppShellLayoutStories.NativeShellWithNotice} />
+
+**Drag region.** The top row — column headers, chrome bar — carries
+`data-app-region="drag"`. Under `data-titlebar` it drags the window; links,
+buttons, fields and anything focusable inside it do not. A custom control
+without one of those roles opts out with `data-app-region="no-drag"`.
+
+**Tooltips keep out of the title bar.** Under `data-titlebar` every tooltip
+treats the window's top row as outside the viewport and flips or shifts out of
+it, whatever side the call site asked for. The rule lives in `TooltipContent`,
+so no call site has to remember it.
+
+**Native chrome.** Under `data-shell="native"` the left column shows the
+default cursor and its labels are not selectable. Fields stay editable.
+
+`SidePanel` used on its own takes `titlebarInset` for the same corner
+behaviour; `AppShell` sets it for its left column. `AppShell` reads the
+attribute live, so the arrangement follows a change without a reload.
+
+## Not covered
+
+- Mapping the OS accent colour onto the accent themes.
+- Window controls on the right (a hidden title bar on Windows): keep the
+  standard title bar there.

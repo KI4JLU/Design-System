@@ -1,4 +1,5 @@
 import * as React from "react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
   MOBILE_PANE_STYLE,
@@ -6,9 +7,12 @@ import {
   useIsDesktop,
   type MobilePaneTab,
 } from "../lib/pane-layout";
+import { useTitlebar } from "../lib/use-titlebar";
 import { BottomTabBar } from "./bottom-tab-bar";
+import { Button } from "./button";
 import { ResizeHandle } from "./resize-handle";
 import { SidePanel } from "./side-panel";
+import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
 
 /**
  * Default expanded width of a shell column, in px.
@@ -24,6 +28,15 @@ import { SidePanel } from "./side-panel";
  * `width` required — is a convenience decision for the shell only; not confirmed with the design-system owner.
  */
 const DEFAULT_PANEL_WIDTH = 256;
+
+/**
+ * Smallest width of the left column while its header row is the window's
+ * title bar AND holds the app's `titlebarControls`: room for the window
+ * controls (`--titlebar-inset-start`, 100px), a brand of about 80px, two 28px
+ * icon buttons and the 36px toggle, with their gaps. Below it the brand would
+ * be clipped.
+ */
+const TITLEBAR_LEFT_MIN_WIDTH = 296;
 
 /**
  * Makes a shell column drag-resizable (0.36.0). Present on an `AppShellPanel`,
@@ -265,6 +278,15 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * the page without moving it; the corner never reaches over a side column.
    */
   statusPosition?: "top" | "bottom-end";
+  /**
+   * Window-level controls for the title bar of a native shell — history
+   * back/forward, typically. Rendered **only under a hidden title bar**
+   * (`<html data-titlebar>`, Storybook „Native shell"), right after the
+   * sidebar toggle: in the left column's header row while it is expanded, at
+   * the start of the bar otherwise. On the web nothing renders — a browser
+   * brings these controls itself.
+   */
+  titlebarControls?: React.ReactNode;
   /** Tabs of the narrow-screen bar, each declaring which area it shows. */
   mobileTabs: MobilePaneTab[];
   /**
@@ -292,6 +314,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       noticeLabel = "Systemmeldung",
       status,
       statusPosition = "top",
+      titlebarControls,
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
@@ -343,15 +366,159 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     const rightPaneId = React.useId();
 
     /*
+      Native shell with a hidden title bar (`<html data-titlebar>`): the
+      frame's first row IS the window's title bar. The window controls sit in
+      its top-left corner, so the one element there keeps clear of them — the
+      left column's header row, else the bar — and a notice becomes the
+      frame's last row instead of its first. On the web
+      (`null`) nothing here applies.
+    */
+    const titlebar = useTitlebar() !== null;
+    const noticeAtBottom = titlebar && Boolean(notice);
+    const cornerOwner = !titlebar ? null : isDesktop && left ? "left" : "bar";
+    // A collapsed left column does not reach into the title bar: the bar
+    // spans the window's full width over the rail's top row and carries the
+    // column's brand and its expand toggle.
+    const besideRail = cornerOwner === "left" && !left?.isOpen;
+    const [railToggleSlot, setRailToggleSlot] = React.useState<HTMLElement | null>(null);
+    // The brand never leaves the window controls: while the column is
+    // collapsed the bar carries the column's `header`, in the same place.
+    const railBrand = besideRail && left?.header ? (
+      <span data-slot="app-shell-brand" className="flex shrink-0 items-center gap-stack-sm">
+        {left.header}
+      </span>
+    ) : null;
+    const railToggle = besideRail && (
+      <span
+        ref={setRailToggleSlot}
+        data-slot="app-shell-rail-toggle"
+        className="flex shrink-0 items-center"
+      />
+    );
+    // The row starts right after the window controls; in full screen, where
+    // there are none, it keeps the 8px a header row has anyway.
+    const overRail: React.CSSProperties | undefined = besideRail
+      ? {
+          marginLeft: -SIDE_PANEL_RAIL_WIDTH,
+          paddingLeft: "max(0.5rem, var(--titlebar-inset-start))",
+        }
+      : undefined;
+    // The app's window controls. While the left column is open they stand in
+    // its header row, right-aligned beside the toggle; otherwise at the start
+    // of the bar, after the toggle the bar then carries.
+    const controlsInLeft = cornerOwner === "left" && !besideRail;
+    const controls = titlebar && titlebarControls ? (
+      <span
+        data-slot="app-shell-titlebar-controls"
+        // Compact, whatever the app hangs in: the title row is tight, and the
+        // buttons stand beside the brand, not as actions of their own.
+        className={cn(
+          "flex shrink-0 items-center [&>button]:size-7 [&>button]:p-0 [&>button_svg]:size-[18px]",
+          // In the column's header row they stand at its far end, beside the
+          // toggle; the brand keeps the start to itself.
+          controlsInLeft && "ml-auto",
+        )}
+      >
+        {titlebarControls}
+      </span>
+    ) : null;
+    // Window controls, brand, the app's controls and the toggle have to fit
+    // the header row, so the column is at least this wide while it holds them.
+    // The floor is the separator's too: its bounds and its value are what the
+    // column really measures, so a drag below the floor reports the floor and
+    // `aria-valuenow` never leaves `aria-valuemin`…`-max`.
+    const leftFloor = left && controlsInLeft && controls ? TITLEBAR_LEFT_MIN_WIDTH : 0;
+    const leftWidth = Math.max(left?.width ?? DEFAULT_PANEL_WIDTH, leftFloor);
+
+    /*
+      Under a hidden title bar the right column is not a column: it floats
+      over the main area as a card below the bar, and its toggle is the last
+      control of the title row — the window's top-right corner. It takes no
+      width, so it has no rail and no resize handle; closed, it is hidden but
+      stays mounted, like a collapsed column's body.
+    */
+    const floatRight = titlebar && isDesktop && right && showRight ? right : null;
+    const RightIcon = floatRight?.isOpen ? PanelRightClose : PanelRightOpen;
+    const rightToggle = floatRight ? (
+      <span data-slot="app-shell-right-toggle" className="flex shrink-0 items-center pr-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={PANE_TOGGLE_CLASS}
+          aria-label={floatRight.isOpen ? floatRight.collapseLabel : floatRight.expandLabel}
+          aria-expanded={floatRight.isOpen}
+          aria-controls={rightPaneId}
+          onClick={() => floatRight.onOpenChange(!floatRight.isOpen)}
+        >
+          <RightIcon aria-hidden />
+        </Button>
+      </span>
+    ) : null;
+    const rightBubble = floatRight ? (
+      <aside
+        id={rightPaneId}
+        aria-label={floatRight.label}
+        hidden={!floatRight.isOpen}
+        data-slot="app-shell-bubble"
+        className={cn(
+          "absolute top-14 right-2 z-20 max-h-[calc(100%-4rem)] max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest shadow-overlay",
+          floatRight.isOpen ? "flex" : "hidden",
+        )}
+        style={{ width: floatRight.width ?? DEFAULT_PANEL_WIDTH }}
+      >
+        {floatRight.header && (
+          <div className="flex h-12 shrink-0 items-center gap-stack-sm px-4">{floatRight.header}</div>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto">{floatRight.content}</div>
+        {floatRight.footer && <div className="shrink-0">{floatRight.footer}</div>}
+      </aside>
+    ) : null;
+
+    /*
       The chrome bar. `h-14` is on the row itself and not derived from its
       contents, so the bar is 56px tall whatever is hung into it — the same
       chrome unit as a `SidePanel` header row, and a published geometry
       contract outside this repo (JustRAG's `Toast.css`: `top: 68px` = 56 + 12).
     */
     const bar = topBar ? (
-      <header className="flex h-14 shrink-0 items-center">
+      <header
+        data-app-region="drag"
+        data-titlebar-inset={cornerOwner === "bar" || besideRail ? "start" : undefined}
+        className={cn(
+          "flex h-14 shrink-0 items-center",
+          cornerOwner === "bar" && "pl-(--titlebar-inset-start)",
+          (besideRail || (controls && cornerOwner === "bar")) && "gap-1.5",
+          besideRail && "relative z-10 bg-canvas",
+        )}
+        style={overRail}
+      >
+        {railBrand}
+        {railToggle}
+        {!controlsInLeft && controls}
         {topBar}
+        {rightToggle}
       </header>
+    ) : cornerOwner === "bar" || besideRail || (controls && !controlsInLeft) || rightToggle ? (
+      // No bar: an empty title-bar row carries what the title bar has to —
+      // the room for the window controls, the toggles, the app's controls —
+      // and drags the window.
+      <div
+        data-slot="app-shell-titlebar"
+        data-app-region="drag"
+        data-titlebar-inset={cornerOwner === "bar" || besideRail ? "top" : undefined}
+        className={cn(
+          "flex h-14 shrink-0 items-center gap-1.5",
+          cornerOwner === "bar" && "pl-(--titlebar-inset-start)",
+          besideRail && "relative z-10 bg-canvas",
+        )}
+        style={overRail}
+      >
+        {railBrand}
+        {railToggle}
+        {!controlsInLeft && controls}
+        <span className="flex-1" />
+        {rightToggle}
+      </div>
     ) : null;
 
     /*
@@ -364,6 +531,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       <section
         aria-label={noticeLabel}
         data-slot="app-shell-notice"
+        data-app-region={titlebar ? undefined : "drag"}
         className="shrink-0"
       >
         {notice}
@@ -436,14 +604,25 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         id={panel.resize ? paneId : undefined}
         side={side}
         isOpen={panel.isOpen}
-        width={panel.width ?? DEFAULT_PANEL_WIDTH}
+        width={side === "left" ? leftWidth : (panel.width ?? DEFAULT_PANEL_WIDTH)}
         onExpand={() => panel.onOpenChange(true)}
         onCollapse={() => panel.onOpenChange(false)}
         expandLabel={panel.expandLabel}
         collapseLabel={panel.collapseLabel}
-        header={panel.header}
+        header={
+          side === "left" && controlsInLeft && controls ? (
+            <>
+              {panel.header}
+              {controls}
+            </>
+          ) : (
+            panel.header
+          )
+        }
         collapsedPreview={panel.collapsedPreview}
         footer={panel.footer}
+        titlebarInset={side === "left" && cornerOwner === "left"}
+        railToggleContainer={side === "left" && besideRail ? railToggleSlot : undefined}
         aria-label={panel.label}
       >
         <div className="min-h-0 flex-1 overflow-y-auto">{panel.content}</div>
@@ -464,9 +643,9 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       panel.resize && panel.isOpen ? (
         <ResizeHandle
           side={side}
-          value={panel.width ?? DEFAULT_PANEL_WIDTH}
-          min={panel.resize.minWidth}
-          max={panel.resize.maxWidth}
+          value={side === "left" ? leftWidth : (panel.width ?? DEFAULT_PANEL_WIDTH)}
+          min={side === "left" ? Math.max(panel.resize.minWidth, leftFloor) : panel.resize.minWidth}
+          max={side === "left" ? Math.max(panel.resize.maxWidth, leftFloor) : panel.resize.maxWidth}
           label={panel.resize.label}
           controls={paneId}
           onValueChange={panel.resize.onWidthChange}
@@ -482,6 +661,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       const activePane = mobileTabs.find((tab) => tab.id === activeMobileTab)?.pane;
       const panel =
         activePane === "left" ? left : activePane === "right" ? right : undefined;
+      const paneStyle = noticeAtBottom ? undefined : MOBILE_PANE_STYLE;
 
       return (
         <div
@@ -492,25 +672,32 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           )}
           {...props}
         >
-          {noticeRegion}
+          {!titlebar && noticeRegion}
           {bar}
           {panel ? (
             <aside
               aria-label={panel.label}
               className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar"
-              style={MOBILE_PANE_STYLE}
+              style={paneStyle}
             >
               <div className="min-h-0 flex-1 overflow-y-auto">{panel.content}</div>
               {panel.footer && <div className="shrink-0">{panel.footer}</div>}
             </aside>
           ) : (
-            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL} style={MOBILE_PANE_STYLE}>
+            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL} style={paneStyle}>
               {statusLayer}
               {children}
             </main>
           )}
           {/* With the main area only: a side column has the screen to itself. */}
           {!panel && cornerLayer}
+          {/* Under a hidden title bar the notice is the last row, above the
+              tab bar: it takes over the room the area reserves for the bar. */}
+          {noticeAtBottom && (
+            <div data-slot="app-shell-notice-row" className="shrink-0" style={MOBILE_PANE_STYLE}>
+              {noticeRegion}
+            </div>
+          )}
           <BottomTabBar
             items={mobileTabs}
             activeId={activeMobileTab}
@@ -535,12 +722,16 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           // row of columns. The row is there with or without a notice, so a
           // notice appearing or going away never remounts the columns (their
           // scroll positions, a half-typed message).
-          "flex h-dvh flex-col overflow-hidden bg-canvas text-on-surface",
+          //
+          // `bg-window` is the canvas on the web and transparent in a native
+          // shell, where the side panels let the OS material through; the
+          // main column paints the canvas itself for that case.
+          "flex h-dvh flex-col overflow-hidden bg-window text-on-surface",
           className,
         )}
         {...props}
       >
-        {noticeRegion}
+        {!titlebar && noticeRegion}
         <div data-slot="app-shell-row" className="flex min-h-0 flex-1">
           {/* Column, then its separator: the handle sits on the edge that faces
               the content, which is the right edge of a left column and the left
@@ -554,22 +745,27 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           )}
           {/* `app-shell-content`: the bar plus `<main>` — the region a
               page-sized dialog covers (`SettingsDialog` `fitTo`). */}
-          <div data-slot="app-shell-content" className="flex min-w-0 flex-1 flex-col">
+          <div data-slot="app-shell-content" className={cn("flex min-w-0 flex-1 flex-col bg-canvas", floatRight && "relative")}>
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
               {children}
             </main>
             {cornerLayer}
+            {rightBubble}
           </div>
           {/* `showRight` gates the DESKTOP arrangement only — see the prop. */}
-          {right && showRight && (
+          {right && showRight && !floatRight && (
             <>
               {handle(right, "right", rightPaneId)}
               {column(right, "right", rightPaneId)}
             </>
           )}
         </div>
+        {/* Under a hidden title bar the first row is the window's title bar,
+            so the notice is the frame's last row instead: full width, in the
+            flow, never scrolling away. */}
+        {noticeAtBottom && noticeRegion}
       </div>
     );
   },

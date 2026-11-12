@@ -29,7 +29,9 @@ import { Button, type ButtonProps } from "./button";
  * with a German screen-reader label. `scroll-fade-b` is a mask on the
  * viewport that fades the transcript out at its lower edge while there is
  * more to scroll to (the primitive's `data-scrollable` contains `end`), so
- * the content does not end in a hard cut above the composer.
+ * the content does not end in a hard cut above the composer. The upper edge
+ * fades the same way while content lies above (`start`), so a scrolled
+ * transcript does not end in a hard cut under the chrome bar either.
  */
 
 function MessageScrollerProvider(
@@ -69,6 +71,10 @@ function MessageScrollerViewport({
         "data-autoscrolling:[scrollbar-color:transparent_transparent] data-pending-scroll:invisible",
         // scroll-fade-b: only while more content lies below.
         "[&[data-scrollable~=end]]:[mask-image:linear-gradient(to_bottom,#000_calc(100%_-_3rem),transparent)]",
+        // The same at the upper edge, only while content lies above — and
+        // both at once in between (two attribute selectors, so it wins).
+        "[&[data-scrollable~=start]]:[mask-image:linear-gradient(to_bottom,transparent,#000_3rem)]",
+        "[&[data-scrollable~=start][data-scrollable~=end]]:[mask-image:linear-gradient(to_bottom,transparent,#000_3rem,#000_calc(100%_-_3rem),transparent)]",
         className,
       )}
       {...props}
@@ -133,7 +139,9 @@ function MessageScrollerButton({
       data-direction={direction}
       direction={direction}
       className={cn(
-        "absolute left-1/2 -translate-x-1/2 shadow-md transition-[translate,scale,opacity] duration-200",
+        // A circle, like the composer's send button below it — not the
+        // rounded square of an icon button in a toolbar.
+        "absolute left-1/2 -translate-x-1/2 rounded-full shadow-md transition-[translate,scale,opacity] duration-200",
         "data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)]",
         "data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)]",
         "data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full",

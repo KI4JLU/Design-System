@@ -28,3 +28,24 @@ describe("DialogContent", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("DialogContent showClose", () => {
+  it("renders the close button by default and leaves it out on request", () => {
+    const { rerender } = render(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined}>
+          <DialogTitle>Titel</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByRole("button", { name: "Schließen" })).toBeInTheDocument();
+    rerender(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined} showClose={false}>
+          <DialogTitle>Titel</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.queryByRole("button", { name: "Schließen" })).toBeNull();
+  });
+});

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
 import { FolderOpen, Home, MessageSquare } from "lucide-react";
@@ -907,5 +907,334 @@ describe("AppShell — viewport switch", () => {
     expect(html).toContain("<main");
     // …and not the narrow-screen arrangement, whose bar is the tell.
     expect(html).not.toContain('aria-label="Bereichswechsel"');
+  });
+});
+
+/**
+ * Native shell (KI-998). The oracle is the card's acceptance plus the owner's
+ * review of the first build: with the title bar hidden (`<html
+ * data-titlebar>`) the frame's first row is the window's title bar — window
+ * controls, then the sidebar toggle, then the brand, in one row — nothing may
+ * sit under the controls, and without the attribute nothing changes. jsdom
+ * applies no CSS; the geometry is measured in Chromium by
+ * `Templates/AppShellLayout` › NativeShell.
+ */
+describe("AppShell — native shell", () => {
+  const hideTitlebar = (mode: "inset" | "hidden" = "inset") => {
+    document.documentElement.dataset.titlebar = mode;
+  };
+  afterEach(() => {
+    delete document.documentElement.dataset.titlebar;
+  });
+
+  const insetOwners = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll("[data-titlebar-inset]"));
+
+  it("changes nothing on the web: no inset owner, the toggle after the brand, the notice first", () => {
+    stubViewport(true);
+    const { container } = renderShell({ notice: <p>Wartung</p> });
+    expect(insetOwners(container)).toEqual([]);
+    expect(
+      precedes(screen.getByText("Marke"), screen.getByRole("button", { name: "Navigation einklappen" })),
+    ).toBe(true);
+    expect(container.firstElementChild?.firstElementChild).toBe(
+      screen.getByRole("region", { name: "Systemmeldung" }),
+    );
+  });
+
+  it.each(["inset", "hidden"] as const)(
+    "keeps the brand at the start of the left column's header row, the toggle after it (%s)",
+    (mode) => {
+      hideTitlebar(mode);
+      stubViewport(true);
+      const { container } = renderShell();
+      const owners = insetOwners(container);
+      expect(owners).toHaveLength(1);
+      expect(owners[0]).toHaveAttribute("data-titlebar-inset", "start");
+      const toggle = screen.getByRole("button", { name: "Navigation einklappen" });
+      expect(owners[0]).toContainElement(toggle);
+      expect(owners[0].firstElementChild).toContainElement(screen.getByText("Marke"));
+      expect(precedes(screen.getByText("Marke"), toggle)).toBe(true);
+    },
+  );
+
+  describe("right column", () => {
+    it("floats over the main area instead of standing beside it, with its toggle in the bar", async () => {
+      hideTitlebar();
+      stubViewport(true);
+      const onOpenChange = vi.fn();
+      const { container } = renderShell({ right: rightPanel({ onOpenChange, resize: rightResize() }) });
+      const pane = screen.getByRole("complementary", { name: "Quellen" });
+      // Inside the main column's box, after the page: over it, not beside it.
+      const content = container.querySelector("[data-slot='app-shell-content']")!;
+      expect(content).toContainElement(pane);
+      expect(precedes(screen.getByRole("main"), pane)).toBe(true);
+      expect(pane).toHaveTextContent("Quellen-Inhalt");
+      // No width of its own in the row: no separator.
+      expect(screen.queryByRole("separator", { name: "Breite der Quellen ändern" })).toBeNull();
+      // Its one toggle is the bar's last control and names the pane.
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen einklappen" });
+      expect(precedes(screen.getByText("Anwendung"), toggle)).toBe(true);
+      expect(pane).not.toContainElement(toggle);
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(document.getElementById(toggle.getAttribute("aria-controls")!)).toBe(pane);
+      await userEvent.click(toggle);
+      expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    it("hides the closed pane without unmounting it, and leaves no rail", async () => {
+      hideTitlebar();
+      stubViewport(true);
+      const onOpenChange = vi.fn();
+      renderShell({ right: rightPanel({ isOpen: false, onOpenChange }) });
+      expect(screen.queryByRole("complementary", { name: "Quellen" })).toBeNull();
+      expect(screen.getByText("Quellen-Inhalt")).not.toBeVisible();
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen ausklappen" });
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await userEvent.click(toggle);
+      expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
+    });
+
+    it("has neither pane nor toggle while showRight is false", () => {
+      hideTitlebar();
+      stubViewport(true);
+      renderShell({ showRight: false });
+      expect(screen.queryByText("Quellen-Inhalt")).toBeNull();
+      expect(screen.queryByRole("button", { name: /Quellen/ })).toBeNull();
+    });
+
+    it("stays a column on the web", () => {
+      stubViewport(true);
+      const { container } = renderShell();
+      const pane = screen.getByRole("complementary", { name: "Quellen" });
+      expect(container.querySelector("[data-slot='app-shell-content']")).not.toContainElement(pane);
+      expect(pane).toContainElement(screen.getByRole("button", { name: "Quellen einklappen" }));
+    });
+  });
+
+  it("keeps a collapsed column out of the title bar: the bar carries its toggle", async () => {
+    hideTitlebar();
+    stubViewport(true);
+    const onOpenChange = vi.fn();
+    const { container } = renderShell({ left: leftPanel({ isOpen: false, onOpenChange }) });
+    const banner = screen.getByRole("banner");
+    const toggle = await within(banner).findByRole("button", { name: "Navigation ausklappen" });
+    // In the bar, before the bar's own content, and no longer in the rail.
+    expect(precedes(toggle, screen.getByText("Anwendung"))).toBe(true);
+    // The brand stays: first in the bar, before the toggle, mounted once.
+    const brand = within(banner).getByText("Marke");
+    expect(banner.firstElementChild).toContainElement(brand);
+    expect(precedes(brand, toggle)).toBe(true);
+    expect(screen.getAllByText("Marke")).toHaveLength(1);
+    const rail = screen.getByRole("complementary", { name: "Navigationsspalte" });
+    expect(rail).not.toContainElement(toggle);
+    expect(insetOwners(container)).toEqual([banner]);
+    // Still the column's own control: it names the body it opens, and opens it.
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).not.toBeNull();
+    expect(rail).toContainElement(document.getElementById(toggle.getAttribute("aria-controls")!));
+    await userEvent.click(toggle);
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it("carries the toggle in the empty title-bar row when the shell has no bar", async () => {
+    hideTitlebar();
+    stubViewport(true);
+    const { container } = renderShell({ topBar: undefined, left: leftPanel({ isOpen: false }) });
+    const strip = container.querySelector("[data-slot='app-shell-titlebar']") as HTMLElement;
+    expect(await within(strip).findByRole("button", { name: "Navigation ausklappen" })).toBeVisible();
+  });
+
+  it("does not remount the bar's content when the column collapses", () => {
+    hideTitlebar();
+    stubViewport(true);
+    const { rerender } = renderShell();
+    const content = screen.getByText("Anwendung");
+    rerender(
+      <AppShell
+        topBar={<span>Anwendung</span>}
+        left={leftPanel({ isOpen: false })}
+        right={rightPanel()}
+        mobileTabs={TABS}
+        activeMobileTab="page"
+        onMobileTabChange={() => {}}
+        mobileTabBarLabel="Bereichswechsel"
+      >
+        <p>Inhalt</p>
+      </AppShell>,
+    );
+    expect(screen.getByText("Anwendung")).toBe(content);
+  });
+
+  it.each([
+    ["a shell without a left column", true, { left: undefined }],
+    ["below lg", false, {}],
+  ] as const)("gives the corner to the bar in %s", (_name, isDesktop, props) => {
+    hideTitlebar();
+    stubViewport(isDesktop);
+    const { container } = renderShell(props);
+    expect(insetOwners(container)).toEqual([screen.getByRole("banner")]);
+  });
+
+  it("makes the notice the frame's last row on a wide screen, across the side columns", () => {
+    hideTitlebar();
+    stubViewport(true);
+    const { container } = renderShell({ notice: <p>Wartung</p> });
+    const region = screen.getByRole("region", { name: "Systemmeldung" });
+    const frame = container.firstElementChild!;
+    expect(frame.lastElementChild).toBe(region);
+    for (const area of [
+      screen.getByRole("banner"),
+      screen.getByRole("main"),
+      screen.getByRole("complementary", { name: "Navigationsspalte" }),
+      screen.getByRole("complementary", { name: "Quellen" }),
+    ]) {
+      expect(precedes(area, region)).toBe(true);
+      expect(area.contains(region)).toBe(false);
+    }
+    expect(insetOwners(container)).not.toContain(region);
+  });
+
+  it.each([
+    ["main area", "page"],
+    ["a side column", "nav"],
+  ] as const)("puts the notice between the area and the tab bar below lg (%s)", (_name, activeMobileTab) => {
+    hideTitlebar();
+    stubViewport(false);
+    renderShell({ notice: <p>Wartung</p>, activeMobileTab });
+    const region = screen.getByRole("region", { name: "Systemmeldung" });
+    const area =
+      activeMobileTab === "page"
+        ? screen.getByRole("main")
+        : screen.getByRole("complementary", { name: "Navigationsspalte" });
+    expect(precedes(area, region)).toBe(true);
+    expect(precedes(region, screen.getByRole("navigation", { name: "Bereichswechsel" }))).toBe(true);
+    // The room for the tab bar is reserved once: by the notice's row, not also by the area.
+    expect(area.style.paddingBottom).toBe("");
+    expect(region.parentElement!.style.paddingBottom).not.toBe("");
+  });
+
+  it("does not remount the page when the title bar mode changes", () => {
+    stubViewport(true);
+    const { container } = renderShell({ notice: <p>Wartung</p> });
+    const page = screen.getByText("Inhalt");
+    act(() => hideTitlebar());
+    return waitFor(() => {
+      expect(container.firstElementChild!.lastElementChild).toBe(
+        screen.getByRole("region", { name: "Systemmeldung" }),
+      );
+      expect(screen.getByText("Inhalt")).toBe(page);
+    });
+  });
+
+  it.each([
+    ["a shell without a left column", true, { left: undefined }],
+    ["a collapsed left column", true, { left: leftPanel({ isOpen: false }) }],
+    ["below lg, main area", false, {}],
+    ["below lg, a side column", false, { activeMobileTab: "nav" }],
+  ] as const)("keeps the area clear with an empty title-bar row when there is no bar (%s)", (_name, isDesktop, props) => {
+    hideTitlebar();
+    stubViewport(isDesktop);
+    const { container } = renderShell({ topBar: undefined, ...props });
+    const strip = container.querySelector("[data-slot='app-shell-titlebar']");
+    expect(strip).toHaveAttribute("data-app-region", "drag");
+    const area =
+      "activeMobileTab" in props
+        ? screen.getByRole("complementary", { name: "Navigationsspalte" })
+        : screen.getByRole("main");
+    expect(precedes(strip!, area)).toBe(true);
+  });
+
+  it("renders no empty row on the web, or when there is nothing for it to carry", () => {
+    stubViewport(true);
+    const web = renderShell({ topBar: undefined, left: undefined });
+    expect(web.container.querySelector("[data-slot='app-shell-titlebar']")).toBeNull();
+    web.unmount();
+    hideTitlebar();
+    // Nothing for a title row to carry: the left column holds the corner
+    // and there is no floating right pane whose toggle it would hold.
+    const expanded = renderShell({ topBar: undefined, right: undefined });
+    expect(expanded.container.querySelector("[data-slot='app-shell-titlebar']")).toBeNull();
+  });
+
+  describe("titlebarControls", () => {
+    const controls = <button type="button">Zurück</button>;
+
+    it("renders nothing on the web", () => {
+      stubViewport(true);
+      renderShell({ titlebarControls: controls });
+      expect(screen.queryByRole("button", { name: "Zurück" })).toBeNull();
+    });
+
+    it("stands in the open left column's header row, after the brand and before the toggle", () => {
+      hideTitlebar();
+      stubViewport(true);
+      renderShell({ titlebarControls: controls });
+      const column = screen.getByRole("complementary", { name: "Navigationsspalte" });
+      const back = within(column).getByRole("button", { name: "Zurück" });
+      expect(precedes(screen.getByText("Marke"), back)).toBe(true);
+      expect(precedes(back, screen.getByRole("button", { name: "Navigation einklappen" }))).toBe(true);
+      expect(screen.getAllByRole("button", { name: "Zurück" })).toHaveLength(1);
+    });
+
+    // Oracle: the APG window splitter — `aria-valuenow` lies within
+    // `aria-valuemin`…`aria-valuemax` and is what the column measures.
+    it("keeps a resizable column's separator on the widened width and within its bounds", () => {
+      hideTitlebar();
+      stubViewport(true);
+      renderShell({
+        left: leftPanel({ width: 233, resize: leftResize({ minWidth: 150, maxWidth: 260 }) }),
+        titlebarControls: controls,
+      });
+      const column = screen.getByRole("complementary", { name: "Navigationsspalte" });
+      const separator = screen.getByRole("separator", { name: "Breite der Navigation ändern" });
+      const now = Number(separator.getAttribute("aria-valuenow"));
+      expect(now).toBe(parseFloat(column.style.width));
+      expect(now).toBeGreaterThanOrEqual(Number(separator.getAttribute("aria-valuemin")));
+      expect(now).toBeLessThanOrEqual(Number(separator.getAttribute("aria-valuemax")));
+      expect(Number(separator.getAttribute("aria-valuemin"))).toBe(now);
+    });
+
+    it("widens a narrow left column so the row fits, and only while it holds the controls", () => {
+      hideTitlebar();
+      stubViewport(true);
+      const narrow = leftPanel({ width: 233 });
+      const withControls = renderShell({ left: narrow, titlebarControls: controls });
+      const widened = parseFloat(screen.getByRole("complementary", { name: "Navigationsspalte" }).style.width);
+      expect(widened).toBeGreaterThan(233);
+      withControls.unmount();
+      renderShell({ left: narrow });
+      expect(screen.getByRole("complementary", { name: "Navigationsspalte" }).style.width).toBe("233px");
+    });
+
+    it.each([
+      ["a collapsed left column", true, { left: leftPanel({ isOpen: false }) }],
+      ["a shell without a left column", true, { left: undefined }],
+      ["below lg", false, {}],
+    ] as const)("sits at the start of the bar with %s", async (_name, isDesktop, props) => {
+      hideTitlebar();
+      stubViewport(isDesktop);
+      renderShell({ titlebarControls: controls, ...props });
+      const banner = screen.getByRole("banner");
+      const back = within(banner).getByRole("button", { name: "Zurück" });
+      expect(precedes(back, screen.getByText("Anwendung"))).toBe(true);
+      if ("left" in props && props.left) {
+        const toggle = await within(banner).findByRole("button", { name: "Navigation ausklappen" });
+        expect(precedes(toggle, back)).toBe(true);
+      }
+      expect(screen.getAllByRole("button", { name: "Zurück" })).toHaveLength(1);
+    });
+  });
+
+  it("marks the frame's top row as the window's drag region", () => {
+    hideTitlebar();
+    stubViewport(true);
+    renderShell();
+    const drag = (el: Element | null) => el?.closest("[data-app-region='drag']");
+    expect(drag(screen.getByText("Marke"))).not.toBeNull();
+    expect(drag(screen.getByText("Anwendung"))).toBe(screen.getByRole("banner"));
+    // The pages themselves do not drag the window.
+    expect(drag(screen.getByText("Inhalt"))).toBeNull();
+    expect(drag(screen.getByText("Bereich A"))).toBeNull();
   });
 });

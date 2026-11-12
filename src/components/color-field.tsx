@@ -104,7 +104,7 @@ const ColorField = React.forwardRef<HTMLDivElement, ColorFieldProps>(
               type="button"
               aria-pressed={custom}
               onClick={openNative}
-              className="mt-3 flex w-full cursor-pointer items-center gap-2 rounded-[var(--ui-radius-control)] px-2 py-1.5 text-sm text-on-surface outline-none hover:bg-surface-container focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="mt-3 flex w-full cursor-pointer items-center gap-2 rounded-[var(--ui-radius-control)] px-2 py-1.5 text-sm text-on-surface outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {custom ? (
                 <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-outline-variant" style={{ background: current }} />

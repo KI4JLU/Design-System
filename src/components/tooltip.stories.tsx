@@ -1,4 +1,6 @@
+import { useLayoutEffect } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { Pencil, RefreshCw, Trash2, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { Button } from "./button";
@@ -93,4 +95,79 @@ export const DisabledTrigger: Story = {
       </Tooltip>
     </div>
   ),
+};
+
+function HiddenTitlebar({ children }: { children: React.ReactNode }) {
+  useLayoutEffect(() => {
+    document.documentElement.dataset.titlebar = "inset";
+    return () => {
+      delete document.documentElement.dataset.titlebar;
+    };
+  }, []);
+  return <>{children}</>;
+}
+
+/**
+ * Unter einer versteckten Titelleiste (`<html data-titlebar>`, „Native
+ * shell") bleibt die oberste Fensterzeile frei: Ein Tooltip, der dort landen
+ * würde — hier mit `side="top"` direkt unter der Zeile —, weicht aus, egal
+ * welche Seite der Aufrufer verlangt. Die Regel sitzt in `TooltipContent`.
+ */
+export const KeepsOutOfTheTitleBar: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <HiddenTitlebar>
+      <div className="flex flex-col items-start gap-2 pt-15 pl-3">
+        <Tooltip open>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Neuer Chat">
+              <Pencil aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Neuer Chat</TooltipContent>
+        </Tooltip>
+      </div>
+    </HiddenTitlebar>
+  ),
+  play: async ({ canvasElement }) => {
+    const tip = await within(canvasElement.ownerDocument.body).findByRole("tooltip");
+    const box = tip.closest("[data-slot='tooltip-content']")!.getBoundingClientRect();
+    // 56px: the window's title row.
+    await expect(box.top).toBeGreaterThanOrEqual(56);
+  },
+};
+
+function DesktopHost({ on, children }: { on: boolean; children: React.ReactNode }) {
+  useLayoutEffect(() => {
+    if (on) document.documentElement.dataset.host = "desktop";
+    return () => {
+      delete document.documentElement.dataset.host;
+    };
+  }, [on]);
+  return <>{children}</>;
+}
+
+const desktopOnly = (
+  <span data-desktop-only="" data-testid="hint" className="inline-flex">
+    ⌘N
+  </span>
+);
+
+/**
+ * `data-desktop-only`: im Web nicht sichtbar, in der Desktop-App
+ * (`<html data-host="desktop">`) mit der Darstellung, die die eigenen Klassen
+ * des Elements vorgeben.
+ */
+export const DesktopOnlyHiddenOnTheWeb: Story = {
+  render: () => <DesktopHost on={false}>{desktopOnly}</DesktopHost>,
+  play: async ({ canvas }) => {
+    await expect(getComputedStyle(canvas.getByTestId("hint")).display).toBe("none");
+  },
+};
+
+export const DesktopOnlyShownInTheDesktopApp: Story = {
+  render: () => <DesktopHost on>{desktopOnly}</DesktopHost>,
+  play: async ({ canvas }) => {
+    await expect(getComputedStyle(canvas.getByTestId("hint")).display).toBe("inline-flex");
+  },
 };

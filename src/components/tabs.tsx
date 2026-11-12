@@ -139,7 +139,8 @@ const TabsTrigger = React.forwardRef<
               // h-8: the compact control height, so buttons beside the strip
               // (paging arrows, actions) share its bottom and centre line.
               "h-8 shrink-0 rounded-t-md py-0 bg-surface-container-low",
-              "hover:bg-surface-container hover:text-on-surface",
+              // On the grey strip (`surface-container-low`): the raised hover.
+              "hover:bg-hover-raised hover:text-on-surface",
               "data-[state=active]:bg-primary-fixed data-[state=active]:text-on-primary-fixed data-[state=active]:hover:bg-primary-fixed",
               // The shared focus-ring tone is too close to primary-fixed
               // (~1.3:1); on the active tab the ring takes the text tone.

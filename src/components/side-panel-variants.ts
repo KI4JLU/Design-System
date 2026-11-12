@@ -47,3 +47,12 @@ export const sidePanelVariants = cva(
     },
   },
 );
+
+/**
+ * A pane toggle, wherever it stands — the pane's header row, the rail, the
+ * title bar: a 36px ghost square around a 20px icon. One class for all of
+ * them, so the icon has one size and with it one line weight (a lucide icon's
+ * 2-unit stroke scales with its size: 24px draws visibly heavier lines than
+ * the 20px icons beside it).
+ */
+export const PANE_TOGGLE_CLASS = "size-9 shrink-0 p-0 text-on-surface-variant [&_svg]:size-5";

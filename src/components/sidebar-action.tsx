@@ -6,6 +6,11 @@ import { sidebarRowInsetX } from "./sidebar-card-variants";
 export type SidebarActionProps = ButtonProps & {
   /** Leading icon, 18px, on the same axis as the rows' icons below it. */
   icon: React.ReactNode;
+  /**
+   * Shown at the row's end, right-aligned — a shortcut hint (`Kbd`), a count.
+   * The label truncates before it.
+   */
+  trailing?: React.ReactNode;
 };
 
 /**
@@ -16,7 +21,7 @@ export type SidebarActionProps = ButtonProps & {
  * defaults to `ghost`; pass another to override.
  */
 const SidebarAction = React.forwardRef<HTMLButtonElement, SidebarActionProps>(
-  ({ icon, variant = "ghost", className, children, ...props }, ref) => (
+  ({ icon, trailing, variant = "ghost", className, children, ...props }, ref) => (
     <Button
       ref={ref}
       data-slot="sidebar-action"
@@ -25,7 +30,7 @@ const SidebarAction = React.forwardRef<HTMLButtonElement, SidebarActionProps>(
         "h-[38px] w-full justify-start py-0 text-left font-body-base text-sm font-normal",
         "rounded-[var(--ui-radius-row)] active:scale-100",
         // The row colours belong to the ghost row only; another variant keeps its own.
-        variant === "ghost" && "text-on-surface hover:bg-surface-container-low",
+        variant === "ghost" && "text-on-surface hover:bg-hover",
         sidebarRowInsetX,
         className,
       )}
@@ -35,6 +40,11 @@ const SidebarAction = React.forwardRef<HTMLButtonElement, SidebarActionProps>(
         {icon}
       </span>
       <span className="min-w-0 truncate">{children}</span>
+      {trailing != null && (
+        <span data-slot="sidebar-action-trailing" className="ml-auto flex shrink-0 items-center">
+          {trailing}
+        </span>
+      )}
     </Button>
   ),
 );
