@@ -414,6 +414,15 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
         ) : null}
         <div className="flex min-w-[min(var(--bar-side-min),(100%_-_var(--bar-search-min)_-_2rem)/2)] flex-1 items-center justify-end gap-2">
           {headerActions}
+          {/* The floating card's toggle lies over the bar's end
+              (`topBarClearsToggle`); this keeps the region's last control
+              clear of it. A spacer and not padding: a `flex-1` region's base
+              size is floored at its padding, which would make this side
+              wider than the other and move the search off the centre. With
+              the region's `gap-2` it is the reserve the shell publishes. */}
+          {rightPanel && showRight !== false ? (
+            <span aria-hidden className="w-[calc(var(--app-shell-bar-end-reserve,0.5rem)-0.5rem)] shrink-0" />
+          ) : null}
         </div>
       </div>
     );
@@ -440,6 +449,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
       <AppShell
         ref={ref}
         topBar={!bar ? undefined : isDesktop ? wideBar : narrowBar}
+        topBarClearsToggle={isDesktop}
         left={{
           /* THE NAV MOVES INTO THE RAIL WHEN THE COLUMN COLLAPSES; it is not
              rendered in both places, and it is not dropped.

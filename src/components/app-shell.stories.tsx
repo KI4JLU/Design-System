@@ -179,13 +179,15 @@ export const Reference: Story = {
     const m = main.getBoundingClientRect();
     const r = right.getBoundingClientRect();
     await expect(l.right).toBeLessThanOrEqual(m.left + 1);
-    await expect(m.right).toBeLessThanOrEqual(r.left + 1);
+    // The right pane floats over the page as a card, inside main's box.
+    await expect(r.left).toBeGreaterThan(m.left);
+    await expect(r.right).toBeLessThanOrEqual(m.right);
 
     // Eine Chrome-Einheit: die Zeile über dem Inhalt ist 56px hoch und liegt
     // auf der Oberkante beider Spalten.
     await expect(bar.getBoundingClientRect().height).toBe(56);
     await expect(Math.round(bar.getBoundingClientRect().top)).toBe(Math.round(l.top));
-    await expect(Math.round(r.top)).toBe(Math.round(l.top));
+    await expect(Math.round(r.top)).toBe(Math.round(bar.getBoundingClientRect().bottom));
 
     // Beide Spalten eingeklappt: zwei 60px-Schienen (`SIDE_PANEL_RAIL_WIDTH`),
     // die linke mit `collapsedPreview`-Icons. **Die eingeklappte Form ist die
@@ -195,10 +197,11 @@ export const Reference: Story = {
     await userEvent.click(await canvas.findByRole("button", { name: "Navigation einklappen" }));
     await userEvent.click(await canvas.findByRole("button", { name: "Quellen einklappen" }));
     // Orakel: die exportierte Designkonstante — kein literales 60 hier.
-    for (const name of ["Hauptnavigation", "Quellen"]) {
-      const column = await canvas.findByRole("complementary", { name });
-      await expect(column.getBoundingClientRect().width).toBe(SIDE_PANEL_RAIL_WIDTH);
-    }
+    const rail = await canvas.findByRole("complementary", { name: "Hauptnavigation" });
+    await expect(rail.getBoundingClientRect().width).toBe(SIDE_PANEL_RAIL_WIDTH);
+    // The closed card is hidden, with no rail of its own.
+    await expect(canvas.queryByRole("complementary", { name: "Quellen" })).toBeNull();
+    await expect(await canvas.findByRole("button", { name: "Quellen ausklappen" })).toBeVisible();
     // Nur der Weg zurück ist erreichbar; die Kopfzeilen sind abgeräumt.
     await expect(
       await canvas.findByRole("button", { name: "Navigation ausklappen" }),

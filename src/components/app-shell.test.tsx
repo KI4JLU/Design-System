@@ -231,14 +231,11 @@ describe("AppShell — desktop arrangement", () => {
     expect(precedes(toggle, nav)).toBe(true);
     expect(precedes(nav, footer)).toBe(true);
 
-    // The right column mirrors the toggle to the content-facing edge.
+    // The right pane is a card over the page: its header carries no toggle,
+    // that one is the bar's (see „right column" below).
     const right = screen.getByRole("complementary", { name: "Quellen" });
-    expect(
-      precedes(
-        within(right).getByRole("button", { name: "Quellen einklappen" }),
-        within(right).getByText("Quellen"),
-      ),
-    ).toBe(true);
+    expect(within(right).getByText("Quellen")).toBeInTheDocument();
+    expect(within(right).queryByRole("button", { name: "Quellen einklappen" })).toBeNull();
   });
 
   it("points each toggle at the column body it controls, resolved and distinct", () => {
@@ -381,7 +378,7 @@ describe("AppShell — desktop arrangement", () => {
  * `resize-handle.test.tsx` and is deliberately not restated.
  */
 describe("AppShell — resizable columns", () => {
-  it("gives each resizable column a separator with the consumer's own numbers", () => {
+  it("gives the resizable left column a separator with the consumer's own numbers, the floating right pane none", () => {
     stubViewport(true);
     renderShell({
       left: leftPanel({ resize: leftResize() }),
@@ -395,17 +392,16 @@ describe("AppShell — resizable columns", () => {
     expect(left).toHaveAttribute("aria-valuemax", String(LEFT_MAX));
     expect(left).toHaveAttribute("aria-valuenow", String(LEFT_WIDTH));
 
-    const right = screen.getByRole("separator", { name: "Breite der Quellen ändern" });
-    expect(right).toHaveAttribute("aria-valuemin", String(RIGHT_MIN));
-    expect(right).toHaveAttribute("aria-valuemax", String(RIGHT_MAX));
-    expect(right).toHaveAttribute("aria-valuenow", String(RIGHT_WIDTH));
-
-    // Exactly two — a shell with two resizable columns has two separators, and
-    // nothing else in the tree claims the role.
-    expect(screen.getAllByRole("separator")).toHaveLength(2);
+    // Exactly one: the right pane floats and takes no width in the row, so a
+    // `resize` contract on it draws no separator — its `width` still sizes it.
+    expect(screen.getAllByRole("separator")).toHaveLength(1);
+    expect(screen.getByRole("complementary", { name: "Quellen" })).toHaveAttribute(
+      "style",
+      expect.stringContaining(`${RIGHT_WIDTH}px`),
+    );
   });
 
-  it("points each separator's aria-controls at its own column, resolved and distinct", () => {
+  it("points the separator's aria-controls at its own column, resolved", () => {
     stubViewport(true);
     renderShell({
       left: leftPanel({ resize: leftResize() }),
@@ -423,7 +419,6 @@ describe("AppShell — resizable columns", () => {
        that element carries no width at all. */
     const cases = [
       ["Breite der Navigation ändern", "Navigationsspalte", LEFT_WIDTH],
-      ["Breite der Quellen ändern", "Quellen", RIGHT_WIDTH],
     ] as const;
     const resolved: HTMLElement[] = [];
     for (const [handleName, columnName, width] of cases) {
@@ -436,10 +431,10 @@ describe("AppShell — resizable columns", () => {
       expect(column).toHaveAttribute("style", expect.stringContaining(`${width}px`));
       resolved.push(column as HTMLElement);
     }
-    expect(resolved[0]).not.toBe(resolved[1]);
+    expect(resolved).toHaveLength(1);
   });
 
-  it("hands each column's handle the side it sits on, so the keys mirror", async () => {
+  it("hands the left column's handle the side it sits on", async () => {
     stubViewport(true);
     const left = leftResize();
     const right = rightResize();
@@ -457,10 +452,7 @@ describe("AppShell — resizable columns", () => {
     screen.getByRole("separator", { name: "Breite der Navigation ändern" }).focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(left.onWidthChange).toHaveBeenCalledWith(LEFT_WIDTH + STEP);
-
-    screen.getByRole("separator", { name: "Breite der Quellen ändern" }).focus();
-    await userEvent.keyboard("{ArrowRight}");
-    expect(right.onWidthChange).toHaveBeenCalledWith(RIGHT_WIDTH - STEP);
+    expect(right.onWidthChange).not.toHaveBeenCalled();
   });
 
   it("reports the default width when a resizable column names none", () => {
@@ -485,12 +477,10 @@ describe("AppShell — resizable columns", () => {
     expect(screen.queryAllByRole("separator")).toHaveLength(0);
     // …and nothing else appears either: without a handle there is no reference
     // to resolve, so the column root keeps the DOM it had before this release.
-    for (const name of ["Navigationsspalte", "Quellen"]) {
-      expect(screen.getByRole("complementary", { name })).not.toHaveAttribute("id");
-    }
+    expect(screen.getByRole("complementary", { name: "Navigationsspalte" })).not.toHaveAttribute("id");
   });
 
-  it("renders no separator next to a collapsed column, per column", () => {
+  it("renders no separator next to a collapsed column", () => {
     stubViewport(true);
     renderShell({
       left: leftPanel({ isOpen: false, resize: leftResize() }),
@@ -502,10 +492,7 @@ describe("AppShell — resizable columns", () => {
     expect(
       screen.queryByRole("separator", { name: "Breite der Navigation ändern" }),
     ).not.toBeInTheDocument();
-    // The gate is per column, not global.
-    expect(
-      screen.getByRole("separator", { name: "Breite der Quellen ändern" }),
-    ).toBeInTheDocument();
+    expect(screen.queryAllByRole("separator")).toHaveLength(0);
   });
 
   it("renders no separator below lg, whichever area is on screen", () => {
@@ -995,6 +982,79 @@ describe("AppShell — native shell", () => {
       expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
     });
 
+    it("marks the shown pane on its toggle and takes the toggle's icon from the panel", () => {
+      hideTitlebar();
+      stubViewport(true);
+      const open = renderShell({ right: rightPanel({ toggleIcon: <svg data-testid="quellen-icon" /> }) });
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen einklappen" });
+      expect(toggle).toHaveAttribute("data-state", "open");
+      expect(toggle).toContainElement(screen.getByTestId("quellen-icon"));
+      open.unmount();
+      renderShell({ right: rightPanel({ isOpen: false }) });
+      const closed = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen ausklappen" });
+      expect(closed).toHaveAttribute("data-state", "closed");
+      expect(closed.querySelector("svg")).not.toBeNull();
+    });
+
+    it("keeps a locked pane's toggle in the bar, disabled and described, and renders no card", async () => {
+      stubViewport(true);
+      const onOpenChange = vi.fn();
+      const { container } = renderShell({
+        right: rightPanel({ isOpen: true, onOpenChange, locked: { description: "Für deine Rolle nicht freigegeben" } }),
+      });
+      expect(screen.queryByRole("complementary", { name: "Quellen" })).toBeNull();
+      expect(screen.queryByText("Quellen-Inhalt")).toBeNull();
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen ausklappen" });
+      expect(toggle).toHaveAttribute("aria-disabled", "true");
+      expect(toggle).not.toHaveAttribute("aria-expanded");
+      expect(toggle).not.toHaveAttribute("aria-controls");
+      expect(toggle).toHaveAccessibleDescription("Für deine Rolle nicht freigegeben");
+      expect(toggle.querySelector("[data-slot='app-shell-right-toggle-lock']")).not.toBeNull();
+      await userEvent.click(toggle);
+      expect(onOpenChange).not.toHaveBeenCalled();
+      // Nothing is covered, so nothing is published.
+      expect(
+        container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset"),
+      ).toBe("");
+    });
+
+    it("shows the main area, not a locked pane's content, when a narrow tab points at it", () => {
+      stubViewport(false);
+      renderShell({
+        activeMobileTab: "sources",
+        right: rightPanel({ locked: { description: "Für deine Rolle nicht freigegeben" } }),
+      });
+      expect(screen.queryByText("Quellen-Inhalt")).toBeNull();
+      expect(screen.getByRole("main")).toBeInTheDocument();
+    });
+
+    it("shows the toggle's tooltip on keyboard focus", async () => {
+      stubViewport(true);
+      renderShell({ right: rightPanel({ toggleTooltip: "Quellen des Themas" }) });
+      await userEvent.tab();
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen einklappen" });
+      toggle.focus();
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Quellen des Themas");
+    });
+
+    it("publishes what the open pane covers, on the web too, and nothing while it is closed", () => {
+      const inset = (container: HTMLElement) =>
+        container
+          .querySelector<HTMLElement>("[data-slot='app-shell-content']")!
+          .style.getPropertyValue("--app-shell-bubble-inset");
+      hideTitlebar();
+      stubViewport(true);
+      const open = renderShell({ right: rightPanel({ width: 300 }) });
+      expect(inset(open.container)).toBe("calc(300px + 1rem)");
+      open.unmount();
+      const closed = renderShell({ right: rightPanel({ isOpen: false, width: 300 }) });
+      expect(inset(closed.container)).toBe("");
+      closed.unmount();
+      delete document.documentElement.dataset.titlebar;
+      const web = renderShell({ right: rightPanel({ width: 300 }) });
+      expect(inset(web.container)).toBe("calc(300px + 1rem)");
+    });
+
     it("has neither pane nor toggle while showRight is false", () => {
       hideTitlebar();
       stubViewport(true);
@@ -1003,12 +1063,13 @@ describe("AppShell — native shell", () => {
       expect(screen.queryByRole("button", { name: /Quellen/ })).toBeNull();
     });
 
-    it("stays a column on the web", () => {
+    it("floats on the web too, with its toggle in the bar", () => {
       stubViewport(true);
       const { container } = renderShell();
       const pane = screen.getByRole("complementary", { name: "Quellen" });
-      expect(container.querySelector("[data-slot='app-shell-content']")).not.toContainElement(pane);
-      expect(pane).toContainElement(screen.getByRole("button", { name: "Quellen einklappen" }));
+      expect(container.querySelector("[data-slot='app-shell-content']")).toContainElement(pane);
+      const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Quellen einklappen" });
+      expect(pane).not.toContainElement(toggle);
     });
   });
 
@@ -1147,7 +1208,7 @@ describe("AppShell — native shell", () => {
 
   it("renders no empty row on the web, or when there is nothing for it to carry", () => {
     stubViewport(true);
-    const web = renderShell({ topBar: undefined, left: undefined });
+    const web = renderShell({ topBar: undefined, left: undefined, right: undefined });
     expect(web.container.querySelector("[data-slot='app-shell-titlebar']")).toBeNull();
     web.unmount();
     hideTitlebar();
