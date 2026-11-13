@@ -1,5 +1,5 @@
 import * as React from "react";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Lock, SquareMenu } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
   MOBILE_PANE_STYLE,
@@ -10,6 +10,7 @@ import {
 import { useTitlebar } from "../lib/use-titlebar";
 import { BottomTabBar } from "./bottom-tab-bar";
 import { Button } from "./button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { ResizeHandle } from "./resize-handle";
 import { SidePanel } from "./side-panel";
 import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
@@ -99,6 +100,30 @@ export interface AppShellPanel {
   isOpen: boolean;
   /** Collapse/expand was requested; carries the REQUESTED state. */
   onOpenChange: (isOpen: boolean) => void;
+  /**
+   * Icon of the toggle that shows and hides the column while it floats as a
+   * card (hidden title bar, right column only): it says what the card holds.
+   * Default: a neutral list icon. Not the sidebar icons (`PanelRight…`) —
+   * those stand for a column of the frame, which the card is not; the open
+   * state is the button's tint, not a second icon.
+   */
+  toggleIcon?: React.ReactNode;
+  /**
+   * Tooltip of that toggle (hover and keyboard focus): what the card is, and
+   * — with `locked` — why it cannot be opened. Omitted, there is no tooltip.
+   */
+  toggleTooltip?: React.ReactNode;
+  /**
+   * The floating card exists but this user may not open it (right column
+   * only). The toggle stays in the bar so the place does not jump between
+   * users: dimmed, `aria-disabled`, with a small lock on hover and focus; it
+   * stays focusable so the tooltip that says why is reachable by keyboard.
+   * No card is rendered and `content` is ignored — below `lg` too, where a
+   * tab that points at the pane shows the main area instead. `description` is the
+   * reason for assistive technology (the toggle's `aria-describedby`); show
+   * the same words in `toggleTooltip`.
+   */
+  locked?: { description: string };
   /** Expanded width in px. Default 256 (= the `--width-sidebar` token). */
   width?: number;
   /**
@@ -111,6 +136,11 @@ export interface AppShellPanel {
    * visible effect) and **only from
    * `lg` up** (below it the shell shows one area at a time; there is nothing
    * to resize a column against).
+   *
+   * **Left column only.** From `lg` up the right column floats as a card and
+   * takes no width in the row, so it has no separator; its `width` sizes the card.
+   *
+   * **Left column only**: the floating right card has no rail.
    */
   resize?: AppShellPanelResize;
   /** Accessible name of the expand button (collapsed state). */
@@ -219,6 +249,16 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    */
   showRight?: boolean;
   /**
+   * The floating right card's toggle is the bar's last control. By default it
+   * stands after `topBar` and takes its width from it. `true` when `topBar`
+   * keeps its own end clear instead: the toggle then lies over the bar's end
+   * edge, and the bar carries `--app-shell-bar-end-reserve` — the room
+   * `topBar` leaves free there, on top of an inset of 1.5rem. A bar that
+   * centres something on itself needs this, or the toggle moves its centre
+   * (`AppShellLayout` sets it).
+   */
+  topBarClearsToggle?: boolean;
+  /**
    * Content of the `h-14` chrome bar above `<main>`, in **both**
    * arrangements — the page-label/search/actions row on a wide screen, the
    * brand row on a narrow one. The frame owns the row's height (56px in every
@@ -308,6 +348,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       left,
       right,
       showRight = true,
+      topBarClearsToggle = false,
       topBar,
       mainLabel,
       notice,
@@ -364,6 +405,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     */
     const leftPaneId = React.useId();
     const rightPaneId = React.useId();
+    const rightLockId = React.useId();
 
     /*
       Native shell with a hidden title bar (`<html data-titlebar>`): the
@@ -431,30 +473,63 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     const leftWidth = Math.max(left?.width ?? DEFAULT_PANEL_WIDTH, leftFloor);
 
     /*
-      Under a hidden title bar the right column is not a column: it floats
-      over the main area as a card below the bar, and its toggle is the last
-      control of the title row — the window's top-right corner. It takes no
-      width, so it has no rail and no resize handle; closed, it is hidden but
-      stays mounted, like a collapsed column's body.
+      From `lg` up the right column is not a column: it floats over the main
+      area as a card below the bar, and its toggle is the last control of the
+      bar — the top-right corner, on the web and in a native window alike. It
+      takes no width, so it has no rail and no resize handle; closed, it is
+      hidden but stays mounted, like a collapsed column's body. The frame's
+      columns are left to what frames the app (navigation, a host's own
+      sidebars); what belongs to the page floats over it.
     */
-    const floatRight = titlebar && isDesktop && right && showRight ? right : null;
-    const RightIcon = floatRight?.isOpen ? PanelRightClose : PanelRightOpen;
-    const rightToggle = floatRight ? (
-      <span data-slot="app-shell-right-toggle" className="flex shrink-0 items-center pr-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={PANE_TOGGLE_CLASS}
-          aria-label={floatRight.isOpen ? floatRight.collapseLabel : floatRight.expandLabel}
-          aria-expanded={floatRight.isOpen}
-          aria-controls={rightPaneId}
-          onClick={() => floatRight.onOpenChange(!floatRight.isOpen)}
-        >
-          <RightIcon aria-hidden />
-        </Button>
+    const floatRight = isDesktop && right && showRight ? right : null;
+    const rightLocked = floatRight?.locked;
+    const rightOpen = Boolean(floatRight?.isOpen) && !rightLocked;
+    const rightButton = floatRight ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(PANE_TOGGLE_CLASS, rightLocked && "group/locked relative cursor-not-allowed hover:bg-transparent active:bg-transparent")}
+        aria-label={rightOpen ? floatRight.collapseLabel : floatRight.expandLabel}
+        aria-expanded={rightLocked ? undefined : rightOpen}
+        aria-controls={rightLocked ? undefined : rightPaneId}
+        aria-disabled={rightLocked ? true : undefined}
+        aria-describedby={rightLocked ? rightLockId : undefined}
+        // The ghost button's own open tint marks the shown card.
+        data-state={rightOpen ? "open" : "closed"}
+        data-locked={rightLocked ? "" : undefined}
+        onClick={rightLocked ? undefined : () => floatRight.onOpenChange(!floatRight.isOpen)}
+      >
+        <span className={cn("contents", rightLocked && "[&>svg]:opacity-40")}>
+          {floatRight.toggleIcon ?? <SquareMenu aria-hidden />}
+        </span>
+        {rightLocked && (
+          <>
+            <span
+              aria-hidden
+              data-slot="app-shell-right-toggle-lock"
+              className="absolute right-0.5 bottom-0.5 hidden size-4 items-center justify-center rounded-full bg-canvas text-on-surface group-hover/locked:flex group-focus-visible/locked:flex [&_svg]:size-3!"
+            >
+              <Lock />
+            </span>
+            <span id={rightLockId} hidden>{rightLocked.description}</span>
+          </>
+        )}
+      </Button>
+    ) : null;
+    const rightToggle = floatRight && rightButton ? (
+      <span
+        data-slot="app-shell-right-toggle"
+        className={cn("flex shrink-0 items-center pr-2", topBar && topBarClearsToggle && "absolute inset-y-0 right-0")}
+      >
+        {floatRight.toggleTooltip ? (
+          <Tooltip delayDuration={400}>
+            <TooltipTrigger asChild>{rightButton}</TooltipTrigger>
+            <TooltipContent side="bottom" align="end">{floatRight.toggleTooltip}</TooltipContent>
+          </Tooltip>
+        ) : rightButton}
       </span>
     ) : null;
-    const rightBubble = floatRight ? (
+    const rightBubble = floatRight && !rightLocked ? (
       <aside
         id={rightPaneId}
         aria-label={floatRight.label}
@@ -489,8 +564,11 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           cornerOwner === "bar" && "pl-(--titlebar-inset-start)",
           (besideRail || (controls && cornerOwner === "bar")) && "gap-1.5",
           besideRail && "relative z-10 bg-canvas",
+          rightToggle && topBarClearsToggle && "relative",
         )}
-        style={overRail}
+        // The toggle lies over the bar's end instead of taking width beside
+        // `topBar`: what `topBar` has to keep clear beyond a 1.5rem inset.
+        style={rightToggle && topBarClearsToggle ? ({ ...overRail, "--app-shell-bar-end-reserve": "1.5rem" } as React.CSSProperties) : overRail}
       >
         {railBrand}
         {railToggle}
@@ -660,7 +738,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       // screen.
       const activePane = mobileTabs.find((tab) => tab.id === activeMobileTab)?.pane;
       const panel =
-        activePane === "left" ? left : activePane === "right" ? right : undefined;
+        activePane === "left" ? left : activePane === "right" && !right?.locked ? right : undefined;
       const paneStyle = noticeAtBottom ? undefined : MOBILE_PANE_STYLE;
 
       return (
@@ -745,7 +823,15 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           )}
           {/* `app-shell-content`: the bar plus `<main>` — the region a
               page-sized dialog covers (`SettingsDialog` `fitTo`). */}
-          <div data-slot="app-shell-content" className={cn("flex min-w-0 flex-1 flex-col bg-canvas", floatRight && "relative")}>
+          <div
+            data-slot="app-shell-content"
+            className={cn("flex min-w-0 flex-1 flex-col bg-canvas", floatRight && "relative")}
+            // What the open bubble covers at the content's end edge: its width
+            // plus `right-2` and the same gap on its other side. Content that
+            // must stay readable beside the bubble keeps clear of it by this
+            // much; without a bubble, or closed, the variable is unset.
+            style={rightOpen && floatRight ? ({ "--app-shell-bubble-inset": `calc(${floatRight.width ?? DEFAULT_PANEL_WIDTH}px + 1rem)` } as React.CSSProperties) : undefined}
+          >
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
@@ -754,13 +840,6 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {cornerLayer}
             {rightBubble}
           </div>
-          {/* `showRight` gates the DESKTOP arrangement only — see the prop. */}
-          {right && showRight && !floatRight && (
-            <>
-              {handle(right, "right", rightPaneId)}
-              {column(right, "right", rightPaneId)}
-            </>
-          )}
         </div>
         {/* Under a hidden title bar the first row is the window's title bar,
             so the notice is the frame's last row instead: full width, in the

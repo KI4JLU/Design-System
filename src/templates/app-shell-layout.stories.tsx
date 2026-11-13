@@ -227,8 +227,10 @@ export const Overview: Story = {
  * `play` (Chromium, the runner's 1280px window, both columns at their 320px
  * default), oracles in brackets:
  * 1. the bar is 56px [the published contract, as above];
- * 2. history | main | sources, left to right [the layout boxes];
- * 3. each column has its named separator [ARIA `separator` + name];
+ * 2. history | main, left to right, the sources card inside main's box
+ *    [the layout boxes];
+ * 3. the history column has its named separator, the card none
+ *    [ARIA `separator` + name];
  * 4. the bar's four controls do not overlap or clip, and the field sits on
  *    the bar's centre [the boxes against each other and against the bar] —
  *    the real consumer composition at the real consumer widths, not only the
@@ -251,14 +253,16 @@ export const ChatWorkspace: Story = {
     ).getBoundingClientRect();
     const main = canvasElement.querySelector("main")!.getBoundingClientRect();
     await expect(history.right).toBeLessThanOrEqual(main.left + 1);
-    await expect(main.right).toBeLessThanOrEqual(sources.left + 1);
+    // The sources float over the page as a card: inside the main area's
+    // box, at its end edge, not beside it.
+    await expect(sources.left).toBeGreaterThan(main.left);
+    await expect(sources.right).toBeLessThanOrEqual(main.right);
+    await expect(sources.top).toBeGreaterThanOrEqual(main.top);
 
     await expect(
       await canvas.findByRole("separator", { name: "Breite des Verlaufs ändern" }),
     ).toBeInTheDocument();
-    await expect(
-      await canvas.findByRole("separator", { name: "Breite der Quellen ändern" }),
-    ).toBeInTheDocument();
+    await expect(canvas.queryByRole("separator", { name: "Breite der Quellen ändern" })).toBeNull();
 
     const g = measureWorkspaceBar(canvasElement);
     await expectNoOverlap(g);
@@ -449,8 +453,8 @@ const COLUMN_WIDTH = 320;
  * JustRAG's measured case (KI-838, `KbWorkspaceLayout ›
  * WorkspaceBarWithScopedSearch`, Chromium, both side columns open at 320px):
  * a **560px** bar holding a back button and a topic title, a search field and
- * a gear — the workspace context's own bar. The shell is fixed at 1200px
- * (= 560 + 2 × 320) and both widths are pinned, so the bar is 560 whatever
+ * a gear — the workspace context's own bar. The shell is fixed at 880px
+ * (= 560 + 320; the sources card takes no width) and the width is pinned, so the bar is 560 whatever
  * the Storybook viewport — only the bar's own width enters its flex
  * computation. (Both columns carry a resize handle here; a handle has no
  * layout width, see `HandleHasNoLayoutWidth`.) The failure this pins is in
@@ -475,7 +479,7 @@ export const NarrowBarKeepsTheLabel: Story = {
       search={<ShellSearch label={WORKSPACE_SEARCH} />}
       leftWidth={COLUMN_WIDTH}
       rightWidth={COLUMN_WIDTH}
-      style={{ width: 560 + 2 * COLUMN_WIDTH }}
+      style={{ width: 560 + COLUMN_WIDTH }}
     >
       <ChatPage />
     </AppShellFixture>
@@ -574,7 +578,7 @@ export const BarGivesWayInOrder: Story = {
   play: async ({ canvasElement }) => {
     const shell = document.getElementById("shrink-order-shell") as HTMLElement;
     const at = async (barWidth: number) => {
-      shell.style.width = `${barWidth + 2 * COLUMN_WIDTH}px`;
+      shell.style.width = `${barWidth + COLUMN_WIDTH}px`;
       const g = measureWorkspaceBar(canvasElement);
       await expect(g.row.width).toBe(barWidth);
       await expectBarHeight(canvasElement);
@@ -809,8 +813,8 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
 };
 
 /**
- * **Both columns are draggable**, shown in the workspace context, where both
- * are. The shell composes `SidePanel` + `ResizeHandle` for it; there is no
+ * **The left column is draggable**, shown in the workspace context (the
+ * sources float as a card and have no separator). The shell composes `SidePanel` + `ResizeHandle` for it; there is no
  * second mechanism and no storage in the package. The widths are **the
  * app's state**: `onWidthChange` reports every clamped value, and the app
  * passes it back through `leftWidth` or `rightPanel.width`.
@@ -818,9 +822,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
  * The `play` function measures in Chromium what jsdom cannot: it focuses the
  * left separator, presses `→` three times and checks that the column's
  * **measured** box grew by 3 × `step` (30px) and equals the separator's
- * `aria-valuenow` exactly. The same for the right column with `←`: the
- * arrow keys are mirrored per side, because the key moves the *separator*
- * and `aria-valuenow` reports the *column*.
+ * `aria-valuenow` exactly.
  *
  * Oracle: the browser's layout against the story's state, not a number read
  * from the component code. Start widths are measured, not asserted.
@@ -852,25 +854,12 @@ export const WithResizableColumns: Story = {
     // Gemessene Box und gemeldeter Wert sind EINE Zahl, nicht zwei.
     await expect(leftHandle.getAttribute("aria-valuenow")).toBe(String(leftAfter));
 
-    // Rechte Spalte: gespiegelt, also `←`.
-    const rightColumn = await canvas.findByRole("complementary", { name: "Quellen" });
-    const rightHandle = await canvas.findByRole("separator", {
-      name: "Breite der Quellen ändern",
-    });
-    const rightBefore = rightColumn.getBoundingClientRect().width;
-    rightHandle.focus();
-    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
-    const rightAfter = rightColumn.getBoundingClientRect().width;
-    await expect(rightAfter).toBe(rightBefore + 3 * step);
-    await expect(rightHandle.getAttribute("aria-valuenow")).toBe(String(rightAfter));
+    // The sources card floats: it has no separator.
+    await expect(canvas.queryByRole("separator", { name: "Breite der Quellen ändern" })).toBeNull();
 
-    // Und die Trenner liegen auf den inhaltsseitigen Kanten: links rechts von
-    // der Spalte, rechts links davon.
+    // The separator lies on the content-facing edge: to the right of the column.
     await expect(leftHandle.getBoundingClientRect().left).toBeGreaterThanOrEqual(
       leftColumn.getBoundingClientRect().right - 1,
-    );
-    await expect(rightHandle.getBoundingClientRect().right).toBeLessThanOrEqual(
-      rightColumn.getBoundingClientRect().left + 1,
     );
   },
 };
