@@ -160,7 +160,6 @@ export { menuItemVariants } from "./components/menu-item-variants";
 export { NavItem, type NavItemProps } from "./components/nav-item";
 export { navItemVariants } from "./components/nav-item-variants";
 export { Notice, type NoticeProps, type NoticeTone } from "./components/notice";
-export { noticeVariants } from "./components/notice-variants";
 export { PageHeader, type PageHeaderProps } from "./components/page-header";
 export {
   Popover,

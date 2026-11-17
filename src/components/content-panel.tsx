@@ -18,6 +18,9 @@ export interface ContentPanelProps extends Omit<React.HTMLAttributes<HTMLElement
  * A panel that takes a whole content area (an editor that replaces the view
  * it belongs to): header with title and close, a scrolling body capped at a
  * readable width, a pinned footer. Needs a flex-column parent with a height.
+ *
+ * @deprecated Use `SettingsDialog`. The one consumer, JustRAG's system-prompt
+ * panel, moved to a settings dialog; the panel will be removed in a later release.
  */
 const ContentPanel = React.forwardRef<HTMLElement, ContentPanelProps>(
   ({ title, onClose, closeLabel = "Schließen", footer, titleId, className, children, ...props }, ref) => {
@@ -61,6 +64,8 @@ export interface PanelSectionProps extends Omit<React.HTMLAttributes<HTMLElement
 }
 
 /**
+ * @deprecated Goes with `ContentPanel`; use `SettingsDialog` (`sections`) and `SettingsRow`.
+ *
  * One titled block of a settings-style panel: title row (+ `aside`), a muted
  * hint, then the content. Consecutive sections are divided by a rule, so a
  * panel made of them reads as one form.
