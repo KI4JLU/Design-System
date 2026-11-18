@@ -1,18 +1,18 @@
 import * as React from "react";
-import { Lock, SquareMenu } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Lock, Maximize2, Minimize2, PanelLeftClose, PanelRightClose, PanelRightOpen, Plus, SquareMenu, TextAlignStart, X } from "lucide-react";
 import { cn } from "../lib/utils";
-import {
-  MOBILE_PANE_STYLE,
-  PANE_FILL,
-  useIsDesktop,
-  type MobilePaneTab,
-} from "../lib/pane-layout";
+import { PANE_FILL, useIsDesktop, type MobilePaneTab, type PaneId } from "../lib/pane-layout";
 import { useTitlebar } from "../lib/use-titlebar";
-import { BottomTabBar } from "./bottom-tab-bar";
 import { Button } from "./button";
+import { BottomSheet } from "./bottom-sheet";
+import { Drawer, DrawerContent, DrawerTitle } from "./drawer";
+import { Kbd, KbdGroup } from "./kbd";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { ResizeHandle } from "./resize-handle";
 import { SidePanel } from "./side-panel";
+import { SidebarCollapsedContext } from "./sidebar-context";
 import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
 
 /**
@@ -38,6 +38,27 @@ const DEFAULT_PANEL_WIDTH = 256;
  * be clipped.
  */
 const TITLEBAR_LEFT_MIN_WIDTH = 296;
+
+/**
+ * What the main area keeps beside an `AppShellSidePanel`, in px: below it a
+ * chat's composer no longer fits. The frame's shrinking rules follow from it,
+ * in this order as the frame narrows:
+ *
+ *  1. The side panel gives way first: it is at most 70% of the frame and at
+ *     most what leaves the main area this width, but never below its own
+ *     minimum.
+ *  2. Then the left column collapses to its rail, for as long as it would
+ *     otherwise take the main area below this width. The consumer's
+ *     `isOpen` is not touched; the column comes back with the room.
+ *  3. The floating card stops asking the page to keep clear of it
+ *     (`--app-shell-bubble-inset`) once that would leave the page less than
+ *     this width: it then simply lies over the page's end.
+ */
+const MAIN_MIN_WIDTH = 360;
+/** Largest share of the frame's width a side panel takes. */
+const SIDE_PANEL_MAX_FRACTION = 0.7;
+/** A side panel's smallest width when it names none (no `resize`). */
+const SIDE_PANEL_MIN_WIDTH = 360;
 
 /**
  * Makes a shell column drag-resizable (0.36.0). Present on an `AppShellPanel`,
@@ -91,6 +112,15 @@ export interface AppShellPanel {
    */
   footer?: React.ReactNode;
   /**
+   * The column's primary action below `md` (left column only) — „Neuer
+   * Chat". There the column is a drawer, and this stands in its bottom row,
+   * at the end, with `footer` beside it in its collapsed form (a user menu
+   * as its avatar): the place a thumb reaches. On a wide screen it is not
+   * rendered; the action is part of `content` there, and `content` leaves it
+   * out below `md` so it does not show twice.
+   */
+  narrowAction?: React.ReactNode;
+  /**
    * Accessible name of the column's `complementary` landmark. Required: a
    * shell can have two of them on screen, and unnamed landmarks cannot be told
    * apart.
@@ -118,7 +148,7 @@ export interface AppShellPanel {
    * only). The toggle stays in the bar so the place does not jump between
    * users: dimmed, `aria-disabled`, with a small lock on hover and focus; it
    * stays focusable so the tooltip that says why is reachable by keyboard.
-   * No card is rendered and `content` is ignored — below `lg` too, where a
+   * No card is rendered and `content` is ignored — below `md` too, where a
    * tab that points at the pane shows the main area instead. `description` is the
    * reason for assistive technology (the toggle's `aria-describedby`); show
    * the same words in `toggleTooltip`.
@@ -147,6 +177,13 @@ export interface AppShellPanel {
   expandLabel: string;
   /** Accessible name of the collapse button (expanded state). */
   collapseLabel: string;
+  /**
+   * **Floating right card only.** Accessible name of a close button in the
+   * card's top end corner, e.g. „Quellen schließen" — distinct from
+   * `collapseLabel`, the toggle's name in the bar. Omitted, the card has no
+   * button of its own and closes from the toggle.
+   */
+  closeLabel?: string;
   /** Optional icon strip shown in the collapsed rail. */
   collapsedPreview?: React.ReactNode;
 }
@@ -176,47 +213,26 @@ export interface AppShellPanel {
  * nothing changes: no separator, no id on the `<aside>`, the 256px default.
  * The width itself stays the consumer's number — this package stores nothing.
  *
- * **Below `lg`: one area at a time plus a `BottomTabBar`**, chosen in JS
- * (`useIsDesktop`, `lib/pane-layout.ts`) for the reason given there: a shown
- * area is not a narrower version of itself — it
- * fills the screen, ignores the collapse state and must lose its collapse
- * control. The consumer declares which tab shows which area (`mobileTabs`) and
- * which tab is current; it writes no breakpoint check.
+ * **Below `md`: the page, with drawers over it**, chosen in JS
+ * (`useIsDesktop`, `lib/pane-layout.ts`) for the reason given there: an area
+ * shown there is not a narrower version of itself. The page stays on screen;
+ * the left column is a drawer from the left edge, opened by a toggle at the
+ * start of the bar; the right card is a `BottomSheet`; a shown
+ * `AppShellSidePanel` fills the frame. There is no tab bar (until 0.83.0
+ * there was one, and one area at a time): the toggles stay in the bar, as on
+ * a wide screen. What is open is still the consumer's `activeMobileTab` — one
+ * id, mapped to an area by `mobileTabs` — so the app writes no breakpoint
+ * check.
  *
- * **No drawer, no dialog, and therefore no focus management.** Until 0.29.0
- * the narrow-screen navigation was a Radix `Dialog`, which brought a focus
- * trap, Escape-to-close and a scroll lock *because it was an overlay*: content
- * behind a modal must not be reachable, and a modal needs a way out. The
- * tab-bar arrangement is not an overlay — the shown area **is** the page,
- * nothing is layered over anything, so there is no "behind" to trap focus away
- * from and no dismissal to bind Escape to. Removing the dialog removes all
- * three requirements rather than leaving them unimplemented; what stays is the
- * tab bar's own contract (a `navigation` landmark, exactly one
- * `aria-current="page"`).
+ * **The drawers are overlays, and bring an overlay's contract**: the page
+ * behind is inert, Escape and the scrim close them, the focus returns to what
+ * opened them. Each node is still mounted once: a column's content is in the
+ * drawer below `md` and in the column from `md` up, never in both.
  *
- * **Every node is mounted once.** The drawer rendered the *same* nav node a
- * second time, so a consumer's `id` inside it existed twice while the drawer
- * was open (JustRAG hit exactly this and documented it in `AppChrome.tsx`).
- * With the drawer gone there is one mount per node in every state — which is
- * also why `SidebarSurfaceContext`, the mechanism that told the two copies
- * apart, is deleted.
- *
- * **One `<main>` per arrangement, never two** — and when a side column is the
- * area on screen below `lg`, there is no `main` landmark at all: the main
- * column is not in the tree, and wrapping a `complementary` in `main` would be
- * a worse lie than its absence. A workspace screen (two side panes around the
- * main area) is this frame too, through `AppShellLayout` + `rightPanel`;
- * `mainLabel` and `showRight` (0.37.0) are the props that case needed. The
- * former `WorkspaceLayout` wrapper was removed in KI-846, so there is one
- * frame in this library, not two.
- * TODO: that a narrow screen showing a side column has no `main` landmark is a
- * consequence, not a confirmed decision with the design-system owner.
- *
- * TODO: below `lg` a shown column renders its `content` and its `footer` but
- * **not** its `header` — the header row exists to carry the collapse toggle
- * (which must be gone there) and the brand (which `topBar` already shows),
- * while the footer is typically the only route to sign-out. Reasoned from
- * those two facts, not confirmed with the design-system owner.
+ * **One `<main>`, in every arrangement.** A workspace screen (two side panes
+ * around the main area) is this frame too, through `AppShellLayout` +
+ * `rightPanel`; `mainLabel` and `showRight` (0.37.0) are the props that case
+ * needed.
  *
  * **The collapsed rail keeps the footer** (0.30.0): `SidePanel` renders it
  * below the rail's scrolling strip, and publishes its collapsed state on
@@ -237,12 +253,12 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * once that state passes, which is the bug recorded for workspace screens
    * before this flag moved here in 0.37.0.
    *
-   * **Ignored below `lg`**, deliberately: hiding buys horizontal space, and
+   * **Ignored below `md`**, deliberately: hiding buys horizontal space, and
    * one area on screen has none to win — a tab whose column refused to appear
    * would be a dead control. Omitting `right` is the other thing: then the
    * column does not exist at all, in either arrangement.
    *
-   * TODO: that the flag is ignored below `lg` (a consumer reading only the
+   * TODO: that the flag is ignored below `md` (a consumer reading only the
    * prop name could expect otherwise), and that there is no symmetric
    * `showLeft`, is reasoning carried over with the arrangement in 0.37.0 —
    * not confirmed with the design-system owner.
@@ -314,7 +330,7 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * Where `status` floats. `top` (default): centred at the top of the main
    * area (`Alert layout="pill"`). `bottom-end`: a card in the bottom-right
    * corner of the main area, up to 24rem wide — full width on a narrow
-   * screen, above the tab bar (`Alert layout="toast"`). Either way it covers
+   * screen (`Alert layout="toast"`). Either way it covers
    * the page without moving it; the corner never reaches over a side column.
    */
   statusPosition?: "top" | "bottom-end";
@@ -327,25 +343,532 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * brings these controls itself.
    */
   titlebarControls?: React.ReactNode;
-  /** Tabs of the narrow-screen bar, each declaring which area it shows. */
+  /**
+   * The areas of the narrow arrangement, each with an id: which id shows the
+   * left column, which the main area, which the right card. There is no tab
+   * bar; only `id` and `pane` are read (the icon and label of a
+   * `MobilePaneTab` are not shown anywhere).
+   */
   mobileTabs: MobilePaneTab[];
   /**
-   * Id of the current tab — the **single** input that decides which area is on
-   * screen below `lg`. Any derivation the app needs (two tabs on one area, a
-   * tab implied by other view state) stays in the app.
+   * Id of the current area — the **single** input that decides what is open
+   * below `md`: the navigation drawer (`pane: "left"`), the sources card
+   * (`pane: "right"`) or neither (`pane: "main"`). The page stays on screen
+   * in all three. Any derivation the app needs stays in the app.
    */
   activeMobileTab: string;
-  /** A tab was tapped. */
+  /**
+   * Another area was asked for: a toggle in the bar was used, or the drawer
+   * or card was dismissed (then it carries the `main` id).
+   */
   onMobileTabChange: (id: string) => void;
-  /** Accessible name of the tab bar's `navigation` landmark. */
-  mobileTabBarLabel: string;
+  /** @deprecated Unused: the narrow arrangement has no tab bar. */
+  mobileTabBarLabel?: string;
 }
+
+/**
+ * The frame's two slots an `AppShellSidePanel` renders into — the end column
+ * of the row and the end of the bar, for its toggle (each `null` until the
+ * element is mounted) — or `undefined` where the frame has no such column:
+ * outside an `AppShell`, and below `md`.
+ */
+const AppShellSidePanelContext = React.createContext<
+  | {
+      column: HTMLElement | null;
+      toggle: HTMLElement | null;
+      /** Most the panel may measure right now; `null` while unmeasured. */
+      maxWidth: number | null;
+      /** Where the main area starts in the row, in px: what a maximised panel keeps clear. */
+      inset: number;
+      /** The narrow frame: one area on screen, so the shown panel fills it. */
+      narrow: boolean;
+      /** A mounted panel says it is there, so the frame keeps a row for its toggle; returns the undo. */
+      present: () => () => void;
+      /** The shown panel tells the frame its smallest and its current width, and whether it covers the main area. */
+      report: (size: { min: number; width: number; maximized: boolean } | null) => void;
+    }
+  | undefined
+>(undefined);
+
+/** One tab of an `AppShellSidePanel`: what the strip shows for it. */
+export interface AppShellSidePanelTab {
+  /** Identity of the tab; `activeTabId` and the callbacks carry it. */
+  id: string;
+  /** The tab's label. Truncated in the strip, so keep the start distinctive. */
+  title: string;
+  /** Optional icon before the title: what kind of content the tab holds. */
+  icon?: React.ReactNode;
+  /** Accessible name of the tab's close button, e.g. „Quelle schließen". */
+  closeLabel: string;
+}
+
+/** One kind of content an `AppShellSidePanel` can open as a tab. */
+export interface AppShellSidePanelLauncher {
+  /** Identity of the kind; `onLaunch` carries it. */
+  id: string;
+  /** Its name, e.g. „Quellen", „Browser". */
+  label: string;
+  /** Icon before the name. */
+  icon?: React.ReactNode;
+  /** Listed but not available. Say why in `label` or leave it out instead. */
+  disabled?: boolean;
+  /**
+   * One key that opens it while the empty panel lists the launchers and the
+   * focus is in the panel or nowhere (never while the user types): „B". Shown
+   * at the row's end, there and in the `+` menu.
+   */
+  shortcut?: string;
+}
+
+export interface AppShellSidePanelProps {
+  /** Accessible name of the column's `complementary` landmark. */
+  label: string;
+  /** Shown (`true`) or hidden (`false`). Hiding keeps the tabs. Consumer state. */
+  isOpen: boolean;
+  /** The toggle was used, or the last tab was closed; carries the REQUESTED state. */
+  onOpenChange: (isOpen: boolean) => void;
+  /** Accessible name of the toggle while the panel is hidden. */
+  expandLabel: string;
+  /** Accessible name of the toggle while the panel is shown. */
+  collapseLabel: string;
+  /** The open tabs, in strip order. Consumer state. */
+  tabs: AppShellSidePanelTab[];
+  /** The shown tab; `null` (or an unknown id) shows `empty`. */
+  activeTabId: string | null;
+  /** Another tab was chosen. */
+  onTabChange: (id: string) => void;
+  /**
+   * A tab's close button was used. The consumer removes the tab and picks
+   * the next active one; closing the last tab should also hide the panel.
+   */
+  onTabClose: (id: string) => void;
+  /** Accessible name of the tab strip, e.g. „Geöffnete Inhalte". */
+  tabListLabel: string;
+  /** Width in px. The consumer's number, as for the other columns. */
+  width: number;
+  /** Given, a separator on the panel's content-facing edge drags its width. */
+  resize?: AppShellPanelResize;
+  /**
+   * What the panel can open. Given, a `+` button stands after the last tab
+   * and opens them as a menu, and a panel with no tab open lists them under
+   * `launcherTitle` — the same list in both places. Omitted, there is no `+`.
+   */
+  launchers?: AppShellSidePanelLauncher[];
+  /** One was chosen. The consumer opens (or shows) that tab. */
+  onLaunch?: (id: string) => void;
+  /** Accessible name of the `+` button, e.g. „Inhalt öffnen". */
+  addLabel?: string;
+  /**
+   * Accessible names of the button that lets the panel cover the main area
+   * and brings it back beside it. Both given, the button stands before the
+   * toggle; omitted, the panel cannot be maximised.
+   */
+  maximizeLabel?: string;
+  restoreLabel?: string;
+  /** Covers the main area. Consumer state, with `onMaximizedChange`; omitted, the panel keeps it itself. */
+  isMaximized?: boolean;
+  onMaximizedChange?: (isMaximized: boolean) => void;
+  /**
+   * `aria-keyshortcuts` of the toggle and of the maximise button
+   * („Meta+Alt+B"). Names the consumer's shortcut only: the chord itself is
+   * the app's to handle, as every window-wide shortcut is.
+   */
+  toggleKeyShortcuts?: string;
+  maximizeKeyShortcuts?: string;
+  /** Heading of the list in the empty panel. Default: `addLabel`. */
+  launcherTitle?: string;
+  /**
+   * Shown in place of a tab's content while no tab is open, instead of the
+   * launcher list — or as the whole empty state when there are no `launchers`.
+   */
+  empty?: React.ReactNode;
+  /** The active tab's content. Only that: inactive tabs are not mounted. */
+  children?: React.ReactNode;
+}
+
+/**
+ * A panel beside the page, at the frame's end edge: a full-height column
+ * with a tab strip in its first row and one tab's content below. For what a
+ * page opens next to itself and that has to stay readable beside it — a cited
+ * source next to an answer, a document, an embedded browser.
+ *
+ * **Declared in the page, placed by the frame.** Render it anywhere under an
+ * `AppShell`: the column goes to the end of the frame's row, the toggle to
+ * the end of the bar. What opens a tab is page state (which citation was
+ * clicked), usually far below the component that renders the frame, so the
+ * panel is controlled from there and needs no state lifted to the frame.
+ *
+ * **It takes width from the main area**, unlike the floating `right` card,
+ * which covers the main area's end. With both shown, the card floats beside
+ * the panel.
+ *
+ * **The toggle hides the panel and keeps its tabs.** Hidden, the toggle is
+ * the bar's last control; shown, it stands at the end of the tab strip — the
+ * frame's top end corner either way. It is there with no tab open too, so
+ * its place does not depend on what the page has opened; the panel then
+ * shows `empty`.
+ *
+ * **Only the active tab's content is mounted** (`children`), and none while
+ * the panel is hidden: what a tab must keep across that lives in the
+ * consumer's state. A tab whose content is not DOM — a native browser view a
+ * desktop host lays over the page — fills its content area with a
+ * placeholder and reports that element's rectangle to the host.
+ *
+ * **Below `md`, and outside an `AppShell`, nothing renders**: the frame has
+ * no columns there and one area on screen. The consumer shows the content
+ * its own way (a full-screen dialog).
+ */
+const SHORTCUT_KEY_SIGNS: Record<string, string> = { Meta: "⌘", Alt: "⌥", Shift: "⇧", Control: "Ctrl" };
+
+/**
+ * An icon button's tooltip: its name, and its shortcut where it has one
+ * (`aria-keyshortcuts` form, „Meta+Alt+B").
+ */
+function IconTip({ label, shortcut, children }: { label?: string; shortcut?: string; children: React.ReactElement }) {
+  if (!label) return children;
+  return (
+    <Tooltip delayDuration={400}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="bottom">
+        <span className="flex items-center gap-2">
+          {label}
+          {shortcut && (
+            <KbdGroup aria-hidden>
+              {shortcut.split("+").map((key) => (
+                <Kbd key={key}>{SHORTCUT_KEY_SIGNS[key] ?? key}</Kbd>
+              ))}
+            </KbdGroup>
+          )}
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function AppShellSidePanel({
+  label,
+  isOpen,
+  onOpenChange,
+  expandLabel,
+  collapseLabel,
+  tabs,
+  activeTabId,
+  onTabChange,
+  onTabClose,
+  tabListLabel,
+  width,
+  resize,
+  launchers,
+  onLaunch,
+  addLabel,
+  launcherTitle,
+  maximizeLabel,
+  restoreLabel,
+  isMaximized,
+  onMaximizedChange,
+  toggleKeyShortcuts,
+  maximizeKeyShortcuts,
+  empty,
+  children,
+}: AppShellSidePanelProps) {
+  const slots = React.useContext(AppShellSidePanelContext);
+  const panelId = React.useId();
+  const tabId = (id: string) => `${panelId}-tab-${id}`;
+  const active = tabs.find((tab) => tab.id === activeTabId) ?? null;
+
+  // The toggle is mounted anew when it moves between bar and strip; a toggle
+  // that was used keeps the focus across that move.
+  const toggleRef = React.useRef<HTMLButtonElement>(null);
+  const refocusToggle = React.useRef(false);
+  React.useEffect(() => {
+    if (!refocusToggle.current) return;
+    refocusToggle.current = false;
+    toggleRef.current?.focus();
+  });
+
+  // The frame's cap (see `MAIN_MIN_WIDTH`): the panel gives way before the
+  // main area does, down to its own minimum. The consumer's `width` is not
+  // changed by it, so the panel is its old size again once there is room.
+  const minWidth = resize ? resize.minWidth : Math.min(width, SIDE_PANEL_MIN_WIDTH);
+  const cap = slots?.maxWidth ?? null;
+  const maxWidth = cap === null ? null : Math.max(minWidth, cap);
+  const shownWidth = maxWidth === null ? width : Math.min(width, maxWidth);
+  const report = slots?.report;
+  const shown = Boolean(slots) && isOpen;
+  // Maximised, the panel covers the main area; its width beside it is kept
+  // for the way back.
+  const canMaximize = maximizeLabel !== undefined && restoreLabel !== undefined;
+  const [ownMaximized, setOwnMaximized] = React.useState(false);
+  const narrow = slots?.narrow ?? false;
+  const maximized = narrow || (canMaximize && (isMaximized ?? ownMaximized));
+  const setMaximized = (next: boolean) => {
+    setOwnMaximized(next);
+    onMaximizedChange?.(next);
+  };
+  React.useLayoutEffect(() => {
+    if (!report || !shown) return;
+    report({ min: minWidth, width: shownWidth, maximized });
+  }, [report, shown, minWidth, shownWidth, maximized]);
+
+  // A launcher's key opens it while the empty panel lists them — from inside
+  // the panel, or with the focus nowhere; never out of a field being typed in.
+  const asideRef = React.useRef<HTMLElement>(null);
+  const hasActiveTab = tabs.some((tab) => tab.id === activeTabId);
+  const launchKeys = shown && !hasActiveTab && empty === undefined ? launchers : undefined;
+  const onLaunchRef = React.useRef(onLaunch);
+  React.useEffect(() => {
+    onLaunchRef.current = onLaunch;
+  });
+  React.useEffect(() => {
+    if (!launchKeys?.some((launcher) => launcher.shortcut)) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const focusFree = !target || target === document.body;
+      if (!focusFree && !asideRef.current?.contains(target)) return;
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+      const hit = launchKeys.find(
+        (launcher) => !launcher.disabled && launcher.shortcut?.toLowerCase() === event.key.toLowerCase(),
+      );
+      if (!hit) return;
+      event.preventDefault();
+      onLaunchRef.current?.(hit.id);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [launchKeys]);
+  React.useLayoutEffect(() => {
+    if (!report || !shown) return;
+    return () => report(null);
+  }, [report, shown]);
+  const present = slots?.present;
+  React.useLayoutEffect(() => present?.(), [present]);
+
+  if (!slots) return null;
+
+  const toggle = (
+    <IconTip label={isOpen ? collapseLabel : expandLabel} shortcut={toggleKeyShortcuts}>
+    <Button
+      ref={toggleRef}
+      variant="ghost"
+      size="icon"
+      className={PANE_TOGGLE_CLASS}
+      data-slot="app-shell-panel-toggle"
+      aria-label={isOpen ? collapseLabel : expandLabel}
+      aria-expanded={isOpen}
+      aria-controls={isOpen ? panelId : undefined}
+      aria-keyshortcuts={toggleKeyShortcuts}
+      onClick={() => {
+        refocusToggle.current = true;
+        onOpenChange(!isOpen);
+      }}
+    >
+      {isOpen ? <PanelRightClose aria-hidden /> : <PanelRightOpen aria-hidden />}
+    </Button>
+    </IconTip>
+  );
+
+  if (!isOpen) return slots.toggle ? createPortal(toggle, slots.toggle) : null;
+  if (!slots.column) return null;
+
+  const canLaunch = launchers !== undefined && launchers.length > 0;
+
+  // Arrow keys move along the strip and show the tab they land on, as a
+  // tablist with automatic activation does.
+  const onTabKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const last = tabs.length - 1;
+    const next =
+      event.key === "ArrowRight" ? (index === last ? 0 : index + 1)
+      : event.key === "ArrowLeft" ? (index === 0 ? last : index - 1)
+      : event.key === "Home" ? 0
+      : event.key === "End" ? last
+      : null;
+    if (next === null || next === index) return;
+    event.preventDefault();
+    const target = tabs[next];
+    onTabChange(target.id);
+    document.getElementById(tabId(target.id))?.focus();
+  };
+
+  return createPortal(
+    <>
+      {resize && !maximized && (
+        <ResizeHandle
+          side="right"
+          value={shownWidth}
+          min={resize.minWidth}
+          max={maxWidth === null ? resize.maxWidth : Math.max(resize.minWidth, Math.min(resize.maxWidth, maxWidth))}
+          label={resize.label}
+          controls={panelId}
+          onValueChange={resize.onWidthChange}
+        />
+      )}
+      {/* Maximised, the panel leaves the flow; this keeps its width in the
+          row, so the covered page is not laid out anew. */}
+      {maximized && !narrow && <div aria-hidden className="shrink-0" style={{ width: shownWidth }} />}
+      <aside
+        ref={asideRef}
+        id={panelId}
+        aria-label={label}
+        data-slot="app-shell-side-panel"
+        data-maximized={maximized ? "" : undefined}
+        className={cn(
+          "flex min-h-0 min-w-0 flex-col border-l border-outline-variant bg-canvas text-on-surface",
+          maximized && "absolute inset-y-0 right-0 z-10",
+          narrow && "z-30 border-l-0",
+        )}
+        style={maximized ? { left: narrow ? 0 : slots.inset } : { width: shownWidth }}
+      >
+        {/* The strip: level with the bar and the left column's header row,
+            and part of the title bar under a hidden one. */}
+        <div
+          data-slot="app-shell-side-panel-strip"
+          data-app-region="drag"
+          className={cn(
+            "flex h-14 shrink-0 items-center gap-1 border-b border-outline-variant pr-2 pl-2",
+            // Filling a narrow frame, the strip is the window's first row:
+            // it keeps clear of a native shell's window controls.
+            narrow && "pl-[max(0.5rem,var(--titlebar-inset-start,0px))]",
+          )}
+        >
+          <div
+            role="tablist"
+            aria-label={tabListLabel}
+            className="flex min-w-0 items-center gap-1 overflow-x-auto"
+          >
+            {tabs.map((tab, index) => {
+              const selected = tab.id === active?.id;
+              return (
+                <div
+                  key={tab.id}
+                  data-slot="app-shell-side-panel-tab"
+                  data-state={selected ? "active" : "inactive"}
+                  className={cn(
+                    "flex h-9 max-w-56 min-w-0 shrink items-center rounded-[var(--ui-radius-control)] pr-1 text-sm",
+                    selected
+                      ? "bg-surface-container text-on-surface"
+                      : "text-on-surface-variant hover:bg-surface-container-low",
+                  )}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    id={tabId(tab.id)}
+                    aria-selected={selected}
+                    aria-controls={selected ? `${panelId}-content` : undefined}
+                    // One stop for the strip; the arrow keys move within it.
+                    tabIndex={selected || (!active && index === 0) ? 0 : -1}
+                    className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[inherit] border-0 bg-transparent pr-1 pl-3 text-inherit [font:inherit] [&_svg]:size-4 [&_svg]:shrink-0"
+                    onClick={() => onTabChange(tab.id)}
+                    onKeyDown={(event) => onTabKeyDown(event, index)}
+                  >
+                    {tab.icon}
+                    <span className="truncate">{tab.title}</span>
+                  </button>
+                  <IconTip label={tab.closeLabel}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 p-0 text-on-surface-variant [&_svg]:size-3.5"
+                      aria-label={tab.closeLabel}
+                      onClick={() => onTabClose(tab.id)}
+                    >
+                      <X aria-hidden />
+                    </Button>
+                  </IconTip>
+                </div>
+              );
+            })}
+          </div>
+          {canLaunch && (
+            <DropdownMenu>
+              <IconTip label={addLabel}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0 p-0 text-on-surface-variant [&_svg]:size-4"
+                    data-slot="app-shell-side-panel-add"
+                    aria-label={addLabel}
+                  >
+                    <Plus aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+              </IconTip>
+              <DropdownMenuContent align="start">
+                {launchers.map((launcher) => (
+                  <DropdownMenuItem
+                    key={launcher.id}
+                    disabled={launcher.disabled}
+                    onSelect={() => onLaunch?.(launcher.id)}
+                  >
+                    {launcher.icon}
+                    {launcher.label}
+                    {launcher.shortcut && <Kbd aria-hidden className="ml-auto">{launcher.shortcut.toUpperCase()}</Kbd>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {/* The strip's free room stays with the window: it drags it. */}
+          <span className="min-w-0 flex-1" />
+          {canMaximize && !narrow && (
+            <IconTip label={maximized ? restoreLabel : maximizeLabel} shortcut={maximizeKeyShortcuts}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={PANE_TOGGLE_CLASS}
+              data-slot="app-shell-side-panel-maximize"
+              aria-label={maximized ? restoreLabel : maximizeLabel}
+              aria-pressed={maximized}
+              aria-keyshortcuts={maximizeKeyShortcuts}
+              onClick={() => setMaximized(!maximized)}
+            >
+              {maximized ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
+            </Button>
+            </IconTip>
+          )}
+          {toggle}
+        </div>
+        <div
+          id={`${panelId}-content`}
+          role={active ? "tabpanel" : undefined}
+          aria-labelledby={active ? tabId(active.id) : undefined}
+          data-slot="app-shell-side-panel-content"
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {active ? children : empty ?? (canLaunch && (
+            <div data-slot="app-shell-side-panel-launcher" className="m-auto flex w-full max-w-sm flex-col gap-1 p-6">
+              <p className="m-0 mb-2 text-center text-sm text-on-surface-variant">{launcherTitle ?? addLabel}</p>
+              {launchers.map((launcher) => (
+                <Button
+                  key={launcher.id}
+                  variant="ghost"
+                  className="h-10 w-full justify-start gap-3 [&_svg]:size-4 [&_svg]:shrink-0"
+                  disabled={launcher.disabled}
+                  aria-keyshortcuts={launcher.shortcut}
+                  onClick={() => onLaunch?.(launcher.id)}
+                >
+                  {launcher.icon}
+                  {launcher.label}
+                  {launcher.shortcut && <Kbd aria-hidden className="ml-auto">{launcher.shortcut.toUpperCase()}</Kbd>}
+                </Button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </aside>
+    </>,
+    slots.column,
+  );
+}
+AppShellSidePanel.displayName = "AppShellSidePanel";
 
 const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
   (
     {
       className,
-      left,
+      left: leftProp,
       right,
       showRight = true,
       topBarClearsToggle = false,
@@ -359,13 +882,82 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       mobileTabs,
       activeMobileTab,
       onMobileTabChange,
-      mobileTabBarLabel,
+      mobileTabBarLabel: _mobileTabBarLabel,
       children,
       ...props
     },
     ref,
   ) => {
     const isDesktop = useIsDesktop();
+    // Deprecated and unused; taken out so it does not reach the DOM.
+    void _mobileTabBarLabel;
+
+    /*
+      The frame's width, for its shrinking rules (see `MAIN_MIN_WIDTH`).
+      Unmeasured (no ResizeObserver, no layout) none of them applies: every
+      column is what the consumer says.
+    */
+    const rowRef = React.useRef<HTMLDivElement>(null);
+    const [rowWidth, setRowWidth] = React.useState<number | null>(null);
+    React.useLayoutEffect(() => {
+      const el = rowRef.current;
+      if (!isDesktop || !el || typeof ResizeObserver === "undefined") {
+        setRowWidth(null);
+        return;
+      }
+      // A frame of no width has no layout to keep (a hidden tree, jsdom).
+      const measure = () => setRowWidth(el.clientWidth || null);
+      const observer = new ResizeObserver(measure);
+      observer.observe(el);
+      measure();
+      return () => observer.disconnect();
+    }, [isDesktop]);
+    // The shown side panel's smallest and current width, as it reports them.
+    const [sidePanel, setSidePanel] = React.useState<{ min: number; width: number; maximized: boolean } | null>(null);
+    // How many `AppShellSidePanel`s are mounted: with one, the frame has a
+    // first row for its toggle even where nothing else asks for a bar.
+    const [sidePanelCount, setSidePanelCount] = React.useState(0);
+    const hasSidePanel = sidePanelCount > 0;
+    const sidePanelPresent = React.useCallback(() => {
+      setSidePanelCount((count) => count + 1);
+      return () => setSidePanelCount((count) => count - 1);
+    }, []);
+    const reportSidePanel = React.useCallback((size: { min: number; width: number; maximized: boolean } | null) => {
+      setSidePanel((prev) =>
+        prev?.min === size?.min && prev?.width === size?.width && prev?.maximized === size?.maximized ? prev : size,
+      );
+    }, []);
+
+    /*
+      Rule 2: beside a side panel, an expanded left column that would take
+      the main area below its minimum shows as its rail. Only the display:
+      the consumer's `isOpen` — a remembered preference — stays, so the
+      column is back once the panel goes or the frame widens. Expanding it by
+      hand while the frame is that narrow is the user's call and holds until
+      the room is back.
+      Collapsing it again there only takes that override back: the stored
+      preference is not written, so the column still returns with the room.
+    */
+    const [leftHeldOpen, setLeftHeldOpen] = React.useState(false);
+    const leftExpandedWidth = Math.max(
+      leftProp?.width ?? DEFAULT_PANEL_WIDTH,
+      leftProp?.resize?.minWidth ?? 0,
+    );
+    const leftCrowds =
+      isDesktop && Boolean(leftProp) && sidePanel !== null && rowWidth !== null &&
+      rowWidth - leftExpandedWidth < MAIN_MIN_WIDTH + sidePanel.min;
+    if (!leftCrowds && leftHeldOpen) setLeftHeldOpen(false);
+    const left: AppShellPanel | undefined =
+      leftProp && leftCrowds
+        ? {
+            ...leftProp,
+            isOpen: leftProp.isOpen && leftHeldOpen,
+            onOpenChange: (next) => {
+              setLeftHeldOpen(next);
+              if (next !== leftProp.isOpen && next) leftProp.onOpenChange(true);
+            },
+          }
+        : leftProp;
 
     /*
       The main area's height, for the corner card's cap (see `cornerLayer`).
@@ -406,6 +998,11 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     const leftPaneId = React.useId();
     const rightPaneId = React.useId();
     const rightLockId = React.useId();
+
+    // The slots an `AppShellSidePanel` renders into: elements, held in state
+    // so the panel renders once they exist.
+    const [panelColumnSlot, setPanelColumnSlot] = React.useState<HTMLElement | null>(null);
+    const [panelToggleSlot, setPanelToggleSlot] = React.useState<HTMLElement | null>(null);
 
     /*
       Native shell with a hidden title bar (`<html data-titlebar>`): the
@@ -472,6 +1069,21 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     const leftFloor = left && controlsInLeft && controls ? TITLEBAR_LEFT_MIN_WIDTH : 0;
     const leftWidth = Math.max(left?.width ?? DEFAULT_PANEL_WIDTH, leftFloor);
 
+    // What the left column takes of the row right now, and from it rule 1:
+    // the most a side panel may measure.
+    const leftTaken = !left ? 0 : left.isOpen ? leftWidth : SIDE_PANEL_RAIL_WIDTH;
+    const sidePanelMax =
+      rowWidth === null
+        ? null
+        : Math.min(Math.floor(rowWidth * SIDE_PANEL_MAX_FRACTION), rowWidth - leftTaken - MAIN_MIN_WIDTH);
+    const panelSlots = React.useMemo(
+      () => ({ column: panelColumnSlot, toggle: panelToggleSlot, maxWidth: sidePanelMax, inset: leftTaken, narrow: !isDesktop, report: reportSidePanel, present: sidePanelPresent }),
+      [panelColumnSlot, panelToggleSlot, sidePanelMax, leftTaken, isDesktop, reportSidePanel, sidePanelPresent],
+    );
+    // Rule 3: the page keeps clear of the open card only while that leaves it
+    // its minimum; otherwise the card lies over its end.
+    const mainWidth = rowWidth === null ? null : rowWidth - leftTaken - (sidePanel?.width ?? 0);
+
     /*
       From `lg` up the right column is not a column: it floats over the main
       area as a card below the bar, and its toggle is the last control of the
@@ -481,9 +1093,64 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       columns are left to what frames the app (navigation, a host's own
       sidebars); what belongs to the page floats over it.
     */
-    const floatRight = isDesktop && right && showRight ? right : null;
+    /*
+      Below `md` the same card and the same toggle: what is open there is the
+      consumer's `activeMobileTab`, so the card's state is read from it and a
+      toggle reports the area to show. `showRight` buys horizontal room and
+      is ignored there, as before.
+    */
+    const narrowPane: PaneId | undefined = isDesktop
+      ? undefined
+      : (mobileTabs.find((tab) => tab.id === activeMobileTab)?.pane ?? "main");
+    const areaId = (pane: PaneId) => mobileTabs.find((tab) => tab.pane === pane)?.id;
+    // Closing a drawer goes back to the main-area id that was current before
+    // it opened — an app may map several ids to the main area.
+    const [lastMainId, setLastMainId] = React.useState<string | undefined>(undefined);
+    if (
+      activeMobileTab !== lastMainId &&
+      mobileTabs.find((tab) => tab.id === activeMobileTab)?.pane === "main"
+    ) {
+      setLastMainId(activeMobileTab);
+    }
+    const showArea = (pane: PaneId) => {
+      const remembered = pane === "main" && mobileTabs.some((tab) => tab.id === lastMainId)
+        ? lastMainId
+        : undefined;
+      const id = remembered ?? areaId(pane);
+      if (id !== undefined && id !== activeMobileTab) onMobileTabChange(id);
+    };
+    const narrowRight = !isDesktop && areaId("right") !== undefined;
+    const rightSource = right && (showRight || !isDesktop) ? right : null;
+    const floatRight: AppShellPanel | null =
+      rightSource && narrowRight
+        ? {
+            ...rightSource,
+            isOpen: narrowPane === "right",
+            onOpenChange: (open) => showArea(open ? "right" : "main"),
+          }
+        : rightSource;
     const rightLocked = floatRight?.locked;
     const rightOpen = Boolean(floatRight?.isOpen) && !rightLocked;
+    const bubbleLeavesRoom =
+      isDesktop && (mainWidth === null ||
+      mainWidth - ((floatRight?.width ?? DEFAULT_PANEL_WIDTH) + 16) >= MAIN_MIN_WIDTH);
+    // Rule 4: at the width where the card stops standing beside the page and
+    // would lie over it, an open card closes — it is in the way there until
+    // asked for. Opened by hand below that width it stays, and the frame
+    // widening again does not reopen it.
+    const bubbleHadRoom = React.useRef(true);
+    const closeBubble = React.useRef<(() => void) | null>(null);
+    React.useEffect(() => {
+      closeBubble.current = rightOpen && floatRight ? () => floatRight.onOpenChange(false) : null;
+    });
+    React.useEffect(() => {
+      if (!isDesktop) {
+        bubbleHadRoom.current = true;
+        return;
+      }
+      if (bubbleHadRoom.current && !bubbleLeavesRoom) closeBubble.current?.();
+      bubbleHadRoom.current = bubbleLeavesRoom;
+    }, [isDesktop, bubbleLeavesRoom]);
     const rightButton = floatRight ? (
       <Button
         variant="ghost"
@@ -517,10 +1184,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       </Button>
     ) : null;
     const rightToggle = floatRight && rightButton ? (
-      <span
-        data-slot="app-shell-right-toggle"
-        className={cn("flex shrink-0 items-center pr-2", topBar && topBarClearsToggle && "absolute inset-y-0 right-0")}
-      >
+      <span data-slot="app-shell-right-toggle" className="flex shrink-0 items-center">
         {floatRight.toggleTooltip ? (
           <Tooltip delayDuration={400}>
             <TooltipTrigger asChild>{rightButton}</TooltipTrigger>
@@ -528,6 +1192,65 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           </Tooltip>
         ) : rightButton}
       </span>
+    ) : null;
+    // The bar's end: the card's toggle, then the slot a hidden
+    // `AppShellSidePanel` puts its toggle into — the frame's top end corner.
+    // Without either it is no box and takes no room.
+    const barEnd = (
+      <span
+        data-slot="app-shell-bar-end"
+        className={cn(
+          "flex shrink-0 items-center gap-1 has-[button]:pr-2",
+          topBar && topBarClearsToggle && rightToggle && "absolute inset-y-0 right-0",
+        )}
+      >
+        {rightToggle}
+        <span ref={setPanelToggleSlot} data-slot="app-shell-panel-toggle-slot" className="contents" />
+      </span>
+    );
+
+    /*
+      Below `md` the left column is a drawer over the page, opened by a
+      toggle at the start of the bar — where the column's own toggle stands
+      on a wide screen. The consumer's `isOpen` is the wide screen's collapse
+      preference and is not read here: a drawer starts closed.
+    */
+    const narrowLeftOpen = narrowPane === "left";
+    const narrowLeftToggle = !isDesktop && left && areaId("left") !== undefined ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={PANE_TOGGLE_CLASS}
+        data-slot="app-shell-drawer-toggle"
+        aria-label={narrowLeftOpen ? left.collapseLabel : left.expandLabel}
+        aria-expanded={narrowLeftOpen}
+        onClick={() => showArea(narrowLeftOpen ? "main" : "left")}
+      >
+        {/* Not the column icon: below `md` this opens a drawer, not a column. */}
+        <TextAlignStart aria-hidden />
+      </Button>
+    ) : null;
+    // The card's own way out, in its top end corner (`closeLabel`). The
+    // toggle in the bar closes it too; the focus goes back there.
+    const bubbleClose = floatRight?.closeLabel ? (
+      <IconTip label={floatRight.closeLabel}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8 shrink-0 p-0 text-on-surface-variant [&_svg]:size-4"
+        data-slot="app-shell-bubble-close"
+        aria-label={floatRight.closeLabel}
+        onClick={(event) => {
+          const toggle = event.currentTarget.ownerDocument.querySelector<HTMLElement>(
+            `[aria-controls="${CSS.escape(rightPaneId)}"]`,
+          );
+          floatRight.onOpenChange(false);
+          toggle?.focus();
+        }}
+      >
+        <X aria-hidden />
+      </Button>
+      </IconTip>
     ) : null;
     const rightBubble = floatRight && !rightLocked ? (
       <aside
@@ -542,9 +1265,16 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         style={{ width: floatRight.width ?? DEFAULT_PANEL_WIDTH }}
       >
         {floatRight.header && (
-          <div className="flex h-12 shrink-0 items-center gap-stack-sm px-4">{floatRight.header}</div>
+          <div className="flex h-12 shrink-0 items-center gap-stack-sm pr-2 pl-4">
+            <div className="flex min-w-0 flex-1 items-center gap-stack-sm">{floatRight.header}</div>
+            {bubbleClose}
+          </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">{floatRight.content}</div>
+        {/* Without a header row the button lies over the card's corner. */}
+        {!floatRight.header && bubbleClose && (
+          <span className="absolute top-2 right-2 rounded-[var(--ui-radius-control)] bg-surface-container-lowest">{bubbleClose}</span>
+        )}
         {floatRight.footer && <div className="shrink-0">{floatRight.footer}</div>}
       </aside>
     ) : null;
@@ -563,20 +1293,24 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           "flex h-14 shrink-0 items-center",
           cornerOwner === "bar" && "pl-(--titlebar-inset-start)",
           (besideRail || (controls && cornerOwner === "bar")) && "gap-1.5",
+          narrowLeftToggle && cornerOwner !== "bar" && "pl-2",
           besideRail && "relative z-10 bg-canvas",
-          rightToggle && topBarClearsToggle && "relative",
+          // The bar's end lies over it instead of taking width beside
+          // `topBar`: what `topBar` has to keep clear beyond a 1.5rem inset —
+          // one toggle, or two while a side panel's toggle stands there too.
+          rightToggle && topBarClearsToggle &&
+            "relative [--app-shell-bar-end-reserve:1.5rem] has-[[data-slot=app-shell-panel-toggle]]:[--app-shell-bar-end-reserve:4rem]",
         )}
-        // The toggle lies over the bar's end instead of taking width beside
-        // `topBar`: what `topBar` has to keep clear beyond a 1.5rem inset.
-        style={rightToggle && topBarClearsToggle ? ({ ...overRail, "--app-shell-bar-end-reserve": "1.5rem" } as React.CSSProperties) : overRail}
+        style={overRail}
       >
         {railBrand}
         {railToggle}
+        {narrowLeftToggle}
         {!controlsInLeft && controls}
         {topBar}
-        {rightToggle}
+        {barEnd}
       </header>
-    ) : cornerOwner === "bar" || besideRail || (controls && !controlsInLeft) || rightToggle ? (
+    ) : cornerOwner === "bar" || besideRail || (controls && !controlsInLeft) || rightToggle || narrowLeftToggle || hasSidePanel ? (
       // No bar: an empty title-bar row carries what the title bar has to —
       // the room for the window controls, the toggles, the app's controls —
       // and drags the window.
@@ -593,9 +1327,10 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       >
         {railBrand}
         {railToggle}
+        {narrowLeftToggle}
         {!controlsInLeft && controls}
         <span className="flex-1" />
-        {rightToggle}
+        {barEnd}
       </div>
     ) : null;
 
@@ -710,7 +1445,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     /*
       The column's separator, or nothing. Two gates: no `resize` contract → the column is not resizable at all, and a
       collapsed column is the fixed-width rail, where a separator would report
-      a value nothing responds to. The third gate — „not below `lg`" — is the
+      a value nothing responds to. The third gate — „not below `md`" — is the
       arrangement itself: the narrow branch below returns before this is
       called.
 
@@ -731,62 +1466,107 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       ) : null;
 
     if (!isDesktop) {
-      // One lookup in the consumer's own table — not a derivation: the app
-      // decides which tab is active, the table says which area that tab shows.
-      // A tab pointing at a column this shell does not have (and an id that is
-      // in no tab at all) falls back to the main area rather than to a blank
-      // screen.
-      const activePane = mobileTabs.find((tab) => tab.id === activeMobileTab)?.pane;
-      const panel =
-        activePane === "left" ? left : activePane === "right" && !right?.locked ? right : undefined;
-      const paneStyle = noticeAtBottom ? undefined : MOBILE_PANE_STYLE;
-
       return (
+        <AppShellSidePanelContext.Provider value={panelSlots}>
         <div
           ref={ref}
           className={cn(
-            "flex h-dvh min-h-0 flex-col overflow-hidden bg-canvas text-on-surface",
+            "relative flex h-dvh min-h-0 flex-col overflow-hidden bg-canvas text-on-surface",
             className,
           )}
           {...props}
         >
           {!titlebar && noticeRegion}
-          {bar}
-          {panel ? (
-            <aside
-              aria-label={panel.label}
-              className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar"
-              style={paneStyle}
-            >
-              <div className="min-h-0 flex-1 overflow-y-auto">{panel.content}</div>
-              {panel.footer && <div className="shrink-0">{panel.footer}</div>}
-            </aside>
-          ) : (
-            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL} style={paneStyle}>
+          {/* The page is always on screen: drawer and card lie over it. The
+              bar is inside this box, as on a wide screen: the card hangs
+              one bar's height below the box's top edge. */}
+          <div
+            data-slot="app-shell-content"
+            className={cn("flex min-h-0 min-w-0 flex-1 flex-col", sidePanel?.maximized && "invisible")}
+            inert={sidePanel?.maximized || undefined}
+          >
+            {bar}
+            <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
               {children}
             </main>
+            {cornerLayer}
+          </div>
+          {/* The slot a shown `AppShellSidePanel` fills: here it lies over
+              the whole frame, one area on screen. */}
+          <div ref={setPanelColumnSlot} data-slot="app-shell-panel-slot" className="contents" />
+          {/* The card is a drawer here, from the bottom edge: one area on
+              screen, nothing floating. */}
+          {floatRight && !rightLocked && (
+            <BottomSheet
+              id={rightPaneId}
+              data-slot="app-shell-bubble"
+              open={floatRight.isOpen}
+              onOpenChange={floatRight.onOpenChange}
+              label={floatRight.label}
+              header={(floatRight.header || bubbleClose) && (
+                <>
+                  <div className="flex min-w-0 flex-1 items-center gap-stack-sm">{floatRight.header}</div>
+                  {bubbleClose}
+                </>
+              )}
+              footer={floatRight.footer}
+            >
+              {floatRight.content}
+            </BottomSheet>
           )}
-          {/* With the main area only: a side column has the screen to itself. */}
-          {!panel && cornerLayer}
-          {/* Under a hidden title bar the notice is the last row, above the
-              tab bar: it takes over the room the area reserves for the bar. */}
-          {noticeAtBottom && (
-            <div data-slot="app-shell-notice-row" className="shrink-0" style={MOBILE_PANE_STYLE}>
-              {noticeRegion}
-            </div>
+          {/* Under a hidden title bar the notice is the frame's last row. */}
+          {noticeAtBottom && noticeRegion}
+          {left && narrowLeftToggle && (
+            <Drawer
+              direction="left"
+              open={narrowLeftOpen}
+              onOpenChange={(open) => showArea(open ? "left" : "main")}
+            >
+              <DrawerContent
+                data-slot="app-shell-drawer"
+                className="w-[min(20rem,85vw)] sm:max-w-none"
+              >
+                <DrawerTitle className="sr-only">{left.label}</DrawerTitle>
+                {/* The column's header row, with the toggle that closes the drawer. */}
+                <div className="flex h-14 shrink-0 items-center gap-stack-sm pr-2 pl-4">
+                  <span className="flex min-w-0 flex-1 items-center">{left.header}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={PANE_TOGGLE_CLASS}
+                    aria-label={left.collapseLabel}
+                    onClick={() => showArea("main")}
+                  >
+                    <PanelLeftClose aria-hidden />
+                  </Button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto">{left.content}</div>
+                {left.narrowAction ? (
+                  // The drawer's bottom row: the footer as its short form at
+                  // the start, the primary action at the end.
+                  <div
+                    data-slot="app-shell-drawer-actions"
+                    className="flex shrink-0 items-center justify-between gap-3 pr-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-2"
+                  >
+                    <SidebarCollapsedContext.Provider value>
+                      <span className="flex shrink-0 items-center">{left.footer}</span>
+                    </SidebarCollapsedContext.Provider>
+                    {left.narrowAction}
+                  </div>
+                ) : (
+                  left.footer && <div className="shrink-0">{left.footer}</div>
+                )}
+              </DrawerContent>
+            </Drawer>
           )}
-          <BottomTabBar
-            items={mobileTabs}
-            activeId={activeMobileTab}
-            onChange={onMobileTabChange}
-            label={mobileTabBarLabel}
-          />
         </div>
+        </AppShellSidePanelContext.Provider>
       );
     }
 
     return (
+      <AppShellSidePanelContext.Provider value={panelSlots}>
       <div
         ref={ref}
         className={cn(
@@ -810,7 +1590,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         {...props}
       >
         {!titlebar && noticeRegion}
-        <div data-slot="app-shell-row" className="flex min-h-0 flex-1">
+        <div ref={rowRef} data-slot="app-shell-row" className="relative flex min-h-0 flex-1">
           {/* Column, then its separator: the handle sits on the edge that faces
               the content, which is the right edge of a left column and the left
               edge of a right one — carried by DOM order, so tab order matches
@@ -825,12 +1605,15 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
               page-sized dialog covers (`SettingsDialog` `fitTo`). */}
           <div
             data-slot="app-shell-content"
-            className={cn("flex min-w-0 flex-1 flex-col bg-canvas", floatRight && "relative")}
+            className={cn("flex min-w-0 flex-1 flex-col bg-canvas", floatRight && "relative", sidePanel?.maximized && "invisible")}
+            // Under a maximised side panel the page is covered: out of the
+            // tab order and the accessibility tree until the panel is back.
+            inert={sidePanel?.maximized || undefined}
             // What the open bubble covers at the content's end edge: its width
             // plus `right-2` and the same gap on its other side. Content that
             // must stay readable beside the bubble keeps clear of it by this
             // much; without a bubble, or closed, the variable is unset.
-            style={rightOpen && floatRight ? ({ "--app-shell-bubble-inset": `calc(${floatRight.width ?? DEFAULT_PANEL_WIDTH}px + 1rem)` } as React.CSSProperties) : undefined}
+            style={rightOpen && floatRight && bubbleLeavesRoom ? ({ "--app-shell-bubble-inset": `calc(${floatRight.width ?? DEFAULT_PANEL_WIDTH}px + 1rem)` } as React.CSSProperties) : undefined}
           >
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
@@ -840,15 +1623,21 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {cornerLayer}
             {rightBubble}
           </div>
+          {/* The end column an `AppShellSidePanel` fills. After the main
+              column, so the floating card — inside it — stays beside the
+              panel. `contents`: the slot is no box; empty, the row is as it
+              was. */}
+          <div ref={setPanelColumnSlot} data-slot="app-shell-panel-slot" className="contents" />
         </div>
         {/* Under a hidden title bar the first row is the window's title bar,
             so the notice is the frame's last row instead: full width, in the
             flow, never scrolling away. */}
         {noticeAtBottom && noticeRegion}
       </div>
+      </AppShellSidePanelContext.Provider>
     );
   },
 );
 AppShell.displayName = "AppShell";
 
-export { AppShell };
+export { AppShell, AppShellSidePanel };

@@ -15,10 +15,12 @@ import {
 import { PreviewContent } from "./inline-citation.stories";
 
 /**
- * shadcn/ui `drawer` (https://ui.shadcn.com/r/styles/new-york-v4/drawer.json),
- * imported with the shadcn CLI, on vaul: a bottom sheet with scrim and grab
- * handle; swipe down, the scrim, Esc or a `DrawerClose` closes it. A Radix
- * Dialog underneath: `role="dialog"`, named by `DrawerTitle`.
+ * A panel from a screen edge, on Base UI's `Drawer`
+ * (https://base-ui.com/react/components/drawer): a bottom sheet with scrim
+ * and grab handle that follows the finger; swipe down, the scrim, Esc or a
+ * `DrawerClose` closes it. `role="dialog"`, named by `DrawerTitle`. For a
+ * sheet sized by its content with half- and full-screen stops, see
+ * `BottomSheet`.
  */
 const meta = {
   title: "Components/Drawer",

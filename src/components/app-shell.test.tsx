@@ -1,3 +1,4 @@
+import * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -5,6 +6,8 @@ import { renderToString } from "react-dom/server";
 import { FolderOpen, Home, MessageSquare } from "lucide-react";
 import {
   AppShell,
+  AppShellSidePanel,
+  type AppShellSidePanelProps,
   type AppShellPanel,
   type AppShellPanelResize,
 } from "./app-shell";
@@ -163,8 +166,8 @@ const TABS: MobilePaneTab[] = [
   { id: "sources", icon: <FolderOpen />, label: "Quellen", pane: "right" },
 ];
 
-function renderShell(props: Partial<React.ComponentProps<typeof AppShell>> = {}) {
-  return render(
+function shellElement(props: Partial<React.ComponentProps<typeof AppShell>> = {}) {
+  return (
     <AppShell
       topBar={<span>Anwendung</span>}
       left={leftPanel()}
@@ -176,8 +179,12 @@ function renderShell(props: Partial<React.ComponentProps<typeof AppShell>> = {})
       {...props}
     >
       <p>Inhalt</p>
-    </AppShell>,
+    </AppShell>
   );
+}
+
+function renderShell(props: Partial<React.ComponentProps<typeof AppShell>> = {}) {
+  return render(shellElement(props));
 }
 
 /** `true` when `a` precedes `b` in document order. */
@@ -587,7 +594,7 @@ describe("AppShell — showRight (0.37.0)", () => {
     const right = rightPanel();
     renderShell({ right, showRight: false, activeMobileTab: "sources" });
 
-    expect(screen.getByRole("complementary", { name: "Quellen" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Quellen" })).toBeInTheDocument();
     expect(screen.getByText("Quellen-Inhalt")).toBeVisible();
     expect(right.onOpenChange).not.toHaveBeenCalled();
   });
@@ -610,25 +617,25 @@ describe("AppShell — every node is mounted once", () => {
   it.each([
     ["desktop, expanded", true, true, "page", 1],
     ["desktop, collapsed", true, false, "page", 1],
-    ["narrow, the nav tab", false, true, "nav", 1],
-    ["narrow, the main tab", false, true, "page", 0],
+    ["narrow, the drawer open", false, true, "nav", 1],
+    ["narrow, the drawer closed", false, true, "page", 0],
   ] as const)(
     "%s: the consumer's id occurs %i×",
     (_name, isDesktop, isOpen, activeMobileTab, expected) => {
       stubViewport(isDesktop);
-      const { container } = renderShell({
+      renderShell({
         left: leftPanel({ isOpen }),
         activeMobileTab,
       });
-      expect(container.querySelectorAll("#nav-bereich-a")).toHaveLength(expected);
+      // Over the whole document: the narrow drawer is portalled out of the frame.
+      expect(document.querySelectorAll("#nav-bereich-a")).toHaveLength(expected);
     },
   );
 
-  it.each([true, false])("puts no dialog in the tree (desktop: %s)", (isDesktop) => {
+  it.each([true, false])("puts no dialog in the tree while nothing is open (desktop: %s)", (isDesktop) => {
     stubViewport(isDesktop);
     const { container } = renderShell();
-    // Nothing modal survives: neither an open dialog nor a trigger for one.
-    // Queried over the whole document, because a Radix drawer portalled itself
+    // Queried over the whole document, because a drawer portals itself
     // outside the container.
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -645,19 +652,16 @@ describe("AppShell — notice", () => {
   it.each([
     ["desktop", true, "page"],
     ["below lg, main area", false, "page"],
-    ["below lg, a side column", false, "nav"],
-  ] as const)("comes first, above the bar and the area on screen (%s)", (_name, isDesktop, activeMobileTab) => {
+    ["below lg, the drawer open", false, "nav"],
+  ] as const)("comes first, above the bar and the page (%s)", (_name, isDesktop, activeMobileTab) => {
     stubViewport(isDesktop);
     const { container } = renderShell({ notice: <p>Wartung am Freitag</p>, activeMobileTab });
 
-    const region = screen.getByRole("region", { name: "Systemmeldung" });
+    // `hidden`: an open drawer is modal and hides the frame behind it.
+    const region = screen.getByRole("region", { name: "Systemmeldung", hidden: true });
     expect(region).toHaveTextContent("Wartung am Freitag");
-    expect(precedes(region, screen.getByRole("banner"))).toBe(true);
-    const area =
-      activeMobileTab === "page"
-        ? screen.getByRole("main")
-        : screen.getByRole("complementary", { name: "Navigationsspalte" });
-    expect(precedes(region, area)).toBe(true);
+    expect(precedes(region, screen.getByRole("banner", { hidden: true }))).toBe(true);
+    expect(precedes(region, screen.getByRole("main", { hidden: true }))).toBe(true);
     // The frame's own first child: inside nothing, so it spans the frame.
     expect(container.firstElementChild?.firstElementChild).toBe(region);
   });
@@ -734,12 +738,11 @@ describe("AppShell — status position", () => {
     }
   });
 
-  it("stays above the tab bar below lg, and only with the main area", () => {
+  it("sits under the page below lg, whatever is open over it", () => {
     stubViewport(false);
     const { rerender } = renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });
     const layer = screen.getByText("Wartung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
     expect(precedes(screen.getByRole("main"), layer)).toBe(true);
-    expect(precedes(layer, screen.getByRole("navigation", { name: "Bereichswechsel" }))).toBe(true);
 
     rerender(
       <AppShell
@@ -756,99 +759,148 @@ describe("AppShell — status position", () => {
         <p>Inhalt</p>
       </AppShell>,
     );
-    expect(screen.queryByText("Wartung")).toBeNull();
+    // The page stays on screen behind the drawer, and the message with it.
+    expect(screen.getByText("Wartung")).toBeInTheDocument();
   });
 });
 
+/**
+ * Below lg there is no tab bar (owner, 2026-11-17: neither reference chat app
+ * has one): the page stays on screen, the navigation is a drawer over it and
+ * the sources the same floating card as on a wide screen, each opened by its
+ * toggle in the top bar. Which is open is the consumer's `activeMobileTab`.
+ */
 describe("AppShell — narrow-screen arrangement", () => {
-  it.each([
-    ["nav", "Navigationsspalte"],
-    ["page", null],
-    ["sources", "Quellen"],
-  ] as const)("shows exactly the one area tab %s declares", (activeMobileTab, paneName) => {
+  it("has no tab bar, and keeps the page on screen whatever is open", () => {
     stubViewport(false);
-    const { container } = renderShell({ activeMobileTab });
-
-    const complementary = screen.queryAllByRole("complementary");
-    if (paneName === null) {
-      expect(screen.getByRole("main")).toHaveTextContent("Inhalt");
-      expect(complementary).toHaveLength(0);
-    } else {
-      expect(complementary).toHaveLength(1);
-      expect(complementary[0]).toHaveAccessibleName(paneName);
-      // No `main` at all while a side column is the area on screen — the main
-      // column is not in the tree, and wrapping a `complementary` in `main`
-      // would misname it. Counted as elements, so an unnamed second one would
-      // fail too.
-      expect(container.querySelectorAll("main")).toHaveLength(0);
+    for (const activeMobileTab of ["nav", "page", "sources"]) {
+      const { unmount } = renderShell({ activeMobileTab });
+      expect(screen.queryByRole("navigation", { name: "Bereichswechsel" })).toBeNull();
+      expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(0);
+      expect(screen.getByRole("main", { hidden: true })).toHaveTextContent("Inhalt");
+      unmount();
     }
   });
 
-  it("keeps the top bar, with no menu button to open anything", () => {
+  it("keeps the top bar, with the navigation toggle at its start and the card's at its end", () => {
     stubViewport(false);
     renderShell({ activeMobileTab: "page" });
-    expect(screen.getByRole("banner")).toHaveTextContent("Anwendung");
-    // The three tab buttons are the only buttons of the chrome; the burger is
-    // gone, so nothing here can open a navigation surface.
-    const chromeButtons = within(
-      screen.getByRole("navigation", { name: "Bereichswechsel" }),
-    )
-      .getAllByRole("button")
-      .map((button) => button.textContent);
-    expect(chromeButtons).toEqual(["Navigation", "Seite", "Quellen"]);
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    const bar = screen.getByRole("banner");
+    expect(bar).toHaveTextContent("Anwendung");
+    const names = within(bar).getAllByRole("button").map((button) => button.getAttribute("aria-label"));
+    expect(names).toEqual(["Navigation ausklappen", "Quellen ausklappen"]);
+    expect(precedes(within(bar).getByRole("button", { name: "Navigation ausklappen" }), screen.getByText("Anwendung"))).toBe(true);
+    expect(precedes(screen.getByText("Anwendung"), within(bar).getByRole("button", { name: "Quellen ausklappen" }))).toBe(true);
+    // Nothing is open: no drawer, the card hidden.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("complementary", { name: "Quellen" })).toBeNull();
   });
 
-  it("marks exactly one tab as the current one", () => {
+  it("opens the navigation as a drawer over the page, named and with the column's footer", async () => {
     stubViewport(false);
-    renderShell({ activeMobileTab: "sources" });
-    const current = document.querySelectorAll('[aria-current="page"]');
-    expect(current).toHaveLength(1);
-    expect(current[0]).toHaveAccessibleName("Quellen");
+    renderShell({ activeMobileTab: "nav" });
+    const drawer = await screen.findByRole("dialog", { name: "Navigationsspalte" });
+    expect(within(drawer).getByRole("navigation", { name: "Hauptnavigation" })).toBeInTheDocument();
+    expect(within(drawer).getByText("Marke")).toBeInTheDocument();
+    // Typically the only route to sign-out.
+    expect(within(drawer).getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
   });
 
-  it("shows a collapsed column in full, with no collapse control", () => {
+  it("puts the column's primary action in the drawer's bottom row, after the footer, and nowhere on a wide screen", async () => {
     stubViewport(false);
-    const left = leftPanel({ isOpen: false });
-    renderShell({ left, activeMobileTab: "nav" });
+    const left = leftPanel({ narrowAction: <button type="button">Neuer Chat</button> });
+    const narrow = renderShell({ left, activeMobileTab: "nav" });
+    const drawer = await screen.findByRole("dialog", { name: "Navigationsspalte" });
+    const row = drawer.querySelector("[data-slot='app-shell-drawer-actions']")!;
+    const action = within(drawer).getByRole("button", { name: "Neuer Chat" });
+    expect(row).toContainElement(action);
+    expect(row).toContainElement(within(drawer).getByRole("button", { name: "Abmelden" }));
+    expect(precedes(within(drawer).getByRole("button", { name: "Abmelden" }), action)).toBe(true);
+    expect(precedes(within(drawer).getByRole("navigation", { name: "Hauptnavigation" }), row)).toBe(true);
+    narrow.unmount();
+    stubViewport(true);
+    renderShell({ left });
+    expect(screen.queryByRole("button", { name: "Neuer Chat" })).toBeNull();
+  });
 
-    expect(screen.getByRole("navigation", { name: "Hauptnavigation" })).toBeVisible();
-    for (const name of ["Navigation einklappen", "Navigation ausklappen"]) {
-      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-    }
-    // A control that collapses the only visible area would leave an empty
-    // screen and destroy the desktop preference on the way.
+  it("reports the area a toggle asks for, and decides nothing itself", async () => {
+    stubViewport(false);
+    const onMobileTabChange = vi.fn();
+    renderShell({ onMobileTabChange, activeMobileTab: "page" });
+    await userEvent.click(screen.getByRole("button", { name: "Navigation ausklappen" }));
+    expect(onMobileTabChange).toHaveBeenLastCalledWith("nav");
+    await userEvent.click(screen.getByRole("button", { name: "Quellen ausklappen" }));
+    expect(onMobileTabChange).toHaveBeenLastCalledWith("sources");
+    // Controlled: still nothing open.
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("asks for the main area when the drawer is closed from inside", async () => {
+    stubViewport(false);
+    const onMobileTabChange = vi.fn();
+    renderShell({ onMobileTabChange, activeMobileTab: "nav" });
+    const drawer = await screen.findByRole("dialog", { name: "Navigationsspalte" });
+    await userEvent.click(within(drawer).getByRole("button", { name: "Navigation einklappen" }));
+    expect(onMobileTabChange).toHaveBeenLastCalledWith("page");
+  });
+
+  it("shows the sources as a drawer, opened by the area and closed to the main one", async () => {
+    stubViewport(false);
+    const onMobileTabChange = vi.fn();
+    const right = rightPanel({ isOpen: false, closeLabel: "Quellen schließen" });
+    const { container } = renderShell({ right, onMobileTabChange, activeMobileTab: "sources" });
+    // A drawer over the page, not a card floating in it.
+    const card = screen.getByRole("dialog", { name: "Quellen" });
+    expect(card).toHaveAttribute("data-direction", "bottom");
+    expect(container.querySelector("[data-slot='app-shell-content']")).not.toContainElement(card);
+    expect(card).toHaveTextContent("Quellen-Inhalt");
+    await userEvent.click(within(card).getByRole("button", { name: "Quellen schließen" }));
+    expect(onMobileTabChange).toHaveBeenLastCalledWith("page");
+    // The wide screen's open state is neither read nor written here.
+    expect(right.onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("closes a drawer back to the main-area id that was current, not the first one", async () => {
+    stubViewport(false);
+    const onMobileTabChange = vi.fn();
+    const tabs = [
+      { id: "nav", icon: <span />, label: "Navigation", pane: "left" as const },
+      { id: "one", icon: <span />, label: "Eins", pane: "main" as const },
+      { id: "two", icon: <span />, label: "Zwei", pane: "main" as const },
+    ];
+    const view = renderShell({ mobileTabs: tabs, activeMobileTab: "two", onMobileTabChange });
+    view.rerender(shellElement({ mobileTabs: tabs, activeMobileTab: "nav", onMobileTabChange }));
+    await userEvent.keyboard("{Escape}");
+    expect(onMobileTabChange).toHaveBeenLastCalledWith("two");
+  });
+
+  it("does not read the wide screen's collapse preference: a drawer starts closed", () => {
+    stubViewport(false);
+    const left = leftPanel({ isOpen: true });
+    renderShell({ left, activeMobileTab: "page" });
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(left.onOpenChange).not.toHaveBeenCalled();
-    // The column's footer stays reachable — it is typically the only route to
-    // sign-out.
-    expect(screen.getByRole("button", { name: "Abmelden" })).toBeInTheDocument();
   });
 
-  it("falls back to the main area for a tab whose column this shell lacks", () => {
+  it("shows only the page for an area whose column this shell lacks", () => {
     stubViewport(false);
     renderShell({ right: undefined, activeMobileTab: "sources" });
     expect(screen.getByRole("main")).toHaveTextContent("Inhalt");
     expect(screen.queryAllByRole("complementary")).toHaveLength(0);
   });
 
-  it("reserves the tab bar's height so the area's last row is not covered", () => {
+  it("reserves no room at the bottom of the page", () => {
     stubViewport(false);
     renderShell({ activeMobileTab: "page" });
-    // The bar is `fixed` and one chrome unit tall — the same exported constant
-    // the collapsed rail uses, which is why the reservation is that constant
-    // and not a second literal 60. Only the px part is asserted: jsdom's CSS
-    // parser garbles the nested `env()`.
-    expect(screen.getByRole("main").getAttribute("style")).toContain(
-      `${SIDE_PANEL_RAIL_WIDTH}px`,
-    );
+    expect(screen.getByRole("main").getAttribute("style")).toBeNull();
   });
 
-  it("reports a tab change without deciding anything about it", async () => {
+  it("does not ask the page to keep clear of the card", () => {
     stubViewport(false);
-    const onMobileTabChange = vi.fn();
-    renderShell({ onMobileTabChange });
-    await userEvent.click(screen.getByRole("button", { name: "Quellen" }));
-    expect(onMobileTabChange).toHaveBeenCalledWith("sources");
+    const { container } = renderShell({ activeMobileTab: "sources" });
+    expect(
+      container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset"),
+    ).toBe("");
   });
 });
 
@@ -856,9 +908,9 @@ describe("AppShell — viewport switch", () => {
   it("asks for Tailwind's own lg boundary", () => {
     stubViewport(true);
     renderShell();
-    // `--breakpoint-lg: 64rem` in Tailwind's theme — the boundary the `lg:`
+    // `--breakpoint-md: 48rem` in Tailwind's theme — the boundary the `lg:`
     // utilities in this library use.
-    expect(askedQueries).toContain("(min-width: 64rem)");
+    expect(askedQueries).toContain("(min-width: 48rem)");
   });
 
   it("falls back to the desktop arrangement where matchMedia does not exist", () => {
@@ -1157,22 +1209,15 @@ describe("AppShell — native shell", () => {
   });
 
   it.each([
-    ["main area", "page"],
-    ["a side column", "nav"],
-  ] as const)("puts the notice between the area and the tab bar below lg (%s)", (_name, activeMobileTab) => {
+    ["nothing open", "page"],
+    ["the drawer open", "nav"],
+  ] as const)("makes the notice the frame's last row below lg (%s)", (_name, activeMobileTab) => {
     hideTitlebar();
     stubViewport(false);
-    renderShell({ notice: <p>Wartung</p>, activeMobileTab });
-    const region = screen.getByRole("region", { name: "Systemmeldung" });
-    const area =
-      activeMobileTab === "page"
-        ? screen.getByRole("main")
-        : screen.getByRole("complementary", { name: "Navigationsspalte" });
-    expect(precedes(area, region)).toBe(true);
-    expect(precedes(region, screen.getByRole("navigation", { name: "Bereichswechsel" }))).toBe(true);
-    // The room for the tab bar is reserved once: by the notice's row, not also by the area.
-    expect(area.style.paddingBottom).toBe("");
-    expect(region.parentElement!.style.paddingBottom).not.toBe("");
+    const { container } = renderShell({ notice: <p>Wartung</p>, activeMobileTab });
+    const region = screen.getByRole("region", { name: "Systemmeldung", hidden: true });
+    expect(precedes(screen.getByRole("main", { hidden: true }), region)).toBe(true);
+    expect(container.firstElementChild!.lastElementChild).toBe(region);
   });
 
   it("does not remount the page when the title bar mode changes", () => {
@@ -1192,18 +1237,14 @@ describe("AppShell — native shell", () => {
     ["a shell without a left column", true, { left: undefined }],
     ["a collapsed left column", true, { left: leftPanel({ isOpen: false }) }],
     ["below lg, main area", false, {}],
-    ["below lg, a side column", false, { activeMobileTab: "nav" }],
+    ["below lg, the drawer open", false, { activeMobileTab: "nav" }],
   ] as const)("keeps the area clear with an empty title-bar row when there is no bar (%s)", (_name, isDesktop, props) => {
     hideTitlebar();
     stubViewport(isDesktop);
     const { container } = renderShell({ topBar: undefined, ...props });
     const strip = container.querySelector("[data-slot='app-shell-titlebar']");
     expect(strip).toHaveAttribute("data-app-region", "drag");
-    const area =
-      "activeMobileTab" in props
-        ? screen.getByRole("complementary", { name: "Navigationsspalte" })
-        : screen.getByRole("main");
-    expect(precedes(strip!, area)).toBe(true);
+    expect(precedes(strip!, screen.getByRole("main", { hidden: true }))).toBe(true);
   });
 
   it("renders no empty row on the web, or when there is nothing for it to carry", () => {
@@ -1297,5 +1338,396 @@ describe("AppShell — native shell", () => {
     // The pages themselves do not drag the window.
     expect(drag(screen.getByText("Inhalt"))).toBeNull();
     expect(drag(screen.getByText("Bereich A"))).toBeNull();
+  });
+});
+
+/**
+ * `AppShellSidePanel`: a tabbed column at the frame's end edge that the page
+ * declares. The oracle is the reported defect — a panel the page put at the
+ * main area's end lay under the floating `right` card — plus the owner's
+ * brief: a panel like a browser's, with tabs, a toggle that hides it and
+ * keeps them, and a shell without one being the shell it was.
+ */
+describe("AppShell — side panel", () => {
+  const PANEL_WIDTH = 417;
+  const TWO_TABS = [
+    { id: "a", title: "Quelle 3", closeLabel: "Quelle 3 schließen" },
+    { id: "b", title: "Handbuch", closeLabel: "Handbuch schließen" },
+  ];
+  const panel = (overrides: Partial<AppShellSidePanelProps> = {}) => (
+    <AppShellSidePanel
+      label="Seitenbereich"
+      isOpen
+      onOpenChange={() => {}}
+      expandLabel="Seitenbereich einblenden"
+      collapseLabel="Seitenbereich ausblenden"
+      tabs={TWO_TABS}
+      activeTabId="a"
+      onTabChange={() => {}}
+      onTabClose={() => {}}
+      tabListLabel="Geöffnete Inhalte"
+      width={PANEL_WIDTH}
+      empty={<p>Nichts geöffnet</p>}
+      {...overrides}
+    >
+      <p>Zitat-Inhalt</p>
+    </AppShellSidePanel>
+  );
+  const shell = (child: React.ReactNode, props: Partial<React.ComponentProps<typeof AppShell>> = {}) => (
+    <AppShell
+      topBar={<span>Anwendung</span>}
+      left={leftPanel()}
+      right={rightPanel()}
+      mobileTabs={TABS}
+      activeMobileTab="page"
+      onMobileTabChange={() => {}}
+      mobileTabBarLabel="Bereichswechsel"
+      {...props}
+    >
+      <p>Inhalt</p>
+      {child}
+    </AppShell>
+  );
+  afterEach(() => {
+    delete document.documentElement.dataset.titlebar;
+  });
+
+  it("stands after the main column, outside the box the floating card covers", () => {
+    stubViewport(true);
+    const { container } = render(shell(panel()));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    const content = container.querySelector("[data-slot='app-shell-content']")!;
+    expect(container.querySelector("[data-slot='app-shell-row']")).toContainElement(column);
+    expect(content).not.toContainElement(column);
+    expect(precedes(content, column)).toBe(true);
+    // The card stays in the main column's box, so it floats beside the panel.
+    expect(content).toContainElement(screen.getByRole("complementary", { name: "Quellen" }));
+    expect(column).toHaveStyle({ width: `${PANEL_WIDTH}px` });
+    // Mounted once: not also where the page declared it.
+    expect(screen.getByRole("main")).not.toContainElement(column);
+    expect(screen.getAllByText("Zitat-Inhalt")).toHaveLength(1);
+  });
+
+  it("shows the tabs in a strip above the active tab's content, wired as a tablist", () => {
+    stubViewport(true);
+    const { container } = render(shell(panel()));
+    const strip = container.querySelector("[data-slot='app-shell-side-panel-strip']")!;
+    expect(strip.className).toContain("h-14");
+    const list = within(strip as HTMLElement).getByRole("tablist", { name: "Geöffnete Inhalte" });
+    const tabs = within(list).getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["Quelle 3", "Handbuch"]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
+    // One tab stop for the strip.
+    expect(tabs.map((tab) => tab.tabIndex)).toEqual([0, -1]);
+    const content = screen.getByRole("tabpanel", { name: "Quelle 3" });
+    expect(content).toHaveTextContent("Zitat-Inhalt");
+    expect(document.getElementById(tabs[0].getAttribute("aria-controls")!)).toBe(content);
+    expect(precedes(strip, content)).toBe(true);
+  });
+
+  it("reports a chosen tab, by click and by arrow key, and decides nothing itself", async () => {
+    stubViewport(true);
+    const onTabChange = vi.fn();
+    render(shell(panel({ onTabChange })));
+    await userEvent.click(screen.getByRole("tab", { name: "Handbuch" }));
+    expect(onTabChange).toHaveBeenLastCalledWith("b");
+    screen.getByRole("tab", { name: "Quelle 3" }).focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(onTabChange).toHaveBeenLastCalledWith("b");
+    expect(screen.getByRole("tab", { name: "Handbuch" })).toHaveFocus();
+    await userEvent.keyboard("{ArrowRight}");
+    // Wraps from the last tab to the first.
+    expect(onTabChange).toHaveBeenLastCalledWith("a");
+    // Controlled: nothing was selected by the component.
+    expect(screen.getByRole("tab", { name: "Quelle 3" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("gives each tab a close button of its own, outside the tab", async () => {
+    stubViewport(true);
+    const onTabClose = vi.fn();
+    const onTabChange = vi.fn();
+    render(shell(panel({ onTabClose, onTabChange })));
+    const close = screen.getByRole("button", { name: "Handbuch schließen" });
+    expect(screen.getByRole("tab", { name: "Handbuch" })).not.toContainElement(close);
+    await userEvent.click(close);
+    expect(onTabClose).toHaveBeenCalledExactlyOnceWith("b");
+    expect(onTabChange).not.toHaveBeenCalled();
+  });
+
+  it("shows `empty` and no tabpanel while no tab is open, the toggle still there", () => {
+    stubViewport(true);
+    render(shell(panel({ tabs: [], activeTabId: null })));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    expect(column).toHaveTextContent("Nichts geöffnet");
+    expect(column).not.toHaveTextContent("Zitat-Inhalt");
+    expect(screen.queryByRole("tabpanel")).toBeNull();
+    expect(within(column).getByRole("button", { name: "Seitenbereich ausblenden" })).toBeInTheDocument();
+  });
+
+  const LAUNCHERS = [
+    { id: "sources", label: "Quellen" },
+    { id: "browser", label: "Browser", disabled: true },
+  ];
+
+  it("lists what it can open in the empty panel, and reports the chosen kind", async () => {
+    stubViewport(true);
+    const onLaunch = vi.fn();
+    render(shell(panel({
+      tabs: [], activeTabId: null, empty: undefined,
+      launchers: LAUNCHERS, onLaunch, addLabel: "Inhalt öffnen", launcherTitle: "Was möchtest du öffnen?",
+    })));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    expect(column).toHaveTextContent("Was möchtest du öffnen?");
+    expect(within(column).getByRole("button", { name: "Browser" })).toBeDisabled();
+    await userEvent.click(within(column).getByRole("button", { name: "Quellen" }));
+    expect(onLaunch).toHaveBeenCalledExactlyOnceWith("sources");
+  });
+
+  it("offers the same kinds from a + after the tabs, which is no tab", async () => {
+    stubViewport(true);
+    const onLaunch = vi.fn();
+    render(shell(panel({ launchers: LAUNCHERS, onLaunch, addLabel: "Inhalt öffnen" })));
+    const add = screen.getByRole("button", { name: "Inhalt öffnen" });
+    const list = screen.getByRole("tablist");
+    expect(list).not.toContainElement(add);
+    expect(precedes(list, add)).toBe(true);
+    expect(precedes(add, screen.getByRole("button", { name: "Seitenbereich ausblenden" }))).toBe(true);
+    // With a tab open the content is the tab's, not the list.
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Zitat-Inhalt");
+    await userEvent.click(add);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Quellen" }));
+    expect(onLaunch).toHaveBeenCalledExactlyOnceWith("sources");
+  });
+
+  it("has no + and no list without launchers", () => {
+    stubViewport(true);
+    render(shell(panel({ tabs: [], activeTabId: null, empty: undefined, addLabel: "Inhalt öffnen" })));
+    expect(screen.queryByRole("button", { name: "Inhalt öffnen" })).toBeNull();
+    expect(document.querySelector("[data-slot='app-shell-side-panel-launcher']")).toBeNull();
+  });
+
+  it("keeps its toggle at the end of the strip while shown, pointing at the panel", async () => {
+    stubViewport(true);
+    const onOpenChange = vi.fn();
+    render(shell(panel({ onOpenChange })));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    const toggle = within(column).getByRole("button", { name: "Seitenbereich ausblenden" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).toBe(column);
+    expect(precedes(screen.getByRole("tablist"), toggle)).toBe(true);
+    expect(within(screen.getByRole("banner")).queryByRole("button", { name: /Seitenbereich/ })).toBeNull();
+    await userEvent.click(toggle);
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+  });
+
+  it("hidden, leaves only its toggle: the bar's last control, after the card's", async () => {
+    stubViewport(true);
+    const onOpenChange = vi.fn();
+    render(shell(panel({ isOpen: false, onOpenChange })));
+    expect(screen.queryByRole("complementary", { name: "Seitenbereich" })).toBeNull();
+    expect(screen.queryByText("Zitat-Inhalt")).toBeNull();
+    const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "Seitenbereich einblenden" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).not.toHaveAttribute("aria-controls");
+    expect(precedes(screen.getByRole("button", { name: "Quellen einklappen" }), toggle)).toBe(true);
+    await userEvent.click(toggle);
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
+  });
+
+  it("keeps the focus on the toggle when it moves between bar and strip", async () => {
+    stubViewport(true);
+    const Harness = () => {
+      const [isOpen, setOpen] = React.useState(false);
+      return shell(panel({ isOpen, onOpenChange: setOpen }));
+    };
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("button", { name: "Seitenbereich einblenden" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Seitenbereich ausblenden" })).toHaveFocus());
+    await userEvent.click(screen.getByRole("button", { name: "Seitenbereich ausblenden" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Seitenbereich einblenden" })).toHaveFocus());
+  });
+
+  it("gets a separator on its content-facing edge only with a resize contract", async () => {
+    stubViewport(true);
+    const onWidthChange = vi.fn();
+    const { rerender } = render(shell(panel()));
+    expect(screen.queryByRole("separator", { name: "Breite des Seitenbereichs ändern" })).toBeNull();
+    rerender(shell(panel({
+      resize: { minWidth: 300, maxWidth: 700, onWidthChange, label: "Breite des Seitenbereichs ändern" },
+    })));
+    const handle = screen.getByRole("separator", { name: "Breite des Seitenbereichs ändern" });
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    expect(precedes(handle, column)).toBe(true);
+    expect(handle).toHaveAttribute("aria-valuenow", String(PANEL_WIDTH));
+    expect(document.getElementById(handle.getAttribute("aria-controls")!)).toBe(column);
+    handle.focus();
+    // A pane on the right grows towards the left.
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(onWidthChange).toHaveBeenCalledExactlyOnceWith(PANEL_WIDTH + STEP);
+  });
+
+  it("leaves a shell without one as it was: two empty slots that are no boxes", () => {
+    stubViewport(true);
+    const { container } = render(shell(null));
+    const row = container.querySelector("[data-slot='app-shell-row']")!;
+    const slot = container.querySelector("[data-slot='app-shell-panel-slot']")!;
+    expect(row.lastElementChild).toBe(slot);
+    expect(slot).toBeEmptyDOMElement();
+    expect(slot.className).toBe("contents");
+    const toggleSlot = container.querySelector("[data-slot='app-shell-panel-toggle-slot']")!;
+    expect(toggleSlot).toBeEmptyDOMElement();
+    expect(toggleSlot.className).toBe("contents");
+    // The card's toggle is still the bar's last control.
+    const buttons = within(screen.getByRole("banner")).getAllByRole("button");
+    expect(buttons[buttons.length - 1]).toHaveAccessibleName("Quellen einklappen");
+  });
+
+  it("comes and goes without remounting the page", () => {
+    stubViewport(true);
+    const { rerender } = render(shell(null));
+    const page = screen.getByText("Inhalt");
+    rerender(shell(panel()));
+    expect(screen.getByRole("complementary", { name: "Seitenbereich" })).toBeInTheDocument();
+    expect(screen.getByText("Inhalt")).toBe(page);
+    rerender(shell(panel({ isOpen: false })));
+    expect(screen.queryByRole("complementary", { name: "Seitenbereich" })).toBeNull();
+    expect(screen.getByText("Inhalt")).toBe(page);
+  });
+
+  it("is the same panel under a hidden title bar, its strip dragging the window", () => {
+    document.documentElement.dataset.titlebar = "inset";
+    stubViewport(true);
+    const { container } = render(shell(panel()));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    expect(container.querySelector("[data-slot='app-shell-content']")).not.toContainElement(column);
+    expect(container.querySelector("[data-slot='app-shell-side-panel-strip']")).toHaveAttribute("data-app-region", "drag");
+    // The window controls are at the start: the panel owns no inset.
+    expect(column.querySelector("[data-titlebar-inset]")).toBeNull();
+    expect(container.querySelectorAll("[data-titlebar-inset]")).toHaveLength(1);
+  });
+
+  /**
+   * The frame's shrinking rules. Oracle: the owner's brief — the left column
+   * collapses by itself rather than squeeze the chat beside the panel, the
+   * card lies over a narrow page instead of pushing it — with the reference
+   * app's numbers: the main area keeps 360px, the panel takes at most 70%.
+   * jsdom has no layout, so the frame's width is stubbed.
+   */
+  describe("shrinking rules", () => {
+    const frameIs = (width: number) => {
+      vi.stubGlobal("ResizeObserver", class {
+        observe() {}
+        disconnect() {}
+      });
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+        return this.dataset.slot === "app-shell-row" ? width : 0;
+      });
+    };
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+    const resize = { minWidth: 360, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+
+    it("shows the left column as its rail while it would crowd the main area, and never tells the consumer", async () => {
+      stubViewport(true);
+      // 895 − 311 leaves 584 for main area and panel: less than 360 + 360.
+      frameIs(895);
+      const onOpenChange = vi.fn();
+      render(shell(panel({ resize }), { left: leftPanel({ onOpenChange }) }));
+      const expand = await screen.findByRole("button", { name: "Navigation ausklappen" });
+      expect(screen.queryByRole("button", { name: "Navigation einklappen" })).toBeNull();
+      expect(onOpenChange).not.toHaveBeenCalled();
+      // Expanding by hand is the user's call and holds.
+      await userEvent.click(expand);
+      expect(await screen.findByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it("leaves the left column expanded while there is room, and without a shown panel", () => {
+      stubViewport(true);
+      frameIs(1400);
+      const { rerender } = render(shell(panel({ resize })));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      vi.restoreAllMocks();
+      frameIs(895);
+      rerender(shell(panel({ resize, isOpen: false })));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+    });
+
+    it("caps the panel so the main area keeps 360px, down to the panel's minimum, and keeps the consumer's width", () => {
+      stubViewport(true);
+      // 1200 − 311 − 360 = 529 is less than 70% of 1200.
+      frameIs(1200);
+      render(shell(panel({ width: 800, resize })));
+      const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+      expect(column).toHaveStyle({ width: "529px" });
+      const handle = screen.getByRole("separator", { name: "Breite des Seitenbereichs ändern" });
+      expect(handle).toHaveAttribute("aria-valuenow", "529");
+      expect(handle).toHaveAttribute("aria-valuemax", "529");
+      expect(resize.onWidthChange).not.toHaveBeenCalled();
+    });
+
+    it("caps the panel at 70% of a wide frame", () => {
+      stubViewport(true);
+      frameIs(2000);
+      // The rail leaves 2000 − 60 − 360 = 1580, so the share is what binds.
+      render(shell(panel({ width: 1600, resize: { ...resize, maxWidth: 1800 } }), { left: leftPanel({ isOpen: false }) }));
+      expect(screen.getByRole("complementary", { name: "Seitenbereich" })).toHaveStyle({ width: "1400px" });
+    });
+
+    it("stops publishing the card's inset once the page would keep less than 360px beside it", () => {
+      stubViewport(true);
+      const inset = (container: HTMLElement) =>
+        container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset");
+      // Main area 1400 − 311 = 1089: the 233px card plus 16 leaves 840.
+      frameIs(1400);
+      const wide = render(shell(null));
+      expect(inset(wide.container)).not.toBe("");
+      wide.unmount();
+      vi.restoreAllMocks();
+      // Main area 900 − 311 = 589: 589 − 249 = 340, under 360.
+      frameIs(900);
+      const narrow = render(shell(null));
+      expect(inset(narrow.container)).toBe("");
+      // The card itself is still shown, over the page.
+      expect(screen.getByRole("complementary", { name: "Quellen" })).toBeVisible();
+    });
+  });
+
+  it("fills the narrow frame when shown: over the page, without resize or maximise", () => {
+    stubViewport(false);
+    const { container } = render(shell(panel({
+      maximizeLabel: "Maximieren", restoreLabel: "Verkleinern",
+      resize: { minWidth: 360, maxWidth: 900, onWidthChange: () => {}, label: "Breite" },
+    })));
+    const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+    expect(column).toHaveClass("absolute");
+    expect(column).toHaveStyle({ left: "0px" });
+    expect(within(column).getByRole("button", { name: "Seitenbereich ausblenden" })).toBeInTheDocument();
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Maximieren" })).toBeNull();
+    // The covered page is out of reach until the panel is hidden.
+    expect(container.querySelector("[data-slot='app-shell-content']")).toHaveAttribute("inert");
+  });
+
+  it("keeps a first row for the hidden panel's toggle in a frame with no bar of its own", () => {
+    stubViewport(true);
+    render(shell(panel({ isOpen: false }), { topBar: undefined, right: undefined }));
+    expect(screen.getByRole("button", { name: "Seitenbereich einblenden" })).toBeInTheDocument();
+  });
+
+  it("hidden in the narrow frame, leaves its toggle at the end of the bar", () => {
+    stubViewport(false);
+    const { container } = render(shell(panel({ isOpen: false })));
+    expect(screen.queryByRole("complementary", { name: "Seitenbereich" })).toBeNull();
+    const toggle = screen.getByRole("button", { name: "Seitenbereich einblenden" });
+    expect(container.querySelector("[data-slot='app-shell-bar-end']")).toContainElement(toggle);
+    expect(container.querySelector("[data-slot='app-shell-content']")).not.toHaveAttribute("inert");
+  });
+
+  it("renders nothing outside a shell", () => {
+    const { container } = render(panel());
+    expect(container).toBeEmptyDOMElement();
   });
 });

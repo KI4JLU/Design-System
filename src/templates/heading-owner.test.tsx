@@ -62,7 +62,7 @@ function stubMatchMedia() {
     "matchMedia",
     (query: string) =>
       ({
-        matches: query === "(min-width: 64rem)",
+        matches: query === "(min-width: 48rem)",
         media: query,
         onchange: null,
         addEventListener: () => {},

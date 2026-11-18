@@ -9,6 +9,10 @@
  */
 export {
   AppShell,
+  AppShellSidePanel,
+  type AppShellSidePanelProps,
+  type AppShellSidePanelTab,
+  type AppShellSidePanelLauncher,
   type AppShellProps,
   type AppShellPanel,
   type AppShellPanelResize,
@@ -346,9 +350,11 @@ export {
   DrawerContent,
   DrawerHeader,
   DrawerFooter,
+  DrawerBody,
   DrawerTitle,
   DrawerDescription,
 } from "./components/drawer";
+export { BottomSheet, type BottomSheetProps } from "./components/bottom-sheet";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";
