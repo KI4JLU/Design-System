@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useLayoutEffect, useState, type ReactNode } from "react";
 import { composeStories } from "@storybook/react-vite";
-import { expect, waitFor, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChevronLeft, ChevronRight, LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";

@@ -1693,6 +1693,214 @@ describe("AppShell — side panel", () => {
       // The card itself is still shown, over the page.
       expect(screen.getByRole("complementary", { name: "Quellen" })).toBeVisible();
     });
+
+    /**
+     * Rule 4, with a frame that changes width: the stub keeps the observers'
+     * callbacks so a new width can be delivered as a resize would.
+     */
+    describe("the card where it stops fitting beside the page", () => {
+      let width = 0;
+      let notify: (() => void)[] = [];
+      const frameStartsAt = (start: number) => {
+        width = start;
+        notify = [];
+        vi.stubGlobal("ResizeObserver", class {
+          constructor(callback: () => void) { notify.push(callback); }
+          observe() {}
+          disconnect() {}
+        });
+        vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+          return this.dataset.slot === "app-shell-row" ? width : 0;
+        });
+      };
+      const frameBecomes = (next: number) => {
+        width = next;
+        act(() => notify.forEach((callback) => callback()));
+      };
+
+      it("closes an open card when the frame narrows past that width, once", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const right = rightPanel();
+        render(shell(null, { right }));
+        expect(right.onOpenChange).not.toHaveBeenCalled();
+        frameBecomes(800);
+        expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+        frameBecomes(780);
+        expect(right.onOpenChange).toHaveBeenCalledTimes(1);
+      });
+
+      it("leaves a card alone that is opened by hand below that width, and does not reopen one on widening", () => {
+        stubViewport(true);
+        frameStartsAt(800);
+        const onOpenChange = vi.fn();
+        const { rerender } = render(shell(null, { right: rightPanel({ isOpen: false, onOpenChange }) }));
+        rerender(shell(null, { right: rightPanel({ isOpen: true, onOpenChange }) }));
+        expect(onOpenChange).not.toHaveBeenCalled();
+        frameBecomes(1400);
+        expect(onOpenChange).not.toHaveBeenCalled();
+      });
+
+      it("closes the card when a side panel takes the room", () => {
+        stubViewport(true);
+        frameStartsAt(1200);
+        const right = rightPanel();
+        const { rerender } = render(shell(panel({ isOpen: false }), { right }));
+        expect(right.onOpenChange).not.toHaveBeenCalled();
+        rerender(shell(panel({ isOpen: true }), { right }));
+        expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("never closes it in the narrow frame, where the card is a sheet", () => {
+        stubViewport(false);
+        frameStartsAt(500);
+        const right = rightPanel();
+        render(shell(null, { right, activeMobileTab: "sources" }));
+        expect(right.onOpenChange).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("maximise", () => {
+    const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+    const resize = { minWidth: 360, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite ändern" };
+
+    it("has no maximise button without both labels", () => {
+      stubViewport(true);
+      render(shell(panel({ maximizeLabel: "Seitenbereich maximieren" })));
+      expect(screen.queryByRole("button", { name: "Seitenbereich maximieren" })).toBeNull();
+    });
+
+    it("covers the main area and comes back, keeping its own state", async () => {
+      stubViewport(true);
+      const { container } = render(shell(panel({ ...labels, resize })));
+      const content = container.querySelector("[data-slot='app-shell-content']")!;
+      const column = screen.getByRole("complementary", { name: "Seitenbereich" });
+      expect(screen.getByRole("separator", { name: "Breite ändern" })).toBeInTheDocument();
+
+      await userEvent.click(within(column).getByRole("button", { name: "Seitenbereich maximieren" }));
+      expect(column).toHaveAttribute("data-maximized");
+      expect(column).toHaveClass("absolute");
+      // The covered page is out of reach, and there is no edge left to drag.
+      expect(content).toHaveAttribute("inert");
+      expect(screen.queryByRole("separator", { name: "Breite ändern" })).toBeNull();
+      const restore = within(column).getByRole("button", { name: "Seitenbereich verkleinern" });
+      expect(restore).toHaveAttribute("aria-pressed", "true");
+
+      await userEvent.click(restore);
+      expect(column).not.toHaveAttribute("data-maximized");
+      expect(column).toHaveStyle({ width: `${PANEL_WIDTH}px` });
+      expect(content).not.toHaveAttribute("inert");
+    });
+
+    it("follows the consumer's state when given, and reports the requested one", async () => {
+      stubViewport(true);
+      const onMaximizedChange = vi.fn();
+      const { rerender } = render(shell(panel({ ...labels, isMaximized: false, onMaximizedChange })));
+      await userEvent.click(screen.getByRole("button", { name: "Seitenbereich maximieren" }));
+      expect(onMaximizedChange).toHaveBeenCalledExactlyOnceWith(true);
+      expect(screen.getByRole("complementary", { name: "Seitenbereich" })).not.toHaveAttribute("data-maximized");
+      rerender(shell(panel({ ...labels, isMaximized: true, onMaximizedChange })));
+      expect(screen.getByRole("complementary", { name: "Seitenbereich" })).toHaveAttribute("data-maximized");
+    });
+
+    it("gives the page back when a maximised panel is hidden", () => {
+      stubViewport(true);
+      const { container, rerender } = render(shell(panel({ ...labels, isMaximized: true })));
+      expect(container.querySelector("[data-slot='app-shell-content']")).toHaveAttribute("inert");
+      rerender(shell(panel({ ...labels, isMaximized: true, isOpen: false })));
+      expect(container.querySelector("[data-slot='app-shell-content']")).not.toHaveAttribute("inert");
+    });
+  });
+
+  describe("launcher shortcuts", () => {
+    const launchers = [
+      { id: "citations", label: "Quellenangaben", shortcut: "Q" },
+      { id: "browser", label: "Browser", shortcut: "B", disabled: true },
+    ];
+    const emptyPanel = (overrides: Partial<AppShellSidePanelProps> = {}) =>
+      panel({ tabs: [], activeTabId: null, empty: undefined, launchers, addLabel: "Inhalt öffnen", ...overrides });
+
+    it("lists the launchers in the empty panel with their keys", () => {
+      stubViewport(true);
+      render(shell(emptyPanel()));
+      const row = screen.getByRole("button", { name: "Quellenangaben" });
+      expect(row).toHaveAttribute("aria-keyshortcuts", "Q");
+      expect(row).toHaveTextContent("Q");
+    });
+
+    it("opens a launcher on its key, in either case, with the focus nowhere or in the panel", async () => {
+      stubViewport(true);
+      const onLaunch = vi.fn();
+      render(shell(emptyPanel({ onLaunch })));
+      await userEvent.keyboard("q");
+      expect(onLaunch).toHaveBeenLastCalledWith("citations");
+      screen.getByRole("button", { name: "Seitenbereich ausblenden" }).focus();
+      await userEvent.keyboard("Q");
+      expect(onLaunch).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not fire while the user types, with a modifier, for a disabled launcher, or outside the panel", async () => {
+      stubViewport(true);
+      const onLaunch = vi.fn();
+      render(
+        <>
+          {shell(emptyPanel({ onLaunch }))}
+        </>,
+      );
+      const field = document.createElement("input");
+      screen.getByRole("main").append(field);
+      field.focus();
+      await userEvent.keyboard("q");
+      field.blur();
+      await userEvent.keyboard("{Control>}q{/Control}");
+      await userEvent.keyboard("b");
+      screen.getByRole("button", { name: "Navigation einklappen" }).focus();
+      await userEvent.keyboard("q");
+      expect(onLaunch).not.toHaveBeenCalled();
+    });
+
+    it("is off once a tab is open, and while the panel is hidden", async () => {
+      stubViewport(true);
+      const onLaunch = vi.fn();
+      const { rerender } = render(shell(panel({ launchers, onLaunch, empty: undefined })));
+      await userEvent.keyboard("q");
+      rerender(shell(emptyPanel({ onLaunch, isOpen: false })));
+      await userEvent.keyboard("q");
+      expect(onLaunch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("tooltips", () => {
+    it("names the toggle on hover, with its shortcut as keys", async () => {
+      stubViewport(true);
+      render(shell(panel({ toggleKeyShortcuts: "Meta+Alt+B" })));
+      const toggle = screen.getByRole("button", { name: "Seitenbereich ausblenden" });
+      expect(toggle).toHaveAttribute("aria-keyshortcuts", "Meta+Alt+B");
+      await userEvent.hover(toggle);
+      const tip = await screen.findByRole("tooltip");
+      expect(tip).toHaveTextContent("Seitenbereich ausblenden");
+      expect(tip).toHaveTextContent("⌘");
+      expect(tip).toHaveTextContent("⌥");
+    });
+  });
+
+  describe("the card's close button", () => {
+    it("is there only with closeLabel", () => {
+      stubViewport(true);
+      render(shell(null, { right: rightPanel() }));
+      expect(screen.queryByRole("button", { name: "Quellen schließen" })).toBeNull();
+    });
+
+    it("closes the card and hands the focus to its toggle", async () => {
+      stubViewport(true);
+      const right = rightPanel({ closeLabel: "Quellen schließen" });
+      render(shell(null, { right }));
+      const card = screen.getByRole("complementary", { name: "Quellen" });
+      await userEvent.click(within(card).getByRole("button", { name: "Quellen schließen" }));
+      expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      expect(screen.getByRole("button", { name: "Quellen einklappen" })).toHaveFocus();
+    });
   });
 
   it("fills the narrow frame when shown: over the page, without resize or maximise", () => {
