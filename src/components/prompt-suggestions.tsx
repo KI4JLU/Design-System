@@ -13,6 +13,24 @@ export interface PromptSuggestionsProps
   title?: React.ReactNode;
   /** Icon before the headline. Default: a lightbulb. `null` hides it. */
   titleIcon?: React.ReactNode;
+  /**
+   * Keeps the component's space while there are no suggestions, without
+   * showing anything: for suggestions that arrive later (loaded, generated) or
+   * may not come at all, so the layout around it (a centred composer) is the
+   * same either way and does not move. The header row is then kept too,
+   * whether or not there is a headline or anything to step through. Without
+   * it, an empty list renders nothing.
+   */
+  reserveSpace?: boolean;
+  /**
+   * The suggestions are still being loaded or generated. While there are none
+   * yet, placeholder chips stand in for them. They follow `revealDelay` like
+   * the suggestions themselves, so a load that is over within that pause
+   * never shows them.
+   */
+  loading?: boolean;
+  /** Announced to screen readers while the placeholders stand in ("Vorschläge werden geladen"). */
+  loadingLabel?: string;
   /** Disables every suggestion (e.g. no sources to ask about yet). */
   disabled?: boolean;
   /** Leading icon inside each suggestion. */
@@ -37,6 +55,9 @@ export interface PromptSuggestionsProps
 /** Width of the edge fade in px — also the gap an arrow step leaves before a suggestion. */
 const FADE = 24;
 
+/** The placeholder chips shown while loading: three, of unequal length like real questions. */
+const PLACEHOLDER_WIDTHS = ["15rem", "11rem", "18rem"] as const;
+
 const controlClass = cn(
   "inline-flex size-8 items-center justify-center text-on-surface-variant transition-colors",
   "rounded-[var(--ui-radius-control,var(--radius-action))]",
@@ -58,6 +79,9 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
       onSelect,
       title,
       titleIcon,
+      reserveSpace,
+      loading,
+      loadingLabel,
       disabled,
       icon,
       dismissible,
@@ -81,14 +105,20 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
     // row by one suggestion and are offered only while the row overflows.
     const [revealed, setRevealed] = React.useState(revealDelay <= 0);
     const [dismissed, setDismissed] = React.useState(false);
-    const shown = revealed && !dismissed;
+    const empty = items.length === 0;
+    // Empty and not loading: only there to keep the space (`reserveSpace`).
+    const spaceOnly = empty && !loading;
+    const rendered = !spaceOnly || !!reserveSpace;
+    const shown = revealed && !dismissed && !spaceOnly;
     React.useEffect(() => {
       if (revealDelay <= 0) return;
       const timer = window.setTimeout(() => setRevealed(true), revealDelay);
       return () => window.clearTimeout(timer);
     }, [revealDelay]);
     const rowRef = React.useRef<HTMLUListElement>(null);
-    useScrollFade(rowRef, { axis: "x", size: FADE });
+    // Only over real suggestions — and so it attaches when they arrive in a
+    // list that was not there, or held placeholders, on mount.
+    useScrollFade(rowRef, { axis: "x", size: FADE, enabled: rendered && !empty });
     const [edges, setEdges] = React.useState({ prev: false, next: false });
     React.useLayoutEffect(() => {
       const el = rowRef.current;
@@ -106,7 +136,7 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
         el.removeEventListener("scroll", update);
         ro.disconnect();
       };
-    }, [items.length]);
+    }, [items.length, rendered]);
     const step = (dir: 1 | -1) => {
       const el = rowRef.current;
       if (!el) return;
@@ -119,17 +149,24 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
       const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       el.scrollTo({ left: target ?? (dir === 1 ? el.scrollWidth : 0), behavior: reduced ? "auto" : "smooth" });
     };
-    if (items.length === 0) return null;
-    const scrollable = edges.prev || edges.next;
+    // Placeholders are not stepped through, however many overflow.
+    const scrollable = !empty && (edges.prev || edges.next);
     const canDismiss = dismissible || !!onDismiss;
-    const hasHeader = title != null || scrollable || canDismiss;
+    // With `reserveSpace` the header row is always there: its controls come
+    // and go with the content, and the component must not change its height.
+    const hasHeader = title != null || scrollable || canDismiss || !!reserveSpace;
+    if (!rendered) return null;
 
     return (
       <div
         ref={ref}
         data-slot="prompt-suggestions"
         data-revealed={shown || undefined}
-        aria-hidden={dismissed || undefined}
+        data-empty={spaceOnly ? "" : undefined}
+        aria-hidden={dismissed || spaceOnly || undefined}
+        // Hidden means out of reach at once, not only when the fade is over:
+        // focus inside (the close button just pressed) is released.
+        inert={dismissed || spaceOnly || undefined}
         className={cn(
           "flex flex-col gap-3 transition-[opacity,visibility] duration-700 ease-out motion-reduce:transition-none",
           shown ? "visible opacity-100" : "invisible opacity-0",
@@ -193,10 +230,32 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
         <ul
           ref={rowRef}
           aria-labelledby={title != null ? titleId : undefined}
-          className="relative mx-0 -my-1 flex list-none flex-nowrap gap-2 overflow-x-auto px-0 py-1 [&::-webkit-scrollbar]:hidden"
+          aria-busy={(empty && loading) || undefined}
+          className={cn(
+            "relative mx-0 -my-1 flex list-none flex-nowrap gap-2 px-0 py-1 [&::-webkit-scrollbar]:hidden",
+            // Nothing to scroll to while there are only placeholders.
+            empty ? "overflow-hidden" : "overflow-x-auto",
+          )}
           // Inline, not a utility: an app's unlayered global scrollbar rules would beat it.
           style={{ scrollbarWidth: "none" }}
         >
+          {empty &&
+            // Chips without text, the size of real ones: pulsing while the
+            // suggestions load, otherwise only the row's height.
+            PLACEHOLDER_WIDTHS.map((width) => (
+              <li key={width} aria-hidden="true" className="shrink-0">
+                <span
+                  data-slot="prompt-suggestion-placeholder"
+                  className={cn(
+                    "inline-flex rounded-full border border-transparent px-3 py-2 text-[13px]",
+                    loading && "animate-pulse bg-surface-container-high motion-reduce:animate-none",
+                  )}
+                  style={{ width }}
+                >
+                  &nbsp;
+                </span>
+              </li>
+            ))}
           {items.map((suggestion, index) => (
             <li key={`${index}-${suggestion}`} className="shrink-0">
               <button
@@ -218,6 +277,13 @@ const PromptSuggestions = React.forwardRef<HTMLDivElement, PromptSuggestionsProp
             </li>
           ))}
         </ul>
+        {loadingLabel != null && (
+          // There from the start and filled once the placeholders show, so the
+          // change is announced; `visible` keeps it out of the reveal's hiding.
+          <span role="status" className="sr-only visible">
+            {empty && loading && shown ? loadingLabel : ""}
+          </span>
+        )}
       </div>
     );
   },
