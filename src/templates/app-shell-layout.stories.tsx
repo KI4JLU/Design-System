@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useLayoutEffect, type ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { composeStories } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { ChevronLeft, ChevronRight, LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
+import { AppShellSidePanel } from "../components/app-shell";
 import { Button } from "../components/button";
 import { ChatStage } from "../components/chat-stage";
 import { Logo } from "../components/logo";
@@ -1627,5 +1628,200 @@ export const NativeShellWithNotice: Story = {
     await expect(notice.width).toBeCloseTo(frame.width, 0);
     await expect(column.bottom).toBeCloseTo(notice.top, 0);
     await expect(canvas.getByRole("main").getBoundingClientRect().bottom).toBeCloseTo(notice.top, 0);
+  },
+};
+
+const SIDE_TABS = [
+  { id: "po", title: "Prüfungsordnung, § 12", closeLabel: "Prüfungsordnung, § 12 schließen" },
+  { id: "hb", title: "Modulhandbuch", closeLabel: "Modulhandbuch schließen" },
+];
+
+/** What a page declares beside itself: tabs it opened, state it keeps. */
+const SidePanelDemo = ({ initiallyOpen = true }: { initiallyOpen?: boolean }) => {
+  const [isOpen, setOpen] = useState(initiallyOpen);
+  const [tabs, setTabs] = useState(SIDE_TABS);
+  const [activeTabId, setActive] = useState<string | null>("po");
+  const [width, setWidth] = useState(400);
+  return (
+    <AppShellSidePanel
+      label="Seitenbereich"
+      isOpen={isOpen}
+      onOpenChange={setOpen}
+      expandLabel="Seitenbereich einblenden"
+      collapseLabel="Seitenbereich ausblenden"
+      tabs={tabs}
+      activeTabId={activeTabId}
+      onTabChange={setActive}
+      onTabClose={(id) => {
+        const rest = tabs.filter((tab) => tab.id !== id);
+        setTabs(rest);
+        if (id === activeTabId) setActive(rest[0]?.id ?? null);
+        if (rest.length === 0) setOpen(false);
+      }}
+      tabListLabel="Geöffnete Inhalte"
+      width={width}
+      resize={{ minWidth: 320, maxWidth: 720, onWidthChange: setWidth, label: "Breite des Seitenbereichs ändern" }}
+      launchers={[
+        { id: "po", label: "Prüfungsordnung, § 12" },
+        { id: "hb", label: "Modulhandbuch" },
+        { id: "browser", label: "Browser", disabled: true },
+      ]}
+      onLaunch={(id) => {
+        const tab = SIDE_TABS.find((candidate) => candidate.id === id);
+        if (!tab) return;
+        if (!tabs.some((open) => open.id === id)) setTabs([...tabs, tab]);
+        setActive(id);
+      }}
+      addLabel="Inhalt öffnen"
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 text-sm">
+        {activeTabId === "po"
+          ? "Die Masterarbeit ist binnen sechs Monaten nach der Ausgabe des Themas abzugeben."
+          : "Modul 12: Abschlussmodul, 30 Leistungspunkte."}
+      </div>
+    </AppShellSidePanel>
+  );
+};
+
+/** The panel and the floating card side by side: neither covers the other. */
+const expectPanelBesideCard = async (canvas: ReturnType<typeof within>, canvasElement: HTMLElement) => {
+  const column = await canvas.findByRole("complementary", { name: "Seitenbereich" });
+  const box = column.getBoundingClientRect();
+  const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
+  const frame = content.parentElement!.parentElement!.getBoundingClientRect();
+  const main = canvas.getByRole("main").getBoundingClientRect();
+  // Where the panel leaves the card no room beside the page, the card has
+  // closed (rule 4); asked for again, it lies over the page.
+  const reopen = within(bar(canvasElement)).queryByRole("button", { name: "Quellen ausklappen" });
+  if (reopen) await userEvent.click(reopen);
+  const card = (await canvas.findByRole("complementary", { name: "Quellen" })).getBoundingClientRect();
+  // A column of the frame: full height, at the end edge, the main area before it.
+  await expect(box.width).toBe(400);
+  await expect(box.top).toBeCloseTo(frame.top, 0);
+  await expect(box.bottom).toBeCloseTo(frame.bottom, 0);
+  await expect(box.right).toBeCloseTo(frame.right, 0);
+  await expect(main.right).toBeCloseTo(box.left, 0);
+  // The card floats over the main area and stops before the panel; so does its toggle.
+  await expect(card.width).toBeGreaterThan(0);
+  await expect(card.right).toBeLessThan(box.left);
+  const cardToggle = within(bar(canvasElement)).getByRole("button", { name: "Quellen einklappen" });
+  await expect(cardToggle.getBoundingClientRect().right).toBeLessThan(box.left);
+  // The strip is level with the bar; the panel's toggle is its last control,
+  // in the frame's top end corner.
+  const strip = column.querySelector("[data-slot='app-shell-side-panel-strip']") as HTMLElement;
+  await expect(strip.getBoundingClientRect().height).toBe(56);
+  await expect(strip.getBoundingClientRect().top).toBeCloseTo(bar(canvasElement).getBoundingClientRect().top, 0);
+  const toggle = within(column).getByRole("button", { name: "Seitenbereich ausblenden" });
+  await expect(frame.right - toggle.getBoundingClientRect().right).toBeCloseTo(8, 0);
+  return { column, strip, frame };
+};
+
+/**
+ * `AppShellSidePanel`: the page declares a tabbed panel beside itself — a
+ * cited source next to the answer. It takes width from the main area; the
+ * floating sources card stays over the main area, beside the panel. The
+ * toggle hides the panel and keeps its tabs; closing the last tab hides it.
+ */
+export const ChatWorkspaceWithSidePanel: Story = {
+  render: () => (
+    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+      <ChatPage />
+      <SidePanelDemo />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const { column, frame } = await expectPanelBesideCard(canvas, canvasElement);
+    // Tabs switch the content.
+    await userEvent.click(within(column).getByRole("tab", { name: "Modulhandbuch" }));
+    await expect(within(column).getByRole("tabpanel", { name: "Modulhandbuch" })).toHaveTextContent("Modul 12");
+    // Hidden, the toggle is the bar's last control, in the same corner, and
+    // the bar keeps its last action clear of both toggles.
+    await userEvent.click(within(column).getByRole("button", { name: "Seitenbereich ausblenden" }));
+    const header = bar(canvasElement);
+    const show = await within(header).findByRole("button", { name: "Seitenbereich einblenden" });
+    await expect(canvas.queryByRole("complementary", { name: "Seitenbereich" })).toBeNull();
+    await expect(frame.right - show.getBoundingClientRect().right).toBeCloseTo(8, 0);
+    const cardToggle = within(header).getByRole("button", { name: "Quellen einklappen" }).getBoundingClientRect();
+    await expect(cardToggle.right).toBeLessThanOrEqual(show.getBoundingClientRect().left);
+    for (const button of within(header).getAllByRole("button")) {
+      const box = button.getBoundingClientRect();
+      if (box.right <= cardToggle.left) continue;
+      await expect(box.left).toBeGreaterThanOrEqual(cardToggle.left);
+    }
+    // Shown again, the tabs are still there, the chosen one active.
+    await userEvent.click(show);
+    const again = await canvas.findByRole("complementary", { name: "Seitenbereich" });
+    await expect(within(again).getByRole("tab", { name: "Modulhandbuch" })).toHaveAttribute("aria-selected", "true");
+    // The + stands right after the last tab, not at the strip's far end.
+    const add = within(again).getByRole("button", { name: "Inhalt öffnen" }).getBoundingClientRect();
+    const lastTab = within(again).getByRole("button", { name: "Modulhandbuch schließen" }).getBoundingClientRect();
+    await expect(add.left - lastTab.right).toBeLessThanOrEqual(12);
+    // Closing the last tab hides the panel; shown again, it lists what it can open.
+    await userEvent.click(within(again).getByRole("button", { name: "Modulhandbuch schließen" }));
+    await userEvent.click(within(again).getByRole("button", { name: "Prüfungsordnung, § 12 schließen" }));
+    await waitFor(() => expect(canvas.queryByRole("complementary", { name: "Seitenbereich" })).toBeNull());
+    await userEvent.click(await within(bar(canvasElement)).findByRole("button", { name: "Seitenbereich einblenden" }));
+    const emptyPanel = await canvas.findByRole("complementary", { name: "Seitenbereich" });
+    await userEvent.click(within(emptyPanel).getByRole("button", { name: "Modulhandbuch" }));
+    await expect(within(emptyPanel).getByRole("tab", { name: "Modulhandbuch" })).toHaveAttribute("aria-selected", "true");
+  },
+};
+
+/** The same panel in a native shell: opaque, its strip part of the title bar. */
+export const NativeShellWorkspaceWithSidePanel: Story = {
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+        <ChatPage />
+        <SidePanelDemo />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const { column, strip } = await expectPanelBesideCard(canvas, canvasElement);
+    await expect(alphaOf(getComputedStyle(column).backgroundColor)).toBe(1);
+    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
+    await expect(region(strip)).toBe("drag");
+    await expect(region(within(column).getByRole("tab", { name: "Modulhandbuch" }))).toBe("no-drag");
+    await expect(region(within(column).getByRole("button", { name: "Seitenbereich ausblenden" }))).toBe("no-drag");
+  },
+};
+
+/**
+ * The frame's shrinking rules, in a 900px frame with the panel shown: the
+ * left column shows as its rail by itself, the main area keeps 360px, the
+ * panel its minimum — and the sources card lies over the page, which does
+ * not move aside for it.
+ */
+export const SidePanelInNarrowFrame: Story = {
+  render: () => (
+    <div style={{ width: 900 }}>
+      <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+        <ChatPage />
+        <SidePanelDemo />
+      </AppShellFixture>
+    </div>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const column = await canvas.findByRole("complementary", { name: "Seitenbereich" });
+    // The history column gave way by itself.
+    await canvas.findByRole("button", { name: "Verlauf ausklappen" });
+    await expect(canvas.queryByRole("button", { name: "Verlauf einklappen" })).toBeNull();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    await expect(main.width).toBeGreaterThanOrEqual(360);
+    await expect(column.getBoundingClientRect().width).toBeGreaterThanOrEqual(320);
+    await expect(column.getBoundingClientRect().right).toBeLessThanOrEqual(900);
+    // The card had no room beside the page and closed by itself. Asked for,
+    // it is over the page, and the page is not asked to keep clear.
+    const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
+    await expect(canvas.queryByRole("complementary", { name: "Quellen" })).toBeNull();
+    await userEvent.click(await canvas.findByRole("button", { name: "Quellen ausklappen" }));
+    const card = (await canvas.findByRole("complementary", { name: "Quellen" })).getBoundingClientRect();
+    await expect(card.width).toBeGreaterThan(0);
+    await expect(card.left).toBeGreaterThanOrEqual(main.left);
+    await expect(content.style.getPropertyValue("--app-shell-bubble-inset")).toBe("");
+    // Hidden, the panel gives the room back and the column returns.
+    await userEvent.click(within(column).getByRole("button", { name: "Seitenbereich ausblenden" }));
+    await canvas.findByRole("button", { name: "Verlauf einklappen" });
   },
 };

@@ -530,11 +530,12 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   column: pass `collapsedPreview` on the panel if you want icons in it. Do
   **not** put your own minimise button into `logo` — the column renders its
   own toggle in the header row, on the edge facing the content, with the
-  `aria-expanded`/`aria-controls` wiring already done. Below `lg` the shell
-  shows **one area at a time** plus a `BottomTabBar`, so the four tab props
-  (`mobileTabs`, `activeMobileTab`, `onMobileTabChange`, `mobileTabBarLabel`)
-  are required and the call site still writes no breakpoint check: which tab
-  shows which area is data. There is no drawer and no burger button any more.
+  `aria-expanded`/`aria-controls` wiring already done. Below `md` the page
+  stays on screen and the columns open over it — the navigation as a drawer,
+  the right panel as a `BottomSheet`. The props `mobileTabs`,
+  `activeMobileTab` and `onMobileTabChange` name what is open there, and the
+  call site still writes no breakpoint check: which id shows which area is
+  data. There is no tab bar.
   A second column on the right is `rightPanel` (an `AppShellPanel`, the same
   shape `AppShell.left`/`.right` take). Do not compose `AppShell` +
   `SidePanel` by hand to get any of this. Every nav row that should collapse

@@ -69,7 +69,7 @@ function stubMatchMedia(): void {
   vi.stubGlobal("matchMedia", (query: string) => ({
     // The viewport query answers „desktop" so the shell renders its wide
     // arrangement; `prefers-color-scheme` (ThemeProvider's) still answers „no".
-    matches: query === "(min-width: 64rem)",
+    matches: query === "(min-width: 48rem)",
     media: query,
     onchange: null,
     addEventListener: () => {},

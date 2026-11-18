@@ -14,13 +14,14 @@ import { SIDE_PANEL_RAIL_WIDTH } from "../components/side-panel-variants";
  */
 
 /**
- * Tailwind's `lg` breakpoint, as a media query: `--breakpoint-lg: 64rem` in
- * `node_modules/tailwindcss/theme.css` (this repo adds no `--breakpoint-*`
- * override). The same value the `lg:` utilities elsewhere in this library use,
- * and the boundary the source implementation uses (JustRAG's `useIsMobile`:
- * `max-width: 1023px` = 1024px = 64rem at the 16px default root size).
+ * Tailwind's `md` breakpoint, as a media query: `--breakpoint-md: 48rem`
+ * (768px at the 16px default root size). Below it a frame is one area on
+ * screen with drawers over it. It was `lg` (64rem) until the side panel
+ * came: a 900px window is a narrow desktop — its columns give way by the
+ * frame's shrinking rules — not a phone. Consumers that ask the same
+ * question (JustRAG's `useIsMobile`, `max-width: 767px`) use this value.
  */
-export const DESKTOP_QUERY = "(min-width: 64rem)";
+export const DESKTOP_QUERY = "(min-width: 48rem)";
 
 function subscribeToViewport(onStoreChange: () => void): () => void {
   // `matchMedia` is missing in jsdom (verified: jsdom 29 does not implement
