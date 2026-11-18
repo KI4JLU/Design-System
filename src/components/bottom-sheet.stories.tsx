@@ -10,7 +10,7 @@ import { Button } from "./button";
  * all of it — and scrolls inside the part on screen.
  */
 const meta = {
-  title: "Components/BottomSheet",
+  title: "Components/Overlays/BottomSheet",
   component: BottomSheet,
   parameters: { viewport: { defaultViewport: "mobile1" } },
 } satisfies Meta<typeof BottomSheet>;
