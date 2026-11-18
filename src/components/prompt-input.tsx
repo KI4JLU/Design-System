@@ -28,6 +28,7 @@ import {
   InputGroupTextarea,
 } from "./input-group";
 import { FilePreview } from "./file-preview";
+import { HoverPreview, HoverPreviewGroup } from "./hover-preview";
 import { usePdfPreviewImage } from "../lib/use-pdf-preview";
 import {
   promptInputControlShape,
@@ -73,6 +74,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -333,11 +335,11 @@ export function PromptInputAttachment({
   );
 }
 
-export type AttachmentChipProps = HTMLAttributes<HTMLDivElement> & {
+export type AttachmentChipProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   filename: string;
   mediaType?: string;
   /** The file itself (blob:, data: or http(s)): an image's thumbnail and the
-   *  hover preview. Without it the chip shows the paperclip and the preview
+   *  preview. Without it the chip shows the paperclip and the preview
    *  the file glyph with its type badge. */
   url?: string;
   status?: PromptInputAttachmentStatus;
@@ -345,15 +347,22 @@ export type AttachmentChipProps = HTMLAttributes<HTMLDivElement> & {
   /** Shows the remove button (top right, on hover / focus). Absent: a
    *  read-only chip, e.g. on a sent message. */
   onRemove?: () => void;
-  /** Where the hover preview opens. Default `top`, clear of a composer below. */
+  /** Where the preview opens. Default `top`, clear of a composer below. */
   previewSide?: "top" | "bottom" | "left" | "right";
 };
 
 /**
- * A file chip: the type glyph or image thumbnail, the file name and a hover
- * preview (`FilePreview`). The composer's attachments use it with a remove
- * button (`PromptInputAttachment`); a sent message shows the same chips
- * read-only, so an attachment looks the same before and after sending.
+ * A file chip: the type glyph or image thumbnail, the file name and a
+ * preview (`FilePreview` in a `HoverPreview`: it opens when the pointer rests
+ * on the chip, not while it passes over). The composer's attachments use it
+ * with a remove button (`PromptInputAttachment`); a sent message shows the
+ * same chips read-only, so an attachment looks the same before and after
+ * sending. Several chips in a `HoverPreviewGroup` share one preview card.
+ *
+ * It takes no `title`: a tooltip would show together with the preview. A
+ * name the chip cuts off is written out under the preview instead. The chip
+ * itself is not a focus stop; a consumer that gives it an action makes it a
+ * button (`role`, `tabIndex`), and keyboard focus then opens the preview.
  */
 export function AttachmentChip({
   filename,
@@ -364,8 +373,12 @@ export function AttachmentChip({
   statusMessage,
   onRemove,
   previewSide = "top",
-  ...props
+  ...rest
 }: AttachmentChipProps) {
+  // Dropped at runtime too (the type already refuses it): a title's tooltip
+  // would show together with the preview.
+  const { title: _title, ...props } = rest as typeof rest & { title?: string };
+  void _title;
   const mediaType =
     fileType?.startsWith("image/") && url ? "image" : "file";
   const isImage = mediaType === "image";
@@ -373,13 +386,39 @@ export function AttachmentChip({
   const statusText = status
     ? statusMessage || (status === "uploading" ? "Uploading" : "Upload failed")
     : undefined;
-  // A PDF's first page is rendered when the chip mounts, so the hover card
+  // A PDF's first page is rendered when the chip mounts, so the preview
   // shows a ready bitmap instead of decoding the PDF while it opens.
   const pdfImage = usePdfPreviewImage(url, fileType);
+  const labelRef = useRef<HTMLSpanElement>(null);
 
   return (
-    <PromptInputHoverCard>
-      <HoverCardTrigger asChild>
+    // JLU: the preview opens above the chip by default, so it does not cover
+    // the composer; Radix still flips it when there is no room.
+    <HoverPreview
+      side={previewSide}
+      content={
+        <>
+          {statusText && (
+            <p
+              className={cn(
+                "m-0 mb-2 max-w-40 font-medium text-xs",
+                status === "error" ? "text-error" : "text-on-surface-variant",
+              )}
+            >
+              {statusText}
+            </p>
+          )}
+          {/* Fixed-size card regardless of filename (FilePreview): the picture,
+              first PDF page, or a file glyph with a filetype badge. */}
+          {pdfImage !== undefined ? (
+            <FilePreview filename={filename} loading={pdfImage === null} mediaType={pdfImage ? "image/png" : undefined} url={pdfImage ?? undefined} />
+          ) : (
+            <FilePreview filename={filename} mediaType={fileType} url={url} />
+          )}
+          <AttachmentChipFullName labelRef={labelRef} name={filename} />
+        </>
+      }
+    >
         <div
           data-slot="attachment-chip"
           className={cn(
@@ -422,7 +461,7 @@ export function AttachmentChip({
             </div>
           </div>
 
-          <span className="flex-1 truncate">{attachmentLabel}</span>
+          <span ref={labelRef} className="flex-1 truncate">{attachmentLabel}</span>
           {statusText && <span className="sr-only">{`: ${statusText}`}</span>}
           {onRemove && (
             <Button
@@ -441,30 +480,25 @@ export function AttachmentChip({
             </Button>
           )}
         </div>
-      </HoverCardTrigger>
-      {/* JLU: the preview opens above the chip by default, so it does not
-          cover the composer; Radix still flips it when there is no room. */}
-      <PromptInputHoverCardContent className="w-auto p-2" side={previewSide}>
-        {statusText && (
-          <p
-            className={cn(
-              "mb-2 max-w-40 font-medium text-xs",
-              status === "error" ? "text-error" : "text-on-surface-variant",
-            )}
-          >
-            {statusText}
-          </p>
-        )}
-        {/* Fixed-size card regardless of filename (FilePreview): the picture,
-            first PDF page, or a file glyph with a filetype badge — nothing
-            else, so a long name never resizes it. The name is the chip's text. */}
-        {pdfImage !== undefined ? (
-          <FilePreview filename={filename} loading={pdfImage === null} mediaType={pdfImage ? "image/png" : undefined} url={pdfImage ?? undefined} />
-        ) : (
-          <FilePreview filename={filename} mediaType={fileType} url={url} />
-        )}
-      </PromptInputHoverCardContent>
-    </PromptInputHoverCard>
+    </HoverPreview>
+  );
+}
+
+/**
+ * The whole file name under the preview, only when the chip cuts it off:
+ * a name that fits is already readable right next to the card.
+ */
+function AttachmentChipFullName({ labelRef, name }: { labelRef: RefObject<HTMLSpanElement | null>; name: string }) {
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const label = labelRef.current;
+    setCut(Boolean(label && label.scrollWidth > label.clientWidth));
+  }, [labelRef, name]);
+  if (!cut || !name) return null;
+  return (
+    <p data-slot="attachment-chip-full-name" className="m-0 mt-2 w-40 text-xs text-on-surface [overflow-wrap:anywhere]">
+      {name}
+    </p>
   );
 }
 
@@ -492,9 +526,12 @@ export function PromptInputAttachments({
       className={cn("flex flex-wrap items-center gap-2 p-3 w-full", className)}
       {...props}
     >
-      {attachments.files.map((file) => (
-        <Fragment key={file.id}>{children(file)}</Fragment>
-      ))}
+      {/* One preview card for the row: it moves from chip to chip. */}
+      <HoverPreviewGroup>
+        {attachments.files.map((file) => (
+          <Fragment key={file.id}>{children(file)}</Fragment>
+        ))}
+      </HoverPreviewGroup>
     </div>
   );
 }
