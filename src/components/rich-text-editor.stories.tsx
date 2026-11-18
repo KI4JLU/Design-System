@@ -5,7 +5,7 @@ import { RichTextEditor } from "./rich-text-editor";
 import { TooltipProvider } from "./tooltip";
 
 const meta = {
-  title: "Components/RichTextEditor",
+  title: "Components/Forms/RichTextEditor",
   component: RichTextEditor,
   decorators: [(Story) => <TooltipProvider><Story /></TooltipProvider>],
 } satisfies Meta<typeof RichTextEditor>;

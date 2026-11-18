@@ -10,7 +10,7 @@ import { Task, TaskContent, TaskItem, TaskItemFile, TaskTrigger } from "./task";
  * imported with the AI Elements CLI. Open by default.
  */
 const meta = {
-  title: "Components/Task",
+  title: "Components/AI/Task",
   component: Task,
 } satisfies Meta<typeof Task>;
 

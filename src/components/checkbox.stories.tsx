@@ -5,7 +5,7 @@ import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 
 const meta = {
-  title: "Components/Checkbox",
+  title: "Components/Forms/Checkbox",
   component: Checkbox,
 } satisfies Meta<typeof Checkbox>;
 

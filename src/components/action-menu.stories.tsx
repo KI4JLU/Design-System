@@ -4,7 +4,7 @@ import { Pencil, Settings, SlidersHorizontal, Trash2, UserPlus } from "lucide-re
 import { ActionMenu } from "./action-menu";
 
 const meta = {
-  title: "Components/ActionMenu",
+  title: "Components/Actions/ActionMenu",
   component: ActionMenu,
   parameters: { layout: "centered", a11y: { test: "error" } },
 } satisfies Meta<typeof ActionMenu>;

@@ -11,7 +11,7 @@ const OPTIONS = [
 ];
 
 const meta = {
-  title: "Components/SegmentedControl",
+  title: "Components/Forms/SegmentedControl",
   component: SegmentedControl,
   args: {
     options: OPTIONS,

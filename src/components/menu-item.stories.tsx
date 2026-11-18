@@ -3,7 +3,7 @@ import { Check, ExternalLink, LogOut, SlidersHorizontal } from "lucide-react";
 import { MenuItem } from "./menu-item";
 
 const meta = {
-  title: "Components/MenuItem",
+  title: "Components/Actions/MenuItem",
   component: MenuItem,
   argTypes: {
     variant: { control: "select", options: ["default", "destructive"] },

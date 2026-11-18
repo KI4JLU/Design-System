@@ -13,7 +13,7 @@ import { Shimmer } from "./shimmer";
 import { expect } from "storybook/test";
 
 const meta = {
-  title: "Components/MessageScroller",
+  title: "Components/AI/MessageScroller",
   component: MessageScroller,
 } satisfies Meta<typeof MessageScroller>;
 

@@ -8,7 +8,7 @@ import { ColorField } from "./color-field";
 import { SettingsRow } from "./settings-dialog";
 
 const meta = {
-  title: "Components/ColorField",
+  title: "Components/Forms/ColorField",
   component: ColorField,
 } satisfies Meta<typeof ColorField>;
 

@@ -18,7 +18,7 @@ const SORT_OPTIONS = [
 ];
 
 const meta = {
-  title: "Components/ListToolbar",
+  title: "Components/Lists & Filters/ListToolbar",
   component: ListToolbar,
 } satisfies Meta<typeof ListToolbar>;
 

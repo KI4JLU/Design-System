@@ -20,7 +20,7 @@ import { contrastRatio } from "../test/fixtures/real-pointer";
  * (tone `secondary`). Closed by default.
  */
 const meta = {
-  title: "Components/ChainOfThought",
+  title: "Components/AI/ChainOfThought",
   component: ChainOfThought,
 } satisfies Meta<typeof ChainOfThought>;
 

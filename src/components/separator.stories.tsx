@@ -8,7 +8,7 @@ import { Separator } from "./separator";
  * decorative by default (hidden from assistive technology).
  */
 const meta = {
-  title: "Components/Separator",
+  title: "Components/Data Display/Separator",
   component: Separator,
 } satisfies Meta<typeof Separator>;
 

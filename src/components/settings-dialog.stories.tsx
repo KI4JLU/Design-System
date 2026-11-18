@@ -18,7 +18,7 @@ import { Textarea } from "./textarea";
 import { page, resolvedColor, resolvedStyle } from "../test/fixtures/combobox-panel";
 
 const meta = {
-  title: "Components/SettingsDialog",
+  title: "Components/Overlays/SettingsDialog",
   component: SettingsDialog,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof SettingsDialog>;

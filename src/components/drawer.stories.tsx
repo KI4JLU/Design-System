@@ -21,7 +21,7 @@ import { PreviewContent } from "./inline-citation.stories";
  * Dialog underneath: `role="dialog"`, named by `DrawerTitle`.
  */
 const meta = {
-  title: "Components/Drawer",
+  title: "Components/Overlays/Drawer",
   component: Drawer,
 } satisfies Meta<typeof Drawer>;
 

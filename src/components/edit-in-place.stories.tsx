@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
  * gradient and on a plain surface alike. Focus makes the outline solid.
  */
 const meta = {
-  title: "Components/Edit in place",
+  title: "Components/Forms/EditInPlace",
   parameters: { layout: "padded", a11y: { test: "error" } },
 } satisfies Meta;
 

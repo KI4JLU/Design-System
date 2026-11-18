@@ -4,7 +4,7 @@ import { NoticeDialog, NoticeDialogLink } from "./notice-dialog";
 import { Button } from "./button";
 
 const meta = {
-  title: "Components/NoticeDialog",
+  title: "Components/Feedback/NoticeDialog",
   component: NoticeDialog,
 } satisfies Meta<typeof NoticeDialog>;
 

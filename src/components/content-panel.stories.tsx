@@ -4,7 +4,7 @@ import { Button } from "./button";
 import { Textarea } from "./textarea";
 
 const meta = {
-  title: "Components/ContentPanel",
+  title: "Layout/ContentPanel",
   component: ContentPanel,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ContentPanel>;

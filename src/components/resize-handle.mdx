@@ -5,6 +5,10 @@ import * as ResizeHandleStories from "./resize-handle.stories";
 
 # ResizeHandle
 
+> **Internal part of `AppShellLayout`.** A resizable column gets its handle
+> from `AppShellLayout` (`leftResize`); use `ResizeHandle` directly only
+> between two areas the shell does not own.
+
 Der zugängliche Ziehgriff zwischen zwei Bereichen. Ersetzt inline gestylte
 `div`-Griffe mit eigener Tastaturlogik pro Einsatzort.
 

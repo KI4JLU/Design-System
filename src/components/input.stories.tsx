@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { Input } from "./input";
 
 const meta = {
-  title: "Components/Input",
+  title: "Components/Forms/Input",
   component: Input,
   args: { placeholder: "Suchen…" },
   argTypes: {

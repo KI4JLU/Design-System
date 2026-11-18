@@ -17,7 +17,7 @@ import { FormControl, FormItem, FormLabel } from "./form";
 import { Input } from "./input";
 
 const meta = {
-  title: "Components/Alert",
+  title: "Components/Feedback/Alert",
   component: Alert,
   parameters: { a11y: { test: "error" } },
   args: {

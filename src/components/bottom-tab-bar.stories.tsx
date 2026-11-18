@@ -11,7 +11,7 @@ const ITEMS: BottomTabBarItem[] = [
 ];
 
 const meta = {
-  title: "Layout/BottomTabBar",
+  title: "Components/Navigation/BottomTabBar",
   component: BottomTabBar,
   args: {
     items: ITEMS,

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Shimmer } from "./shimmer";
 
 const meta = {
-  title: "Components/Shimmer",
+  title: "Components/Feedback/Shimmer",
   component: Shimmer,
   args: { children: "Denke nach …" },
 } satisfies Meta<typeof Shimmer>;

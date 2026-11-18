@@ -10,7 +10,7 @@ const OPTIONS = [
 ];
 
 const meta = {
-  title: "Components/FilterChips",
+  title: "Components/Lists & Filters/FilterChips",
   component: FilterChips,
   args: {
     options: OPTIONS,

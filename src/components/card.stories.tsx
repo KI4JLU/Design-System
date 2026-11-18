@@ -18,7 +18,7 @@ import { Badge } from "./badge";
 import { ActionMenu } from "./action-menu";
 
 const meta = {
-  title: "Components/Card",
+  title: "Components/Data Display/Card",
   component: Card,
 } satisfies Meta<typeof Card>;
 

@@ -6,7 +6,7 @@ import { Button } from "./button";
 import { Message, MessageContent } from "./message";
 
 const meta = {
-  title: "Components/TitleTooltips",
+  title: "Components/Overlays/TitleTooltips",
   component: TitleTooltips,
 } satisfies Meta<typeof TitleTooltips>;
 

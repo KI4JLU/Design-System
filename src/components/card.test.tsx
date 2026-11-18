@@ -38,7 +38,7 @@ describe("Card", () => {
  * edge through one custom property, and every part falls back to neutral
  * without it. jsdom applies no Tailwind, so the contract pinned here is the
  * property, the slots and the fallbacks written into the classes; the look is
- * pinned by the `Components/Card` stories.
+ * pinned by the `Components/Data Display/Card` stories.
  */
 describe("Card hairline parts", () => {
   it("hands accentColor to the parts as --card-accent, made legible, with its on-colour", () => {
