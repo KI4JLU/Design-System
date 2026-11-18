@@ -567,7 +567,7 @@ Until then the git path carries us; keep the README's git section first.
   - **Feature: `AppShellPanel.narrowAction`** / `AppShellLayout` `sidebarNarrowAction`: the navigation's primary action in the drawer's bottom row, beside the footer in its short form.
   - **Feature: `AppShellPanel.closeLabel`** (right card): given, the card has a close button in its top end corner.
   - **Feature: `BottomSheet`** (see the inventory): content height up to half the screen, then half/full stops.
-  - **`Drawer` is on Base UI** (`@base-ui/react` 1.9.0 in, `vaul` out; externalised in the build). Exports and `direction` stay; new `DrawerBody`, and `snapPoints` / `snapPoint` / `onSnapPointChange` pass through. **Breaking for selectors only:** `data-vaul-drawer-direction` is `data-direction`; `DrawerTrigger` / `DrawerClose` keep `asChild`.
+  - **`Drawer` is on Base UI** (`@base-ui/react` 1.9.0 in, `vaul` out; externalised in the build). Exports and `direction` stay; new `DrawerBody`, and `snapPoints` / `snapPoint` / `onSnapPointChange` pass through. **Breaking:** the selector `data-vaul-drawer-direction` is `data-direction`, and `DrawerContent` takes Base UI's popup props — Radix's `onOpenAutoFocus` / `onCloseAutoFocus` are `initialFocus` / `finalFocus` (JustRAG's citation sheet used the latter). `DrawerTrigger` / `DrawerClose` keep `asChild`.
   - Icon buttons of the side panel and the card's close button have tooltips, with the shortcut where one is named.
 - **0.82.0** — Breaking for importers of `noticeVariants` only; no app imports it.
   - **Breaking: `noticeVariants` is removed** (deprecated since 0.62.0). It was `alertVariants` under another name: import `alertVariants`. `Notice` stays, deprecated, until its consumers have moved to `Alert`.
