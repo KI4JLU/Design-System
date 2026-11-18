@@ -10,7 +10,7 @@ const OPTIONS = [
 ];
 
 const meta = {
-  title: "Components/FilterMenu",
+  title: "Components/Lists & Filters/FilterMenu",
   component: FilterMenu,
   args: {
     icon: ArrowUpDown,

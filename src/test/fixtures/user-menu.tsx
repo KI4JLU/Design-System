@@ -15,7 +15,7 @@ import { SidebarUserMenu } from "../../components/sidebar-user-menu";
  * to the real providers the Storybook decorator mounts. A choice in the dialog
  * therefore switches the whole canvas (the toolbar's next change wins again).
  *
- * One copy for two users: `Components/SidebarUserMenu → OpensSettings` (the
+ * One copy for two users: `Components/Navigation/SidebarUserMenu → OpensSettings` (the
  * flow on its own, KI-850) and the `AppShellLayout` fixture in `./app-shell`
  * (the flow in its real position, the column footer).
  *

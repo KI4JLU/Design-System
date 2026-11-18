@@ -9,7 +9,7 @@ import { expect, userEvent, waitFor } from "storybook/test";
 import { resolvedStyle } from "../test/fixtures/combobox-panel";
 
 const meta = {
-  title: "Components/SidebarCard",
+  title: "Components/Navigation/SidebarCard",
   component: SidebarCard,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof SidebarCard>;

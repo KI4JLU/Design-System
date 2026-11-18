@@ -9,7 +9,7 @@ const EMBED_SNIPPET = `<!-- Chat-Widget Embed -->
 ></script>`;
 
 const meta = {
-  title: "Components/CodeBlock",
+  title: "Components/Data Display/CodeBlock",
   component: CodeBlock,
   args: { code: EMBED_SNIPPET },
 } satisfies Meta<typeof CodeBlock>;

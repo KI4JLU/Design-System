@@ -9,7 +9,7 @@ import { PreviewBackLink, PreviewDialog } from "./preview-dialog";
 import { RichTextEditor } from "./rich-text-editor";
 
 const meta = {
-  title: "Components/PreviewDialog",
+  title: "Components/Files/PreviewDialog",
   component: PreviewDialog,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof PreviewDialog>;

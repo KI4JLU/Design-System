@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsib
  * `Reasoning`, `ChainOfThought` and `Task`.
  */
 const meta = {
-  title: "Components/Collapsible",
+  title: "Components/Data Display/Collapsible",
   component: Collapsible,
 } satisfies Meta<typeof Collapsible>;
 

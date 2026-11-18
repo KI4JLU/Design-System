@@ -6,7 +6,7 @@ import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 
 const meta = {
-  title: "Components/Popover",
+  title: "Components/Overlays/Popover",
   component: Popover,
 } satisfies Meta<typeof Popover>;
 

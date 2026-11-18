@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Logo } from "./logo";
 
 const meta = {
-  title: "Components/Logo",
+  title: "Components/Data Display/Logo",
   component: Logo,
   args: { product: "App" },
   argTypes: {

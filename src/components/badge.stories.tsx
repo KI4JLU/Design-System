@@ -3,7 +3,7 @@ import { CircleCheck, LoaderCircle, TrendingUp, TriangleAlert } from "lucide-rea
 import { Badge } from "./badge";
 
 const meta = {
-  title: "Components/Badge",
+  title: "Components/Feedback/Badge",
   component: Badge,
   args: { children: "Status" },
   argTypes: {

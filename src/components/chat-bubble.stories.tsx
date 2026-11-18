@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ChatBubble } from "./chat-bubble";
 
 const meta = {
-  title: "Components/ChatBubble",
+  title: "Components/AI/ChatBubble",
   component: ChatBubble,
   args: { children: "Hallo, wie kann ich helfen?" },
   argTypes: {

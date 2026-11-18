@@ -4,7 +4,7 @@ import { FilePreview } from "./file-preview";
 import { HoverPreviewGroup } from "./hover-preview";
 
 const meta = {
-  title: "Components/AttachmentChip",
+  title: "Components/Files/AttachmentChip",
   component: AttachmentChip,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AttachmentChip>;

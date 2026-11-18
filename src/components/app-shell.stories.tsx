@@ -27,7 +27,17 @@ const TABS: MobilePaneTab[] = [
 const meta = {
   title: "Layout/AppShell",
   component: AppShell,
-  parameters: { layout: "fullscreen" },
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "**Internal part of `AppShellLayout`.** Apps render `AppShellLayout` " +
+          "(Templates), which composes this frame with its columns, bar and tabs; " +
+          "use `AppShell` directly only to build a new shell template.",
+      },
+    },
+  },
   // Basis-Args nur für die Props-Tabelle: jede Story rendert über `render` mit
   // eigenem Zustand, weil Einklapp-Zustand und aktiver Reiter beim Konsumenten
   // liegen und in Storybook nur als lokaler State existieren können.

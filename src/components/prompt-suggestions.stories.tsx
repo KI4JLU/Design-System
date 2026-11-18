@@ -4,7 +4,7 @@ import { fn } from "storybook/test";
 import { PromptSuggestions } from "./prompt-suggestions";
 
 const meta = {
-  title: "Components/PromptSuggestions",
+  title: "Components/AI/PromptSuggestions",
   component: PromptSuggestions,
   args: {
     title: "Vorschläge",

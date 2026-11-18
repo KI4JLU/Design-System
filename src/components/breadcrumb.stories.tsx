@@ -13,7 +13,7 @@ import {
 } from "./breadcrumb";
 
 const meta = {
-  title: "Components/Breadcrumb",
+  title: "Components/Navigation/Breadcrumb",
   component: Breadcrumb,
   parameters: { a11y: { test: "error" } },
 } satisfies Meta<typeof Breadcrumb>;

@@ -24,7 +24,7 @@ import { contrastRatio, realKeyboard } from "../test/fixtures/real-pointer";
  * mobile entry point to a message's actions.
  */
 const meta = {
-  title: "Components/ContextMenu",
+  title: "Components/Actions/ContextMenu",
   component: ContextMenu,
 } satisfies Meta<typeof ContextMenu>;
 

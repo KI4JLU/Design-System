@@ -18,7 +18,7 @@ import {
  * Esc closes and returns focus to the chip. The chip shows only the number.
  */
 const meta = {
-  title: "Components/InlineCitation",
+  title: "Components/AI/InlineCitation",
   component: InlineCitationCard,
   // PreviewContent is a helper shared with the Drawer stories, not a story.
   excludeStories: ["PreviewContent"],

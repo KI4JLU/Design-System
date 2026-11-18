@@ -14,7 +14,7 @@ import { Button } from "./button";
 import { cn } from "../lib/utils";
 
 const meta = {
-  title: "Components/Toast",
+  title: "Components/Feedback/Toast",
   component: Toast,
 } satisfies Meta<typeof Toast>;
 

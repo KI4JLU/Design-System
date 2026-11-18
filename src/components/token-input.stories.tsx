@@ -27,7 +27,7 @@ import { contrastRatio, realHover, realUnhover } from "../test/fixtures/real-poi
  */
 
 const meta = {
-  title: "Components/TokenInput",
+  title: "Components/Forms/TokenInput",
   component: TokenInput,
   // Stricter than the repo-wide `todo`, as for `Combobox`: the ARIA wiring
   // is the point, so an axe violation in any story's end state fails the test.

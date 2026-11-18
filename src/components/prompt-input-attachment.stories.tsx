@@ -13,7 +13,7 @@ import { resolvedColor, resolvedStyle } from "../test/fixtures/combobox-panel";
 import { realHover, realUnhover } from "../test/fixtures/real-pointer";
 
 const meta = {
-  title: "Components/PromptInputAttachment",
+  title: "Components/AI/PromptInputAttachment",
   component: PromptInputAttachment,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof PromptInputAttachment>;

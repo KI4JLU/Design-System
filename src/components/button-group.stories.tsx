@@ -10,7 +10,7 @@ import { Button } from "./button";
  * Joins its children into one bar: inner corners squared, inner borders shared.
  */
 const meta = {
-  title: "Components/ButtonGroup",
+  title: "Components/Actions/ButtonGroup",
   component: ButtonGroup,
 } satisfies Meta<typeof ButtonGroup>;
 

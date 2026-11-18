@@ -125,8 +125,10 @@ const preview: Preview = {
   parameters: {
     // Sidebar order. Without it Storybook keeps the index in import order,
     // which put `Layout/BottomTabBar` first and the landing page `Einführung`
-    // third. Keep it a plain object literal: Storybook reads `storySort`
-    // statically when it builds the index.
+    // third. `Components` is grouped by purpose, in the order a page is
+    // usually built; a new group must be added here or it sorts last. Keep it
+    // a plain object literal: Storybook reads `storySort` statically when it
+    // builds the index.
     options: {
       storySort: {
         order: [
@@ -137,6 +139,17 @@ const preview: Preview = {
           "Templates",
           "Layout",
           "Components",
+          [
+            "Actions",
+            "Forms",
+            "Feedback",
+            "Overlays",
+            "Navigation",
+            "Lists & Filters",
+            "Data Display",
+            "Files",
+            "AI",
+          ],
           "*",
         ],
       },

@@ -5,7 +5,7 @@ import { NavItem } from "./nav-item";
 import { SidePanel } from "./side-panel";
 
 const meta = {
-  title: "Components/NavItem",
+  title: "Components/Navigation/NavItem",
   component: NavItem,
   argTypes: {
     level: { control: "select", options: ["top", "sub"] },

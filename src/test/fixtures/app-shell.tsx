@@ -105,7 +105,7 @@ export const WORKSPACE_SECTION = "Mein Wissen";
  * The search field of the bar's centre region: a DS `Input` with a leading
  * search icon. JLURAG renders a `Combobox` input with the same leading icon
  * there (`GlobalSearch.tsx`); the dropdown is not the fixture's subject — see
- * `Components/Combobox → Default` for it.
+ * `Components/Forms/Combobox → Default` for it.
  */
 export function ShellSearch({ label = "Suchen" }: { label?: string }) {
   return (

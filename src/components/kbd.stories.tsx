@@ -4,7 +4,7 @@ import { Button } from "./button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
 const meta = {
-  title: "Components/Kbd",
+  title: "Components/Data Display/Kbd",
   component: Kbd,
   args: { children: "Esc" },
 } satisfies Meta<typeof Kbd>;

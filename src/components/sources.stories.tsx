@@ -10,7 +10,7 @@ import { realHover } from "../test/fixtures/real-pointer";
  * imported with the shadcn CLI. Closed by default; the trigger opens the list.
  */
 const meta = {
-  title: "Components/Sources",
+  title: "Components/AI/Sources",
   component: Sources,
 } satisfies Meta<typeof Sources>;
 

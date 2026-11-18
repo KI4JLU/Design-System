@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { Button } from "./button";
 
 const meta = {
-  title: "Components/Tooltip",
+  title: "Components/Overlays/Tooltip",
   component: Tooltip,
 } satisfies Meta<typeof Tooltip>;
 

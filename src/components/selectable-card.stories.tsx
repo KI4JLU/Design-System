@@ -8,7 +8,7 @@ import { ActionMenu } from "./action-menu";
 import { resolvedStyle } from "../test/fixtures/combobox-panel";
 
 const meta = {
-  title: "Components/SelectableCard",
+  title: "Components/Forms/SelectableCard",
   component: SelectableCard,
   parameters: { layout: "padded", a11y: { test: "error" } },
 } satisfies Meta<typeof SelectableCard>;

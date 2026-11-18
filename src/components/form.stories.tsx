@@ -12,7 +12,7 @@ import {
 import { Button } from "./button";
 
 const meta = {
-  title: "Components/Form",
+  title: "Components/Forms/Form",
   component: FormItem,
 } satisfies Meta<typeof FormItem>;
 

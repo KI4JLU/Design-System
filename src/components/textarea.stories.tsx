@@ -5,7 +5,7 @@ import { Card } from "./card";
 import { FormItem, FormLabel, FormControl, FormMessage } from "./form";
 
 const meta = {
-  title: "Components/Textarea",
+  title: "Components/Forms/Textarea",
   component: Textarea,
   args: { placeholder: "System-Prompt eingeben…" },
   argTypes: {

@@ -17,7 +17,7 @@ import { useCarouselSlides } from "./carousel-context";
  * long) and the slides in view for a „1–3 von 5" counter.
  */
 const meta = {
-  title: "Components/Carousel",
+  title: "Components/Data Display/Carousel",
   component: Carousel,
 } satisfies Meta<typeof Carousel>;
 

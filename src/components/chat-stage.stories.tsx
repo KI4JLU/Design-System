@@ -12,7 +12,7 @@ const composer = (
 );
 
 const meta = {
-  title: "Components/ChatStage",
+  title: "Components/AI/ChatStage",
   component: ChatStage,
   decorators: [(Story) => <div className="flex h-[560px] flex-col bg-surface">{Story()}</div>],
   args: { composer, footer: "Antworten werden aus deinen Quellen generiert. Die KI kann Fehler machen.", footerId: "chat-disclaimer" },

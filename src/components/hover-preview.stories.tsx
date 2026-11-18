@@ -3,7 +3,7 @@ import { FilePreview } from "./file-preview";
 import { HoverPreview, HoverPreviewGroup } from "./hover-preview";
 
 const meta = {
-  title: "Components/HoverPreview",
+  title: "Components/Overlays/HoverPreview",
   component: HoverPreview,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof HoverPreview>;

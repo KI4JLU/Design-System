@@ -6,7 +6,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "./dropdown-menu";
 import { UserMenuWithSettings } from "../test/fixtures/user-menu";
 
 const meta = {
-  title: "Components/SidebarUserMenu",
+  title: "Components/Navigation/SidebarUserMenu",
   component: SidebarUserMenu,
   args: {
     initials: "JL",

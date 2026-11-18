@@ -15,7 +15,7 @@ import {
 import { InputGroupAddon } from "./input-group";
 
 const meta = {
-  title: "Components/PromptInputAdaptiveTextarea",
+  title: "Components/AI/PromptInputAdaptiveTextarea",
   component: PromptInputAdaptiveTextarea,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof PromptInputAdaptiveTextarea>;

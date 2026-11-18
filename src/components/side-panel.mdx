@@ -5,6 +5,10 @@ import * as SidePanelStories from "./side-panel.stories";
 
 # SidePanel
 
+> **Internal part of `AppShellLayout`.** Apps get their side columns from
+> `AppShellLayout` (Templates), which composes `SidePanel` and `ResizeHandle`;
+> use it directly only to build a new shell template.
+
 Der Rahmen einer einklappbaren Arbeitsbereichs-Leiste: Breite, Einklapp-Zustand,
 Randseite. Ersetzt die handgebaute Doppelung aus „linke Leiste" und „rechte
 Leiste" — die Position ist eine Prop, kein eigener Bestandteil der Komponente.

@@ -11,7 +11,7 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "./reasoning";
  * streaming; `ReasoningContent` renders its string as given (no streamdown).
  */
 const meta = {
-  title: "Components/Reasoning",
+  title: "Components/AI/Reasoning",
   component: Reasoning,
   decorators: [
     (Story) => (

@@ -17,7 +17,7 @@ import {
 } from "./table";
 
 const meta = {
-  title: "Components/Table",
+  title: "Components/Lists & Filters/Table",
   component: Table,
 } satisfies Meta<typeof Table>;
 

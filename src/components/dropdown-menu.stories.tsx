@@ -12,7 +12,7 @@ import { Button } from "./button";
 import { Avatar } from "./avatar";
 
 const meta = {
-  title: "Components/DropdownMenu",
+  title: "Components/Actions/DropdownMenu",
   component: DropdownMenu,
 } satisfies Meta<typeof DropdownMenu>;
 

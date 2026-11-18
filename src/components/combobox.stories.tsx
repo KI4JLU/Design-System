@@ -52,7 +52,7 @@ import {
  */
 
 const meta = {
-  title: "Components/Combobox",
+  title: "Components/Forms/Combobox",
   component: Combobox,
   // Stricter than the repo-wide `todo`: the ARIA wiring is this component's
   // whole point, so an axe violation in any story's end state fails the test.

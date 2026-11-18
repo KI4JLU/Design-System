@@ -279,8 +279,8 @@ container under itself (`ghost-destructive`); the chip `×` fills red
 (`error` with `on-error`), because the error chip's own background is the
 error container.
 
-Live: Storybook `Components/Button → Delete Actions` and
-`Components/SettingsDialog → Delete In Footer`.
+Live: Storybook `Components/Actions/Button → Delete Actions` and
+`Components/Overlays/SettingsDialog → Delete In Footer`.
 
 ## Card
 

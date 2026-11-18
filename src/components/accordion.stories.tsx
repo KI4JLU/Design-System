@@ -11,7 +11,7 @@ import { Badge } from "./badge";
  * of what is folded) or a trailing count are composed there, not props.
  */
 const meta = {
-  title: "Components/Accordion",
+  title: "Components/Data Display/Accordion",
   component: Accordion,
 } satisfies Meta<typeof Accordion>;
 

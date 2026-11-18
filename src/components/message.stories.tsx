@@ -32,7 +32,7 @@ import {
  * (streamdown is not shipped; the app brings its own markdown rendering).
  */
 const meta = {
-  title: "Components/Message",
+  title: "Components/AI/Message",
   component: Message,
   args: { from: "assistant" },
 } satisfies Meta<typeof Message>;

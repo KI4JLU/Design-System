@@ -23,7 +23,7 @@ import { PreviewContent } from "./inline-citation.stories";
  * `BottomSheet`.
  */
 const meta = {
-  title: "Components/Drawer",
+  title: "Components/Overlays/Drawer",
   component: Drawer,
 } satisfies Meta<typeof Drawer>;
 

@@ -11,7 +11,7 @@ import {
 import { FormControl, FormDescription, FormItem, FormLabel } from "./form";
 
 const meta = {
-  title: "Components/Select",
+  title: "Components/Forms/Select",
   component: Select,
 } satisfies Meta<typeof Select>;
 
