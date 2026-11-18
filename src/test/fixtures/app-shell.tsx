@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import {
-  ArrowLeft,
   Compass,
   FolderOpen,
   History,
@@ -17,6 +16,14 @@ import {
   Wrench,
 } from "lucide-react";
 import { AppShellLayout, type AppShellLayoutProps } from "../../templates/app-shell-layout";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "../../components/breadcrumb";
 import { Button } from "../../components/button";
 import { Input } from "../../components/input";
 import { Logo } from "../../components/logo";
@@ -46,9 +53,11 @@ import { UserMenuWithSettings } from "./user-menu";
  *    no `headerActions`, two narrow-screen tabs.
  *  - `workspace` — `KbWorkspaceLayout.tsx` (l. 132–208): the chat history as
  *    the left column (`history/HistoryPanel.tsx`: `SidebarPanel` expanded,
- *    `SidebarRail` collapsed), back button + title as `pageLabel`, a ghost gear
+ *    `SidebarRail` collapsed), the breadcrumb „Mein Wissen / ‹topic›" as
+ *    `pageLabel`, a ghost gear
  *    in `headerActions`, the sources as `rightPanel` with a `collapsedPreview`
- *    rail (`sidebar/SourcesRail.tsx`), both columns resizable, three tabs.
+ *    rail (`sidebar/SourcesRail.tsx`), three tabs. From `lg` up the sources
+ *    float as a card (0.81.0), so only the history column is resizable.
  *
  * `search` is REQUIRED here although it is optional on the component: a
  * central search is the convention of every shell, so a story has to decide
@@ -69,12 +78,28 @@ export interface AppShellFixtureProps
   /** The bar's centre region — required by the fixture, see the note above. */
   search: ReactNode;
   children: ReactNode;
-  /** `workspace` only: a fixed sources-column width instead of the resizable one. */
+  /** `workspace` only: a fixed sources-card width instead of the persisted one. */
   rightWidth?: number;
+  /**
+   * `workspace` only: this user may not see the sources — the card is locked
+   * (`rightPanel.locked`), as JLURAG's `KbWorkspaceLayout.tsx` does without
+   * the `seeSources` capability.
+   */
+  sourcesLocked?: boolean;
 }
+
+/** The reason a locked sources card gives (JLURAG `sourcesLockedReason`). */
+export const SOURCES_LOCKED_REASON =
+  "Mit deiner Rolle in diesem Thema kannst du die Quellen nicht einsehen.";
+
+/** The locked toggle's accessible name (JLURAG: „‹sources› – ‹locked›"). */
+export const SOURCES_LOCKED_LABEL = "Quellen – gesperrt";
 
 /** The workspace's topic title — long enough to truncate in every bar measured. */
 export const WORKSPACE_TITLE = "Prüfungsordnung Informatik (Master of Science), Fassung 2026";
+
+/** The overview section the workspace's breadcrumb leads back to. */
+export const WORKSPACE_SECTION = "Mein Wissen";
 
 /**
  * The search field of the bar's centre region: a DS `Input` with a leading
@@ -88,15 +113,20 @@ export function ShellSearch({ label = "Suchen" }: { label?: string }) {
   );
 }
 
-export function AppShellFixture({ context, rightWidth, ...props }: AppShellFixtureProps) {
+export function AppShellFixture({
+  context,
+  rightWidth,
+  sourcesLocked,
+  ...props
+}: AppShellFixtureProps) {
   return context === "overview" ? (
     <OverviewShell {...props} />
   ) : (
-    <WorkspaceShell rightWidth={rightWidth} {...props} />
+    <WorkspaceShell rightWidth={rightWidth} sourcesLocked={sourcesLocked} {...props} />
   );
 }
 
-type ContextProps = Omit<AppShellFixtureProps, "context" | "rightWidth">;
+type ContextProps = Omit<AppShellFixtureProps, "context" | "rightWidth" | "sourcesLocked">;
 
 const userMenu = <UserMenuWithSettings initials="JL" name="Jamie Lee" role="Admin" />;
 
@@ -331,12 +361,40 @@ function memoryStorage(): Storage {
   } satisfies Storage;
 }
 
+/**
+ * The workspace's `pageLabel`: the path back to the overview section and the
+ * topic, as JLURAG's `KbWorkspaceLayout.tsx` renders it. The section is a real
+ * link (the app opens it in a new tab on a modified click); the topic is the
+ * current page and truncates, the section never does.
+ */
+function WorkspaceBreadcrumb() {
+  return (
+    <Breadcrumb className="min-w-0">
+      <BreadcrumbList className="flex-nowrap">
+        <BreadcrumbItem className="shrink-0">
+          <BreadcrumbLink href="#" onClick={(event) => event.preventDefault()}>
+            {WORKSPACE_SECTION}
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator>/</BreadcrumbSeparator>
+        <BreadcrumbItem className="min-w-0">
+          <BreadcrumbPage className="truncate">{WORKSPACE_TITLE}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
 /** JLURAG's bounds (`hooks/useSidebarResize.ts`): 320 by default, left 150–600, right 300–800. */
 const LEFT_BOUNDS = { min: 150, max: 600 };
 const RIGHT_BOUNDS = { min: 300, max: 800 };
 const DEFAULT_COLUMN_WIDTH = 320;
 
-function WorkspaceShell({ rightWidth, ...props }: ContextProps & { rightWidth?: number }) {
+function WorkspaceShell({
+  rightWidth,
+  sourcesLocked,
+  ...props
+}: ContextProps & { rightWidth?: number; sourcesLocked?: boolean }) {
   const [storage] = useState(memoryStorage);
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
@@ -364,21 +422,7 @@ function WorkspaceShell({ rightWidth, ...props }: ContextProps & { rightWidth?: 
       logo={<Logo product="RAG" />}
       nav={<HistoryNav />}
       navLabel="Verlauf"
-      pageLabel={
-        <span className="flex min-w-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            title="Zurück zur Übersicht"
-            aria-label="Zurück zur Übersicht"
-            className="shrink-0"
-          >
-            <ArrowLeft size={20} aria-hidden="true" />
-          </Button>
-          <span className="min-w-0 truncate">{WORKSPACE_TITLE}</span>
-        </span>
-      }
+      pageLabel={<WorkspaceBreadcrumb />}
       headerActions={
         <Button
           type="button"
@@ -402,22 +446,41 @@ function WorkspaceShell({ rightWidth, ...props }: ContextProps & { rightWidth?: 
       }}
       collapseLabel="Verlauf einklappen"
       expandLabel="Verlauf ausklappen"
-      rightPanel={{
-        content: <SourcesContent />,
-        collapsedPreview: <SourcesRail />,
-        label: "Quellen",
-        isOpen: rightOpen,
-        onOpenChange: setRightOpen,
-        width: rightWidth ?? persistedRightWidth,
-        resize: {
-          minWidth: RIGHT_BOUNDS.min,
-          maxWidth: RIGHT_BOUNDS.max,
-          onWidthChange: setRightWidth,
-          label: "Breite der Quellen ändern",
-        },
-        expandLabel: "Quellen ausklappen",
-        collapseLabel: "Quellen einklappen",
-      }}
+      rightPanel={
+        sourcesLocked
+          ? {
+              // The toggle keeps its place, locked; no card, no content.
+              content: null,
+              label: "Quellen",
+              isOpen: false,
+              onOpenChange: () => {},
+              expandLabel: SOURCES_LOCKED_LABEL,
+              collapseLabel: SOURCES_LOCKED_LABEL,
+              locked: { description: SOURCES_LOCKED_REASON },
+              toggleTooltip: (
+                <>
+                  <span className="block font-semibold">Quellen</span>
+                  <span className="mt-1 block font-normal">{SOURCES_LOCKED_REASON}</span>
+                </>
+              ),
+            }
+          : {
+              content: <SourcesContent />,
+              collapsedPreview: <SourcesRail />,
+              label: "Quellen",
+              isOpen: rightOpen,
+              onOpenChange: setRightOpen,
+              width: rightWidth ?? persistedRightWidth,
+              resize: {
+                minWidth: RIGHT_BOUNDS.min,
+                maxWidth: RIGHT_BOUNDS.max,
+                onWidthChange: setRightWidth,
+                label: "Breite der Quellen ändern",
+              },
+              expandLabel: "Quellen ausklappen",
+              collapseLabel: "Quellen einklappen",
+            }
+      }
       mobileTabs={WORKSPACE_TABS}
       activeMobileTab={tab}
       onMobileTabChange={setTab}

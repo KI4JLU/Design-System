@@ -68,7 +68,7 @@ component with a different fill; the shared story fixture that renders them is
 | `sidebarFooter` | `ReactNode` | — | Pinned foot of the left column: the user menu. |
 | `navLabel` | `string` | — | Accessible name of the `<nav>` landmark **and** of the column around it (default „Hauptnavigation"). |
 | `pageLabel` | `ReactNode` | — | Current location — headline-sized and bold, but a `<p>` and **not** a heading, on the left of the bar. Optional: omitted, the template renders **no element** for it. Truncates when the bar is short. |
-| `search` | `ReactNode` | — | The bar's **centre** and **the standard fill of every view**: a search field, capped at 28rem and centred on the *bar*, with or without a label. On a short bar it gives way first, down to 8rem. Not rendered below `lg`. |
+| `search` | `ReactNode` | — | The bar's **centre** and **the standard fill of every view**: a search field, capped at 28rem and centred on the *bar*, with or without a label. On a short bar it gives way first, down to 8rem. Not rendered below `md`. |
 | `headerActions` | `ReactNode` | — | Chrome controls at the **right** end of the bar — an icon button, a menu, several, or nothing. The template renders no control of its own there. Below `lg` this region sits next to the logo in the narrow bar. |
 | `leftOpen` | `boolean` | ✅ | Left column expanded (`true`) or the rail (`false`). |
 | `onLeftOpenChange` | `(isOpen: boolean) => void` | ✅ | The toggle was pressed; receives the **requested** state. |
@@ -77,14 +77,15 @@ component with a different fill; the shared story fixture that renders them is
 | `leftWidth` | `number` | — | Expanded width of the left column in px. Omitted, `AppShell`'s 256 default applies. |
 | `leftResize` | `AppShellPanel["resize"]` | — | Makes the left column draggable (`minWidth`, `maxWidth`, `onWidthChange`, `label` — all or nothing). Omitted, no separator. |
 | `rightPanel` | `AppShellPanel` | — | Second column on the right, passed whole (the shape `AppShell.left`/`.right` take), `resize` included. Omitted, no landmark and no rail. |
-| `showRight` | `boolean` | — | `false` takes `rightPanel` out of the **desktop** arrangement **without** touching its `isOpen`, and is ignored below `lg`. Forwarded to `AppShell`. Hide a column per view with this instead of dropping `rightPanel` (that destroys its collapse state). |
+| `showRight` | `boolean` | — | `false` takes `rightPanel` out of the **desktop** arrangement **without** touching its `isOpen`, and is ignored below `md`. Forwarded to `AppShell`. Hide a column per view with this instead of dropping `rightPanel` (that destroys its collapse state). |
 | `notice` | `ReactNode` | — | The system banner, typically `Alert layout="banner"`: the frame's first row, full width over the columns, above the bar, in both arrangements. Pushes the frame down. Omitted, nothing renders. |
 | `noticeLabel` | `string` | — | Accessible name of the `region` around `notice` (default „Systemmeldung"). |
 | `status` | `ReactNode` | — | A floating status message, typically `Alert layout="pill"`: top centre of the main area, over the page (which does not move), stays while the page scrolls. Omitted, nothing renders. |
-| `mobileTabs` | `MobilePaneTab[]` | ✅ | Tabs of the narrow arrangement, each with `pane: "left" \| "main" \| "right"`. |
-| `activeMobileTab` | `string` | ✅ | Id of the current tab — the **only** input that decides which area shows below `lg`. |
-| `onMobileTabChange` | `(id: string) => void` | ✅ | A tab was tapped. |
-| `mobileTabBarLabel` | `string` | ✅ | Accessible name of the tab bar's `navigation` landmark. |
+| `mobileTabs` | `MobilePaneTab[]` | ✅ | The areas of the narrow arrangement, each with `pane: "left" \| "main" \| "right"`. There is no tab bar: the ids name what is open (navigation drawer, sources sheet, neither). |
+| `activeMobileTab` | `string` | ✅ | Id of the current tab — the **only** input that decides which area shows below `md`. |
+| `onMobileTabChange` | `(id: string) => void` | ✅ | A drawer or the sheet was opened or closed; carries the area to show. |
+| `mobileTabBarLabel` | `string` | — | Deprecated and unused: the narrow arrangement has no tab bar. |
+| `sidebarNarrowAction` | `ReactNode` | — | The navigation's primary action below `md` („Neuer Chat"): the end of the drawer's bottom row, beside the footer in its short form. |
 | `children` | `ReactNode` | ✅ | Page content — a content template (`SectionedGridLayout`, `DashboardLayout`, `TableLayout`, `FormLayout`, …) or a `ChatStage`. |
 
 <ArgTypes />
@@ -328,7 +329,7 @@ const [rightWidth, setRightWidth] = usePersistedWidth("myapp.kb.rightWidth", {
   the *right* one. The key moves the separator, `aria-valuenow` reports the
   column. `Home`/`End` are minimum and maximum and therefore **not** mirrored.
 - **No handle on a collapsed column** (the rail is a fixed 60px; a separator
-  there would report a value with no visible effect) and **none below `lg`**
+  there would report a value with no visible effect) and **none below `md`**
   (one area fills the screen — there is nothing to drag the column against).
 - **Omitted, there is no handle**: no separator, no `id` on the `<aside>`,
   default 256.
@@ -362,33 +363,28 @@ import { usePersistedWidth } from "@ki4jlu/design-system";
 
 ## Responsive behaviour
 
-- **from `lg`**: left column | main column | right column, each column full
-  height, `<main>` scrolls on its own.
-- **below `lg`**: top bar (logo + `headerActions`), **one** area,
-  `BottomTabBar` — no burger button, no drawer, no dialog. `search` is not
-  rendered there: a field capped at 28rem and centred has no centre on a
-  390px bar, and an app that needs search on a phone owns that decision.
+- **from `md`** (768px): left column | main column, the right panel as a
+  card over the main area, a page's `AppShellSidePanel` as an end column.
+  `<main>` scrolls on its own. Where the frame gets tight, it gives way in
+  this order: a side panel shrinks to its minimum (the main area keeps
+  360px), the left column shows as its rail, and the card closes at the
+  width where it would stop standing beside the page.
+- **below `md`**: the bar and the page stay on screen. The navigation is a
+  drawer from the left edge, opened by a toggle at the start of the bar; the
+  right panel is a `BottomSheet`, opened by its toggle at the end of the bar;
+  a shown side panel fills the frame. `search` is not rendered there: a field
+  capped at 28rem and centred has no centre on a 390px bar.
 
 <Canvas of={AppShellLayoutStories.Mobile} />
 
-- **Why in JavaScript and not with an `lg:` utility.** Below `lg` an area is
-  not a narrower version of itself: it fills the screen, it ignores the
-  collapse state, and its collapse toggle has to go (a toggle that collapses
-  the only visible area would leave an empty screen and destroy the desktop
-  setting on the way). None of the three can be expressed as a class on the
-  same markup. The app still writes no breakpoint query: which tab shows
-  which area is data (`mobileTabs`).
-- **No focus trap, no Escape, no scroll lock — and that is not an
-  omission.** Those three belong to an **overlay**: content behind a modal
-  dialog must not be reachable, and a dialog needs a way out. The tab
-  arrangement overlays nothing — the area shown **is** the page. With the
-  dialog the requirement disappears instead of staying unmet. What remains is
-  the tab bar's contract: a `navigation` landmark with exactly one
-  `aria-current="page"`.
-- **One `<main>` per arrangement, never two** — and when a *side* column is
-  the area shown below `lg`, there is **no** `main` at all: the main column is
-  not in the tree then, and wrapping a `complementary` in a `main` would be
-  the worse lie.
+- **Why in JavaScript and not with an `md:` utility.** Below `md` a column
+  is not a narrower version of itself: it is a drawer with a different way in
+  and out, and its collapse state — a wide screen's preference — is not read.
+  The app still writes no breakpoint query: which id shows which area is data
+  (`mobileTabs`).
+- **Drawers are overlays**: the page behind is inert, Escape and the scrim
+  close them, and the focus returns to the toggle.
+- **One `<main>`**, in every arrangement.
 - **Every node is mounted exactly once**, in every arrangement. There is no
   drawer that would render the nav a second time and duplicate every `id` in
   it.

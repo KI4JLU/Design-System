@@ -55,7 +55,7 @@ function stubViewport(isDesktop: boolean): void {
     "matchMedia",
     (query: string) =>
       ({
-        matches: isDesktop && query === "(min-width: 64rem)",
+        matches: isDesktop && query === "(min-width: 48rem)",
         media: query,
         onchange: null,
         addEventListener: () => {},
@@ -641,8 +641,8 @@ describe("AppShellLayout — the left column's width (0.36.0)", () => {
  * that decide it; the story pins the pixels.
  */
 describe("AppShellLayout — the bar takes the column gutter (0.37.0)", () => {
-  /** The bar's own row: the single child of the `banner` landmark. */
-  const row = () => bar().firstElementChild as HTMLElement;
+  /** The bar's own row: the `banner`'s one `div` (the shell's toggles beside it are buttons and spans). */
+  const row = () => bar().querySelector(":scope > div") as HTMLElement;
 
   it.each([
     ["wide", true],
@@ -714,23 +714,23 @@ describe("AppShellLayout — showRight forwarding (0.37.0)", () => {
       mobileTabs: [...TABS, { id: "sources", icon: <Home />, label: "Quellen", pane: "right" }],
       activeMobileTab: "sources",
     });
-    expect(screen.getByRole("complementary", { name: "Quellen" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Quellen" })).toBeInTheDocument();
   });
 });
 
 describe("AppShellLayout — below lg", () => {
-  it("shows the brand in the bar, a tab bar, and no dialog anywhere", () => {
+  it("shows the brand in the bar with the navigation toggle before it, and no tab bar", () => {
     stubViewport(false);
     renderLayout({ pageLabel: "Dashboard", nav: collapsibleNav });
 
     expect(bar()).toHaveTextContent("Marke");
-    expect(
-      screen.getByRole("navigation", { name: "Bereichswechsel" }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Bereichswechsel" })).toBeNull();
+    const toggle = within(bar()).getByRole("button", { name: COLUMN_LABELS.expand });
+    expect(precedes(toggle, within(bar()).getByText("Marke"))).toBe(true);
+    // Closed until asked for.
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0);
-    // The wide bar's other two regions are not on a 360px screen…
+    // The wide bar's other two regions are not on a 360px screen.
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-    // …and the nav column is reached through its tab, not through a burger.
     expect(screen.getByRole("main")).toHaveTextContent("Inhalt");
     expect(screen.queryAllByRole("complementary")).toHaveLength(0);
   });
@@ -743,23 +743,22 @@ describe("AppShellLayout — below lg", () => {
     expect(bar()).toContainElement(screen.getByRole("searchbox", { name: "Suche" }));
   });
 
-  it("shows the nav column, without a collapse control, when its tab is active", () => {
+  it("shows the nav in a drawer when its area is active, whatever the wide screen's collapse state", async () => {
     stubViewport(false);
     renderLayout({ nav: collapsibleNav, leftOpen: false, activeMobileTab: "nav" });
 
-    const column = screen.getByRole("complementary", { name: "Hauptnavigation" });
-    expect(within(column).getByRole("navigation")).toBeInTheDocument();
-    expect(within(column).getByRole("button", { name: "Team" })).toBeInTheDocument();
-    for (const name of Object.values(COLUMN_LABELS)) {
-      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-    }
+    const drawer = await screen.findByRole("dialog", { name: "Hauptnavigation" });
+    expect(within(drawer).getByRole("navigation")).toBeInTheDocument();
+    // In full, not as the rail's icons.
+    expect(within(drawer).getByRole("button", { name: "Team" })).toHaveTextContent("Team");
+    expect(within(drawer).getByRole("button", { name: COLUMN_LABELS.collapse })).toBeInTheDocument();
   });
 
-  it("reports a tab change to the consumer", async () => {
+  it("reports the area the navigation toggle asks for to the consumer", async () => {
     stubViewport(false);
     const onMobileTabChange = vi.fn();
     renderLayout({ onMobileTabChange });
-    await userEvent.click(screen.getByRole("button", { name: "Bereiche" }));
+    await userEvent.click(screen.getByRole("button", { name: COLUMN_LABELS.expand }));
     expect(onMobileTabChange).toHaveBeenCalledWith("nav");
   });
 });

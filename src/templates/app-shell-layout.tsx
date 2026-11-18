@@ -80,6 +80,12 @@ export interface AppShellLayoutProps
   nav: React.ReactNode;
   /** Pinned bottom of the left column (user menu). */
   sidebarFooter?: React.ReactNode;
+  /**
+   * The navigation's primary action below `lg` („Neuer Chat"): a button in
+   * the drawer's bottom row, beside `sidebarFooter`. See
+   * `AppShellPanel.narrowAction`.
+   */
+  sidebarNarrowAction?: React.ReactNode;
   /** Accessible name of the navigation landmark, and of the column around it. */
   navLabel?: string;
   /**
@@ -239,6 +245,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
       logo,
       nav,
       sidebarFooter,
+      sidebarNarrowAction,
       navLabel = "Hauptnavigation",
       pageLabel,
       search,
@@ -497,6 +504,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
           ),
           header: logo,
           footer: sidebarFooter ? <div className="p-2">{sidebarFooter}</div> : undefined,
+          narrowAction: sidebarNarrowAction,
           label: navLabel,
           isOpen: leftOpen,
           onOpenChange: onLeftOpenChange,
