@@ -179,7 +179,11 @@ function createGroup(initial: Timing, setActive: (item: Item) => void, setOpen: 
     },
     // For the group itself, not the items.
     hide,
-    scheduleClose,
+    /** The pointer left the card: close, unless its item still has the pointer or focus. */
+    cardLeave: () => {
+      if (s.activeId !== null && (s.hoverId === s.activeId || s.focusId === s.activeId)) return;
+      scheduleClose();
+    },
     cancelClose: () => clearTimeout(s.close),
     suppressActive: () => {
       s.suppressedId = s.activeId;
@@ -230,7 +234,8 @@ export interface HoverPreviewGroupProps {
  *   reduced motion it does not slide.
  *
  * Keyboard focus opens a preview the same way (after the rest delay, at once
- * while warm). A press on the item, Escape and any scroll close it. Touch
+ * while warm). A press on the item (pointer, Enter or Space), Escape and any
+ * scroll close it. Touch
  * opens nothing: a preview is a pointer and keyboard affordance, so whatever
  * it shows must be reachable another way.
  *
@@ -315,7 +320,7 @@ function HoverPreviewGroup({
             onFocusOutside={(e) => e.preventDefault()}
             // The pointer may move onto the card (WCAG 1.4.13).
             onPointerEnter={group.cancelClose}
-            onPointerLeave={group.scheduleClose}
+            onPointerLeave={group.cardLeave}
             className={cn(
               "z-50 w-auto rounded-xl border bg-surface-container-lowest p-2 text-on-surface shadow-overlay outline-none duration-150 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
               className,
@@ -381,6 +386,10 @@ function HoverPreviewItem({ content, children, side, align, className, disabled 
         onPointerLeave={() => group.leave(id)}
         onPointerDown={() => {
           if (!disabled) group.press(id);
+        }}
+        // Enter and Space press the trigger too, without a pointer.
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) group.press(id);
         }}
         onFocus={() => {
           const it = item();

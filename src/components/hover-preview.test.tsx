@@ -215,6 +215,39 @@ describe("HoverPreview", () => {
     expect(cards()).toHaveLength(0);
   });
 
+  it("stays open when the pointer leaves the card while the item keeps focus", () => {
+    const matches = Element.prototype.matches;
+    vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, sel: string) {
+      return sel === ":focus-visible" ? this === document.activeElement : matches.call(this, sel);
+    });
+    renderList();
+    act(() => row("A").focus());
+    wait(REST);
+    fireEvent.pointerEnter(cards()[0]);
+    fireEvent.pointerLeave(cards()[0]);
+    wait(CLOSE * 3);
+    expect(cards()).toHaveLength(1);
+    act(() => row("A").blur());
+    wait(CLOSE);
+    expect(cards()).toHaveLength(0);
+  });
+
+  it.each(["Enter", " "])("closes when the focused item is pressed with %j", (key) => {
+    const matches = Element.prototype.matches;
+    vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, sel: string) {
+      return sel === ":focus-visible" ? this === document.activeElement : matches.call(this, sel);
+    });
+    renderList();
+    act(() => row("A").focus());
+    wait(REST);
+    expect(cards()).toHaveLength(1);
+    fireEvent.keyDown(row("A"), { key });
+    expect(cards()).toHaveLength(0);
+    // Not again while focus stays on the pressed item.
+    wait(REST * 2);
+    expect(cards()).toHaveLength(0);
+  });
+
   it("does not open for focus that came from a click", () => {
     const matches = Element.prototype.matches;
     vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, sel: string) {
