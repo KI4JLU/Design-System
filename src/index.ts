@@ -611,6 +611,12 @@ export {
   type TokenInputChipTone,
 } from "./components/token-input";
 export { HoverCard, HoverCardTrigger, HoverCardContent } from "./components/hover-card";
+export {
+  HoverPreview,
+  HoverPreviewGroup,
+  type HoverPreviewProps,
+  type HoverPreviewGroupProps,
+} from "./components/hover-preview";
 export { PdfThumbnail, type PdfThumbnailProps } from "./components/pdf-thumbnail";
 export { preloadPdfjs, renderPdfFirstPage, setPdfWorkerSrc, type RenderPdfFirstPageOptions } from "./lib/pdf-render";
 export { usePdfPreviewImage } from "./lib/use-pdf-preview";
