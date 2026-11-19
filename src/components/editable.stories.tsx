@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { Editable, EditableArea, EditableInput, EditablePreview } from "./editable";
 
@@ -18,11 +17,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 function Title() {
-  const [value, setValue] = useState("Arbeit");
   return (
-    <Editable value={value} onValueChange={setValue} onSubmit={setValue} placeholder="Name">
+    <Editable defaultValue="Arbeit" placeholder="Name">
       <EditableArea>
-        <EditablePreview aria-label="Name bearbeiten" />
+        <EditablePreview />
         <EditableInput aria-label="Name" />
       </EditableArea>
     </Editable>
@@ -34,10 +32,10 @@ export const Default: Story = {
   // Oracle: a click turns the text into a field holding it; Escape gives the text back.
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByText("Arbeit"));
+    await userEvent.click(await canvas.findByText("Arbeit"));
     const field = await canvas.findByRole("textbox", { name: "Name" });
     await expect(field).toHaveValue("Arbeit");
     await userEvent.keyboard("{Escape}");
-    await expect(canvas.getByText("Arbeit")).toBeVisible();
+    await expect(await canvas.findByText("Arbeit")).toBeVisible();
   },
 };
