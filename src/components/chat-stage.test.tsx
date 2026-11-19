@@ -31,4 +31,18 @@ describe("ChatStage", () => {
     expect(composer()).not.toHaveClass("mb-auto");
     expect(container.querySelector("[data-slot=chat-stage]")).not.toHaveAttribute("data-empty");
   });
+
+  // Oracle: the header is the first thing in the content region (so an empty
+  // chat centres it with the content) and carries the axis shift; without the
+  // prop nothing renders.
+  it("puts the header row first in the content and moves it with the centre axis", () => {
+    const { container, rerender } = render(<ChatStage header={<span>Rolle</span>}><p>x</p></ChatStage>);
+    const content = container.querySelector("[data-slot=chat-stage-content]") as HTMLElement;
+    const header = content.firstElementChild as HTMLElement;
+    expect(header.dataset.slot).toBe("chat-stage-header");
+    expect(header).toHaveTextContent("Rolle");
+    expect(header.className).toContain("var(--chat-axis-shift,0px)");
+    rerender(<ChatStage><p>x</p></ChatStage>);
+    expect(container.querySelector("[data-slot=chat-stage-header]")).toBeNull();
+  });
 });

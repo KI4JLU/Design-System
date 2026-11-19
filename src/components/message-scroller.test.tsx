@@ -45,6 +45,16 @@ describe("MessageScroller", () => {
     expect(button).toHaveAttribute("data-direction", "end");
   });
 
+  // Oracle: the button's horizontal anchor is the scroller's centre minus the
+  // chat column's axis shift, 0 when no ChatStage consumer sets it (jsdom lays
+  // nothing out, so the class is what can be checked).
+  it("centres the jump button on the chat column's shifted axis", () => {
+    const { container } = render(<Transcript />);
+    const button = container.querySelector('[data-slot="message-scroller-button"]');
+    expect(button?.className).toContain("left-[calc(50%_-_var(--chat-axis-shift,0px))]");
+    expect(button?.className).toContain("-translate-x-1/2");
+  });
+
   it("labels the scroll region in German by default", () => {
     render(<Transcript />);
     expect(screen.getByRole("region", { name: "Nachrichten" })).toBeInTheDocument();
