@@ -59,7 +59,7 @@ restating it.
 ### Premade components first — a standing rule
 
 **If a premade component exists in a shadcn registry (shadcn/ui, AI Elements
-at `elements.ai-sdk.dev`, or another free registry), the DS takes it as
+at `elements.ai-sdk.dev`, ReUI at `reui.io`, or another free registry), the DS takes it as
 published. It does not write its own.** This holds whether or not a card
 mentions it. A component is built from scratch only when no registry has one,
 and the card says so.
@@ -71,7 +71,10 @@ and the card says so.
    `components.json` registers it as `@ai-elements`, so `npx shadcn@latest add
    @ai-elements/<name>` installs from the same URL, and the shadcn MCP can
    search it. The `ai-elements` CLI does the same, but it is announced as deprecated, and
-   `npx ai-elements` without `add <name>` installs **every** component. Copying the registry JSON and
+   `npx ai-elements` without `add <name>` installs **every** component. ReUI is
+   registered as `@reui`, pinned to its Radix build (`/r/styles/radix-vega/`):
+   ReUI has no `new-york` style and redirects it to `base-nova`, its Base UI
+   build. Its Pro blocks need a licence and return 401. Copying the registry JSON and
    rewriting the code by hand is not an import. If the CLI fails, report it as a
    blocker. Don't work around it. Neither CLI may overwrite an existing DS file
    (`badge.tsx`, `shimmer.tsx`, …); revert any it touched.
