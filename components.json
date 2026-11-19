@@ -17,5 +17,8 @@
     "utils": "@/lib/utils",
     "hooks": "@/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "registries": {
+    "@ai-elements": "https://elements.ai-sdk.dev/api/registry/{name}.json"
+  }
 }
