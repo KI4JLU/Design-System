@@ -1262,6 +1262,49 @@ export const WithSystemStatusBottomEnd: Story = {
 };
 
 /**
+ * `statusPosition="top-end"`: the same card in the main area's top-right
+ * corner, for a message that asks for an action — here a new version that
+ * waits for a reload, with no close button.
+ */
+export const WithSystemStatusTopEnd: Story = {
+  render: () => (
+    <AppShellFixture
+      context="overview"
+      search={<ShellSearch />}
+      statusPosition="top-end"
+      status={
+        <Alert tone="info" layout="toast" live="polite">
+          <AlertTitle>Neue Version verfügbar</AlertTitle>
+          <AlertDescription>Lade die Seite neu, um sie zu verwenden.</AlertDescription>
+          <AlertAction>
+            <Button variant="outline" size="sm">
+              Neu laden
+            </Button>
+          </AlertAction>
+        </Alert>
+      }
+    >
+      <SectionedGridPage />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const card = await canvas.findByRole("status");
+    const box = card.getBoundingClientRect();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+
+    // Top-right of the main area, 16px in from both edges.
+    await expect(box.top).toBeCloseTo(main.top + 16, 0);
+    await expect(box.right).toBeCloseTo(main.right - 16, 0);
+    await expect(box.left).toBeGreaterThanOrEqual(main.left);
+    // 24rem at most.
+    await expect(box.width).toBeLessThanOrEqual(384);
+    await expect(within(card).getByRole("button", { name: "Neu laden" })).toBeVisible();
+    await expect(within(card).queryByRole("button", { name: "Schließen" })).toBeNull();
+  },
+};
+
+/**
  * A corner card taller than the screen: it is capped below the bar and scrolls
  * in itself, so its title and close button can still be reached.
  */
