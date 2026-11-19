@@ -14,6 +14,10 @@ export const logoVariants = cva(
         sm: "text-body-base",
         default: "text-headline-md-mobile",
         lg: "text-headline-md",
+        xl: "text-display-lg",
+        // Above the type scale on purpose (its top step is 32px): the
+        // wordmark over an auth card is a brand mark, not a text style.
+        xxl: "text-[3rem]",
       },
     },
     defaultVariants: {
