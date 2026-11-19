@@ -67,8 +67,10 @@ and the card says so.
 1. **Import, don't port.** Install with `npx shadcn@latest add <name or registry
    URL>`. For AI Elements that URL is
    `https://elements.ai-sdk.dev/api/registry/<name>.json`, the current source
-   (the older `registry.ai-sdk.dev/<name>.json` serves a stale revision). The
-   `ai-elements` CLI does the same, but it is announced as deprecated, and
+   (the older `registry.ai-sdk.dev/<name>.json` serves a stale revision).
+   `components.json` registers it as `@ai-elements`, so `npx shadcn@latest add
+   @ai-elements/<name>` installs from the same URL, and the shadcn MCP can
+   search it. The `ai-elements` CLI does the same, but it is announced as deprecated, and
    `npx ai-elements` without `add <name>` installs **every** component. Copying the registry JSON and
    rewriting the code by hand is not an import. If the CLI fails, report it as a
    blocker. Don't work around it. Neither CLI may overwrite an existing DS file
