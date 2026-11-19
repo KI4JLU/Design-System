@@ -218,6 +218,60 @@ describe("SidebarCard", () => {
   });
 });
 
+// Oracle: the prop's contract — the indicator is the row's trailing mark at
+// rest and the ⋯ trigger stands on it; an extra or a checkbox holds that
+// column instead. Geometry is measured in the story (Chromium), not here.
+describe("SidebarCard indicator", () => {
+  const mark = <span role="img" aria-label="Geteiltes Wissen">g</span>;
+  const slot = () => document.querySelector('[data-slot="sidebar-card-indicator"]');
+  const actions = [{ label: "Umbenennen", onSelect: () => {} }];
+
+  it("shows the mark in the trailing column, and the menu trigger stands over it", () => {
+    render(card({ indicator: mark, actions, actionsLabel: "Aktionen für" }));
+    expect(slot()).toContainElement(screen.getByRole("img", { name: "Geteiltes Wissen" }));
+    // Same 32px box as every trailing control, last in the row.
+    expect(slot()).toHaveClass("size-8");
+    expect(screen.getByRole("listitem").lastElementChild).toBe(slot());
+    // The trigger is out of the flow, on the row's end inset — where the mark is.
+    expect(screen.getByRole("button", { name: "Aktionen für Budget" })).toHaveClass("absolute", "right-1");
+    expect(screen.getByRole("listitem")).toHaveClass("relative");
+    // And the mark gives way while the trigger shows.
+    expect(slot()?.className).toContain("group-hover/sidebar-card:opacity-0");
+    expect(slot()?.className).toContain("group-focus-within/sidebar-card:opacity-0");
+    // …and never takes the trigger's clicks while it is under it.
+    expect(slot()?.className).toContain("pointer-events-none");
+  });
+
+  it("keeps the title clear of the mark: no fade, the column is reserved", () => {
+    render(card({ indicator: mark, actions, actionsLabel: "Aktionen für" }));
+    expect(screen.getByRole("button", { name: "Budget" }).className).not.toContain("mask-image");
+    expect(screen.getByRole("listitem")).not.toHaveAttribute("data-menu");
+  });
+
+  it("stays visible on a row without a menu", () => {
+    render(card({ indicator: mark }));
+    expect(slot()).not.toBeNull();
+    expect(slot()?.className).not.toContain("opacity-0");
+  });
+
+  it.each([
+    ["an extra", { extra: <button type="button">Erneut</button> }],
+    ["a checkbox", { selectable: true, onSelectedChange: () => {}, selectLabel: "Auswählen" }],
+    ["selection mode", { selectionMode: true, selectable: true, onSelectedChange: () => {} }],
+  ])("leaves the trailing column to %s", (_name, props) => {
+    render(card({ indicator: mark, actions, actionsLabel: "Aktionen für", ...props }));
+    expect(slot()).toBeNull();
+  });
+
+  it("opens the menu from the trigger over the mark", async () => {
+    const onSelect = vi.fn();
+    render(card({ indicator: mark, actionsLabel: "Aktionen für", actions: [{ label: "Umbenennen", onSelect }] }));
+    await userEvent.click(screen.getByRole("button", { name: "Aktionen für Budget" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Umbenennen" }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("SidebarRailItem / SidebarSelectionBar", () => {
   it("marks the open entry and shows a type label when given", () => {
     render(<><SidebarRailItem aria-label="a.pdf" iconText="PDF" active /><SidebarRailItem aria-label="b" /></>);

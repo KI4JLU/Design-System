@@ -95,6 +95,33 @@ and the card says so.
    an allowed change from step 2. The review checks this diff, not only the
    behaviour.
 
+### Hand-built components follow the registry contract
+
+When no registry has the component and the DS builds it itself, it is built
+**on the API a registry component of that kind has** — so it reads like the
+rest of the library, and a registry component can replace it later without
+rewriting its consumers. Before writing one, read the closest registry
+relatives (shadcn/ui, ReUI, Dice UI, …) and take their contract:
+
+- **Compound parts, named after the registry family** — `Sortable` ·
+  `SortableGroup` · `SortableItem` · `SortableItemHandle` · `SortableOverlay`,
+  not one component with render props.
+- **State through `value`** (plus `defaultValue` where uncontrolled makes
+  sense) and `onValueChange` / `onValueCommit(value, meta)`; items identified
+  by `getItemValue`, parts by a `value` prop.
+- **`asChild`** (Radix `Slot`) to render onto the consumer's own element
+  instead of a wrapper. A part rendered `asChild` leaves the child's own
+  `data-slot` alone.
+- **`data-slot`** on every part and **state as data attributes**
+  (`data-dragging`, `data-drop-target`, `data-state`), styled with
+  `data-[…]:` utilities — no state class names, no injected `className`.
+- `forwardRef`, `className` merged with `cn`, remaining props spread onto the
+  element; variant maps in a sibling `*-variants.ts`.
+- The file's header comment names the registry components whose contract it
+  follows, and why none of them could be imported.
+
+[`sortable.tsx`](../src/components/sortable.tsx) is the reference.
+
 ### shadcn → JLU token mapping
 
 The CLI styles components against its own Tailwind-4 CSS-variable set

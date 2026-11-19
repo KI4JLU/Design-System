@@ -16,6 +16,20 @@ describe("ActionMenu", () => {
     expect(screen.getByRole("button", { name: "Aktionen" })).toHaveClass("bg-primary");
   });
 
+  // Oracle: the trigger reads as a menu button before its dropdown exists,
+  // and the keys of a menu button open it (Enter, Space, ↓).
+  it("is a menu button before first use and opens with the keyboard", async () => {
+    render(<ActionMenu actions={[{ label: "A", onSelect: vi.fn() }]} label="Aktionen" />);
+    const trigger = screen.getByRole("button", { name: "Aktionen" });
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("menu")).toBeNull();
+    trigger.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(await screen.findByRole("menuitem", { name: "A" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aktionen", hidden: true })).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("opens the menu and runs the chosen action", async () => {
     const onRename = vi.fn();
     render(
