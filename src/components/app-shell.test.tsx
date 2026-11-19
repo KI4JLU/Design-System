@@ -726,6 +726,15 @@ describe("AppShell — status position", () => {
     expect(screen.getByRole("main").firstElementChild).toBe(layer);
   });
 
+  it("floats in the main area's top corner at top-end, in the status layer's place", () => {
+    stubViewport(true);
+    renderShell({ status: <p>Neue Version</p>, statusPosition: "top-end" });
+    const layer = screen.getByText("Neue Version").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    expect(layer).toHaveAttribute("data-position", "top-end");
+    expect(screen.getByRole("main").firstElementChild).toBe(layer);
+    expect(screen.getAllByText("Neue Version")).toHaveLength(1);
+  });
+
   it("sits under the main area at bottom-end, outside the scrolling page and the side columns", () => {
     stubViewport(true);
     renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });

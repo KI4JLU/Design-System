@@ -323,17 +323,19 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * The message brings its own live-region role (`Alert live="polite"`), so
    * the slot adds no landmark. Omitted (or falsy), nothing renders.
    *
-   * `statusPosition` moves it to the bottom end of the main area.
+   * `statusPosition` moves it to a corner of the main area.
    */
   status?: React.ReactNode;
   /**
    * Where `status` floats. `top` (default): centred at the top of the main
    * area (`Alert layout="pill"`). `bottom-end`: a card in the bottom-right
    * corner of the main area, up to 24rem wide — full width on a narrow
-   * screen (`Alert layout="toast"`). Either way it covers
-   * the page without moving it; the corner never reaches over a side column.
+   * screen (`Alert layout="toast"`). `top-end`: the same card in the
+   * top-right corner, for a message that asks for an action. Either way it
+   * covers the page without moving it; a corner never reaches over a side
+   * column.
    */
-  statusPosition?: "top" | "bottom-end";
+  statusPosition?: "top" | "top-end" | "bottom-end";
   /**
    * Window-level controls for the title bar of a native shell — history
    * back/forward, typically. Rendered **only under a hidden title bar**
@@ -966,7 +968,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     */
     const mainRef = React.useRef<HTMLElement>(null);
     const [mainHeight, setMainHeight] = React.useState<number | null>(null);
-    const measureMain = Boolean(status) && statusPosition === "bottom-end";
+    const measureMain = Boolean(status) && statusPosition !== "top";
     React.useLayoutEffect(() => {
       const el = mainRef.current;
       if (!measureMain || !el || typeof ResizeObserver === "undefined") {
@@ -1386,6 +1388,28 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       radius and overlay shadow itself: the card's own shadow is clipped by
       the scroller, the holder's is not.
     */
+    /*
+      The top corner: the same card and holder as the bottom corner (below),
+      in the status layer's place — main's first child, sticky and of no
+      height — so it stays in the main area's top-right corner while the page
+      scrolls and never reaches over a side column.
+    */
+    const topCornerLayer = status && statusPosition === "top-end" ? (
+      <div
+        data-slot="app-shell-status"
+        data-position="top-end"
+        className="pointer-events-none sticky top-4 z-20 flex h-0 shrink-0 justify-end overflow-visible px-4"
+      >
+        <div
+          data-slot="app-shell-status-scroller"
+          className="pointer-events-auto h-fit max-h-[calc(100dvh-9.25rem)] w-full overflow-y-auto rounded-[var(--ui-radius-box)] shadow-overlay sm:max-w-sm"
+          style={mainHeight != null ? { maxHeight: Math.max(mainHeight - 32, 0) } : undefined}
+        >
+          {status}
+        </div>
+      </div>
+    ) : null;
+
     const cornerLayer = status && statusPosition === "bottom-end" ? (
       <div
         data-slot="app-shell-status"
@@ -1488,6 +1512,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
+              {topCornerLayer}
               {children}
             </main>
             {cornerLayer}
@@ -1618,6 +1643,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
               {statusLayer}
+              {topCornerLayer}
               {children}
             </main>
             {cornerLayer}

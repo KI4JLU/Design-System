@@ -388,6 +388,28 @@
     30% { opacity: 1; transform: translateY(-25%); }
   }
 
+  /* `Skeleton` / `SkeletonText`: hidden for the first animation's delay (the
+   * `delay` prop sets `animation-delay` on the element — a variable here
+   * would be resolved on :root, not there), then pulsing or — `shimmer` —
+   * with a light band sweeping across. `-reveal` alone is the delay without
+   * motion. The reveal only fills backwards: after the delay the element's
+   * visibility is its own again (a caller's `invisible`, a hidden ancestor). */
+  --animate-skeleton-reveal: jlu-skeleton-appear 0s linear backwards;
+  --animate-skeleton-pulse: jlu-skeleton-appear 0s linear backwards, jlu-skeleton-breathe 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-skeleton-shimmer: jlu-skeleton-appear 0s linear backwards, jlu-skeleton-sweep 1.8s ease-in-out infinite;
+  @keyframes jlu-skeleton-appear {
+    from { visibility: hidden; }
+  }
+  @keyframes jlu-skeleton-breathe {
+    50% { opacity: 0.5; }
+  }
+  /* The highlight is the middle of a background three times the bar's width
+   * (`--skeleton-sheen`): from just off the left edge to just off the right. */
+  @keyframes jlu-skeleton-sweep {
+    from { background-position: 85% 0; }
+    to { background-position: 15% 0; }
+  }
+
   /* --------------------------------------------------------------------------
    * SEMANTISCHE STATUS-/FEEDBACK-TOKENS
    * Ersetzen die verstreuten `green-*` / `teal-*` / `amber-*` Utilities.
@@ -959,4 +981,49 @@ html[data-shell="native"] body {
     [data-slot="settings-row"]:not([data-search-miss]) *
   ) {
   display: none;
+}
+
+/* The shimmer's highlight: a soft, narrow band lighter than the bar, half
+ * see-through, so the bar under it keeps its colour and never looks wiped.
+ * Light: the lightest surface. Dark: that surface is darker than the bar, so
+ * a little of the text colour instead. */
+:root {
+  --skeleton-sheen-color: color-mix(in srgb, var(--color-surface-container-lowest) 55%, transparent);
+  --skeleton-sheen: linear-gradient(90deg, transparent 42%, var(--skeleton-sheen-color) 50%, transparent 58%);
+}
+[data-theme="dark"] {
+  --skeleton-sheen-color: color-mix(in srgb, var(--color-on-surface) 10%, transparent);
+}
+
+/* `SkeletonText`: each heading and paragraph inside becomes one bar, as wide
+ * and as high as its own text. Its text is transparent, what it contains
+ * (pills, icons) is hidden; the wrapper carries the delay. Other elements
+ * (list items, bare spans or divs) are not covered — see the component. */
+[data-slot="skeleton-text"] :is(h1, h2, h3, h4, h5, h6, p) {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: var(--radius-action);
+  background-color: var(--color-surface-container-high);
+  color: transparent !important;
+}
+[data-slot="skeleton-text"][data-align="center"] :is(h1, h2, h3, h4, h5, h6, p) {
+  margin-inline: auto;
+}
+[data-slot="skeleton-text"][data-shimmer] :is(h1, h2, h3, h4, h5, h6, p) {
+  background-image: var(--skeleton-sheen);
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  /* Still: the highlight waits off the bar. */
+  background-position: 85% 0;
+}
+[data-slot="skeleton-text"] :is(h1, h2, h3, h4, h5, h6, p) * {
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="skeleton-text"] :is(h1, h2, h3, h4, h5, h6, p) {
+    animation: jlu-skeleton-breathe 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  [data-slot="skeleton-text"][data-shimmer] :is(h1, h2, h3, h4, h5, h6, p) {
+    animation: jlu-skeleton-sweep 1.8s ease-in-out infinite;
+  }
 }

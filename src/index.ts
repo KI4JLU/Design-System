@@ -47,6 +47,7 @@ export {
   ButtonGroupText,
 } from "./components/button-group";
 export { buttonGroupVariants } from "./components/button-group-variants";
+export { ScrollingText, type ScrollingTextProps } from "./components/scrolling-text";
 export {
   Card,
   type CardProps,
@@ -355,6 +356,7 @@ export {
   DrawerDescription,
 } from "./components/drawer";
 export { BottomSheet, type BottomSheetProps } from "./components/bottom-sheet";
+export { Skeleton, SkeletonText, type SkeletonProps, type SkeletonTextProps } from "./components/skeleton";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Stack, type StackProps } from "./components/stack";
 export { stackVariants } from "./components/stack-variants";

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
+import { measureScrollingText, measureScrollingTextIn, scrollingTextAttribute, scrollingTextClassName } from "../lib/scrolling-text";
 import { cn } from "../lib/utils";
 import { cardAccentStyle, cardSurfaceClassName } from "./card-variants";
 
@@ -40,10 +41,16 @@ export interface CardProps extends React.ComponentProps<"div"> {
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, interactive = false, accent = false, accentColor, tint = false, style, ...props }, ref) => (
+  ({ className, interactive = false, accent = false, accentColor, tint = false, style, onPointerEnter, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="card"
+      // A scrolling line in the card (a band's title) moves while the pointer
+      // is anywhere on the card, so the card measures it on the way in.
+      onPointerEnter={(e) => {
+        measureScrollingTextIn(e.currentTarget);
+        onPointerEnter?.(e);
+      }}
       style={cardAccentStyle(accentColor, style)}
       className={cn(
         cardSurfaceClassName,
@@ -70,11 +77,17 @@ Card.displayName = "Card";
  * dark mode). Without an accent colour: the primary colour at 44 % of that, no
  * wash. A solid tint at raised contrast (`data-contrast` `medium` or `more`),
  * none with reduced colours (`data-colors="reduced"`). Flush with the card's
- * top corners. A `CardTitle` in it takes the band's size (18px, two lines at
- * most) and the free width; the controls sit at the end.
+ * top corners. A `CardTitle` in it takes the band's size (18px) and the free
+ * width and stays on one line, cut with an ellipsis — so every band in a grid
+ * is as high as the next — and scrolls to its end while the pointer rests on
+ * the card (`ScrollingText`). An element in the title (a button, a link) is
+ * that line itself: `<ScrollingText asChild>`. The controls sit at the end.
  */
+const CardBandContext = React.createContext(false);
+
 const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
   ({ className, ...props }, ref) => (
+    <CardBandContext.Provider value>
     <div
       ref={ref}
       data-slot="card-band"
@@ -90,11 +103,12 @@ const CardBand = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
         "in-data-[contrast=medium]:bg-[color:color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent)] in-data-[contrast=more]:bg-[color:color-mix(in_oklab,var(--card-accent,var(--color-outline))_16%,transparent)]",
         // Reduced colours (`data-colors`): no tint at all, at any contrast.
         "in-data-[colors=reduced]:bg-none! in-data-[colors=reduced]:bg-transparent!",
-        "*:data-[slot=card-title]:line-clamp-2 *:data-[slot=card-title]:min-w-0 *:data-[slot=card-title]:flex-1 *:data-[slot=card-title]:font-sans *:data-[slot=card-title]:text-lg *:data-[slot=card-title]:leading-snug",
+        "*:data-[slot=card-title]:min-w-0 *:data-[slot=card-title]:flex-1 *:data-[slot=card-title]:font-sans *:data-[slot=card-title]:text-lg *:data-[slot=card-title]:leading-snug",
         className,
       )}
       {...props}
     />
+    </CardBandContext.Provider>
   ),
 );
 CardBand.displayName = "CardBand";
@@ -164,7 +178,7 @@ CardHeader.displayName = "CardHeader";
  * reverts element margins in `@layer base` would otherwise push the title
  * apart from its description.
  *
- * In a `CardBand` the title takes the band's size (see there).
+ * In a `CardBand` the title takes the band's size and is one scrolling line (see there).
  */
 export interface CardTitleProps extends React.ComponentProps<"div"> {
   /** Render the single child element instead of a `div` (e.g. an `<h1>`). */
@@ -172,13 +186,21 @@ export interface CardTitleProps extends React.ComponentProps<"div"> {
 }
 
 const CardTitle = React.forwardRef<HTMLDivElement, CardTitleProps>(
-  ({ className, asChild = false, ...props }, ref) => {
+  ({ className, asChild = false, onFocus, ...props }, ref) => {
     const Comp = asChild ? Slot : "div";
+    // In a band the title is one line that scrolls to its end under the
+    // pointer; the card measures it, the title itself only for the focus.
+    const inBand = React.useContext(CardBandContext);
     return (
       <Comp
         ref={ref}
         data-slot="card-title"
-        className={cn("m-0 font-headline-md text-headline-md font-semibold text-on-surface", className)}
+        {...(inBand ? { [scrollingTextAttribute]: "" } : null)}
+        onFocus={(e) => {
+          if (inBand) measureScrollingText(e.currentTarget);
+          onFocus?.(e);
+        }}
+        className={cn("m-0 font-headline-md text-headline-md font-semibold text-on-surface", inBand && scrollingTextClassName, className)}
         {...props}
       />
     );

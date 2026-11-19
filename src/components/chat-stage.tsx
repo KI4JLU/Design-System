@@ -8,6 +8,12 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
    * column (it is the scroller) and the composer docks at the bottom.
    */
   empty?: boolean;
+  /**
+   * A centred row above the content, in both states: what the chat was
+   * started as (a role badge), a way back. It follows the column's centre
+   * axis (`--chat-axis-shift`).
+   */
+  header?: React.ReactNode;
   /** The composer (PromptInput), with anything under it (PromptSuggestions). */
   composer?: React.ReactNode;
   /**
@@ -29,9 +35,16 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
  * Centring uses auto margins, not `justify-content`, so a tall empty state
  * scrolls from its top instead of being clipped. The card-framed widget is
  * `ChatLayout`.
+ *
+ * **The centre axis.** A consumer that moves its column off the stage's
+ * centre — to keep clear of the shell's floating card
+ * (`--app-shell-bubble-inset`) — sets `--chat-axis-shift` on the stage: the
+ * length the axis moves towards the start edge. The `header` row and
+ * `MessageScrollerButton` follow it; the consumer moves its own boxes
+ * (transcript, composer) by the same length.
  */
 const ChatStage = React.forwardRef<HTMLDivElement, ChatStageProps>(
-  ({ empty = false, composer, footer, footerId, className, children, ...props }, ref) => (
+  ({ empty = false, header, composer, footer, footerId, className, children, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="chat-stage"
@@ -43,6 +56,14 @@ const ChatStage = React.forwardRef<HTMLDivElement, ChatStageProps>(
         data-slot="chat-stage-content"
         className={cn("flex min-w-0 flex-col", empty ? "mt-auto flex-none" : "min-h-0 flex-1")}
       >
+        {header != null && (
+          <div
+            data-slot="chat-stage-header"
+            className="relative left-[calc(-1_*_var(--chat-axis-shift,0px))] flex shrink-0 flex-wrap items-center justify-center gap-2 px-4 pt-3"
+          >
+            {header}
+          </div>
+        )}
         {children}
       </div>
       {composer != null && (
