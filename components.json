@@ -19,6 +19,7 @@
   },
   "iconLibrary": "lucide",
   "registries": {
-    "@ai-elements": "https://elements.ai-sdk.dev/api/registry/{name}.json"
+    "@ai-elements": "https://elements.ai-sdk.dev/api/registry/{name}.json",
+    "@reui": "https://reui.io/r/styles/radix-vega/{name}.json"
   }
 }
