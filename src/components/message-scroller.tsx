@@ -141,7 +141,9 @@ function MessageScrollerButton({
       className={cn(
         // A circle, like the composer's send button below it — not the
         // rounded square of an icon button in a toolbar.
-        "absolute left-1/2 -translate-x-1/2 rounded-full shadow-md transition-[translate,scale,opacity] duration-200",
+        // Centred on the scroller, moved with the chat column's centre axis
+        // where a `ChatStage` consumer shifts it (`--chat-axis-shift`).
+        "absolute left-[calc(50%_-_var(--chat-axis-shift,0px))] -translate-x-1/2 rounded-full shadow-md transition-[translate,scale,opacity] duration-200",
         "data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)]",
         "data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)]",
         "data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full",
