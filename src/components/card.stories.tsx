@@ -392,17 +392,28 @@ export const HairlineLongTitle: Story = {
     // Holding the focus (as under a resting pointer) it scrolls until its end
     // is in view: moved left by exactly what did not fit. Back at once on blur.
     const overflow = button.scrollWidth - button.clientWidth;
-    button.focus();
     // The pace is not under test: the run would take as long as the text is wide.
-    button.style.setProperty("--scrolling-text-delay", "0ms");
-    button.style.setProperty("--scrolling-text-duration", "0.2s");
+    const quick = () => {
+      button.style.setProperty("--scrolling-text-delay", "0ms");
+      button.style.setProperty("--scrolling-text-duration", "0.2s");
+    };
+    // The browser's pointer may rest on this card (where another story left
+    // it): the line is then on its way already. Bring it back first.
+    quick();
+    button.style.setProperty("--scrolling-text-overflow", "0px");
+    await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBe(0));
+    button.focus();
+    quick();
     await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBeCloseTo(-overflow, 0), { timeout: 5000 });
     // The text's own box now ends inside the button: its last letter is in view.
     const text = document.createRange();
     text.selectNodeContents(button);
     await expect(text.getBoundingClientRect().right).toBeLessThanOrEqual(button.getBoundingClientRect().right + 1);
     button.blur();
-    await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBe(0));
+    // Under a resting pointer the line rightly stays at its end.
+    if (!button.closest("[data-slot=card]")!.matches(":hover")) {
+      await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBe(0));
+    }
   },
 };
 
