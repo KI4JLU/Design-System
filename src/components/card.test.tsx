@@ -93,6 +93,13 @@ describe("Card hairline parts", () => {
     expect(screen.getByTestId("band")).toHaveAttribute("data-slot", "card-band");
     expect(screen.getByText("Test")).toHaveAttribute("data-slot", "card-title");
     expect(screen.getByTestId("band").className).toContain("*:data-[slot=card-title]:text-lg");
+    // One line, cut with an ellipsis: a long title never makes the band higher.
+    expect(screen.getByTestId("band").className).not.toContain("line-clamp");
+    expect(screen.getByText("Test").className).toContain("truncate");
+    // … and scrolls to its end under the pointer; outside a band a title wraps as before.
+    expect(screen.getByText("Test").className).toContain("group-hover/card:indent-[calc(-1*var(--scrolling-text-overflow,0px))]");
+    render(<CardTitle>Frei</CardTitle>);
+    expect(screen.getByText("Frei").className).not.toContain("truncate");
     // A hairline card is a column with its footer at the bottom; other cards keep their layout.
     expect(screen.getByTestId("card").className).toContain("has-[>[data-slot=card-band]]:flex-col");
     expect(screen.getByTestId("footer").className).toContain("group-has-[>[data-slot=card-band]]/card:mt-auto");

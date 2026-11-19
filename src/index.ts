@@ -47,6 +47,7 @@ export {
   ButtonGroupText,
 } from "./components/button-group";
 export { buttonGroupVariants } from "./components/button-group-variants";
+export { ScrollingText, type ScrollingTextProps } from "./components/scrolling-text";
 export {
   Card,
   type CardProps,
