@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 import { FileText, MessageSquare, RefreshCw, Clock, Star, User } from "lucide-react";
 import {
   Card,
@@ -13,6 +13,7 @@ import {
   CardFooter,
 } from "./card";
 import { Button } from "./button";
+import { ScrollingText } from "./scrolling-text";
 import { cardNeutralAccent } from "./card-variants";
 import { Badge } from "./badge";
 import { ActionMenu } from "./action-menu";
@@ -332,6 +333,73 @@ export const HairlineReducedColors: Story = {
       // The rule keeps the colour.
       await expect(getComputedStyle(card.querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
     }
+  },
+};
+
+/**
+ * A long title stays on one line and ends in an ellipsis, as plain text and as
+ * a button in the title (a `ScrollingText`), so the band — and with it the
+ * rule — is at the same height on every card of a grid. Rest the pointer on a
+ * card (or focus the button): after a short pause the title scrolls to its end.
+ */
+export const HairlineLongTitle: Story = {
+  render: () => (
+    <div className="grid max-w-3xl grid-cols-3 gap-6">
+      <Card accentColor="var(--color-category-1)" data-testid="short">
+        <CardBand><CardTitle>FAQ Test 3</CardTitle></CardBand>
+        <CardHairline><CategoryPill name="KI" /></CardHairline>
+        <CardContent />
+      </Card>
+      <Card accentColor="var(--color-category-3)" data-testid="long">
+        <CardBand>
+          <CardTitle>Briefing-Tool Selbstbericht Systemakkreditierung</CardTitle>
+          <Button variant="ghost" size="icon" aria-label="Zu Favoriten hinzufügen">
+            <Star aria-hidden="true" className="size-4" />
+          </Button>
+        </CardBand>
+        <CardHairline><CategoryPill name="HRZ" /></CardHairline>
+        <CardContent />
+      </Card>
+      <Card data-testid="button">
+        <CardBand>
+          <CardTitle>
+            <ScrollingText asChild>
+              <button type="button">Einführungsveranstaltungsverzeichnisübersicht</button>
+            </ScrollingText>
+          </CardTitle>
+        </CardBand>
+        <CardHairline />
+        <CardContent />
+      </Card>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    const band = (id: string) => c.getByTestId(id).querySelector<HTMLElement>("[data-slot=card-band]")!;
+    const title = (id: string) => c.getByTestId(id).querySelector<HTMLElement>("[data-slot=card-title]")!;
+    // Oracle: the short title's band, measured in the same frame.
+    const height = band("short").getBoundingClientRect().height;
+    for (const id of ["long", "button"]) {
+      await expect(Math.abs(band(id).getBoundingClientRect().height - height)).toBeLessThanOrEqual(0.5);
+      await expect(title(id).getBoundingClientRect().height).toBe(title("short").getBoundingClientRect().height);
+      // The title stays inside its band: nothing runs under the controls or out of the card.
+      await expect(title(id).getBoundingClientRect().right).toBeLessThanOrEqual(band(id).getBoundingClientRect().right);
+    }
+    // Both long titles are in fact cut — the text is wider than its box.
+    await expect(title("long").scrollWidth).toBeGreaterThan(title("long").clientWidth);
+    const button = title("button").querySelector("button")!;
+    await expect(button.scrollWidth).toBeGreaterThan(button.clientWidth);
+    // Holding the focus (as under a resting pointer) it scrolls until its end
+    // is in view: moved left by exactly what did not fit. Back at once on blur.
+    const overflow = button.scrollWidth - button.clientWidth;
+    button.focus();
+    await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBeCloseTo(-overflow, 0), { timeout: 5000 });
+    // The text's own box now ends inside the button: its last letter is in view.
+    const text = document.createRange();
+    text.selectNodeContents(button);
+    await expect(text.getBoundingClientRect().right).toBeLessThanOrEqual(button.getBoundingClientRect().right + 1);
+    button.blur();
+    await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBe(0));
   },
 };
 
