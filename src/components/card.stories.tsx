@@ -393,6 +393,9 @@ export const HairlineLongTitle: Story = {
     // is in view: moved left by exactly what did not fit. Back at once on blur.
     const overflow = button.scrollWidth - button.clientWidth;
     button.focus();
+    // The pace is not under test: the run would take as long as the text is wide.
+    button.style.setProperty("--scrolling-text-delay", "0ms");
+    button.style.setProperty("--scrolling-text-duration", "0.2s");
     await waitFor(() => expect(parseFloat(getComputedStyle(button).textIndent)).toBeCloseTo(-overflow, 0), { timeout: 5000 });
     // The text's own box now ends inside the button: its last letter is in view.
     const text = document.createRange();
