@@ -435,6 +435,50 @@ export {
 } from "./components/sidebar-card";
 export { sidebarCardVariants, sidebarIconTileVariants, sidebarRowInset, sidebarRowInsetX } from "./components/sidebar-card-variants";
 export { SidebarAction, type SidebarActionProps } from "./components/sidebar-action";
+/** A named, foldable section of a side panel's list, with its heading controls and in-place rename. */
+export {
+  SidebarSection,
+  SidebarSectionButton,
+  SidebarCardGroup,
+  SidebarCardPreview,
+  type SidebarSectionProps,
+  type SidebarSectionButtonProps,
+  type SidebarCardGroupProps,
+  type SidebarCardPreviewProps,
+} from "./components/sidebar-section";
+export { sidebarSectionButtonClasses } from "./components/sidebar-section-variants";
+export { SidebarFilterMenu, type SidebarFilter, type SidebarFilterMenuProps } from "./components/sidebar-filter-menu";
+/** Drag-to-reorder in groups: sort inside a group, outline the other group, commit on drop. */
+export {
+  Sortable,
+  SortableGroup,
+  SortableGroupHandle,
+  SortableItem,
+  SortableItemHandle,
+  SortableDropZone,
+  SortableOverlay,
+  type SortableProps,
+  type SortableCommitMeta,
+  type SortableGroupProps,
+  type SortableGroupHandleProps,
+  type SortableItemProps,
+  type SortableItemHandleProps,
+  type SortableDropZoneProps,
+  type SortableOverlayProps,
+} from "./components/sortable";
+/** Edit a short text in place (imported from the Dice UI registry). */
+export {
+  Editable,
+  EditableArea,
+  EditableCancel,
+  EditableInput,
+  EditableLabel,
+  EditablePreview,
+  EditableSubmit,
+  EditableToolbar,
+  EditableTrigger,
+  type EditableProps,
+} from "./components/editable";
 export { ActionMenu, type ActionMenuItem, type ActionMenuProps } from "./components/action-menu";
 /** File drop target, and the window-wide "files are being dragged" signal that reveals it. */
 export { FileDropzone, type FileDropzoneProps } from "./components/file-dropzone";

@@ -67,11 +67,46 @@ export interface ActionMenuProps {
  * clicks from `[role="menu"]` / `[role="menuitem"]` and the trigger button.
  */
 export function ActionMenu(props: ActionMenuProps) {
+  /* The dropdown is set up on first use. Until then the trigger is a plain
+     button that looks and reads the same: a list of a few hundred rows, each
+     with its own menu, then carries one button per row instead of a dropdown
+     per row. Opening it — pointer down, Enter, Space or ↓, as on the real
+     trigger — swaps the dropdown in, already open. */
+  const [used, setUsed] = React.useState(false);
   if (props.actions.length === 0) return null;
-  return <ActionMenuDropdown {...props} />;
+  if (used) return <ActionMenuDropdown {...props} defaultOpen />;
+  const { label, triggerClassName, variant = "ghost" } = props;
+  return (
+    <Button
+      variant={variant}
+      size="icon"
+      className={cn("shrink-0", triggerClassName)}
+      aria-label={label}
+      aria-haspopup="menu"
+      aria-expanded={false}
+      data-state="closed"
+      onPointerDown={(e) => {
+        if (e.button !== 0 || e.ctrlKey) return;
+        // As the real trigger does: the menu, not the button, takes the focus.
+        e.preventDefault();
+        setUsed(true);
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== "Enter" && e.key !== " " && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        setUsed(true);
+      }}
+      // Whatever else activates a button (assistive technology, a scripted click).
+      onClick={() => setUsed(true)}
+    >
+      <MoreHorizontal aria-hidden="true" className="size-4" />
+    </Button>
+  );
 }
 
-function ActionMenuDropdown({ actions, label, triggerClassName, variant = "ghost", align = "end" }: ActionMenuProps) {
+function ActionMenuDropdown({
+  actions, label, triggerClassName, variant = "ghost", align = "end", defaultOpen,
+}: ActionMenuProps & { defaultOpen?: boolean }) {
   // Closed by a click elsewhere, the menu does not hand focus back to its
   // trigger: the user has moved on, and a returned focus would draw the
   // trigger's focus ring and keep its host's focus-driven extras (a hover
@@ -79,7 +114,7 @@ function ActionMenuDropdown({ actions, label, triggerClassName, variant = "ghost
   // as usual — the keyboard path.
   const closedOutside = React.useRef(false);
   return (
-    <DropdownMenu>
+    <DropdownMenu defaultOpen={defaultOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size="icon" className={cn("shrink-0", triggerClassName)} aria-label={label}>
           <MoreHorizontal aria-hidden="true" className="size-4" />

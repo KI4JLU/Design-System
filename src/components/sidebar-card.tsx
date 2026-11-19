@@ -32,6 +32,15 @@ export interface SidebarCardProps extends Omit<React.LiHTMLAttributes<HTMLLIElem
   meta?: React.ReactNode;
   /** Inline controls before the checkbox (e.g. retry). */
   extra?: React.ReactNode;
+  /**
+   * A quiet mark in the trailing column that says something about the row at
+   * rest (which area a chat belongs to): an icon, not a control. The ⋯ menu
+   * takes its place while the row is hovered, holds focus or has its menu
+   * open, so the two never stand side by side. Give it an accessible name
+   * (`role="img"` + `aria-label`) if it carries meaning. Not shown beside an
+   * `extra` or a checkbox, which hold the trailing column themselves.
+   */
+  indicator?: React.ReactNode;
   actions?: SidebarCardAction[];
   /** Accessible name prefix of the actions trigger: `${actionsLabel} ${title}`. */
   actionsLabel?: string;
@@ -127,6 +136,22 @@ const titleFadesUnderMenu = cn(
   "[@media(hover:hover)]:group-has-[>button[data-state=open]]/sidebar-card:[mask-image:linear-gradient(to_right,#000_calc(100%_-_3.75rem),transparent_calc(100%_-_2rem))]",
 );
 
+/**
+ * The `indicator` of a row with a ⋯ menu: gone while the trigger shows (row
+ * hovered, focus inside it, menu open), which stands exactly on it. Only
+ * where there is hover — on touch the trigger is in the flow, beside it.
+ * It is a mark, not a target: it has no hover of its own to hang a tooltip on.
+ */
+// Written out in full three times, as above: Tailwind scans the source text.
+const indicatorYieldsToMenu = cn(
+  // Under the trigger it must not take the trigger's clicks: an element with
+  // an opacity paints above the positioned trigger before it in the row.
+  "[@media(hover:hover)]:pointer-events-none",
+  "[@media(hover:hover)]:group-hover/sidebar-card:opacity-0",
+  "[@media(hover:hover)]:group-focus-within/sidebar-card:opacity-0",
+  "[@media(hover:hover)]:group-has-[>button[data-state=open]]/sidebar-card:opacity-0",
+);
+
 /** A click that landed on one of the card's own controls — or on its portaled
  *  menu, whose React events still bubble through the card. */
 const isControlClick = (e: React.MouseEvent) =>
@@ -136,7 +161,8 @@ const isControlClick = (e: React.MouseEvent) =>
 
 /**
  * The row of a side panel — a chat in a history list, a source in a sources
- * list. Icon · title (+ meta) · extra · checkbox · actions menu. A flat row:
+ * list. Icon · title (+ meta) · extra · checkbox · actions menu, or an
+ * `indicator` the menu stands over. A flat row:
  * no border or shadow, a quiet fill on hover, a primary tint while active.
  * The ⋯ menu stays out of sight until the row is hovered, holds keyboard
  * focus or has the menu open — and is always shown where there is no hover
@@ -151,7 +177,7 @@ const isControlClick = (e: React.MouseEvent) =>
 const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
   (
     {
-      icon, iconText, title, onOpen, meta, extra, actions, actionsLabel,
+      icon, iconText, title, onOpen, meta, extra, indicator, actions, actionsLabel,
       active, selectable, selected = false, onSelectedChange, selectLabel,
       selectionMode, muted, error, busy, selectionTone = "default", titleTestId, className, onClick, ...rest
     },
@@ -176,7 +202,11 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
 
     // The ⋯ alone at the row's end lies over the title (see `overTitle`);
     // beside a checkbox or an `extra` it keeps its place in the trailing column.
-    const menuOverTitle = !selectionMode && !!actions?.length && !extra && !selectable;
+    const hasMenu = !selectionMode && !!actions?.length;
+    // The indicator holds the trailing column unless an extra or a checkbox does.
+    const showIndicator = indicator != null && indicator !== false && !extra && !selectable && !selectionMode;
+    const menuOverIndicator = hasMenu && showIndicator;
+    const menuOverTitle = hasMenu && !extra && !selectable && !showIndicator;
     const row = (
       // Whole-plane click is a pointer convenience; the title button is the keyboard path.
       <li
@@ -194,7 +224,7 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
               : active ? "active" : error ? "marked" : "idle",
             interactive,
           }),
-          menuOverTitle && "relative",
+          (menuOverTitle || menuOverIndicator) && "relative",
           className,
         )}
         onClick={planeClick}
@@ -243,12 +273,21 @@ const SidebarCard = React.forwardRef<HTMLLIElement, SidebarCardProps>(
           <ActionMenu
             actions={actions}
             label={actionsLabel ? `${actionsLabel} ${title}` : title}
-            triggerClassName={cn(revealOnHover, menuOverTitle && overTitle)}
+            triggerClassName={cn(revealOnHover, (menuOverTitle || menuOverIndicator) && overTitle)}
           />
         )}
         {/* Last: a visible extra (retry) holds the trailing column the
             checkbox takes in selection mode, the hover-only ⋯ to its left. */}
         {!selectionMode && extra}
+        {/* In the trailing column, where the ⋯ trigger stands over it. */}
+        {showIndicator && (
+          <span
+            data-slot="sidebar-card-indicator"
+            className={cn(trailingBox, "text-outline transition-opacity [&>svg]:size-4", menuOverIndicator && indicatorYieldsToMenu)}
+          >
+            {indicator}
+          </span>
+        )}
       </li>
     );
     // An error or a running job: the DS Tooltip on the row (the sr-only text
