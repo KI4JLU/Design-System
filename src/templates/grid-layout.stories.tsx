@@ -50,6 +50,12 @@ export const Cards: Story = {
     const create = canvas.getByRole("button", { name: "Neues Thema" }).getBoundingClientRect();
     await expect(filters.left).toBeCloseTo(toolbar.left, 0);
     await expect(create.right).toBeCloseTo(toolbar.right, 0);
+    // The toolbar's icons are 16px, as JLURAG sets them (`h-4 w-4`) — an
+    // unsized lucide icon would be 24px [the icons' boxes].
+    for (const name of ["Karten", "Liste", "Neues Thema"]) {
+      const icon = canvas.getByRole("button", { name }).querySelector("svg")!.getBoundingClientRect();
+      await expect([name, icon.width]).toEqual([name, 16]);
+    }
 
     const boxes = cells(canvasElement).map((c) => c.getBoundingClientRect());
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);

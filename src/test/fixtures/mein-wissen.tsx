@@ -17,7 +17,7 @@ import { TOPICS, type Topic } from "./topics";
 
 const FILTERS = [
   { value: "all", label: "Alle" },
-  { value: "favorites", label: "Favoriten", icon: <Star aria-hidden="true" /> },
+  { value: "favorites", label: "Favoriten", icon: <Star className="size-4" aria-hidden="true" /> },
   { value: "personal", label: "Privat" },
   { value: "shared", label: "Geteilt" },
   { value: "studium", label: "Studium", color: "var(--color-category-1)" },
@@ -64,8 +64,8 @@ export function MeinWissen({
             value={view}
             onValueChange={(v) => setView(v as View)}
             options={[
-              { value: "cards", label: "Karten", icon: <LayoutGrid aria-hidden="true" />, showLabel: true },
-              { value: "list", label: "Liste", icon: <List aria-hidden="true" />, showLabel: true },
+              { value: "cards", label: "Karten", icon: <LayoutGrid className="size-4" aria-hidden="true" />, showLabel: true },
+              { value: "list", label: "Liste", icon: <List className="size-4" aria-hidden="true" />, showLabel: true },
             ]}
           />
           <Button>
