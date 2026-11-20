@@ -1400,6 +1400,15 @@ const historyControls = (
 const nativeLogo = <Logo product="RAG" size="sm" />;
 
 /**
+ * The native stories set `data-shell` / `data-titlebar` on `<html>` — the
+ * document, not the story. On the Docs page every story shares one document,
+ * so inline they would turn every other shell on the page native too (the
+ * brand of `Overview` slid 100px to the right, behind the window controls).
+ * In its own iframe each keeps its attributes to itself.
+ */
+const OWN_IFRAME_IN_DOCS = { docs: { story: { inline: false, iframeHeight: 640 } } };
+
+/**
  * Stands in for the Electron host of „Native shell": sets the two `<html>`
  * attributes the preload would set, paints a backdrop where the OS material
  * would be, and draws three dots where macOS puts the window controls.
@@ -1452,6 +1461,7 @@ const alphaOf = (color: string): number => {
  * window controls and the top row drags the window. See „Native shell".
  */
 export const NativeShell: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
@@ -1525,6 +1535,7 @@ export const NativeShell: Story = {
  * it, as on the web. The arrangement of the row stays.
  */
 export const NativeShellFullScreen: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost titlebar="hidden">
       <AppShellFixture
@@ -1560,6 +1571,7 @@ export const NativeShellFullScreen: Story = {
  * expanded; the rail starts below.
  */
 export const NativeShellCollapsed: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
@@ -1623,6 +1635,7 @@ export const NativeShellCollapsed: Story = {
  * below the bar, opened by the last control of the title row.
  */
 export const NativeShellWorkspace: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
@@ -1672,6 +1685,7 @@ export const NativeShellWorkspace: Story = {
  * the frame's last row: full width at the bottom of the window.
  */
 export const NativeShellWithNotice: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
@@ -1845,6 +1859,7 @@ export const ChatWorkspaceWithSidePanel: Story = {
 
 /** The same panel in a native shell: opaque, its strip part of the title bar. */
 export const NativeShellWorkspaceWithSidePanel: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
