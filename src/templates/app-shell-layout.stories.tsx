@@ -40,7 +40,7 @@ import { MeinWissen } from "../test/fixtures/mein-wissen";
  *
  * No story mounts a theme toggle: colour scheme, contrast, accent and Style
  * live behind the user menu's „Einstellungen" (`SettingsDialog` +
- * `AppearanceSettings`), which `Overview` walks through.
+ * `AppearanceSettings`), which `SettingsFromUserMenu` walks through.
  * ------------------------------------------------------------------------- */
 
 // Portable Stories: page content is the content templates' own stories —
@@ -184,11 +184,11 @@ const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.
  * 3. the navigation's rows in JLURAG's order, „Mein Wissen" current
  *    [ARIA `navigation`, `button` names, `aria-current`];
  * 4. the page is the region „Mein Wissen" with the only `<h1>`, inside
- *    `<main>` [ARIA `region`, `heading`];
- * 5. „Einstellungen" in the user menu opens the settings window on its
- *    „Darstellung" section, and it closes again [ARIA roles and names:
- *    `menuitem`, `dialog`, `heading` level 2, `combobox`] — the route that
- *    replaced a theme toggle in the bar.
+ *    `<main>` [ARIA `region`, `heading`].
+ *
+ * Nothing here opens or moves: this is the template's showcase, and a `play`
+ * function runs on the visible page each time the story opens. The settings
+ * route through the user menu is `SettingsFromUserMenu`.
  */
 export const Overview: Story = {
   render: () => (
@@ -196,7 +196,7 @@ export const Overview: Story = {
       <MeinWissen />
     </AppShellFixture>
   ),
-  play: async ({ canvas, canvasElement, userEvent }) => {
+  play: async ({ canvas, canvasElement }) => {
     await expect(
       canvasElement.querySelector("[data-slot='app-shell-content'] > header"),
     ).toBeNull();
@@ -219,7 +219,27 @@ export const Overview: Story = {
     const region = within(main).getByRole("region", { name: "Mein Wissen" });
     await expect(within(region).getByRole("heading", { level: 1, name: "Mein Wissen" })).toBeVisible();
     await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  },
+};
 
+/**
+ * **Colour scheme, contrast, accent and Style live behind the user menu**, not
+ * in the bar: „Einstellungen" opens the settings window on its „Darstellung"
+ * section (`SettingsDialog` + `AppearanceSettings`). The same overview as
+ * `Overview`; this story walks the route.
+ *
+ * `play` (Chromium), oracles in brackets: „Einstellungen" in the user menu
+ * opens the settings window on „Darstellung", with the colour-scheme field,
+ * and it closes again [ARIA roles and names: `menuitem`, `dialog`, `heading`
+ * level 2, `combobox`].
+ */
+export const SettingsFromUserMenu: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={null} bar={false}>
+      <MeinWissen />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
     const body = page(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: /Jamie Lee/ }));
     await userEvent.click(await body.findByRole("menuitem", { name: "Einstellungen" }));
