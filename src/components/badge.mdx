@@ -1,0 +1,61 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as BadgeStories from "./badge.stories";
+
+<Meta of={BadgeStories} />
+
+# Badge
+
+A short label for a state or a property: „Öffentlich", „Beta", „Fehler", a
+count. It is read, not clicked — a badge has no action of its own.
+
+```tsx
+import { Badge } from "@ki4jlu/design-system";
+
+<Badge tone="success">Aktiv</Badge>
+```
+
+<Canvas of={BadgeStories.Playground} />
+
+<Controls />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| The state of an item in a card, a row or a header („Öffentlich", „Geteilt (3)") | `Badge` |
+| A count with an icon on a card (files, messages) | `Badge` with the icon as a child; the full phrase in a tooltip and for screen readers |
+| A live or online state | `Badge dot` |
+| A filter the user can switch off | `FilterChips`, not a badge |
+| An entered value that can be removed (an address, a tag) | `TokenInput`'s chips |
+| A message that needs reading | `Alert` |
+
+## Tones
+
+`tone` is the status vocabulary of the whole system: `neutral`, `primary`,
+`secondary`, `success`, `warning`, `error`, `info`.
+
+<Canvas of={BadgeStories.Filled} />
+
+## Status dot
+
+`dot` adds a leading dot in the tone's text colour — the live/online pattern.
+The dot is decoration; the text carries the meaning.
+
+<Canvas of={BadgeStories.WithDot} />
+
+## Text appearance
+
+`appearance="text"` drops the pill: icon and text inline, for a status in
+running text or a health check list.
+
+<Canvas of={BadgeStories.TextAppearance} />
+
+## Accessibility
+
+- The text must say the state; never colour alone. A badge that is only an
+  icon and a number needs the full phrase for screen readers
+  (`<span className="sr-only">36 Dateien</span>`) and, for sighted users,
+  in a tooltip.
+- Icons inside a badge are decorative: `aria-hidden="true"`.
+- A badge is not focusable and has no role. If it has to do something, it is
+  a button.

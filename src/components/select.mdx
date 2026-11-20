@@ -1,0 +1,72 @@
+import { Meta, Canvas, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as SelectStories from "./select.stories";
+import { SelectTrigger } from "./select";
+
+<Meta of={SelectStories} />
+
+# Select
+
+Picks one value from a short, fixed list. Built on Radix: arrow keys,
+typeahead and Escape work as in a native select, the list looks like the rest
+of the system.
+
+```tsx
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@ki4jlu/design-system";
+
+<Select value={order} onValueChange={setOrder}>
+  <SelectTrigger aria-label="Sortierung">
+    <SelectValue />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="recent">Zuletzt aktiv</SelectItem>
+    <SelectItem value="name">Name</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+<Canvas of={SelectStories.Basic} />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| One value from a fixed list of up to about 15 | `Select` |
+| A long list, or the user knows what to type | `Combobox` |
+| Two to four options, all worth seeing at once | `SegmentedControl` or a `SelectableCard` group |
+| On / off | `Switch` |
+| Several values | checkboxes or `TokenInput` |
+| A command, not a value („Umbenennen", „Löschen") | `DropdownMenu` or `ActionMenu` |
+
+## Groups
+
+`SelectGroup` with a `SelectLabel` heads a run of items; `SelectSeparator`
+divides runs.
+
+<Canvas of={SelectStories.Grouped} />
+
+## In a form and disabled
+
+Inside a `Form`, `FormControl` ties the trigger to its label and turns it red
+on an error, like any field.
+
+<Canvas of={SelectStories.InForm} />
+
+<Canvas of={SelectStories.Disabled} />
+
+## Trigger variants
+
+<ArgTypes of={SelectTrigger} />
+
+| `variant` | For |
+|---|---|
+| `field` (default) | the framed field in a form |
+| `ghost` | a settings row, where the row already says what the control is |
+| `editable` | a value inside running text or a heading block, keeping its look |
+
+## Accessibility
+
+- The trigger needs a name: a `Label` (`htmlFor` on the trigger's `id`), a
+  `FormLabel`, or `aria-label`.
+- `SelectValue` shows the chosen item's text; give it a `placeholder` when
+  nothing is chosen yet.
+- Do not put links or buttons into items — an item is a value.

@@ -1,0 +1,70 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as ActionMenuStories from "./action-menu.stories";
+
+<Meta of={ActionMenuStories} />
+
+# ActionMenu
+
+The ⋮ menu of a card or a list row: a quiet icon button and a list of actions
+on that one item. Built from data — an array of actions — so every such menu
+in an app looks and behaves the same.
+
+```tsx
+import { ActionMenu } from "@ki4jlu/design-system";
+import { Pencil, Trash2 } from "lucide-react";
+
+<ActionMenu
+  label={`Aktionen: ${topic.name}`}
+  actions={[
+    { label: "Umbenennen…", icon: <Pencil aria-hidden="true" />, onSelect: rename },
+    { label: "Löschen…", icon: <Trash2 aria-hidden="true" />, destructive: true, separatorBefore: true, onSelect: remove },
+  ]}
+/>
+```
+
+<Canvas of={ActionMenuStories.Default} />
+
+<Controls />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| Secondary actions on one item (a topic card, a source row, a chat) | `ActionMenu` |
+| The item's main action | the card or row itself, or a visible button |
+| A menu with its own trigger, checkboxes or custom content | `DropdownMenu` |
+| Actions on a right-click or long-press | `ContextMenu` |
+| Choosing a value | `Select` |
+
+## Writing the actions
+
+- **Only actions on this item.** Page-wide actions belong in the page header.
+- **„…" at the end of a label** when the action opens a dialog and keeps the
+  page („Umbenennen…", „Teilen…"). **`opensPage`** adds a trailing ↗ when it
+  leaves the page (the topic's settings).
+- **`destructive`** for delete and remove — red, like every delete action
+  (`Components/Actions/Button → Delete Actions`). The stories put it last,
+  after a separator (`separatorBefore`).
+- **What the user may not do**: JLURAG's topic card leaves such actions out
+  of the list (`KbCard.tsx`); `disabled` is there for an action that is
+  unavailable for the moment. An action only some roles see can say so with
+  a **`badge`** („Admin").
+- **`submenu`** for a setting with a few values; **`checked`** marks the
+  current one.
+
+<Canvas of={ActionMenuStories.WithBadge} />
+
+## In a clickable card or row
+
+The menu is portalled, but React still bubbles its events through the host. A
+card that opens on click must ignore clicks from the trigger and from
+`[role="menu"]` / `[role="menuitem"]`, or choosing an action also opens the
+card.
+
+## Accessibility
+
+- **`label` is required:** it names the ⋮ button. Include the item
+  („Aktionen: Prüfungsordnung") — a page with twenty cards otherwise has
+  twenty buttons all called „Aktionen".
+- Icons are decorative (`aria-hidden="true"`); the label carries the action.
+- With no actions the menu renders nothing — no empty button.
