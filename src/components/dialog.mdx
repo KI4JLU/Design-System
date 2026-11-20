@@ -1,0 +1,81 @@
+import { Meta, Canvas, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as DialogStories from "./dialog.stories";
+import { DialogContent } from "./dialog";
+
+<Meta of={DialogStories} />
+
+# Dialog
+
+A modal window over the page for a short, self-contained task: create, rename,
+confirm. Built on Radix, so focus trap, Escape, scroll lock and the ARIA roles
+come with it.
+
+```tsx
+import {
+  Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter, DialogClose, Button,
+} from "@ki4jlu/design-system";
+
+<Dialog>
+  <DialogTrigger asChild><Button>Neues Thema</Button></DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Neues Thema</DialogTitle>
+      <DialogDescription>Gib deinem Thema einen Namen.</DialogDescription>
+    </DialogHeader>
+    {/* fields */}
+    <DialogFooter>
+      <DialogClose asChild><Button variant="outline">Abbrechen</Button></DialogClose>
+      <Button>Erstellen</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+<Canvas of={DialogStories.Form} />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| A short task the user finishes or cancels (create, rename, share) | `Dialog` |
+| „Are you sure?" before something that cannot be undone | `AlertDialog` — it does not close on a click outside |
+| Many settings in sections, with search | `SettingsDialog` |
+| A file or a source to look at | `PreviewDialog` |
+| A text the user has to accept (terms, usage policy) | `NoticeDialog` |
+| Something that does not block the page | `Popover`, `Drawer` or a `SidePanel` |
+
+## Parts
+
+- **`DialogContent`** — the window: a 24px inset, the box radius and a close
+  button in the corner.
+- **`DialogHeader`**, **`DialogTitle`**, **`DialogDescription`** — the title
+  names the dialog, the description describes it, both for screen readers.
+- **`DialogFooter`** — the actions: Abbrechen (`outline`) first, the primary
+  action last. A destructive confirm step uses `variant="destructive"` (see
+  `Components/Actions/Button → Delete Actions`).
+- **`DialogClose`** — wraps any button that only closes.
+
+<ArgTypes of={DialogContent} />
+
+## Confirming a deletion
+
+<Canvas of={DialogStories.Confirm} />
+
+For a confirmation that must not be dismissed by a stray click, use
+`AlertDialog`.
+
+## Without the close button
+
+`showClose={false}` is only for a dialog that is one field and its results — a
+command palette — where Escape and a click outside are the way out. A dialog
+with content to read keeps its button.
+
+## Accessibility
+
+- **Always a `DialogTitle`.** It is the dialog's accessible name; without one
+  Radix warns and screen readers announce an unnamed dialog. If the design
+  has no visible title, hide it with `sr-only`, do not drop it.
+- Focus moves into the dialog on open — to the first field — and back to the
+  opener on close. Do not take it elsewhere by hand.
+- `closeLabel` names the corner button (default „Schließen").
