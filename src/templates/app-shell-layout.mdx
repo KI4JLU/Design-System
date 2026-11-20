@@ -37,17 +37,26 @@ component with a different fill; the shared story fixture that renders them is
 | Slot | Overview context — `AppChrome.tsx` | Workspace context — `KbWorkspaceLayout.tsx` |
 |---|---|---|
 | `logo` | `Logo product="RAG"` | `Logo product="RAG"` (JLURAG wraps it in a ghost button back to the overview; the fixture does not, see its header) |
-| `nav` / `navLabel` | NavItem rows in a `SidebarPanel` („Hauptnavigation"): Suchen, Mein Wissen, Geteiltes Wissen, Entdecken | the chat history: `SidebarPanel` + `SidebarCard`s, a `SidebarRail` when collapsed („Verlauf") |
+| `nav` / `navLabel` | NavItem rows in a `SidebarPanel` („Hauptnavigation"): Suchen, Mein Wissen, Geteiltes Wissen, Entdecken | the chat history („Verlauf"): a `SidebarPanel` with „Neuer Chat" and „Suchen" in its head and the chats as `SidebarCard`s grouped by day; a `SidebarRail` when collapsed |
 | `sidebarFooter` | `SidebarUserMenu` — Profil · Einstellungen · Abmelden | the same user menu |
 | `pageLabel` | — (the content template renders the page's `<h1>`) | the breadcrumb „Mein Wissen / ‹topic›" |
-| `bar` / `search` | no bar (`bar={false}`); „Suchen" in the column opens a palette | the topic-scoped search |
+| `bar` / `search` | no bar (`bar={false}`); „Suchen" in the column opens a palette | a bar without search; „Suchen" in the history column opens the topic's palette |
 | `headerActions` | — | one ghost gear icon button |
-| `rightPanel` | — | the sources, with a `collapsedPreview` rail |
+| `rightPanel` | — | the sources card: „Quellen hinzufügen" as its `header` beside the close button (`closeLabel`), the ways to add a source, the sources; a `collapsedPreview` rail |
 | `leftWidth` / `leftResize` | — (256 default) | resizable; the right column floats as a card (0.81.0) |
 | `mobileTabs` | 2 — navigation, content | 3 — history, chat, sources |
-| `children` | `GridLayout` — „Mein Wissen" (also tables, forms) | `ChatStage` |
+| `children` | `GridLayout` — „Mein Wissen" (also tables, forms) | `ChatStage` — a chat, a new chat's start page, a new topic |
 
 <Canvas of={AppShellLayoutStories.ChatWorkspace} />
+
+The workspace's page has three states, each a story: a chat (`ChatWorkspace`,
+above), a new chat in a topic with sources — the start page, centred with
+the composer and the suggestions (`ChatWorkspaceStart`) — and a new topic
+without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
+
+<Canvas of={AppShellLayoutStories.ChatWorkspaceStart} />
+
+<Canvas of={AppShellLayoutStories.ChatWorkspaceEmpty} />
 
 - **Colour scheme, contrast, accent and Style are not in the bar.** They live
   behind the user menu: „Einstellungen" opens a `SettingsDialog` whose

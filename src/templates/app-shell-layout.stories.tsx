@@ -12,6 +12,7 @@ import { Logo } from "../components/logo";
 import { SIDE_PANEL_RAIL_WIDTH } from "../components/side-panel-variants";
 import {
   AppShellFixture,
+  NO_HISTORY,
   ShellSearch,
   SOURCES_LOCKED_LABEL,
   SOURCES_LOCKED_REASON,
@@ -23,6 +24,14 @@ import * as dashboardStories from "./dashboard-layout.stories";
 import * as formStories from "./form-layout.stories";
 import * as tableStories from "./table-layout.stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
+import {
+  CHAT_FOOTER,
+  FIRST_SOURCE_TITLE,
+  TOPIC_NAME,
+  TopicConversation,
+  TopicNew,
+  TopicStart,
+} from "../test/fixtures/topic-chat";
 
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
@@ -31,9 +40,10 @@ import { MeinWissen } from "../test/fixtures/mein-wissen";
  * or `workspace` (JLURAG `KbWorkspaceLayout.tsx`). The overview's page is
  * JLURAG's „Mein Wissen" (`GridLayout`, the `mein-wissen` fixture), which renders
  * its title itself — the reason `pageLabel` is optional: with a label, „Mein
- * Wissen" would stand twice. Every story but `Overview` and `WithoutChromeBar`
- * fills the central `search`, the bar's mechanism other apps use; JLURAG's
- * overview has no bar. The first five stories are one per PAGE CONTEXT; the rest
+ * Wissen" would stand twice. The mechanism stories fill the
+ * central `search`, the bar's mechanism other apps use; the page stories do
+ * not, as JLURAG does not: its overview has no bar, and its workspace bar no
+ * search („Suchen" is in the history column). The first five stories are one per PAGE CONTEXT; the rest
  * are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
@@ -254,12 +264,23 @@ export const SettingsFromUserMenu: Story = {
 };
 
 /**
- * **The workspace context** — JLURAG's `KbWorkspaceLayout.tsx`: the chat
- * history as the left column, the breadcrumb „Mein Wissen / ‹topic›" as
- * `pageLabel`, the topic-scoped search in the centre, a ghost gear in
- * `headerActions`, the sources as `rightPanel` — a floating card since
- * 0.81.0 — and `ChatStage` as the page. Only the history column is
- * resizable; the card has no handle.
+ * **The workspace context** — a topic in JLURAG (`KbWorkspaceLayout.tsx`,
+ * `ChatView.tsx`; `development`, screenshots of 20.11.2026):
+ * - the bar: the breadcrumb „Mein Wissen / ‹topic›" as `pageLabel`, a ghost
+ *   gear in `headerActions` — **no search field**: the topic's search is
+ *   „Suchen" in the history column, which opens a palette in the app;
+ * - the history as the left column: „Neuer Chat" and „Suchen" in the
+ *   panel's head, then „Verlauf", the chats grouped by day;
+ * - the sources as `rightPanel` — a floating card since 0.81.0 — titled
+ *   „Quellen hinzufügen" in its header row beside its close button
+ *   (`header`, `closeLabel`), the four ways to add a source, the sources;
+ * - a chat as the page: `ChatStage` with two turns (`MessageScroller`,
+ *   `Message`, `ChainOfThought`, `Sources`) over the composer and the
+ *   answer disclaimer (`topic-chat` fixture).
+ *
+ * Only the history column is resizable; the card has no handle. The bar's
+ * search, which other apps put there, is pinned by the mechanism stories
+ * below (`NarrowBarKeepsTheLabel` …).
  *
  * `play` (Chromium, the runner's 1280px window, the history column and the
  * card at their 320px default), oracles in brackets:
@@ -268,30 +289,32 @@ export const SettingsFromUserMenu: Story = {
  *    [the layout boxes];
  * 3. the history column has its named separator, the card none
  *    [ARIA `separator` + name];
- * 4. the bar's four controls do not overlap or clip, and the field sits on
- *    the bar's centre [the boxes against each other and against the bar] —
- *    the real consumer composition at the real consumer widths, not only the
- *    fixed-width reproductions further down;
+ * 4. the bar holds no search field; section link, topic title and gear read
+ *    left to right without overlapping, the gear clear of the card's toggle
+ *    [ARIA `searchbox`; the boxes];
  * 5. the label is a `<div>`, not a `<p>`: a node label may hold the
  *    breadcrumb's `nav`, which a `<p>` may not [the DOM];
- * 6. the gear stays clear of the card's toggle, which lies over the bar's
- *    end [the boxes].
+ * 6. the history's head is „Neuer Chat", then „Suchen" (a dialog opener),
+ *    and the chats are grouped under the days „Heute" and „Gestern"
+ *    [ARIA `button` names in DOM order, `aria-haspopup`, `heading` level 3];
+ * 7. the card is titled „Quellen hinzufügen", closes with its own button and
+ *    offers the four kinds of source [ARIA `heading`, `button` names];
+ * 8. the page is the chat: the composer, the answer with its one cited
+ *    source, the disclaimer [ARIA `textbox`, `button` names; text].
  */
 export const ChatWorkspace: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
-      <ChatPage />
+    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
     await expectBarHeight(canvasElement);
 
-    const history = (
-      await canvas.findByRole("complementary", { name: "Verlauf" })
-    ).getBoundingClientRect();
-    const sources = (
-      await canvas.findByRole("complementary", { name: "Quellen" })
-    ).getBoundingClientRect();
+    const historyColumn = await canvas.findByRole("complementary", { name: "Verlauf" });
+    const sourcesCard = await canvas.findByRole("complementary", { name: "Quellen" });
+    const history = historyColumn.getBoundingClientRect();
+    const sources = sourcesCard.getBoundingClientRect();
     const main = canvasElement.querySelector("main")!.getBoundingClientRect();
     await expect(history.right).toBeLessThanOrEqual(main.left + 1);
     // The sources float over the page as a card: inside the main area's
@@ -305,22 +328,135 @@ export const ChatWorkspace: Story = {
     ).toBeInTheDocument();
     await expect(canvas.queryByRole("separator", { name: "Breite der Quellen ändern" })).toBeNull();
 
-    const g = measureWorkspaceBar(canvasElement);
-    await expectNoOverlap(g);
-    await expectCentred(g);
+    const header = bar(canvasElement);
+    const q = within(header);
+    await expect(q.queryByRole("searchbox")).toBeNull();
+    const section = q.getByRole("link", { name: WORKSPACE_SECTION }).getBoundingClientRect();
+    const title = q.getByText(TOPIC_NAME).getBoundingClientRect();
+    const gear = q.getByRole("button", { name: "Einstellungen des Themas" }).getBoundingClientRect();
+    await expect(section.right).toBeLessThanOrEqual(title.left + EDGE_SLACK);
+    await expect(title.right).toBeLessThanOrEqual(gear.left + EDGE_SLACK);
 
-    const label = bar(canvasElement).querySelector<HTMLElement>(
-      "[data-slot='app-shell-page-label']",
-    )!;
+    const label = header.querySelector<HTMLElement>("[data-slot='app-shell-page-label']")!;
     await expect(label.tagName).toBe("DIV");
     await expect(
       within(label).getByRole("navigation", { name: "Navigationspfad" }),
     ).toBeVisible();
 
-    const toggle = within(bar(canvasElement)).getByRole("button", { name: "Quellen einklappen" });
-    await expect(g.gear.right).toBeLessThanOrEqual(
-      toggle.getBoundingClientRect().left + EDGE_SLACK,
-    );
+    const toggle = q.getByRole("button", { name: "Quellen einklappen" });
+    await expect(gear.right).toBeLessThanOrEqual(toggle.getBoundingClientRect().left + EDGE_SLACK);
+
+    const inHistory = within(historyColumn);
+    const newChat = inHistory.getByRole("button", { name: "Neuer Chat" });
+    const search = inHistory.getByRole("button", { name: "Suchen" });
+    await expect(search).toHaveAttribute("aria-haspopup", "dialog");
+    await expect(
+      newChat.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await expect(
+      inHistory.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
+    ).toEqual(["Heute", "Gestern"]);
+
+    const card = within(sourcesCard);
+    await expect(card.getByRole("heading", { name: "Quellen hinzufügen" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Quellen schließen" })).toBeVisible();
+    for (const kind of ["Crawl", "RSS", "Datei hochladen", "Text einfügen"]) {
+      await expect(card.getByRole("button", { name: kind })).toBeVisible();
+    }
+
+    const page = within(canvasElement.querySelector("main")!);
+    await expect(page.getByRole("textbox", { name: "Nachricht" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Quellen · 1/ })).toBeInTheDocument();
+    await expect(page.getByText(CHAT_FOOTER)).toBeVisible();
+  },
+};
+
+/**
+ * An empty `ChatStage` centres its content and composer together between its
+ * top and the pinned disclaimer: the gap above the `<h1>` equals the gap
+ * between the composer's block and the disclaimer, within 1px. Oracle: the
+ * layout engine's boxes, nothing from the component's code.
+ */
+async function expectCentredStart(main: HTMLElement) {
+  const stage = main.querySelector<HTMLElement>("[data-slot='chat-stage']")!;
+  await expect(stage).toHaveAttribute("data-empty");
+  const top = stage.getBoundingClientRect().top;
+  const heading = main.querySelector("h1")!.getBoundingClientRect();
+  const composer = stage.querySelector("[data-slot='chat-stage-composer']")!.getBoundingClientRect();
+  const footer = stage.querySelector("[data-slot='chat-stage-footer']")!.getBoundingClientRect();
+  const above = heading.top - top;
+  await expect(above).toBeGreaterThan(0);
+  await expect(Math.abs(above - (footer.top - composer.bottom))).toBeLessThanOrEqual(1);
+}
+
+/**
+ * **A new chat in a topic** — the topic's start page as JLURAG renders it
+ * once it has sources: the topic's name, the model, „1 Dokument · Stand …",
+ * the description, then the composer and the suggested questions, centred
+ * in the column (`ChatStage empty`). JLURAG's own start-page parts (title
+ * card, glow) are left out; the fixture builds the page from DS parts.
+ *
+ * `play` oracles: the topic's name is the page's only `<h1>`, above the
+ * composer, and the suggestions follow [ARIA `heading`, `textbox`; the
+ * boxes; text]; the stage is in its empty state and the block — name to
+ * suggestions — sits in the middle: the gap above the name equals the gap
+ * between the composer's block and the disclaimer, within 1px
+ * (`expectCentredStart`) [`data-empty`; the boxes].
+ */
+export const ChatWorkspaceStart: Story = {
+  render: () => (
+    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+      <TopicStart />
+    </AppShellFixture>
+  ),
+  play: async ({ canvasElement }) => {
+    const main = canvasElement.querySelector("main")!;
+    const page = within(main);
+    const headings = page.getAllByRole("heading", { level: 1 });
+    await expect(headings.map((h) => h.textContent)).toEqual([TOPIC_NAME]);
+    const name = headings[0].getBoundingClientRect();
+    const field = page.getByRole("textbox", { name: "Nachricht" }).getBoundingClientRect();
+    await expect(name.bottom).toBeLessThanOrEqual(field.top);
+    await expect(page.getByText("Vorschläge")).toBeInTheDocument();
+
+    await expectCentredStart(main);
+  },
+};
+
+/**
+ * **A new topic, no sources yet** — JLURAG after „Neues Thema": „Füge deine
+ * erste Quelle hinzu" in the middle over the composer, „Noch kein Verlauf
+ * vorhanden." in the history, and the sources card's list is a
+ * `FileDropzone` (`emptyTopic`). The card stays open: adding the first
+ * source is the one thing to do.
+ *
+ * `play` oracles [ARIA `heading`, `button`; text; the boxes]: the call is the
+ * page's `<h1>`, centred with the composer as in `ChatWorkspaceStart`; the
+ * history has no chat and says so; the card offers the dropzone (a button
+ * that opens the file picker) and lists no source.
+ */
+export const ChatWorkspaceEmpty: Story = {
+  render: () => (
+    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME} emptyTopic>
+      <TopicNew />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const main = canvasElement.querySelector("main")!;
+    const page = within(main);
+    await expect(page.getByRole("heading", { level: 1, name: FIRST_SOURCE_TITLE })).toBeVisible();
+    await expectCentredStart(main);
+
+    const history = within(await canvas.findByRole("complementary", { name: "Verlauf" }));
+    await expect(history.getByText(NO_HISTORY)).toBeVisible();
+    await expect(history.queryByRole("button", { name: "Chat-Aktionen" })).toBeNull();
+
+    const card = within(await canvas.findByRole("complementary", { name: "Quellen" }));
+    // „Datei hochladen" twice: the button among the kinds, and the dropzone
+    // itself, which opens the same file picker.
+    await expect(card.getAllByRole("button", { name: "Datei hochladen" })).toHaveLength(2);
+    await expect(card.getByText("Dateien hierher ziehen")).toBeVisible();
+    await expect(card.queryByRole("button", { name: "Quellen-Aktionen" })).toBeNull();
   },
 };
 
