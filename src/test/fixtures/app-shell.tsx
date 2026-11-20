@@ -13,7 +13,6 @@ import {
   Settings,
   Trash2,
   Users,
-  Wrench,
 } from "lucide-react";
 import { AppShellLayout, type AppShellLayoutProps } from "../../templates/app-shell-layout";
 import {
@@ -47,10 +46,15 @@ import { UserMenuWithSettings } from "./user-menu";
  * (`web/src/components/`), with neutral content — German labels, no app
  * strings beyond what makes the shape recognisable:
  *
- *  - `overview` — `AppChrome.tsx` (the `AppShellLayout` call at l. 383–423):
- *    `Logo product="RAG"`, NavItem rows in a `SidebarPanel` (`SidebarNav.tsx`),
- *    the user menu as `sidebarFooter`, the search in `search`, no `pageLabel`,
- *    no `headerActions`, two narrow-screen tabs.
+ *  - `overview` — `AppChrome.tsx` (`development`, Nov 2026):
+ *    `Logo product="RAG"`, NavItem rows in a `SidebarPanel` (`SidebarNav.tsx`)
+ *    — „Suchen" (it opens the search palette there), „Mein Wissen",
+ *    „Geteiltes Wissen", „Entdecken"; „Werkzeuge" is hidden in the app
+ *    (`SHOW_TOOLS_NAV = false`) and left out here — the user menu as
+ *    `sidebarFooter`, no `pageLabel`, no `headerActions`, two narrow-screen
+ *    tabs. JLURAG renders this view with `bar={false}` (`Overview` does too);
+ *    the mechanism stories keep the bar and pass a `search` to pin its
+ *    behaviour, which other apps use.
  *  - `workspace` — `KbWorkspaceLayout.tsx` (l. 132–208): the chat history as
  *    the left column (`history/HistoryPanel.tsx`: `SidebarPanel` expanded,
  *    `SidebarRail` collapsed), the breadcrumb „Mein Wissen / ‹topic›" as
@@ -145,21 +149,21 @@ const OVERVIEW_TABS: MobilePaneTab[] = [
 function OverviewNavRows() {
   return (
     <>
-      <NavItem type="button" label="Meine Sammlungen" active>
-        <Home size={20} aria-hidden="true" />
-        <span>Meine Sammlungen</span>
+      <NavItem type="button" label="Suchen">
+        <Search size={20} aria-hidden="true" />
+        <span>Suchen</span>
       </NavItem>
-      <NavItem type="button" label="Mit mir geteilt">
+      <NavItem type="button" label="Mein Wissen" active>
+        <Home size={20} aria-hidden="true" />
+        <span>Mein Wissen</span>
+      </NavItem>
+      <NavItem type="button" label="Geteiltes Wissen">
         <Users size={20} aria-hidden="true" />
-        <span>Mit mir geteilt</span>
+        <span>Geteiltes Wissen</span>
       </NavItem>
       <NavItem type="button" label="Entdecken">
         <Compass size={20} aria-hidden="true" />
         <span>Entdecken</span>
-      </NavItem>
-      <NavItem type="button" label="Werkzeuge">
-        <Wrench size={20} aria-hidden="true" />
-        <span>Werkzeuge</span>
       </NavItem>
     </>
   );
