@@ -244,11 +244,12 @@ Run these in order on every file `shadcn add` produced, before the PR:
 
 ```tsx
 import { Button } from "@ki4jlu/design-system";
+import { Menu } from "lucide-react";
 
 <Button onClick={save}>Speichern</Button>                 // primary
 <Button variant="secondary">Abbrechen</Button>
 <Button variant="outline" size="sm">Filter</Button>
-<Button variant="ghost" size="icon" aria-label="Menü"><Icon name="menu" /></Button>
+<Button variant="ghost" size="icon" aria-label="Menü"><Menu size={20} /></Button>  // icons: Foundations/Icons
 // Delete in a footer / toolbar:
 <Button variant="ghost-destructive">Löschen</Button>
 
