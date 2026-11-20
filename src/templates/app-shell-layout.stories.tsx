@@ -21,8 +21,6 @@ import {
 } from "../test/fixtures/app-shell";
 import * as chatStageStories from "../components/chat-stage.stories";
 import * as dashboardStories from "./dashboard-layout.stories";
-import * as formStories from "./form-layout.stories";
-import * as tableStories from "./table-layout.stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
 import {
   CHAT_FOOTER,
@@ -32,6 +30,7 @@ import {
   TopicNew,
   TopicStart,
 } from "../test/fixtures/topic-chat";
+import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
 
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
@@ -43,8 +42,9 @@ import {
  * Wissen" would stand twice. The mechanism stories fill the
  * central `search`, the bar's mechanism other apps use; the page stories do
  * not, as JLURAG does not: its overview has no bar, and its workspace bar no
- * search („Suchen" is in the history column). The first five stories are one per PAGE CONTEXT; the rest
- * are the mechanism regressions (centring, empty bar, short bar, inset,
+ * search („Suchen" is in the history column). The first seven stories are
+ * JLURAG's screens — the overview and its settings, a topic in three states
+ * and its settings — then `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
  *
@@ -56,8 +56,6 @@ import {
 // Portable Stories: page content is the content templates' own stories —
 // templates compose into each other, nothing is mocked again.
 const { Standard: DashboardPage } = composeStories(dashboardStories, {});
-const { Admin: TablePageContent } = composeStories(tableStories, {});
-const { Settings: FormPageContent } = composeStories(formStories, {});
 
 /**
  * The chat column of the workspace: `ChatStage` with the args of its own
@@ -461,52 +459,75 @@ export const ChatWorkspaceEmpty: Story = {
 };
 
 /**
- * **A table page in the overview shell** — `TableLayout` (its `Admin` story)
- * as `children`. The shell brings the chrome and the one `<main>`; the
- * content template brings the page's heading.
+ * **A topic's settings** — the gear in the workspace bar opens JLURAG's
+ * „Thema-Einstellungen" (`KbSettingsDialog.tsx`; screenshots of 20.11.2026):
+ * a `SettingsDialog` (`size="xl"`, maximizable) with Startseite, Verhalten,
+ * Berechtigungen, Mitglieder and Versionsverlauf (`topic-settings` fixture).
+ * This is where the app's tables and forms are — in settings windows, not on
+ * pages of the shell: the rights per role are a `Table` (Besitzer and Admin
+ * one muted band, their rights fixed), the members a list, the footer the
+ * draft state with „Abbrechen / Speichern".
  *
- * `play` oracle: the ARIA tree — exactly one `main`, the table inside it, and
- * the content template's `<h1>` as the page's only level-1 heading (the
- * shell contributes none; `pageLabel` would be a `<p>`).
+ * `play` (Chromium) walks the window as a user does and ends on the rights
+ * table; oracles in brackets:
+ * 1. the gear announces a dialog and opens „Thema-Einstellungen" on
+ *    „Startseite", with the footer's „Speichern" [ARIA `aria-haspopup`,
+ *    `dialog`, `heading` level 2, `button`];
+ * 2. „Berechtigungen" shows the rights as a table with the four roles as
+ *    column headers; a Bearbeiter right is a checkbox that can be changed, an
+ *    Admin right one that cannot [ARIA `table`, `columnheader`, `checkbox`,
+ *    `aria-disabled` / state after a click];
+ * 3. „Personen zuweisen" leads to „Mitglieder", which lists the three members
+ *    [ARIA `heading`, `list` / `listitem`];
+ * 4. „Versionsverlauf" has no footer — nothing there is a draft
+ *    [no „Speichern" button].
  */
-export const TablePage: Story = {
+export const ChatWorkspaceSettings: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <TablePageContent />
+    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+      <TopicConversation />
     </AppShellFixture>
   ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const mains = canvas.getAllByRole("main");
-    await expect(mains).toHaveLength(1);
-    await expect(within(mains[0]).getByRole("table")).toBeVisible();
-    await expect(
-      within(mains[0]).getByRole("heading", { level: 1, name: "Elemente" }),
-    ).toBeVisible();
-    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-  },
-};
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const body = page(canvasElement);
+    const gear = canvas.getByRole("button", { name: "Einstellungen des Themas" });
+    await expect(gear).toHaveAttribute("aria-haspopup", "dialog");
+    await userEvent.click(gear);
 
-/**
- * **A form page in the overview shell** — `FormLayout` (its `Settings` story)
- * as `children`. Same composition rule and the same oracle as `TablePage`:
- * one `main`, the form's submit button inside it, one `<h1>` — the form's.
- */
-export const FormPage: Story = {
-  render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <FormPageContent />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const mains = canvas.getAllByRole("main");
-    await expect(mains).toHaveLength(1);
-    await expect(within(mains[0]).getByRole("button", { name: "Speichern" })).toBeVisible();
+    const dialog = await body.findByRole("dialog", { name: TOPIC_SETTINGS_TITLE });
+    const d = within(dialog);
+    await expect(d.getByRole("heading", { level: 2, name: "Startseite" })).toBeVisible();
+    await expect(d.getByRole("button", { name: "Speichern" })).toBeInTheDocument();
+
+    await userEvent.click(d.getByRole("button", { name: "Verhalten" }));
+    await expect(await d.findByRole("heading", { level: 2, name: "Verhalten" })).toBeVisible();
+    await expect(d.getByRole("radiogroup", { name: "Rolle" })).toBeVisible();
+
+    await userEvent.click(d.getByRole("button", { name: "Berechtigungen" }));
+    const table = await d.findByRole("table", { name: "Rechte je Rolle" });
+    const t = within(table);
+    for (const role of ["Besitzer", "Admin", "Bearbeiter", "Leser"]) {
+      await expect(t.getByRole("columnheader", { name: role })).toBeInTheDocument();
+    }
+    const editable = t.getByRole("checkbox", { name: "Leser: Sehen" });
+    await expect(editable).not.toBeChecked();
+    await userEvent.click(editable);
+    await expect(editable).toBeChecked();
+    await userEvent.click(editable);
+    await expect(t.getByRole("checkbox", { name: "Admin: Sehen (fest)" })).toBeDisabled();
+
+    await userEvent.click(d.getByRole("button", { name: "Personen zuweisen" }));
+    await expect(await d.findByRole("heading", { level: 2, name: "Mitglieder" })).toBeVisible();
     await expect(
-      within(mains[0]).getByRole("heading", { level: 1, name: "Element-Einstellungen" }),
-    ).toBeVisible();
-    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+      within(d.getByRole("list", { name: "Mitglieder" })).getAllByRole("listitem"),
+    ).toHaveLength(3);
+
+    await userEvent.click(d.getByRole("button", { name: "Versionsverlauf" }));
+    await expect(await d.findByRole("heading", { level: 2, name: "Versionsverlauf" })).toBeVisible();
+    await expect(d.queryByRole("button", { name: "Speichern" })).toBeNull();
+
+    await userEvent.click(d.getByRole("button", { name: "Berechtigungen" }));
+    await expect(await d.findByRole("table", { name: "Rechte je Rolle" })).toBeVisible();
   },
 };
 

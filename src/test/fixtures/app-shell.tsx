@@ -42,6 +42,7 @@ import { SidebarPanel } from "../../components/sidebar-panel";
 import { SidebarRail, SidebarRailItem } from "../../components/sidebar-rail";
 import type { MobilePaneTab } from "../../lib/pane-layout";
 import { usePersistedWidth } from "../../lib/persisted-width";
+import { TopicSettingsDialog } from "./topic-settings";
 import { UserMenuWithSettings } from "./user-menu";
 
 /* ---------------------------------------------------------------------------
@@ -520,6 +521,8 @@ function WorkspaceShell({
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [tab, setTab] = useState("chat");
+  // The gear opens the topic's settings (`topic-settings` fixture).
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // `usePersistedWidth` is exactly the wiring an app writes, except for the
   // injected `storage`; the consumer passes the WHOLE key.
   const [leftWidth, setLeftWidth] = usePersistedWidth("storybook.workspace.leftWidth", {
@@ -545,15 +548,20 @@ function WorkspaceShell({
       navLabel="Verlauf"
       pageLabel={<WorkspaceBreadcrumb topic={topic} />}
       headerActions={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          title="Einstellungen des Themas"
-          aria-label="Einstellungen des Themas"
-        >
-          <Settings size={20} aria-hidden="true" />
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="Einstellungen des Themas"
+            aria-label="Einstellungen des Themas"
+            aria-haspopup="dialog"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings size={20} aria-hidden="true" />
+          </Button>
+          <TopicSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} topic={topic} />
+        </>
       }
       sidebarFooter={userMenu}
       leftOpen={leftOpen}

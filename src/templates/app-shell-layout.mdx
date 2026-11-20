@@ -63,13 +63,14 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
   „Darstellung" section is `AppearanceSettings`, the only place they are
   switched. The `SettingsFromUserMenu` story walks that route in its `play`
   function.
-- **Page content is a content template**, hung in as `children` — the shell
-  brings the chrome and the one `<main>`, the template brings the page's
-  heading:
+- **Tables and forms live in settings windows, not on pages of the shell.**
+  In JLURAG the gear of a topic opens „Thema-Einstellungen", a
+  `SettingsDialog` whose sections hold the rights per role (a `Table`), the
+  members and the version history; the admin console is a `SettingsDialog`
+  too. The `ChatWorkspaceSettings` story opens it from the gear and ends on
+  the rights table.
 
-<Canvas of={AppShellLayoutStories.TablePage} />
-
-<Canvas of={AppShellLayoutStories.FormPage} />
+<Canvas of={AppShellLayoutStories.ChatWorkspaceSettings} />
 
 ## Slots & Props
 
