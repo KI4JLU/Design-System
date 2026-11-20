@@ -150,6 +150,16 @@ export const Hairline: Story = {
     await expect(getComputedStyle(neutral.querySelector("[data-slot=card-band]")!).backgroundImage).toContain("radial-gradient");
     // Its rule is 1px in the border colour: the fill under the top border stays empty.
     await expect(getComputedStyle(neutral.querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    // The title in the band is set in the body face, not the system UI font
+    // Tailwind's `font-sans` falls back to without `--font-sans`. Oracle: the
+    // `--font-body-base` token, resolved through a probe.
+    const probe = document.createElement("span");
+    probe.style.fontFamily = "var(--font-body-base)";
+    canvasElement.appendChild(probe);
+    const bodyFace = getComputedStyle(probe).fontFamily;
+    probe.remove();
+    const title = neutral.querySelector<HTMLElement>("[data-slot=card-title]")!;
+    await expect(getComputedStyle(title).fontFamily).toBe(bodyFace);
   },
 };
 
