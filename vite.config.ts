@@ -44,6 +44,7 @@ export default defineConfig({
     projects: [{
       extends: true,
       test: {
+        name: 'unit',
         // globals: needed for @testing-library/react's automatic DOM cleanup
         globals: true,
         environment: "jsdom",
@@ -65,6 +66,8 @@ export default defineConfig({
       },
       test: {
         name: 'storybook',
+        // Parks the real pointer before every story — see the file.
+        setupFiles: ['./src/test/storybook-setup.ts'],
         browser: {
           enabled: true,
           headless: true,
@@ -79,6 +82,15 @@ export default defineConfig({
           // sees. 1280x800 is a desktop window; a story that wants the narrow
           // arrangement says so per story.
           viewport: { width: 1280, height: 800 },
+          commands: {
+            // Moves Playwright's real mouse off the page. A story that hovers
+            // with the real pointer (`realHover`) leaves it where it was, and
+            // the next story — in another file, at the same spot — would
+            // start under a pointer it never moved: `:hover` styles at rest.
+            parkPointer: async ({ page }) => {
+              await page.mouse.move(-1, -1);
+            },
+          },
           instances: [{
             browser: 'chromium'
           }]

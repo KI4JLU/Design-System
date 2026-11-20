@@ -110,7 +110,7 @@ workspaces or duplicate installs, keep a single copy via Vite's
 ```bash
 npm install
 npm run storybook        # Workbench + Doku (Port 6006)
-npm test                 # Vitest (jsdom)
+npm test                 # unit tests (jsdom), then story tests (Chromium) — one after the other
 npm run lint             # inkl. dogfooded design-system-Regeln
 npm run build            # dist/: ESM + d.ts + tokens.css
 ```
