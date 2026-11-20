@@ -12,10 +12,12 @@ fill its slots — the frame is **never** rebuilt in the app.
 
 **One shell, adapted per context.** Every view of an app is this one
 `AppShellLayout`; what changes between views is what goes into the slots, not
-which frame renders them. And **a central search is the standard fill of the
-bar**: every story on this page passes `search`, and so should every app view
-that has something to search. The prop stays optional — an app without search
-omits it and keeps the bar's geometry (see „The chrome bar" below).
+which frame renders them. Where a view has a chrome bar, **a central search
+is its standard fill**: the mechanism stories on this page pass `search`. The
+prop stays optional — an app without search omits it and keeps the bar's
+geometry (see „The chrome bar" below). JLURAG's overview has **no bar at all**
+(`bar={false}`): navigation and search („Suchen", a palette) live in the left
+column, and the page brings its own heading — the `Overview` story.
 
 <Canvas of={AppShellLayoutStories.Overview} />
 
@@ -35,15 +37,15 @@ component with a different fill; the shared story fixture that renders them is
 | Slot | Overview context — `AppChrome.tsx` | Workspace context — `KbWorkspaceLayout.tsx` |
 |---|---|---|
 | `logo` | `Logo product="RAG"` | `Logo product="RAG"` (JLURAG wraps it in a ghost button back to the overview; the fixture does not, see its header) |
-| `nav` / `navLabel` | NavItem rows in a `SidebarPanel` („Hauptnavigation") | the chat history: `SidebarPanel` + `SidebarCard`s, a `SidebarRail` when collapsed („Verlauf") |
+| `nav` / `navLabel` | NavItem rows in a `SidebarPanel` („Hauptnavigation"): Suchen, Mein Wissen, Geteiltes Wissen, Entdecken | the chat history: `SidebarPanel` + `SidebarCard`s, a `SidebarRail` when collapsed („Verlauf") |
 | `sidebarFooter` | `SidebarUserMenu` — Profil · Einstellungen · Abmelden | the same user menu |
-| `pageLabel` | — (the content template renders the page's `<h1>`) | back button + topic title |
-| `search` | the global search | the topic-scoped search |
+| `pageLabel` | — (the content template renders the page's `<h1>`) | the breadcrumb „Mein Wissen / ‹topic›" |
+| `bar` / `search` | no bar (`bar={false}`); „Suchen" in the column opens a palette | the topic-scoped search |
 | `headerActions` | — | one ghost gear icon button |
 | `rightPanel` | — | the sources, with a `collapsedPreview` rail |
-| `leftWidth` / `leftResize` | — (256 default) | resizable, like the right column |
+| `leftWidth` / `leftResize` | — (256 default) | resizable; the right column floats as a card (0.81.0) |
 | `mobileTabs` | 2 — navigation, content | 3 — history, chat, sources |
-| `children` | `SectionedGridLayout` (also tables, forms) | `ChatStage` |
+| `children` | `GridLayout` — „Mein Wissen" (also tables, forms) | `ChatStage` |
 
 <Canvas of={AppShellLayoutStories.ChatWorkspace} />
 
@@ -86,7 +88,7 @@ component with a different fill; the shared story fixture that renders them is
 | `onMobileTabChange` | `(id: string) => void` | ✅ | A drawer or the sheet was opened or closed; carries the area to show. |
 | `mobileTabBarLabel` | `string` | — | Deprecated and unused: the narrow arrangement has no tab bar. |
 | `sidebarNarrowAction` | `ReactNode` | — | The navigation's primary action below `md` („Neuer Chat"): the end of the drawer's bottom row, beside the footer in its short form. |
-| `children` | `ReactNode` | ✅ | Page content — a content template (`SectionedGridLayout`, `DashboardLayout`, `TableLayout`, `FormLayout`, …) or a `ChatStage`. |
+| `children` | `ReactNode` | ✅ | Page content — a content template (`GridLayout`, `SectionedGridLayout`, `DashboardLayout`, `TableLayout`, `FormLayout`, …) or a `ChatStage`. |
 
 <ArgTypes />
 
@@ -105,9 +107,9 @@ component with a different fill; the shared story fixture that renders them is
 - **A search field goes in `search`, not in `headerActions`.** Centred
   inside `headerActions` with `mx-auto`, it would centre in the space
   *after* the label, and move whenever the page name changes.
-- **Without a label the centre is the same** — the overview context has no
-  `pageLabel` (its content template renders the page's title), and its field
-  sits on the bar's centre; `Overview` asserts it.
+- **Without a label the centre is the same** — with no `pageLabel` (the
+  content template renders the page's title) the field still sits on the
+  bar's centre; `SearchWithoutLabel` asserts it.
 - **The bar stays 56px high** — with label, search only, actions only, all,
   and none:
 

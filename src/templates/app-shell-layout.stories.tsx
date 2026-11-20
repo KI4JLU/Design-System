@@ -21,15 +21,19 @@ import {
 import * as chatStageStories from "../components/chat-stage.stories";
 import * as dashboardStories from "./dashboard-layout.stories";
 import * as formStories from "./form-layout.stories";
-import * as sectionedGridStories from "./sectioned-grid-layout.stories";
 import * as tableStories from "./table-layout.stories";
+import { MeinWissen } from "../test/fixtures/mein-wissen";
 
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
  * shared `AppShellFixture` (`src/test/fixtures/app-shell.tsx`) in one of the
  * two contexts of the reference consumer — `overview` (JLURAG `AppChrome.tsx`)
- * or `workspace` (JLURAG `KbWorkspaceLayout.tsx`) — and every story fills the
- * central `search`. The first five stories are one per PAGE CONTEXT; the rest
+ * or `workspace` (JLURAG `KbWorkspaceLayout.tsx`). The overview's page is
+ * JLURAG's „Mein Wissen" (`GridLayout`, the `mein-wissen` fixture), which renders
+ * its title itself — the reason `pageLabel` is optional: with a label, „Mein
+ * Wissen" would stand twice. Every story but `Overview` and `WithoutChromeBar`
+ * fills the central `search`, the bar's mechanism other apps use; JLURAG's
+ * overview has no bar. The first five stories are one per PAGE CONTEXT; the rest
  * are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
@@ -42,10 +46,6 @@ import * as tableStories from "./table-layout.stories";
 // Portable Stories: page content is the content templates' own stories —
 // templates compose into each other, nothing is mocked again.
 const { Standard: DashboardPage } = composeStories(dashboardStories, {});
-// The page that renders its title ITSELF (`PageHeader`, `<h1>Sammlungen</h1>`)
-// — the reason `pageLabel` became optional: with a label, „Sammlungen" would
-// stand twice, one above the other.
-const { Standard: SectionedGridPage } = composeStories(sectionedGridStories, {});
 const { Admin: TablePageContent } = composeStories(tableStories, {});
 const { Settings: FormPageContent } = composeStories(formStories, {});
 
@@ -171,47 +171,54 @@ const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.
 /* ======================================================================== */
 
 /**
- * **The overview context** — JLURAG's `AppChrome.tsx`: the brand, NavItem
- * rows in a `SidebarPanel`, the user menu pinned to the column's foot, and
- * the search as the bar's ONE control — no `pageLabel` (the content template
- * renders the page's `<h1>`), no `headerActions`. The page is
- * `SectionedGridLayout`, the overview/browse template.
+ * **The overview context** — JLURAG's „Mein Wissen" as `development` renders
+ * it (`AppChrome.tsx`, screenshots of 20.11.2026): no chrome bar
+ * (`bar={false}`); the brand, the NavItem rows — „Suchen" (the search palette
+ * in the app), „Mein Wissen", „Geteiltes Wissen", „Entdecken" — in a
+ * `SidebarPanel`, the user menu pinned to the column's foot. The page is
+ * `GridLayout` with the topic cards, and it renders the page's `<h1>` itself.
  *
  * `play` (Chromium), oracles in brackets:
- * 1. the bar is 56px [the published geometry contract JustRAG positions its
- *    toasts against, not a number read from the component];
+ * 1. no chrome bar: the page starts at the frame's top [the DOM; the boxes];
  * 2. the column stands left of `<main>` [the layout engine's boxes];
- * 3. the field is centred on the bar with no label beside it, and the bar
- *    renders no label element at all [the bar's own box; the DOM];
- * 4. „Einstellungen" in the user menu opens the settings window on its
+ * 3. the navigation's rows in JLURAG's order, „Mein Wissen" current
+ *    [ARIA `navigation`, `button` names, `aria-current`];
+ * 4. the page is the region „Mein Wissen" with the only `<h1>`, inside
+ *    `<main>` [ARIA `region`, `heading`];
+ * 5. „Einstellungen" in the user menu opens the settings window on its
  *    „Darstellung" section, and it closes again [ARIA roles and names:
  *    `menuitem`, `dialog`, `heading` level 2, `combobox`] — the route that
  *    replaced a theme toggle in the bar.
  */
 export const Overview: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <SectionedGridPage />
+    <AppShellFixture context="overview" search={null} bar={false}>
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
-    await expectBarHeight(canvasElement);
-
+    await expect(
+      canvasElement.querySelector("[data-slot='app-shell-content'] > header"),
+    ).toBeNull();
+    const main = canvas.getByRole("main");
     const column = await canvas.findByRole("complementary", { name: "Hauptnavigation" });
-    const main = canvasElement.querySelector("main")!;
+    await expect(main.getBoundingClientRect().top).toBeCloseTo(column.getBoundingClientRect().top, 0);
     await expect(column.getBoundingClientRect().right).toBeLessThanOrEqual(
       main.getBoundingClientRect().left + 1,
     );
 
-    const row = bar(canvasElement).getBoundingClientRect();
-    const field = (
-      await canvas.findByRole("searchbox", { name: "Suchen" })
-    ).getBoundingClientRect();
-    await expect((field.left + field.right) / 2).toBeCloseTo((row.left + row.right) / 2, 0);
-    await expect(field.left).toBeGreaterThan(row.left);
-    await expect(field.right).toBeLessThan(row.right);
-    // Kein Label-Element, nicht nur kein Text: die Zeile enthält keinen Absatz.
-    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
+    const nav = within(canvas.getByRole("navigation", { name: "Hauptnavigation" }));
+    await expect(nav.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual([
+      "Suchen",
+      "Mein Wissen",
+      "Geteiltes Wissen",
+      "Entdecken",
+    ]);
+    await expect(nav.getByRole("button", { name: "Mein Wissen" })).toHaveAttribute("aria-current");
+
+    const region = within(main).getByRole("region", { name: "Mein Wissen" });
+    await expect(within(region).getByRole("heading", { level: 1, name: "Mein Wissen" })).toBeVisible();
+    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 
     const body = page(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: /Jamie Lee/ }));
@@ -450,6 +457,32 @@ export const WithCenteredSearch: Story = {
 };
 
 /**
+ * **The search without a label**: an overview with a bar and no `pageLabel`
+ * — the content template renders the page's title — keeps the field on the
+ * bar's centre, and the bar renders no label element at all.
+ *
+ * `play` (Chromium), oracles in brackets: the field's centre is the bar's
+ * centre, and the field lies inside the bar [the bar's own box]; there is no
+ * label element [the DOM].
+ */
+export const SearchWithoutLabel: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={<ShellSearch />}>
+      <MeinWissen />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const row = bar(canvasElement).getBoundingClientRect();
+    const field = (await canvas.findByRole("searchbox", { name: "Suchen" })).getBoundingClientRect();
+    await expect((field.left + field.right) / 2).toBeCloseTo((row.left + row.right) / 2, 0);
+    await expect(field.left).toBeGreaterThan(row.left);
+    await expect(field.right).toBeLessThan(row.right);
+    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
+  },
+};
+
+/**
  * Weder Label noch Suche noch Aktionen — die leere Zeile. Sie bleibt trotzdem
  * **56px hoch**: Consumer legen Overlays unter dieser Kante ab (JustRAGs
  * `Toast.css`: `top: 68px` = 56 + 12), und eine Zeile, die beim Weglassen der
@@ -463,7 +496,7 @@ export const WithCenteredSearch: Story = {
 export const WithoutPageLabelOrActions: Story = {
   render: () => (
     <AppShellFixture context="overview" search={null}>
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvasElement }) => {
@@ -491,7 +524,7 @@ export const WithoutPageLabelOrActions: Story = {
 export const WithoutChromeBar: Story = {
   render: () => (
     <AppShellFixture context="overview" search={null} bar={false}>
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -782,7 +815,7 @@ export const BarInsetIsTheColumnGutter: Story = {
 export const WithCollapsibleColumns: Story = {
   render: () => (
     <AppShellFixture context="overview" search={<ShellSearch />}>
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
@@ -823,7 +856,7 @@ export const WithCollapsibleColumns: Story = {
     /* Und die Zeilen passen wirklich in 60px — das ist die Messung, die nur der
        Browser-Runner machen kann (jsdom hat kein Layout). Orakel: die
        exportierte Designkonstante, nicht eine literale 60. */
-    const row = await canvas.findByRole("button", { name: "Mit mir geteilt" });
+    const row = await canvas.findByRole("button", { name: "Geteiltes Wissen" });
     await expect(row.getBoundingClientRect().width).toBeLessThanOrEqual(
       SIDE_PANEL_RAIL_WIDTH,
     );
@@ -857,7 +890,7 @@ export const WithCollapsibleColumns: Story = {
 export const CollapsedRailKeepsVerticalPositions: Story = {
   render: () => (
     <AppShellFixture context="overview" search={<ShellSearch />}>
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
@@ -878,7 +911,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
 
     const toggleOpen = await canvas.findByRole("button", { name: "Navigation einklappen" });
     const openToggleCentre = centreY(toggleOpen);
-    const openRow = await canvas.findByRole("button", { name: "Meine Sammlungen" });
+    const openRow = await canvas.findByRole("button", { name: "Mein Wissen" });
     // The composition under test: the rows sit in a `SidebarPanel` frame.
     await expect(openRow.closest('[data-slot="sidebar-panel"]')).not.toBeNull();
     const openNavTop = offsetTop(openRow);
@@ -893,7 +926,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
     // Dieselbe Zeile, jetzt in ihrer Icon-Form: `NavItem` behält seinen Namen
     // über `aria-label`, deshalb findet sie derselbe Selektor.
     await expect(
-      offsetTop(await canvas.findByRole("button", { name: "Meine Sammlungen" })),
+      offsetTop(await canvas.findByRole("button", { name: "Mein Wissen" })),
     ).toBe(openNavTop);
     /* And the foot: the same node, the same distance to the bottom edge. The
        rail adds no bottom padding of its own on top of the consumer node's.
@@ -1153,7 +1186,7 @@ export const WithSystemNotice: Story = {
         </Alert>
       }
     >
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1202,7 +1235,7 @@ export const WithSystemStatus: Story = {
         </Alert>
       }
     >
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1242,7 +1275,7 @@ export const WithSystemStatusBottomEnd: Story = {
         </Alert>
       }
     >
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1284,7 +1317,7 @@ export const WithSystemStatusTopEnd: Story = {
         </Alert>
       }
     >
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1325,7 +1358,7 @@ export const WithSystemStatusBottomEndTall: Story = {
         </Alert>
       }
     >
-      <SectionedGridPage />
+      <MeinWissen />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1427,7 +1460,7 @@ export const NativeShell: Story = {
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <SectionedGridPage />
+        <MeinWissen />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1500,7 +1533,7 @@ export const NativeShellFullScreen: Story = {
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <SectionedGridPage />
+        <MeinWissen />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1536,7 +1569,7 @@ export const NativeShellCollapsed: Story = {
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <SectionedGridPage />
+        <MeinWissen />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1652,7 +1685,7 @@ export const NativeShellWithNotice: Story = {
           </Alert>
         }
       >
-        <SectionedGridPage />
+        <MeinWissen />
       </AppShellFixture>
     </NativeShellHost>
   ),
