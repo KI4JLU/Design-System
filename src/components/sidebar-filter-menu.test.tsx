@@ -42,6 +42,14 @@ describe("SidebarFilterMenu", () => {
     expect(onReset).not.toHaveBeenCalled();
   });
 
+  // Oracle: the DS's selected fill (sidebar-card's active state, ghost aria-pressed).
+  it("sets the trigger on the selected fill while a filter hides rows, and only then", () => {
+    const { rerender } = render(<SidebarFilterMenu label="Filter" filters={filters} onValueChange={() => {}} />);
+    expect(screen.getByRole("button", { name: "Filter" })).not.toHaveClass("bg-primary/10");
+    rerender(<SidebarFilterMenu label="Filter" activeLabel="Filter aktiv" active filters={filters} onValueChange={() => {}} />);
+    expect(screen.getByRole("button", { name: "Filter aktiv" })).toHaveClass("bg-primary/10", "text-primary");
+  });
+
   it("names the trigger by activeLabel while a filter hides rows", () => {
     render(<SidebarFilterMenu label="Filter" activeLabel="Filter aktiv" active filters={filters} onValueChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Filter aktiv" })).toBeInTheDocument();
