@@ -120,6 +120,38 @@ function History() {
   );
 }
 
+/** The filter beside a heading, without and with a filter that hides rows. */
+export const FilterActive: Story = {
+  args: { label: "Verlauf" },
+  render: () => (
+    <ul className="grid w-72 gap-4">
+      {[false, true].map((active) => (
+        <SidebarSection
+          key={String(active)}
+          label={active ? "Verlauf (gefiltert)" : "Verlauf"}
+          aside={(
+            <SidebarFilterMenu
+              label="Filter"
+              activeLabel="Filter aktiv"
+              active={active}
+              filters={[{ key: "activity", label: "Letzte Aktivität", value: active ? "week" : "all", options: [{ value: "all", label: "Alle" }, { value: "week", label: "Diese Woche" }] }]}
+              onValueChange={() => {}}
+            />
+          )}
+        >
+          <SidebarCardList><SidebarCard title="Datei-Browser" /></SidebarCardList>
+        </SidebarSection>
+      ))}
+    </ul>
+  ),
+  // Oracle: only the active trigger sits on the selected fill, and it shows without hover.
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "Filter aktiv" })).toHaveClass("bg-primary/10");
+    await expect(canvas.getByRole("button", { name: "Filter" })).not.toHaveClass("bg-primary/10");
+  },
+};
+
 /** Sections, an empty one, and the plain history with its filter. */
 export const Sections: Story = {
   args: { label: "Angepinnt" },
