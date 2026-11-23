@@ -52,8 +52,7 @@ lucide draws 24px — too large beside their text. Pass one:
 
 <Canvas of={IconStories.SizesFromTheCallSite} />
 
-The sizes are numbers in the components today, not tokens — see
-„Open points" below.
+The sizes are numbers in the components today, not tokens.
 
 ## Colour
 
@@ -88,7 +87,7 @@ recognises it in every list. The table is what JLURAG and the DS use today
 | Add, create | `Plus` | 21 files |
 | Delete | `Trash2` — always with a destructive `Button` variant | 25 |
 | Close; remove from a list | `X` | 22 |
-| Edit, rename | `Pencil` | 19 — **and `PenLine` in 2** (as `Edit3` and `PenLine`), see below |
+| Edit, rename | `Pencil` | 19 — **and `PenLine` in 2** (as `Edit3` and `PenLine`) |
 | Search | `Search` | 18 |
 | Download / Upload | `Download` / `Upload` | 20 / 6 |
 | Copy | `Copy` | 11 |
@@ -107,29 +106,9 @@ recognises it in every list. The table is what JLURAG and the DS use today
 | Locked | `Lock` | 5 |
 | Send | `ArrowUp` | 8 |
 | Information | `Info` | 11 |
-| Success / warning / error | `CircleCheck` / `TriangleAlert` / `CircleX` (`Alert`'s tones) | see below |
-| Loading | the `Spinner` component | see below |
+| Success / warning / error | `CircleCheck` / `TriangleAlert` / `CircleX` (`Alert`'s tones) | — |
+| Loading | the `Spinner` component | — |
 
 Several lucide icons have two names for one glyph: `CheckCircle2` is
 `CircleCheck`, `AlertTriangle` is `TriangleAlert`, `Loader2` is
 `LoaderCircle`, `Edit3` is `PenLine`. Prefer the current name.
-
-## Open points — proposals for the owner
-
-These are not rules yet. Rules are proposed and the owner decides
-(`docs/PATTERN_GOVERNANCE.md`); each point below is a proposal.
-
-1. **Edit is `Pencil`.** JLURAG uses `Pencil` in 19 files and `PenLine` in 2.
-2. **Error is `CircleX`, as in `Alert`.** JLURAG draws `AlertCircle`
-   (= `CircleAlert`, an exclamation mark — a different glyph) in 6 files.
-3. **„Back to …" is `BreadcrumbBack`.** COMPONENT_GUIDELINES already asks for
-   it instead of a bare ← button; JLURAG still draws `ArrowLeft` for back links
-   and buttons in 7 files.
-4. **Loading is `Spinner`.** JLURAG draws `Loader2` with `animate-spin` by
-   hand in 34 files; `Spinner` brings the same glyph with `role="status"` and
-   a label.
-5. **Icon sizes become tokens** (`--icon-size-sm/md/lg` = 16/18/20px) instead
-   of numbers in about 30 places — part of the planned token audit. lucide's
-   `LucideProvider` could then set the default size for an app.
-6. **`MenuItem` sizes its icon like `DropdownMenuItem` (18px).** Today it
-   leaves the icon at lucide's 24px.
