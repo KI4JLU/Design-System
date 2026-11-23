@@ -562,6 +562,7 @@ export {
   type DashboardLayoutProps,
 } from "./templates/dashboard-layout";
 export { FormLayout, type FormLayoutProps } from "./templates/form-layout";
+export { GridLayout, type GridLayoutGroup, type GridLayoutProps } from "./templates/grid-layout";
 export {
   SectionedGridLayout,
   type SectionedGridLayoutProps,

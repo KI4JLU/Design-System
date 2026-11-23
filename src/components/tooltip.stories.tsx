@@ -68,6 +68,14 @@ export const LongContent: Story = {
 };
 
 /**
+ * These stories set attributes on `<html>` (`data-titlebar`, `data-host`) —
+ * the document, not the story. On the Docs page every story shares one
+ * document, so inline the „desktop" story would also show the hint in its
+ * „web" neighbour. In its own iframe each keeps its attributes to itself.
+ */
+const OWN_IFRAME_IN_DOCS = { docs: { story: { inline: false, iframeHeight: 320 } } };
+
+/**
  * Deaktivierte Controls feuern keine Pointer-Events — der Trigger umschließt
  * deshalb einen fokussierbaren `<span>` um den Button, damit der Grund der
  * Deaktivierung erreichbar bleibt (Hover *und* Tastatur).
@@ -114,7 +122,7 @@ function HiddenTitlebar({ children }: { children: React.ReactNode }) {
  * welche Seite der Aufrufer verlangt. Die Regel sitzt in `TooltipContent`.
  */
 export const KeepsOutOfTheTitleBar: Story = {
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", ...OWN_IFRAME_IN_DOCS },
   render: () => (
     <HiddenTitlebar>
       <div className="flex flex-col items-start gap-2 pt-15 pl-3">
@@ -159,6 +167,7 @@ const desktopOnly = (
  * des Elements vorgeben.
  */
 export const DesktopOnlyHiddenOnTheWeb: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => <DesktopHost on={false}>{desktopOnly}</DesktopHost>,
   play: async ({ canvas }) => {
     await expect(getComputedStyle(canvas.getByTestId("hint")).display).toBe("none");
@@ -166,6 +175,7 @@ export const DesktopOnlyHiddenOnTheWeb: Story = {
 };
 
 export const DesktopOnlyShownInTheDesktopApp: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
   render: () => <DesktopHost on>{desktopOnly}</DesktopHost>,
   play: async ({ canvas }) => {
     await expect(getComputedStyle(canvas.getByTestId("hint")).display).toBe("inline-flex");

@@ -1,0 +1,115 @@
+import { Meta, Canvas, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as GridLayoutStories from "./grid-layout.stories";
+import { GridLayout } from "./grid-layout";
+
+<Meta of={GridLayoutStories} />
+
+# GridLayout
+
+A page that is **one grid of cards, or one list of rows**: the overview of a
+user's items. JLURAG's „Mein Wissen", „Geteiltes Wissen" and „Werkzeuge" are
+this page — until now built in the app itself (`TopicGridPage.tsx`); this
+template is that page in the design system.
+
+```tsx
+import { GridLayout } from "@ki4jlu/design-system";
+
+<GridLayout
+  label="Mein Wissen"
+  title="Mein Wissen"
+  description="Deine privaten Themen und Quellen."
+  filters={<FilterChips … />}
+  toolbarActions={<><SegmentedControl … /><Button>Neues Thema</Button></>}
+  view={view}
+  listHeader={<TopicListHeader />}
+  items={topics.map((t) => (view === "list" ? <TopicRow topic={t} /> : <TopicCard topic={t} />))}
+  emptyState={<NoTopics />}
+/>
+```
+
+<Canvas of={GridLayoutStories.Cards} />
+
+## When to use it — and when not
+
+| Page | Template |
+|---|---|
+| One grid of the user's items, perhaps split into „Favoriten" and the rest | **`GridLayout`** |
+| Sections the user opens and closes, each with its own grid | `SectionedGridLayout` |
+| Rows with many columns to sort and compare | `TableLayout` |
+| Figures and charts | `DashboardLayout` |
+
+## Parts
+
+From top to bottom: the page header (`title`, `description`), the toolbar row
+— `filters` at its start, `toolbarActions` at its end — and the cells.
+
+<ArgTypes of={GridLayout} />
+
+- **`label`** names the template's region landmark; usually the title's text.
+- **`filters`** wraps on a narrow screen; **`toolbarActions`** keeps to the
+  end edge. Without both, there is no toolbar row.
+- **`items`** for a page without groups, **`groups`** for one with them. Pass
+  rows in `list` and cards in `cards` — the template changes the column count,
+  not the cell.
+
+## Cards and list
+
+`view="cards"` puts as many columns side by side as fit the content width
+(cells at least 17.5rem), so the count follows the width — also when the
+shell's left column collapses. `uniformRows` makes every row as tall as the
+tallest. `view="list"` is one column at every width, rows closer together,
+with `listHeader` labelling their columns.
+
+<Canvas of={GridLayoutStories.ListView} />
+
+## Groups
+
+`groups` splits the cells into runs under small headings — „Favoriten", then
+„Weitere Themen". **The headings show only while two or more groups have
+cells**: a heading over the only group would name the page a second time.
+Groups without cells are left out.
+
+<Canvas of={GridLayoutStories.WithFavorites} />
+
+<Canvas of={GridLayoutStories.OneGroupNoHeadings} />
+
+## Empty
+
+With no cell at all, `emptyState` takes the grid's place. The header and the
+toolbar stay, so the primary action is where it always is.
+
+<Canvas of={GridLayoutStories.Empty} />
+
+## The topic card
+
+The stories fill the grid with JLURAG's topic card, built from DS parts only —
+`Card`, `CardBand`, `CardHairline`, `Badge`, `ScrollingText`, `ActionMenu`.
+It is a story fixture (`src/test/fixtures/topic-card.tsx`), not a component
+of the package.
+
+<Canvas of={GridLayoutStories.TopicCards} />
+
+## Sorting by drag
+
+The template holds no drag state. To make the cells sortable, wrap each
+group's grid with `renderGroup` — e.g. in `SortableGroup asChild` — and the
+groups in `Sortable` around the template, as JLURAG does today.
+
+## Accessibility
+
+- One landmark: a `region` named by `label`. The page title is an `<h1>` by
+  default; `headingLevel` moves it, and the group headings follow one level
+  below.
+- The toolbar's controls keep their own names — `FilterChips` and
+  `SegmentedControl` need an `aria-label` from the call site.
+- The empty state is plain content: say what is missing and offer the action.
+
+## Open points
+
+- **The name** (`GridLayout`) and the API are proposals for the owner.
+- **Empty states differ across JLURAG's pages** — a dashed box with an icon
+  and a button on „Mein Wissen", one line of text on „Entdecken". The DS has
+  no empty-state component; shadcn/ui's `Empty` would be the one to import
+  (premade components first).
+- **The topic card** is a fixture here. Whether it becomes a DS component is
+  a separate decision.
