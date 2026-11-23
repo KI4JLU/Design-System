@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Editable, EditableArea, EditableInput, EditablePreview } from "./editable";
 
 /**
@@ -35,6 +35,8 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByText("Arbeit"));
     const field = await canvas.findByRole("textbox", { name: "Name" });
     await expect(field).toHaveValue("Arbeit");
+    // Editable focuses the field a frame later; Escape before that goes nowhere.
+    await waitFor(() => expect(field).toHaveFocus());
     await userEvent.keyboard("{Escape}");
     await expect(await canvas.findByText("Arbeit")).toBeVisible();
   },
