@@ -46,9 +46,9 @@ export const Basic: Story = {
 };
 
 /**
- * Klickbare Karte im Grid: `interactive` hebt die Karte beim Hover an
- * (Schatten + Translate). Für Tastatur-Nutzer gehört ein fokussierbares
- * Element (Link/Button) in die Karte.
+ * A clickable card in a grid: `interactive` colours the border on hover — the
+ * card does not move. Keyboard users need a focusable element (link/button)
+ * in the card.
  */
 export const Interactive: Story = {
   render: () => (
