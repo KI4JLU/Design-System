@@ -79,4 +79,35 @@ describe("GridLayout", () => {
     rerender(<GridLayout label="Mein Wissen" items={["a"]} toolbarActions={<button type="button">Neu</button>} />);
     expect(container.querySelector("[data-slot='grid-layout-toolbar']")).not.toBeNull();
   });
+
+  it("counts only cells that render: a group of null or false cells is empty", () => {
+    const { container } = render(
+      <GridLayout
+        label="Mein Wissen"
+        groups={[
+          { id: "favorites", label: "Favoriten", items: [null, false] },
+          { id: "rest", label: "Weitere Themen", items: ["a"] },
+        ]}
+        emptyState="Noch nichts"
+      />,
+    );
+    expect(grids(container)).toHaveLength(1);
+    expect(screen.queryByRole("heading")).toBeNull();
+    render(<GridLayout label="Leer" items={[null, undefined, false]} emptyState="Leer hier" />);
+    expect(screen.getByText("Leer hier")).toBeInTheDocument();
+    render(<GridLayout label="Null" items={[0]} emptyState="Nicht leer" />);
+    expect(screen.queryByText("Nicht leer")).toBeNull();
+  });
+
+  it("keeps a group's cells mounted when the other group empties", () => {
+    const groups = (favorites: string[]) => [
+      { id: "favorites", label: "Favoriten", items: favorites.map((t) => <span key={t}>{t}</span>) },
+      { id: "rest", label: "Weitere Themen", items: [<input key="field" aria-label="Notiz" />] },
+    ];
+    const { rerender } = render(<GridLayout label="Mein Wissen" groups={groups(["a"])} />);
+    const field = screen.getByRole("textbox", { name: "Notiz" });
+    rerender(<GridLayout label="Mein Wissen" groups={groups([])} />);
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Notiz" })).toBe(field);
+  });
 });

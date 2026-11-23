@@ -125,9 +125,12 @@ const GridLayout = React.forwardRef<HTMLElement, GridLayoutProps>(
     ref,
   ) => {
     const GroupHeading = headingTag(nextHeadingLevel(headingLevel));
-    const shown = (groups ?? [{ id: "items", label: null, items: items ?? [] }]).filter(
-      (group) => group.items.length > 0,
-    );
+    // A cell of `null`, `undefined` or a boolean renders nothing — e.g. a
+    // filtered record mapped to `null` — so it does not count: a group of
+    // only those is empty. `0` and other values do render and stay.
+    const shown = (groups ?? [{ id: "items", label: null, items: items ?? [] }])
+      .map((group) => ({ ...group, items: group.items.filter(rendersSomething) }))
+      .filter((group) => group.items.length > 0);
     const isEmpty = shown.length === 0;
     const labelled = shown.length > 1;
 
@@ -190,15 +193,18 @@ const GridLayout = React.forwardRef<HTMLElement, GridLayoutProps>(
               )}
               {shown.map((group) => {
                 const rendered = renderGroup ? renderGroup(grid(group.items), group) : grid(group.items);
-                return labelled ? (
-                  <div key={group.id} className="flex flex-col gap-stack-sm">
-                    <GroupHeading className="m-0 text-sm font-semibold text-on-surface-variant">
-                      {group.label}
-                    </GroupHeading>
+                // The wrapper stays whether or not the heading shows: when a
+                // second group appears or empties, the cells of this one keep
+                // their DOM (focus, an input's value) — only the heading changes.
+                return (
+                  <div key={group.id} data-slot="grid-layout-group" className="flex flex-col gap-stack-sm">
+                    {labelled && (
+                      <GroupHeading className="m-0 text-sm font-semibold text-on-surface-variant">
+                        {group.label}
+                      </GroupHeading>
+                    )}
                     {rendered}
                   </div>
-                ) : (
-                  <React.Fragment key={group.id}>{rendered}</React.Fragment>
                 );
               })}
             </>
@@ -209,5 +215,9 @@ const GridLayout = React.forwardRef<HTMLElement, GridLayoutProps>(
   },
 );
 GridLayout.displayName = "GridLayout";
+
+function rendersSomething(node: React.ReactNode): boolean {
+  return node !== null && node !== undefined && typeof node !== "boolean";
+}
 
 export { GridLayout };
