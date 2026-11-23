@@ -389,8 +389,22 @@ const DICTIONARY: { group: string; entries: Entry[] }[] = [
       { action: "Pin / unpin a row", icons: ["Pin", "PinOff"] },
       { action: "Drag to reorder", icons: ["GripVertical", "GripHorizontal"], note: "`Sortable`'s handles" },
       { action: "The chosen option in a menu", icons: ["Check"], note: "`SidebarFilterMenu`, `Select`, menus" },
-      { action: "A chat / a branched chat", icons: ["MessageSquare", "GitBranch"] },
+      {
+        action: "A row's kind: chat, document, research, academic",
+        icons: ["MessageSquare", "FileText", "Search", "GraduationCap"],
+        note: "a history row's icon",
+      },
+      { action: "A branched chat", icons: ["GitBranch"], note: "instead of the kind's icon" },
       { action: "Favourite", icons: ["Star"] },
+    ],
+  },
+  {
+    group: "Main navigation: the overview's pages",
+    entries: [
+      { action: "Suchen", icons: ["Search"], note: "opens the search palette" },
+      { action: "Mein Wissen", icons: ["House"], note: "also on a chat of its topics" },
+      { action: "Geteiltes Wissen", icons: ["Users"], note: "also on a chat of its topics" },
+      { action: "Entdecken", icons: ["Compass"], note: "also on a chat of its topics" },
     ],
   },
   {
@@ -401,7 +415,6 @@ const DICTIONARY: { group: string; entries: Entry[] }[] = [
       { action: "Open / close the right column", icons: ["PanelRightOpen", "PanelRightClose"], note: "`AppShell`, `SidePanel`" },
       { action: "Full screen / leave it", icons: ["Maximize2", "Minimize2"] },
       { action: "Show / hide", icons: ["Eye", "EyeOff"] },
-      { action: "Home", icons: ["House"] },
     ],
   },
   {
