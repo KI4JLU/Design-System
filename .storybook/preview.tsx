@@ -158,6 +158,9 @@ const preview: Preview = {
             "AI",
           ],
           "*",
+          // Parts of the DS that are not exported (`AppShell`): for work on
+          // the DS itself, last in the sidebar.
+          "Internals",
         ],
       },
     },

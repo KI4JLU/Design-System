@@ -7,13 +7,13 @@
  *   @source "../node_modules/@ki4jlu/design-system";
  * (see README for full consumer setup, fonts, and the no-flash theme script)
  */
+// `AppShell` itself is internal since 0.93.0: apps get the frame through
+// `AppShellLayout`. What stays exported here is part of that template's API.
 export {
-  AppShell,
   AppShellSidePanel,
   type AppShellSidePanelProps,
   type AppShellSidePanelTab,
   type AppShellSidePanelLauncher,
-  type AppShellProps,
   type AppShellPanel,
   type AppShellPanelResize,
 } from "./components/app-shell";

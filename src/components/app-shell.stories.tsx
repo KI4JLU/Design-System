@@ -25,16 +25,16 @@ const TABS: MobilePaneTab[] = [
 ];
 
 const meta = {
-  title: "Primitives/AppShell",
+  title: "Internals/AppShell",
   component: AppShell,
   parameters: {
     layout: "fullscreen",
     docs: {
       description: {
         component:
-          "**Internal part of `AppShellLayout`.** Apps render `AppShellLayout` " +
-          "(Templates), which composes this frame with its columns, bar and tabs; " +
-          "use `AppShell` directly only to build a new shell template.",
+          "**Internal — not exported since 0.93.0.** The frame `AppShellLayout` " +
+          "(Templates) is built on: its columns, bar and tabs. Apps use " +
+          "`AppShellLayout`; this page documents the frame for work on the DS itself.",
       },
     },
   },

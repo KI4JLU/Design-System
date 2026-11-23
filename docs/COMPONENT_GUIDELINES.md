@@ -570,9 +570,10 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   `activeMobileTab` and `onMobileTabChange` name what is open there, and the
   call site still writes no breakpoint check: which id shows which area is
   data. There is no tab bar.
-  A second column on the right is `rightPanel` (an `AppShellPanel`, the same
-  shape `AppShell.left`/`.right` take). Do not compose `AppShell` +
-  `SidePanel` by hand to get any of this. Every nav row that should collapse
+  A second column on the right is `rightPanel` (an `AppShellPanel`). The frame
+  underneath, `AppShell`, is internal since 0.93.0 — there is no other way to
+  this frame than `AppShellLayout`; do not compose `SidePanel`s by hand to get
+  any of this. Every nav row that should collapse
   into the rail needs a `label` on its `NavItem`. (The legacy standalone
   `Sidebar` was removed in KI-846; there is no nav column outside the
   shell any more.)
