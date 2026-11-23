@@ -282,7 +282,7 @@ Menus follow the same rule: `<DropdownMenuItem variant="destructive">`, or
 `destructive: true` on an `ActionMenu` action.
 
 ```tsx
-// SettingsDialog / ContentPanel footer: delete + status left, Abbrechen + Speichern right.
+// SettingsDialog footer: delete + status left, Abbrechen + Speichern right.
 // The footer spreads its two children apart, so delete and status share one wrapper.
 footer={(
   <>

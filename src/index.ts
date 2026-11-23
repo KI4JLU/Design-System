@@ -512,7 +512,7 @@ export { useScrollbarGutter } from "./lib/use-scrollbar-gutter";
 /** Fade a scroller's content out at the edges that have more to scroll. */
 export { useScrollFade } from "./lib/use-scroll-fade";
 /** A panel that replaces a content area, and its titled sections. */
-export { ContentPanel, PanelSection, type ContentPanelProps, type PanelSectionProps } from "./components/content-panel";
+export { PanelSection, type PanelSectionProps } from "./components/panel-section";
 /** The settings window (section nav + search + rows). */
 export { SettingsDialog, SettingsRow, type SettingsDialogProps, type SettingsSection, type SettingsRowProps } from "./components/settings-dialog";
 export { useSettingsSearch, type SettingsSearch } from "./components/settings-search-context";

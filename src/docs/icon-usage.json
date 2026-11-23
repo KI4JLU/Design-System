@@ -250,7 +250,6 @@
     "X": [
       "alert",
       "app-shell",
-      "content-panel",
       "dialog",
       "prompt-input",
       "prompt-suggestions",
