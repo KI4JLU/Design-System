@@ -1,12 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useLayoutEffect, useState, type ReactNode } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { ChevronLeft, ChevronRight, LayoutGrid, Menu } from "lucide-react";
+import { LayoutGrid, Menu } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
-import { AppShellSidePanel } from "../components/app-shell";
 import { Button } from "../components/button";
-import { ChatStage } from "../components/chat-stage";
 import { Logo } from "../components/logo";
 import { SIDE_PANEL_RAIL_WIDTH } from "../components/side-panel-variants";
 import {
@@ -16,7 +13,15 @@ import {
   SOURCES_LOCKED_REASON,
   WORKSPACE_SECTION,
 } from "../test/fixtures/app-shell";
-import * as chatStageStories from "../components/chat-stage.stories";
+import {
+  bar,
+  expectBarHeight,
+  EDGE_SLACK,
+  page,
+  ChatPage,
+  SidePanelDemo,
+  expectPanelBesideCard,
+} from "../test/fixtures/app-shell-stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
 import { Entdecken, GeteiltesWissen } from "../test/fixtures/overview-pages";
 import {
@@ -27,7 +32,6 @@ import {
   TopicNew,
   TopicStart,
 } from "../test/fixtures/topic-chat";
-import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
 
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
@@ -53,16 +57,6 @@ import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
 
 // Portable Stories: page content is the content templates' own stories —
 // templates compose into each other, nothing is mocked again.
-
-/**
- * The chat column of the workspace: `ChatStage` with the args of its own
- * `Conversation` story. Spread rather than `composeStories`, on purpose — that
- * story's meta decorator pins the stage to a 560px box for its own canvas,
- * and in the shell the stage has to fill `<main>` instead.
- */
-function ChatPage() {
-  return <ChatStage {...chatStageStories.default.args} {...chatStageStories.Conversation.args} />;
-}
 
 const meta = {
   title: "Templates/AppShellLayout",
@@ -97,30 +91,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Die Chrome-Zeile selbst: das `banner`-Landmark der Shell. Über die Rolle
- * gesucht und nicht über eine Klasse — `h-14` ist genau die Behauptung, die
- * hier geprüft wird, und ein Selektor `.h-14` wäre auch dann grün, wenn das
- * Utility zu nichts kompilierte.
+ * A mechanism check, not a page: out of the sidebar and the generated docs
+ * (`!dev`, `!autodocs`), still run by `npm test` (`test`). The MDX shows one
+ * where it explains something.
  */
-const bar = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector("header") as HTMLElement;
-
-/**
- * **56px, in jeder Kombination** (nur Label / nur Suche / nur Aktionen /
- * alles / nichts). Die Zahl ist kein aus diesem Code abgelesenes Maß, sondern
- * der veröffentlichte Geometrie-Vertrag dieser Zeile: JustRAG positioniert
- * seine Toasts mit `top: 68px` = 56 + 12 darunter und misst dieselbe 56 in
- * einem eigenen Chromium-Test (`AppShellGeometry` in HomeView.stories.tsx).
- */
-async function expectBarHeight(canvasElement: HTMLElement) {
-  await expect(getComputedStyle(bar(canvasElement)).height).toBe("56px");
-}
-
-/** Sub-pixel slack for "touches but does not overlap". */
-const EDGE_SLACK = 0.5;
-
-/** Portalled layers (menu, dialog) render into `<body>`, outside the canvas. */
-const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body);
+const CHECK_ONLY = ["!dev", "!autodocs"];
 
 /* ======================================================================== */
 /* One story per page context                                               */
@@ -276,37 +251,6 @@ export const DiscoverTopics: Story = {
     const card = subscribed[0].closest("[data-topic]") as HTMLElement;
     await expect(within(card).getByText("1 Dokument")).toBeInTheDocument();
     await expect(within(card).getByText("Stand 16.10.2026")).toBeInTheDocument();
-  },
-};
-
-/**
- * **Colour scheme, contrast, accent and Style live behind the user menu**, not
- * in the bar: „Einstellungen" opens the settings window on its „Darstellung"
- * section (`SettingsDialog` + `AppearanceSettings`). The same overview as
- * `Overview`; this story walks the route.
- *
- * `play` (Chromium), oracles in brackets: „Einstellungen" in the user menu
- * opens the settings window on „Darstellung", with the colour-scheme field,
- * and it closes again [ARIA roles and names: `menuitem`, `dialog`, `heading`
- * level 2, `combobox`].
- */
-export const SettingsFromUserMenu: Story = {
-  render: () => (
-    <AppShellFixture context="overview" bar={false}>
-      <MeinWissen />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement, userEvent }) => {
-    const body = page(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: /Jamie Lee/ }));
-    await userEvent.click(await body.findByRole("menuitem", { name: "Einstellungen" }));
-    const dialog = await body.findByRole("dialog", { name: "Einstellungen" });
-    await expect(
-      within(dialog).getByRole("heading", { level: 2, name: "Darstellung" }),
-    ).toBeVisible();
-    await expect(within(dialog).getByRole("combobox", { name: "Farbschema" })).toBeVisible();
-    await userEvent.click(within(dialog).getByRole("button", { name: "Schließen" }));
-    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
   },
 };
 
@@ -509,109 +453,6 @@ export const ChatWorkspaceEmpty: Story = {
   },
 };
 
-/**
- * **A topic's settings** — the gear in the workspace bar opens
- * „Thema-Einstellungen":
- * a `SettingsDialog` (`size="xl"`, maximizable) with Startseite, Verhalten,
- * Berechtigungen, Mitglieder and Versionsverlauf (`topic-settings` fixture).
- * This is where the app's tables and forms are — in settings windows, not on
- * pages of the shell: the rights per role are a `Table` (Besitzer and Admin
- * one muted band, their rights fixed), the members a list, the footer the
- * draft state with „Abbrechen / Speichern".
- *
- * `play` (Chromium) walks the window as a user does and ends on the rights
- * table; oracles in brackets:
- * 1. the gear announces a dialog and opens „Thema-Einstellungen" on
- *    „Startseite", with the footer's „Speichern" [ARIA `aria-haspopup`,
- *    `dialog`, `heading` level 2, `button`];
- * 2. „Berechtigungen" shows the rights as a table with the four roles as
- *    column headers; a Bearbeiter right is a checkbox that can be changed, an
- *    Admin right one that cannot [ARIA `table`, `columnheader`, `checkbox`,
- *    `aria-disabled` / state after a click];
- * 3. „Personen zuweisen" leads to „Mitglieder", which lists the three members
- *    [ARIA `heading`, `list` / `listitem`];
- * 4. „Versionsverlauf" has no footer — nothing there is a draft
- *    [no „Speichern" button].
- */
-export const ChatWorkspaceSettings: Story = {
-  render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
-      <TopicConversation />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement, userEvent }) => {
-    const body = page(canvasElement);
-    const gear = canvas.getByRole("button", { name: "Einstellungen des Themas" });
-    await expect(gear).toHaveAttribute("aria-haspopup", "dialog");
-    await userEvent.click(gear);
-
-    const dialog = await body.findByRole("dialog", { name: TOPIC_SETTINGS_TITLE });
-    const d = within(dialog);
-    await expect(d.getByRole("heading", { level: 2, name: "Startseite" })).toBeVisible();
-    await expect(d.getByRole("button", { name: "Speichern" })).toBeInTheDocument();
-
-    await userEvent.click(d.getByRole("button", { name: "Verhalten" }));
-    await expect(await d.findByRole("heading", { level: 2, name: "Verhalten" })).toBeVisible();
-    await expect(d.getByRole("radiogroup", { name: "Rolle" })).toBeVisible();
-
-    await userEvent.click(d.getByRole("button", { name: "Berechtigungen" }));
-    const table = await d.findByRole("table", { name: "Rechte je Rolle" });
-    const t = within(table);
-    for (const role of ["Besitzer", "Admin", "Bearbeiter", "Leser"]) {
-      await expect(t.getByRole("columnheader", { name: role })).toBeInTheDocument();
-    }
-    const editable = t.getByRole("checkbox", { name: "Leser: Sehen" });
-    await expect(editable).not.toBeChecked();
-    await userEvent.click(editable);
-    await expect(editable).toBeChecked();
-    await userEvent.click(editable);
-    await expect(t.getByRole("checkbox", { name: "Admin: Sehen (fest)" })).toBeDisabled();
-
-    await userEvent.click(d.getByRole("button", { name: "Personen zuweisen" }));
-    await expect(await d.findByRole("heading", { level: 2, name: "Mitglieder" })).toBeVisible();
-    await expect(
-      within(d.getByRole("list", { name: "Mitglieder" })).getAllByRole("listitem"),
-    ).toHaveLength(3);
-
-    await userEvent.click(d.getByRole("button", { name: "Versionsverlauf" }));
-    await expect(await d.findByRole("heading", { level: 2, name: "Versionsverlauf" })).toBeVisible();
-    await expect(d.queryByRole("button", { name: "Speichern" })).toBeNull();
-
-    await userEvent.click(d.getByRole("button", { name: "Berechtigungen" }));
-    await expect(await d.findByRole("table", { name: "Rechte je Rolle" })).toBeVisible();
-  },
-};
-
-/**
- * Die Anordnung unter `lg`, hier im Workspace-Kontext mit seinen drei
- * Reitern (Verlauf · Chat · Quellen): Top-Bar mit der Marke und den
- * `headerActions` (das Zahnrad bleibt erreichbar), **ein** Bereich,
- * `BottomTabBar`. Kein Burger-Button, kein Drawer, kein Dialog. `search`
- * ist übergeben wie überall — das Template rendert es unter `lg` bewusst
- * nicht (ein auf `max-w-md` gedeckeltes, zentriertes Feld hat in 390px keine
- * Mitte).
- *
- * **Ohne `play`-Assertions, mit Absicht** — die Anordnung hängt am echten
- * Viewport (`matchMedia`), und der Storybook-Vitest-Lauf rendert Stories in
- * einem 1280px-Fenster, nicht im hier eingestellten Story-Viewport. Geprüft
- * ist sie in `app-shell-layout.test.tsx` (jsdom, gestubbter Viewport).
- */
-export const Mobile: Story = {
-  parameters: {
-    viewport: {
-      options: {
-        phone: { name: "Phone", styles: { width: "390px", height: "844px" } },
-      },
-    },
-  },
-  globals: { viewport: { value: "phone" } },
-  render: () => (
-    <AppShellFixture context="workspace">
-      <ChatPage />
-    </AppShellFixture>
-  ),
-};
-
 /* ======================================================================== */
 /* Mechanism regressions, on the same fixture                               */
 /* ======================================================================== */
@@ -631,6 +472,7 @@ export const Mobile: Story = {
  *    collapse toggle is still there [the boxes; ARIA `button` + name].
  */
 export const WithoutChromeBar: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
@@ -662,6 +504,7 @@ export const WithoutChromeBar: Story = {
  * column.
  */
 export const WithCollapsibleColumns: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
@@ -737,6 +580,7 @@ export const WithCollapsibleColumns: Story = {
  * this pins: Changelog, 0.35.0 and KI-852.)
  */
 export const CollapsedRailKeepsVerticalPositions: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
@@ -808,6 +652,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
  * the real `localStorage`; an app omits `storage`.
  */
 export const WithResizableColumns: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture context="workspace">
       <ChatPage />
@@ -864,6 +709,7 @@ export const WithResizableColumns: Story = {
  * triggered by pointer events dispatched from JavaScript.
  */
 export const HandleHasNoLayoutWidth: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture context="workspace">
       <ChatPage />
@@ -1107,6 +953,7 @@ export const WithSystemStatus: Story = {
  * page, which neither moves nor reflows, and clear of the side column.
  */
 export const WithSystemStatusBottomEnd: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
       context="workspace" topic={TOPIC_NAME}
@@ -1145,6 +992,7 @@ export const WithSystemStatusBottomEnd: Story = {
  * waits for a reload, with no close button.
  */
 export const WithSystemStatusTopEnd: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
       context="workspace" topic={TOPIC_NAME}
@@ -1186,6 +1034,7 @@ export const WithSystemStatusTopEnd: Story = {
  * in itself, so its title and close button can still be reached.
  */
 export const WithSystemStatusBottomEndTall: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
       context="workspace" topic={TOPIC_NAME}
@@ -1221,464 +1070,6 @@ export const WithSystemStatusBottomEndTall: Story = {
     await expect(getComputedStyle(scroller).pointerEvents).toBe("auto");
     await expect(within(card).getByRole("button", { name: "Schließen" })).toBeInTheDocument();
   },
-};
-
-/**
- * History buttons as an app would hang them into `titlebarControls`. The
- * native stories also pass the small logo (`nativeLogo`), as the reference
- * consumer does: the header row's minimum width is sized for it.
- */
-const historyControls = (
-  <>
-    <Button variant="ghost" size="icon" aria-label="Zurück">
-      <ChevronLeft size={20} aria-hidden="true" />
-    </Button>
-    <Button variant="ghost" size="icon" aria-label="Vor">
-      <ChevronRight size={20} aria-hidden="true" />
-    </Button>
-  </>
-);
-
-/** The small logo every native story passes, with `historyControls`. */
-const nativeLogo = <Logo product="RAG" size="sm" />;
-
-/**
- * The native stories set `data-shell` / `data-titlebar` on `<html>` — the
- * document, not the story. On the Docs page every story shares one document,
- * so inline they would turn every other shell on the page native too (the
- * brand of `Overview` slid 100px to the right, behind the window controls).
- * In its own iframe each keeps its attributes to itself.
- */
-const OWN_IFRAME_IN_DOCS = { docs: { story: { inline: false, iframeHeight: 640 } } };
-
-/**
- * Stands in for the Electron host of „Native shell": sets the two `<html>`
- * attributes the preload would set, paints a backdrop where the OS material
- * would be, and draws three dots where macOS puts the window controls.
- */
-function NativeShellHost({
-  children,
-  titlebar = "inset",
-}: {
-  children: ReactNode;
-  /** `hidden`: full screen, where the window controls are gone. */
-  titlebar?: "inset" | "hidden";
-}) {
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.dataset.shell = "native";
-    root.dataset.titlebar = titlebar;
-    return () => {
-      delete root.dataset.shell;
-      delete root.dataset.titlebar;
-    };
-  }, [titlebar]);
-  return (
-    <div className="relative bg-linear-to-br from-primary-container via-tertiary-container to-secondary-container">
-      {titlebar === "inset" && (
-        <div
-          aria-hidden="true"
-          data-slot="window-controls"
-          className="pointer-events-none absolute top-5.5 left-4.75 z-30 flex gap-2"
-        >
-          <span className="size-3 rounded-full bg-on-surface-variant/50" />
-          <span className="size-3 rounded-full bg-on-surface-variant/50" />
-          <span className="size-3 rounded-full bg-on-surface-variant/50" />
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
-
-/** Alpha of a computed colour: 1 for `rgb(…)`, the last component otherwise. */
-const alphaOf = (color: string): number => {
-  const match = /(?:\/|,)\s*([\d.]+)\)$/.exec(color);
-  return color.startsWith("rgb(") || !match ? 1 : Number(match[1]);
-};
-
-/**
- * A native shell (`<html data-shell="native" data-titlebar="inset">`): the
- * frame and the side column paint nothing, so the window's material shows,
- * the main column the opaque canvas. The column's header row starts after the
- * window controls and the top row drags the window. See „Native shell".
- */
-export const NativeShell: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture
-        context="overview" bar={false}
-        titlebarControls={historyControls}
-        logo={nativeLogo}
-      >
-        <MeinWissen />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
-    const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
-    const frame = content.parentElement!.parentElement!;
-
-    // Frame and side column transparent, main column opaque.
-    await expect(alphaOf(getComputedStyle(frame).backgroundColor)).toBe(0);
-    await expect(alphaOf(getComputedStyle(column).backgroundColor)).toBe(0);
-    await expect(alphaOf(getComputedStyle(content).backgroundColor)).toBe(1);
-    await expect(alphaOf(getComputedStyle(document.body).backgroundColor)).toBe(0);
-
-    // One title-bar row: window controls, the brand right beside them, the
-    // toggle at the column's far edge.
-    const headerRow = column.querySelector("[data-titlebar-inset='start']") as HTMLElement;
-    await expect(getComputedStyle(headerRow).paddingLeft).toBe("100px");
-    const controls = canvasElement
-      .querySelector("[data-slot='window-controls']")!
-      .getBoundingClientRect();
-    const toggle = within(headerRow).getByRole("button", { name: "Navigation einklappen" });
-    const toggleBox = toggle.getBoundingClientRect();
-    const brand = headerRow.firstElementChild!.firstElementChild!.getBoundingClientRect();
-    await expect(brand.left).toBeCloseTo(controls.left - 19 + 100, 0);
-    await expect(toggleBox.left).toBeGreaterThanOrEqual(brand.right);
-    await expect(column.getBoundingClientRect().right - toggleBox.right).toBeLessThanOrEqual(16);
-    // The app's window controls stand in the column, between brand and toggle.
-    const back = within(headerRow).getByRole("button", { name: "Zurück" }).getBoundingClientRect();
-    const forward = within(headerRow).getByRole("button", { name: "Vor" }).getBoundingClientRect();
-    await expect(back.left).toBeGreaterThanOrEqual(brand.right);
-    await expect(forward.right).toBeLessThanOrEqual(toggleBox.left);
-    // Right-aligned: directly before the toggle, not after the brand.
-    await expect(toggleBox.left - forward.right).toBeLessThanOrEqual(12);
-    // Nothing reaches under the window controls, and everything shares one centre line.
-    const mid = (box: DOMRect) => (box.top + box.bottom) / 2;
-    for (const box of [brand, back, forward, toggleBox]) {
-      await expect(box.left).toBeGreaterThanOrEqual(controls.right);
-      await expect(mid(box)).toBeCloseTo(mid(controls), 0);
-    }
-    // …on one line with the controls, at the frame's top; the overview has no
-    // chrome bar, so the page itself starts on that line too.
-    const rowBox = headerRow.getBoundingClientRect();
-    await expect(rowBox.top).toBeCloseTo(frame.getBoundingClientRect().top, 0);
-    await expect(canvasElement.querySelector("[data-slot='app-shell-titlebar']")).toBeNull();
-    await expect(content.getBoundingClientRect().top).toBeCloseTo(rowBox.top, 0);
-    await expect((controls.top + controls.bottom) / 2).toBeCloseTo((rowBox.top + rowBox.bottom) / 2, 0);
-
-    // Labels in the column are not selectable; it is the navigation.
-    await expect(getComputedStyle(column).userSelect).toBe("none");
-
-    // The row drags the window, its button does not.
-    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
-    await expect(region(headerRow)).toBe("drag");
-    await expect(region(toggle)).toBe("no-drag");
-  },
-};
-
-/**
- * Full screen (`data-titlebar="hidden"`): the window controls are gone, so
- * the brand stands at the column's left edge, on the line of the rows below
- * it, as on the web. The arrangement of the row stays.
- */
-export const NativeShellFullScreen: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost titlebar="hidden">
-      <AppShellFixture
-        context="overview" bar={false}
-        titlebarControls={historyControls}
-        logo={nativeLogo}
-      >
-        <MeinWissen />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas }) => {
-    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
-    const headerRow = column.querySelector("[data-titlebar-inset='start']") as HTMLElement;
-    const brand = headerRow.firstElementChild!.firstElementChild!.getBoundingClientRect();
-    // 8px row inset + the brand's own 10px: where it stands on the web.
-    await expect(brand.left - column.getBoundingClientRect().left).toBeCloseTo(18, 0);
-    // The row is otherwise the same: controls, then the toggle at the far edge.
-    const toggle = within(headerRow).getByRole("button", { name: "Navigation einklappen" }).getBoundingClientRect();
-    const back = within(headerRow).getByRole("button", { name: "Zurück" }).getBoundingClientRect();
-    const forward = within(headerRow).getByRole("button", { name: "Vor" }).getBoundingClientRect();
-    await expect(back.left).toBeGreaterThanOrEqual(brand.right);
-    await expect(toggle.left).toBeGreaterThanOrEqual(forward.right);
-    // The arrows stay right-aligned, beside the toggle, with the brand moved left.
-    await expect(toggle.left - forward.right).toBeLessThanOrEqual(12);
-  },
-};
-
-/**
- * A collapsed column does not reach into the title bar: the bar spans the
- * window's full width and carries the column's toggle where it stands while
- * expanded; the rail starts below. In the workspace, where JustRAG has a bar:
- * after the toggle the app's back / forward, then the breadcrumb.
- */
-export const NativeShellCollapsed: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
-        leftOpen={false}
-        titlebarControls={historyControls}
-        logo={nativeLogo}
-      >
-        <TopicConversation />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const header = bar(canvasElement);
-    const toggle = await within(header).findByRole("button", { name: "Verlauf ausklappen" });
-    const expand = toggle.getBoundingClientRect();
-    const controls = canvasElement
-      .querySelector("[data-slot='window-controls']")!
-      .getBoundingClientRect();
-    const headerBox = header.getBoundingClientRect();
-    const column = canvas.getByRole("complementary", { name: "Verlauf" });
-    const frameLeft = column.getBoundingClientRect().left;
-
-    // The bar is the whole title row: from the window's edge, opaque, over the rail.
-    await expect(headerBox.left).toBeCloseTo(frameLeft, 0);
-    await expect(alphaOf(getComputedStyle(header).backgroundColor)).toBe(1);
-    const corner = document.elementFromPoint(frameLeft + 4, headerBox.bottom - 4);
-    await expect(header.contains(corner)).toBe(true);
-    // The rail's own content starts below it.
-    const firstIcon = column.querySelector("a, button") as HTMLElement;
-    await expect(firstIcon.getBoundingClientRect().top).toBeGreaterThanOrEqual(headerBox.bottom);
-
-    // The brand stays where it stands while expanded: right after the controls.
-    const brand = header.querySelector("[data-slot='app-shell-brand']")!.getBoundingClientRect();
-    await expect(brand.left).toBeCloseTo(controls.left - 19 + 100, 0);
-    // The toggle follows it, on the bar's centre line.
-    await expect(expand.left).toBeGreaterThanOrEqual(brand.right);
-    await expect((expand.top + expand.bottom) / 2).toBeCloseTo((headerBox.top + headerBox.bottom) / 2, 0);
-    // The rail that is left has the page's colour.
-    const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
-    await expect(getComputedStyle(column).backgroundColor).toBe(getComputedStyle(content).backgroundColor);
-    // It takes the click, and does not drag the window.
-    const hit = document.elementFromPoint(
-      (expand.left + expand.right) / 2,
-      (expand.top + expand.bottom) / 2,
-    );
-    await expect(hit?.closest("button")).toBe(toggle);
-    await expect(getComputedStyle(toggle).getPropertyValue("-webkit-app-region")).toBe("no-drag");
-    // Then the app's window controls, then the bar's own content.
-    const forward = within(header).getByRole("button", { name: "Vor" }).getBoundingClientRect();
-    await expect(within(header).getByRole("button", { name: "Zurück" }).getBoundingClientRect().left).toBeGreaterThanOrEqual(expand.right);
-    const breadcrumb = within(header).getByRole("link", { name: WORKSPACE_SECTION });
-    await expect(breadcrumb.getBoundingClientRect().left).toBeGreaterThan(forward.right);
-  },
-};
-
-/**
- * The overview collapsed in a native shell — JustRAG's overview has no chrome
- * bar, so the title bar is the shell's empty title-bar row: it holds the
- * column's toggle after the window controls and drags the window; the rail
- * starts below it and the page beside it.
- */
-export const NativeShellOverviewCollapsed: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture context="overview" bar={false} leftOpen={false} titlebarControls={historyControls} logo={nativeLogo}>
-        <MeinWissen />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>("[data-slot='app-shell-titlebar']");
-    await expect(row).not.toBeNull();
-    const rowBox = row!.getBoundingClientRect();
-    const controls = canvasElement.querySelector("[data-slot='window-controls']")!.getBoundingClientRect();
-    const toggle = await within(row!).findByRole("button", { name: "Navigation ausklappen" });
-    const toggleBox = toggle.getBoundingClientRect();
-    // The toggle stands after the window controls, on their centre line.
-    await expect(toggleBox.left).toBeGreaterThanOrEqual(controls.right);
-    await expect((toggleBox.top + toggleBox.bottom) / 2).toBeCloseTo((controls.top + controls.bottom) / 2, 0);
-    // The rail's own content starts below the row.
-    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
-    const firstIcon = column.querySelector("a, button") as HTMLElement;
-    await expect(firstIcon.getBoundingClientRect().top).toBeGreaterThanOrEqual(rowBox.bottom);
-    // The row drags the window; its button does not.
-    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
-    await expect(region(row!)).toBe("drag");
-    await expect(region(toggle)).toBe("no-drag");
-  },
-};
-
-/**
- * In a native shell with the window controls inset (`data-titlebar="inset"`)
- * the right column floats as it does on the web: a card over the main area,
- * below the bar, opened by the last control of the title row.
- */
-export const NativeShellWorkspace: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
-        titlebarControls={historyControls}
-        logo={nativeLogo}
-      >
-        <TopicConversation />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement, userEvent }) => {
-    const header = bar(canvasElement);
-    const headerBox = header.getBoundingClientRect();
-    const main = canvas.getByRole("main").getBoundingClientRect();
-    const pane = await canvas.findByRole("complementary", { name: "Quellen" });
-    const box = pane.getBoundingClientRect();
-    // Over the main area, which keeps its full width up to the window's edge.
-    await expect(main.right).toBeCloseTo(headerBox.right, 0);
-    await expect(box.top).toBeGreaterThanOrEqual(headerBox.bottom);
-    await expect(box.right).toBeLessThan(main.right);
-    await expect(box.left).toBeGreaterThan(main.left);
-    await expect(box.bottom).toBeLessThan(main.bottom);
-    // An opaque card, in front of the page.
-    await expect(alphaOf(getComputedStyle(pane).backgroundColor)).toBe(1);
-    const hit = document.elementFromPoint(box.left + 24, box.top + 24);
-    await expect(pane.contains(hit)).toBe(true);
-    // Its toggle is the title row's last control, and closes it.
-    const toggle = within(header).getByRole("button", { name: "Quellen einklappen" });
-    await expect(toggle.getBoundingClientRect().right).toBeCloseTo(headerBox.right - 8, 0);
-    // The same control as the left column's toggle: one box, one icon size.
-    const leftToggle = canvas.getByRole("button", { name: "Verlauf einklappen" });
-    const iconOf = (button: HTMLElement) => button.querySelector("svg")!.getBoundingClientRect();
-    await expect(iconOf(toggle).width).toBe(20);
-    await expect(iconOf(toggle).width).toBe(iconOf(leftToggle).width);
-    await expect(toggle.getBoundingClientRect().width).toBe(leftToggle.getBoundingClientRect().width);
-    await userEvent.click(toggle);
-    await waitFor(() => expect(pane).not.toBeVisible());
-    await userEvent.click(within(header).getByRole("button", { name: "Quellen ausklappen" }));
-    await waitFor(() => expect(pane).toBeVisible());
-  },
-};
-
-/**
- * In a native shell the first row is the window's title bar, so a notice is
- * the frame's last row: full width at the bottom of the window.
- */
-export const NativeShellWithNotice: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
-        titlebarControls={historyControls}
-        logo={nativeLogo}
-        notice={
-          <Alert tone="info" layout="banner" live="polite">
-            <AlertDescription>Dieses Angebot befindet sich im Testbetrieb.</AlertDescription>
-          </Alert>
-        }
-      >
-        <TopicConversation />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const region = await canvas.findByRole("region", { name: "Systemmeldung" });
-    const notice = region.getBoundingClientRect();
-    const frame = region.parentElement!.getBoundingClientRect();
-    const header = bar(canvasElement).getBoundingClientRect();
-    const column = canvas.getByRole("complementary", { name: "Verlauf" }).getBoundingClientRect();
-    // Title bar on top, one row: column header and chrome bar start at the frame's edge.
-    await expect(column.top).toBeCloseTo(frame.top, 0);
-    await expect(header.top).toBeCloseTo(frame.top, 0);
-    // Notice at the bottom, full width, under the columns and the page.
-    await expect(notice.bottom).toBeCloseTo(frame.bottom, 0);
-    await expect(notice.left).toBeCloseTo(frame.left, 0);
-    await expect(notice.width).toBeCloseTo(frame.width, 0);
-    await expect(column.bottom).toBeCloseTo(notice.top, 0);
-    await expect(canvas.getByRole("main").getBoundingClientRect().bottom).toBeCloseTo(notice.top, 0);
-  },
-};
-
-const SIDE_TABS = [
-  { id: "po", title: "Prüfungsordnung, § 12", closeLabel: "Prüfungsordnung, § 12 schließen" },
-  { id: "hb", title: "Modulhandbuch", closeLabel: "Modulhandbuch schließen" },
-];
-
-/** What a page declares beside itself: tabs it opened, state it keeps. */
-const SidePanelDemo = ({ initiallyOpen = true }: { initiallyOpen?: boolean }) => {
-  const [isOpen, setOpen] = useState(initiallyOpen);
-  const [tabs, setTabs] = useState(SIDE_TABS);
-  const [activeTabId, setActive] = useState<string | null>("po");
-  const [width, setWidth] = useState(400);
-  return (
-    <AppShellSidePanel
-      label="Seitenbereich"
-      isOpen={isOpen}
-      onOpenChange={setOpen}
-      expandLabel="Seitenbereich einblenden"
-      collapseLabel="Seitenbereich ausblenden"
-      tabs={tabs}
-      activeTabId={activeTabId}
-      onTabChange={setActive}
-      onTabClose={(id) => {
-        const rest = tabs.filter((tab) => tab.id !== id);
-        setTabs(rest);
-        if (id === activeTabId) setActive(rest[0]?.id ?? null);
-        if (rest.length === 0) setOpen(false);
-      }}
-      tabListLabel="Geöffnete Inhalte"
-      width={width}
-      resize={{ minWidth: 320, maxWidth: 720, onWidthChange: setWidth, label: "Breite des Seitenbereichs ändern" }}
-      launchers={[
-        { id: "po", label: "Prüfungsordnung, § 12" },
-        { id: "hb", label: "Modulhandbuch" },
-        { id: "browser", label: "Browser", disabled: true },
-      ]}
-      onLaunch={(id) => {
-        const tab = SIDE_TABS.find((candidate) => candidate.id === id);
-        if (!tab) return;
-        if (!tabs.some((open) => open.id === id)) setTabs([...tabs, tab]);
-        setActive(id);
-      }}
-      addLabel="Inhalt öffnen"
-    >
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 text-sm">
-        {activeTabId === "po"
-          ? "Die Masterarbeit ist binnen sechs Monaten nach der Ausgabe des Themas abzugeben."
-          : "Modul 12: Abschlussmodul, 30 Leistungspunkte."}
-      </div>
-    </AppShellSidePanel>
-  );
-};
-
-/** The panel and the floating card side by side: neither covers the other. */
-const expectPanelBesideCard = async (canvas: ReturnType<typeof within>, canvasElement: HTMLElement) => {
-  const column = await canvas.findByRole("complementary", { name: "Seitenbereich" });
-  const box = column.getBoundingClientRect();
-  const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
-  const frame = content.parentElement!.parentElement!.getBoundingClientRect();
-  const main = canvas.getByRole("main").getBoundingClientRect();
-  // Where the panel leaves the card no room beside the page, the card has
-  // closed (rule 4); asked for again, it lies over the page.
-  const reopen = within(bar(canvasElement)).queryByRole("button", { name: "Quellen ausklappen" });
-  if (reopen) await userEvent.click(reopen);
-  const card = (await canvas.findByRole("complementary", { name: "Quellen" })).getBoundingClientRect();
-  // A column of the frame: full height, at the end edge, the main area before it.
-  await expect(box.width).toBe(400);
-  await expect(box.top).toBeCloseTo(frame.top, 0);
-  await expect(box.bottom).toBeCloseTo(frame.bottom, 0);
-  await expect(box.right).toBeCloseTo(frame.right, 0);
-  await expect(main.right).toBeCloseTo(box.left, 0);
-  // The card floats over the main area and stops before the panel; so does its toggle.
-  await expect(card.width).toBeGreaterThan(0);
-  await expect(card.right).toBeLessThan(box.left);
-  const cardToggle = within(bar(canvasElement)).getByRole("button", { name: "Quellen einklappen" });
-  await expect(cardToggle.getBoundingClientRect().right).toBeLessThan(box.left);
-  // The strip is level with the bar; the panel's toggle is its last control,
-  // in the frame's top end corner.
-  const strip = column.querySelector("[data-slot='app-shell-side-panel-strip']") as HTMLElement;
-  await expect(strip.getBoundingClientRect().height).toBe(56);
-  await expect(strip.getBoundingClientRect().top).toBeCloseTo(bar(canvasElement).getBoundingClientRect().top, 0);
-  const toggle = within(column).getByRole("button", { name: "Seitenbereich ausblenden" });
-  await expect(frame.right - toggle.getBoundingClientRect().right).toBeCloseTo(8, 0);
-  return { column, strip, frame };
 };
 
 /**
@@ -1732,27 +1123,6 @@ export const ChatWorkspaceWithSidePanel: Story = {
   },
 };
 
-/** The same panel in a native shell: opaque, its strip part of the title bar. */
-export const NativeShellWorkspaceWithSidePanel: Story = {
-  parameters: OWN_IFRAME_IN_DOCS,
-  render: () => (
-    <NativeShellHost>
-      <AppShellFixture context="workspace" topic={TOPIC_NAME} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
-        <TopicConversation />
-        <SidePanelDemo />
-      </AppShellFixture>
-    </NativeShellHost>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const { column, strip } = await expectPanelBesideCard(canvas, canvasElement);
-    await expect(alphaOf(getComputedStyle(column).backgroundColor)).toBe(1);
-    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
-    await expect(region(strip)).toBe("drag");
-    await expect(region(within(column).getByRole("tab", { name: "Modulhandbuch" }))).toBe("no-drag");
-    await expect(region(within(column).getByRole("button", { name: "Seitenbereich ausblenden" }))).toBe("no-drag");
-  },
-};
-
 /**
  * The frame's shrinking rules, in a 900px frame with the panel shown: the
  * left column shows as its rail by itself, the main area keeps 360px, the
@@ -1760,6 +1130,7 @@ export const NativeShellWorkspaceWithSidePanel: Story = {
  * not move aside for it.
  */
 export const SidePanelInNarrowFrame: Story = {
+  tags: CHECK_ONLY,
   render: () => (
     <div style={{ width: 900 }}>
       <AppShellFixture context="workspace">

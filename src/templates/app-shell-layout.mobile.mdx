@@ -1,0 +1,27 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import * as MobileShellStories from "./app-shell-layout.mobile.stories";
+
+<Meta of={MobileShellStories} />
+
+# Mobile Shell
+
+`AppShellLayout` below `md` (768px). **It is the same component, not a second
+template**: the shell picks the narrow arrangement itself, so an app renders
+one `AppShellLayout` and writes no breakpoint check — which area shows is
+data (`mobileTabs`, `activeMobileTab`).
+
+- **The bar and the page stay on screen.** The navigation (or a workspace's
+  history) is a drawer from the left edge, opened by a toggle at the start of
+  the bar; the right panel is a `BottomSheet`, opened by its toggle at the end
+  of the bar; a page's side panel fills the frame.
+- **Drawers are overlays**: the page behind is inert, Escape and the scrim
+  close them, and the focus returns to the toggle.
+- **One `<main>`, every node mounted once**, in every arrangement.
+- `sidebarNarrowAction` is the navigation's primary action here („Neuer
+  Chat"), at the end of the drawer's bottom row.
+
+The stories are pinned to a 390px phone viewport — open **Overview** or
+**Workspace** in the sidebar. They are not shown inline here: a docs page is
+wider than `md`, so the shell would show its wide arrangement. The narrow
+arrangement's behaviour is tested in `app-shell-layout.test.tsx`. The wide
+arrangement and all props: „Templates/AppShellLayout".

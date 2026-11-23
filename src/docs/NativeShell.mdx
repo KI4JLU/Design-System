@@ -1,7 +1,7 @@
 import { Canvas, Meta } from "@storybook/addon-docs/blocks";
-import * as AppShellLayoutStories from "../templates/app-shell-layout.stories";
+import * as NativeShellStories from "../templates/app-shell-layout.native.stories";
 
-<Meta title="Native shell" />
+<Meta of={NativeShellStories} name="Docs" />
 
 # Native shell
 
@@ -22,7 +22,7 @@ nothing changes, so the same build runs on the web.
 They are separate because they are separate facts: Windows 11 has Mica with
 its standard title bar, so it sets the first and not the second.
 
-<Canvas of={AppShellLayoutStories.NativeShell} />
+<Canvas of={NativeShellStories.Overview} />
 
 The story stands in for the host: a gradient where the material would be,
 three dots where macOS puts the window controls.
@@ -255,21 +255,21 @@ area keeps the window's full width. Its toggle is the last control of the
 title row. Closed, the card is hidden but stays mounted; there is no rail and
 no resize handle. A narrow window shows it as its own area, as on the web.
 
-<Canvas of={AppShellLayoutStories.NativeShellWorkspace} />
+<Canvas of={NativeShellStories.Workspace} />
 
 **A collapsed column leaves the title bar, the brand does not.** The chrome
 bar then spans the window's full width, opaque, and carries the column's
 `header` — in the place it has while expanded — followed by the column's
 toggle. The rail starts below the title row and takes the page's colour.
 
-<Canvas of={AppShellLayoutStories.NativeShellCollapsed} />
+<Canvas of={NativeShellStories.WorkspaceCollapsed} />
 
 **A notice sits at the bottom.** On the web `notice` is the frame's first
 row, full width. Under `data-titlebar` that row is the title bar, so the
 notice becomes the frame's last row instead: full width at the bottom of the
 window, in the flow, never scrolling away.
 
-<Canvas of={AppShellLayoutStories.NativeShellWithNotice} />
+<Canvas of={NativeShellStories.WithNotice} />
 
 **Drag region.** The top row — column headers, chrome bar — carries
 `data-app-region="drag"`. Under `data-titlebar` it drags the window; links,

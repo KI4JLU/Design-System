@@ -69,8 +69,7 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 - **Colour scheme, contrast, accent and Style are not in the bar.** They live
   behind the user menu: „Einstellungen" opens a `SettingsDialog` whose
   „Darstellung" section is `AppearanceSettings`, the only place they are
-  switched. The `SettingsFromUserMenu` story walks that route in its `play`
-  function.
+  switched. „Templates/Settings → User Settings" walks that route.
 - **Page content is a content template**, hung in as `children` — the shell
   brings the chrome and the one `<main>`, the template brings the page's
   heading. A table or a form page (`TableLayout`, `FormLayout`) goes in like
@@ -78,11 +77,8 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 
 - **An item's settings open in a settings window.** The gear of a topic opens
   „Thema-Einstellungen", a `SettingsDialog` whose sections hold the rights
-  per role (a `Table`), the members and the version history. The
-  `ChatWorkspaceSettings` story opens it from the gear and ends on the rights
-  table.
-
-<Canvas of={AppShellLayoutStories.ChatWorkspaceSettings} />
+  per role (a `Table`), the members and the version history. Every settings
+  window of the app is on its own page: „Templates/Settings".
 
 ## Slots & Props
 
@@ -243,9 +239,9 @@ element — not here.
 With `<html data-shell="native">` the side columns let the window's OS
 material through, and with `<html data-titlebar="inset">` the top row drags
 the window and keeps clear of the window controls. Both are set by the host;
-without them the frame is unchanged. Host setup and behaviour: „Native shell".
-
-<Canvas of={AppShellLayoutStories.NativeShell} />
+without them the frame is unchanged. It is this component, not a second
+layout: the app renders the same `AppShellLayout` on the web and in the
+window. Its stories and the host's setup are on the page „Native shell".
 
 ## Resizable columns
 
@@ -338,9 +334,8 @@ import { usePersistedWidth } from "@ki4jlu/design-system";
 - **below `md`**: the bar and the page stay on screen. The navigation is a
   drawer from the left edge, opened by a toggle at the start of the bar; the
   right panel is a `BottomSheet`, opened by its toggle at the end of the bar;
-  a shown side panel fills the frame.
-
-<Canvas of={AppShellLayoutStories.Mobile} />
+  a shown side panel fills the frame. It is this component, not a second
+  template — the stories at phone width are on „Templates/Mobile Shell".
 
 - **Why in JavaScript and not with an `md:` utility.** Below `md` a column
   is not a narrower version of itself: it is a drawer with a different way in
