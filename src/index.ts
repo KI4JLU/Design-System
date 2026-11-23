@@ -105,11 +105,29 @@ export {
   DialogClose,
   DialogContent,
   DialogHeader,
+  DialogEyebrow,
   DialogFooter,
   DialogTitle,
   DialogDescription,
   type DialogContentProps,
+  type DialogFooterProps,
 } from "./components/dialog";
+export { dialogFooterVariants } from "./components/dialog-variants";
+export {
+  Item,
+  ItemMedia,
+  ItemContent,
+  ItemActions,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+  ItemDescription,
+  ItemHeader,
+  ItemFooter,
+} from "./components/item";
+export { itemVariants, itemMediaVariants } from "./components/item-variants";
+export { IconTile, type IconTileProps } from "./components/icon-tile";
+export { iconTileVariants } from "./components/icon-tile-variants";
 export {
   DropdownMenu,
   DropdownMenuTrigger,

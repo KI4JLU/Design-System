@@ -40,6 +40,7 @@ governance.
 | Success / online | `bg-success` / `text-success`; soft badge: `bg-success-container text-on-success-container` |
 | Info / pending | `text-info` / `bg-info-container text-on-info-container` |
 | Warning | `text-warning` / `bg-warning-container text-on-warning-container` |
+| Caution (ended, revoked, expired) | `text-caution` / `bg-caution-container text-on-caution-container` |
 | Error / destructive | `text-error`; button: a destructive variant — every delete/remove action uses one ([Delete and remove actions](#delete-and-remove-actions)) |
 | Brand wordmark (use `<Logo>`) | `text-brand-wordmark` (prefix) + `bg-brand text-on-brand` (badge); badge is theme-invariant |
 | Elevation | `shadow-card`, `hover:shadow-card-hover`, `shadow-overlay` |

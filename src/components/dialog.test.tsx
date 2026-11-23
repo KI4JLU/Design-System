@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Dialog, DialogContent, DialogTitle } from "./dialog";
+import { Dialog, DialogContent, DialogEyebrow, DialogFooter, DialogTitle } from "./dialog";
 
 function renderDialog(closeLabel?: string) {
   return render(
@@ -47,5 +47,24 @@ describe("DialogContent showClose", () => {
       </Dialog>,
     );
     expect(screen.queryByRole("button", { name: "Schließen" })).toBeNull();
+  });
+});
+
+describe("DialogFooter layout", () => {
+  it("defaults to end and switches to the equal-halves grid with fill", () => {
+    render(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined}>
+          <DialogTitle>T</DialogTitle>
+          <DialogEyebrow>Status</DialogEyebrow>
+          <DialogFooter data-testid="end">a</DialogFooter>
+          <DialogFooter data-testid="fill" layout="fill">b</DialogFooter>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByTestId("end")).toHaveAttribute("data-layout", "end");
+    expect(screen.getByTestId("fill")).toHaveAttribute("data-layout", "fill");
+    expect(screen.getByTestId("fill")).toHaveClass("sm:grid-cols-2");
+    expect(screen.getByText("Status")).toHaveAttribute("data-slot", "dialog-eyebrow");
   });
 });

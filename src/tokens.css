@@ -66,6 +66,10 @@
   --p-night-orange-deep: #e85b3b;
   --p-night-yellow: #ffd76f;
   --p-night-yellow-deep: #d17723;
+  /* Bernstein-Orange zwischen Gelb und Orange: der Caution-Ton (zurückgezogen,
+   * abgelaufen), von der Warnung (gelb) unterscheidbar; Container aus
+   * --p-night-yellow-deep. */
+  --p-night-amber: #f8a94d;
   --p-night-green: #a4dc7b;
   --p-night-green-deep: #009e6a;
   --p-night-cyan: #6adde7;
@@ -115,6 +119,11 @@
   --p-green-400: #4ade80;
   --p-green-600: #15803d;
   --p-green-900: #14532d;
+
+  /* Orange (caution) */
+  --p-orange-100: #ffedd5;
+  --p-orange-700: #c2410c;
+  --p-orange-900: #7c2d12;
 
   /* Amber (warning) */
   --p-amber-100: #fef3c7;
@@ -426,6 +435,14 @@
   --color-warning-container: var(--p-amber-100);
   --color-on-warning-container: var(--p-amber-900);
 
+  /* Caution: something that ended or no longer applies (a revoked link, an
+     expired item) — a status, not a risk. Orange, so it reads apart from the
+     warning's amber/yellow. orange-700 has 5.2:1 on surface (WCAG AA). */
+  --color-caution: var(--p-orange-700);
+  --color-on-caution: var(--p-white);
+  --color-caution-container: var(--p-orange-100);
+  --color-on-caution-container: var(--p-orange-900);
+
   /* Info is blue (the usual convention) — it was teal, which read as a second
      green next to success. The light container is far from the saturated
      primary, so an info box does not look like a button. */
@@ -559,6 +576,11 @@
      * on top of it below 3:1. */
     --color-warning-container: color-mix(in oklab, var(--p-night-yellow) 28%, var(--p-night-950));
     --color-on-warning-container: var(--p-night-yellow);
+
+    --color-caution: var(--p-night-amber);
+    --color-on-caution: var(--p-night-900);
+    --color-caution-container: color-mix(in oklab, var(--p-night-yellow-deep) 28%, var(--p-night-950));
+    --color-on-caution-container: var(--p-night-amber);
 
     --color-info: var(--p-blue-300);
     --color-on-info: var(--p-night-900);

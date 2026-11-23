@@ -3,6 +3,8 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { buttonVariants } from "./button-variants";
+import { dialogFooterVariants } from "./dialog-variants";
+import type { VariantProps } from "class-variance-authority";
 
 /**
  * Accessible modal dialog built on Radix. Provides focus trap, Escape-to-close,
@@ -13,6 +15,12 @@ import { buttonVariants } from "./button-variants";
  * semibold title whose line sits on the centre of the close button — a 36px
  * ghost icon button in the top-right corner, the same control as every other
  * icon button. Actions go in `DialogFooter`.
+ *
+ * Optional parts: `DialogEyebrow` puts a status badge on the close button's
+ * line, top left; `DialogFooter layout="fill"` gives a dialog's two actions
+ * equal halves. The box is its own stacking context (`isolate`), so a
+ * decorative layer inside it (`absolute inset-0 -z-10`, e.g. a colour glow)
+ * stays behind the content and inside the box.
  */
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -53,7 +61,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
+        "fixed left-1/2 top-1/2 z-50 isolate grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
         "rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",
         "focus:outline-none",
         // The close button's geometry as custom properties, so content can
@@ -92,13 +100,41 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * A label on the close button's line, top left — a status `Badge` naming what
+ * the dialog is about ("Einladung", "Link zurückgezogen"). Goes first in the
+ * content; it keeps the close button's corner clear, and its line is the
+ * button's (24px, centred on it), so badge and close sit on one axis.
+ */
+function DialogEyebrow({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
+      data-slot="dialog-eyebrow"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "flex min-h-6 items-center gap-2 pr-[calc(var(--dialog-close-reserve)_-_1.5rem)]",
         className,
       )}
+      {...props}
+    />
+  );
+}
+
+export interface DialogFooterProps
+  extends React.ComponentProps<"div">,
+    VariantProps<typeof dialogFooterVariants> {}
+
+/**
+ * The dialog's actions. `layout="end"` (default): right-aligned, at their own
+ * width. `layout="fill"`: two actions as equal halves of the row, the primary
+ * one last (right); a single action takes the right half. On narrow screens
+ * both stack, the primary on top.
+ */
+function DialogFooter({ className, layout = "end", ...props }: DialogFooterProps) {
+  return (
+    <div
+      data-slot="dialog-footer"
+      data-layout={layout}
+      className={cn(dialogFooterVariants({ layout }), className)}
       {...props}
     />
   );
@@ -139,6 +175,7 @@ export {
   DialogClose,
   DialogContent,
   DialogHeader,
+  DialogEyebrow,
   DialogFooter,
   DialogTitle,
   DialogDescription,
