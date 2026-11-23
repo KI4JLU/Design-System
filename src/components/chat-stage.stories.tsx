@@ -66,14 +66,27 @@ export const WithHeader: Story = {
  * A consumer that moves its column towards the start edge — to keep clear of
  * the shell's floating card — sets `--chat-axis-shift` on the stage. The
  * `header` row and the scroller's jump button follow; the consumer moves its
- * own boxes (here the composer) by the same length. Scroll up to see the
+ * own boxes (here the composer) by the same length. `--chat-axis-width` (the
+ * composer's 28rem here) keeps the header row wrapping inside that box. Scroll up to see the
  * button: it sits on the composer's axis, not the stage's.
  */
 export const ShiftedAxis: Story = {
   name: "Shifted axis",
   args: {
-    style: { "--chat-axis-shift": "120px" } as React.CSSProperties,
-    header: <Badge tone="primary">Rolle: Assistent</Badge>,
+    // The stage is the size container, so the shift is at most half the room
+    // beside the 28rem column (none once the column fills the stage), as a
+    // consumer works it out.
+    className: "@container",
+    style: {
+      "--chat-axis-shift": "clamp(0px, 120px, (100cqw - 28rem) / 2)",
+      "--chat-axis-width": "min(28rem, 100cqw)",
+    } as React.CSSProperties,
+    header: (
+      <>
+        <Button variant="ghost" size="sm">Zurück zur Startseite</Button>
+        <Badge tone="primary">Rolle: Assistent für Prüfungsordnungen und Studienverlaufspläne</Badge>
+      </>
+    ),
     composer: (
       <div className="relative left-[calc(-1_*_var(--chat-axis-shift,0px))] mx-auto w-full max-w-md px-6 pb-4">
         <Textarea aria-label="Nachricht" placeholder="Stelle eine Frage…" />
