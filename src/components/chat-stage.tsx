@@ -41,7 +41,9 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
  * (`--app-shell-bubble-inset`) — sets `--chat-axis-shift` on the stage: the
  * length the axis moves towards the start edge. The `header` row and
  * `MessageScrollerButton` follow it; the consumer moves its own boxes
- * (transcript, composer) by the same length.
+ * (transcript, composer) by the same length. `--chat-axis-width` is the width
+ * of the box on that axis: the `header` row wraps within it, so a long row
+ * does not reach past the column's start edge once it moved.
  */
 const ChatStage = React.forwardRef<HTMLDivElement, ChatStageProps>(
   ({ empty = false, header, composer, footer, footerId, className, children, ...props }, ref) => (
@@ -57,9 +59,13 @@ const ChatStage = React.forwardRef<HTMLDivElement, ChatStageProps>(
         className={cn("flex min-w-0 flex-col", empty ? "mt-auto flex-none" : "min-h-0 flex-1")}
       >
         {header != null && (
+          // No item is wider than the row — a default (`:where`, no
+          // specificity), so an item's own narrower max-width still holds. A
+          // badge (a long role name) wraps its text instead of reaching past
+          // the row's edge.
           <div
             data-slot="chat-stage-header"
-            className="relative left-[calc(-1_*_var(--chat-axis-shift,0px))] flex shrink-0 flex-wrap items-center justify-center gap-2 px-4 pt-3"
+            className="relative left-[calc(-1_*_var(--chat-axis-shift,0px))] mx-auto box-border flex w-full max-w-[var(--chat-axis-width,100%)] shrink-0 flex-wrap items-center justify-center gap-2 px-4 pt-3 [:where(&>*)]:max-w-full [&>[data-slot=badge]]:whitespace-normal [&>[data-slot=badge]]:wrap-anywhere"
           >
             {header}
           </div>

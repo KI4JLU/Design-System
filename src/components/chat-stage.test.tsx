@@ -42,6 +42,12 @@ describe("ChatStage", () => {
     expect(header.dataset.slot).toBe("chat-stage-header");
     expect(header).toHaveTextContent("Rolle");
     expect(header.className).toContain("var(--chat-axis-shift,0px)");
+    // …and wraps within the box on that axis, the full stage when unset.
+    expect(header.className).toContain("max-w-[var(--chat-axis-width,100%)]");
+    // A badge in it wraps its text: no item is wider than the row.
+    expect(header.className).toContain("[:where(&>*)]:max-w-full");
+    expect(header.className).toContain("[&>[data-slot=badge]]:whitespace-normal");
+    expect(header.className).toContain("[&>[data-slot=badge]]:wrap-anywhere");
     rerender(<ChatStage><p>x</p></ChatStage>);
     expect(container.querySelector("[data-slot=chat-stage-header]")).toBeNull();
   });

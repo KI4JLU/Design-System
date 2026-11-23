@@ -24,6 +24,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ className, appearance, tone, dot = false, children, ...props }, ref) => (
     <span
       ref={ref}
+      data-slot="badge"
       className={cn(badgeVariants({ appearance, tone, className }))}
       {...props}
     >
