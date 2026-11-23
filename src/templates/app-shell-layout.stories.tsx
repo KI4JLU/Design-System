@@ -1015,7 +1015,7 @@ export const WithLockedSources: Story = {
 export const WithSystemNotice: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="workspace" topic={TOPIC_NAME}
       notice={
         <Alert tone="error" layout="banner" live="assertive">
           <AlertTitle>Dienst nicht verfügbar</AlertTitle>
@@ -1033,7 +1033,7 @@ export const WithSystemNotice: Story = {
         </Alert>
       }
     >
-      <ChatPage />
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1073,7 +1073,7 @@ export const WithSystemNotice: Story = {
 export const WithSystemStatus: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="workspace" topic={TOPIC_NAME}
       status={
         <Alert tone="warning" layout="pill" live="polite" onDismiss={() => {}}>
           <AlertTitle>Hohe Auslastung</AlertTitle>
@@ -1081,7 +1081,7 @@ export const WithSystemStatus: Story = {
         </Alert>
       }
     >
-      <MeinWissen />
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1109,7 +1109,7 @@ export const WithSystemStatus: Story = {
 export const WithSystemStatusBottomEnd: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="workspace" topic={TOPIC_NAME}
       statusPosition="bottom-end"
       status={
         <Alert tone="warning" layout="toast" live="polite" onDismiss={() => {}}>
@@ -1120,7 +1120,7 @@ export const WithSystemStatusBottomEnd: Story = {
         </Alert>
       }
     >
-      <MeinWissen />
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1147,7 +1147,7 @@ export const WithSystemStatusBottomEnd: Story = {
 export const WithSystemStatusTopEnd: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="workspace" topic={TOPIC_NAME}
       statusPosition="top-end"
       status={
         <Alert tone="info" layout="toast" live="polite">
@@ -1161,7 +1161,7 @@ export const WithSystemStatusTopEnd: Story = {
         </Alert>
       }
     >
-      <MeinWissen />
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1188,7 +1188,7 @@ export const WithSystemStatusTopEnd: Story = {
 export const WithSystemStatusBottomEndTall: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="workspace" topic={TOPIC_NAME}
       statusPosition="bottom-end"
       status={
         <Alert tone="info" layout="toast" live="polite" onDismiss={() => {}}>
@@ -1201,7 +1201,7 @@ export const WithSystemStatusBottomEndTall: Story = {
         </Alert>
       }
     >
-      <MeinWissen />
+      <TopicConversation />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1417,12 +1417,12 @@ export const NativeShellCollapsed: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace"
+        context="workspace" topic={TOPIC_NAME}
         leftOpen={false}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <ChatPage />
+        <TopicConversation />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1516,11 +1516,11 @@ export const NativeShellWorkspace: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace"
+        context="workspace" topic={TOPIC_NAME}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <ChatPage />
+        <TopicConversation />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1565,7 +1565,7 @@ export const NativeShellWithNotice: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace"
+        context="workspace" topic={TOPIC_NAME}
         titlebarControls={historyControls}
         logo={nativeLogo}
         notice={
@@ -1574,7 +1574,7 @@ export const NativeShellWithNotice: Story = {
           </Alert>
         }
       >
-        <ChatPage />
+        <TopicConversation />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -1737,8 +1737,8 @@ export const NativeShellWorkspaceWithSidePanel: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
-      <AppShellFixture context="workspace" titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
-        <ChatPage />
+      <AppShellFixture context="workspace" topic={TOPIC_NAME} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+        <TopicConversation />
         <SidePanelDemo />
       </AppShellFixture>
     </NativeShellHost>
