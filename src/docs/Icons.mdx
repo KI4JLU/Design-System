@@ -1,0 +1,104 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as IconStories from "./icons.stories";
+
+<Meta of={IconStories} />
+
+# Icons
+
+Every icon in the system comes from **[lucide](https://lucide.dev/icons/)**
+(`lucide-react`, a dependency of this package). There is no `Icon` wrapper:
+import the icon by name and put it where it belongs. This page says how big
+it is, where its colour comes from, how it is named for screen readers, and
+which icon stands for which action.
+
+```tsx
+import { Trash2 } from "lucide-react";
+
+<Button variant="ghost-destructive" size="icon" aria-label="Quelle entfernen">
+  <Trash2 size={20} />
+</Button>
+```
+
+The full set is on [lucide.dev](https://lucide.dev/icons/); this page does not
+repeat it.
+
+## Size
+
+**Most components size their icon themselves** — pass the icon without a size
+and the component draws it at its size. The checks below measure it in the
+browser, so the table stays true.
+
+| Size | Where the component sets it |
+|---|---|
+| **20px** | the column toggles of `AppShell`, the `Alert` icon |
+| **18px** | `NavItem`, `SidebarAction`, `SidebarRailItem`, a `DropdownMenuItem` (and `ActionMenu`, built on it) |
+| **16px** | `SidebarCard`'s tile, a second-level `NavItem`, `Input`'s `leadingIcon` |
+
+<Canvas of={IconStories.Sizes} />
+
+<Canvas of={IconStories.MenuSizes} />
+
+A size the call site passes is overridden here: `NavItem` draws 18px although
+JLURAG passes `size={20}`.
+
+**`Button`, `MenuItem` and `Badge` do not size an icon.** Without a size,
+lucide draws 24px — too large beside their text. Pass one:
+
+| Where | Size |
+|---|---|
+| An icon-only `Button` in a bar or a toolbar | `size={20}` |
+| An icon beside a `Button`'s text | `size={16}` |
+| An icon in a filled `Badge` | `size={12}` |
+
+<Canvas of={IconStories.SizesFromTheCallSite} />
+
+The sizes are numbers in the components today, not tokens.
+
+## Colour
+
+lucide strokes with `currentColor`: **an icon is the colour of the text around
+it**, in every tone and both themes. Do not pass `color` — set the text colour
+of the element around it (a tone, a variant, `text-…`).
+
+<Canvas of={IconStories.ColourFromText} />
+
+## Naming for screen readers
+
+- **An icon beside text is decoration.** lucide marks it `aria-hidden="true"`
+  by itself when it is given no accessible name; writing `aria-hidden="true"`
+  as well (as the DS code does) is harmless.
+- **An icon-only button needs `aria-label`** — the icon cannot name it
+  (COMPONENT_GUIDELINES, rule for icon-only controls).
+- **An icon never carries a status alone.** A status icon goes with text that
+  says the status (`Alert`, `Badge`); colour alone is not enough either.
+
+<Canvas of={IconStories.Naming} />
+
+## Which icon for which action
+
+One icon per meaning, everywhere — so a user who has seen „delete" once
+recognises it in every list, and every sidebar section offers its actions with
+the same icons. **Every icon in use has a row**: the dictionary
+(`src/docs/icon-dictionary.ts`) is checked against the inventory below, and a
+unit test fails on an icon without a meaning — give it a row before it ships.
+Where a row names two glyphs for one meaning, its note says which to prefer.
+The last column counts the JustRAG files that import the icon under any of
+its names.
+
+<Canvas of={IconStories.Dictionary} />
+
+Several lucide icons have two names for one glyph: `CheckCircle2` is
+`CircleCheck`, `AlertTriangle` is `TriangleAlert`, `Loader2` is
+`LoaderCircle`, `Edit3` is `PenLine`. Prefer the current name.
+
+## All icons in use
+
+Every icon a DS component draws or JustRAG imports, one tile per glyph: its
+current name, the other names JustRAG imports it as, the components that draw
+it and the number of JustRAG files that import it. The data is
+`src/docs/icon-usage.json`, written by `scripts/icon-usage.mjs`: run it after
+a component starts or stops drawing an icon (a unit test fails until you
+do), and with a JustRAG checkout to refresh its counts —
+`node scripts/icon-usage.mjs <path to JustRAG>`.
+
+<Canvas of={IconStories.Inventory} />

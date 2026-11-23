@@ -126,6 +126,11 @@ export interface AppShellLayoutProps
    *
    * Chrome, like `pageLabel` and `headerActions`: no heading element belongs
    * here.
+   *
+   * @deprecated 0.93.0 — no view puts a search in the bar any more: JustRAG's
+   * search is a „Suchen" row of the column that opens a palette. Still
+   * rendered for existing call sites; it will be removed. Its Chromium stories
+   * went with it (0.93.0); `app-shell-layout.test.tsx` still covers the slot.
    */
   search?: React.ReactNode;
   /**
@@ -336,7 +341,8 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        0.44.0 the centre was `w-full max-w-md min-w-0` and the sides had no
        floor, so the centre kept its full 28rem and the two sides absorbed the
        whole shortfall. Measured in Chromium (JustRAG KI-838, both columns open
-       at 320px, a 560px bar; reproduced by `NarrowBarKeepsTheLabel`): the
+       at 320px, a 560px bar; the story that reproduced it went with the
+       deprecated `search` in 0.93.0): the
        label's region was 16px, a back button plus topic title in it got 0px
        of title, and the back button and the gear each reached 4px into the
        field, which stayed at 448px. Now the order is:
@@ -359,7 +365,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
           search stays usable and centred.
        4. Below a row of search-min + 2 × gap (a 208px bar), the sides are 0
           and the search overflows — not reachable with two open columns on an
-          `lg` window. `BarGivesWayInOrder` measures steps 1–3.
+          `lg` window. (`BarGivesWayInOrder` measured steps 1–3 until 0.93.0.)
 
        So the search is on the row's exact centre at every width down to that
        last step. Known limit: the floor is a length, not the content's own
@@ -395,7 +401,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        becomes the containing block of `position: fixed` descendants, and a
        stacking context) and makes the row's own min-content width 0; the row
        is `w-full` and everything this bar shows that floats is portalled, so
-       neither changes what it renders — measured by `BarGivesWayInOrder`.
+       neither changes what it renders (measured by `BarGivesWayInOrder` until 0.93.0).
        Other content in the slot (a plain `Input`, a `TokenInput`)
        ignores both variables.
 

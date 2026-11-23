@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { composeStories } from "@storybook/react-vite";
 import { KeyRound } from "lucide-react";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { AuthLayout } from "./auth-layout";
 import { Logo } from "../components/logo";
 import { Button } from "../components/button";
@@ -57,39 +57,83 @@ export const SSO: Story = {
   ),
 };
 
-/** Fallback-Variante für lokale Konten (ohne SSO) — Felder aus den Form-Primitives. */
+/**
+ * Local accounts (the fallback without SSO): the wordmark over the card,
+ * the title as the page's `<h1>` (`headingLevel={1}`), username and password
+ * from the form primitives, „Passwort vergessen?", „Anmelden"; under the card
+ * the language switch and the legal links. Sample copy from JustRAG.
+ *
+ * `play` oracles [ARIA]: „Willkommen zurück" is the page's only `<h1>`; the
+ * two fields are labelled „Benutzername" and „Passwort" and fill in as
+ * username and current password (`autocomplete`); the language switch's name
+ * contains its visible text; the footer holds the four legal links.
+ */
 export const Login: Story = {
   args: {
-    title: "Anmelden",
-    description: "Plattform-Verwaltung der JLU.",
+    title: "Willkommen zurück",
+    headingLevel: 1,
+    description: "Melde dich an, um auf deine Knowledge Base zuzugreifen",
   },
   render: (args) => (
     <AuthLayout
       {...args}
-      logo={brand}
+      logo={<Logo product="RAG" size="lg" />}
       footer={
-        <a href="#passwort" className="underline underline-offset-4 hover:text-on-surface">
-          Passwort vergessen?
-        </a>
+        <>
+          <Button variant="outline" size="icon" type="button" aria-label="DE – Switch to English" title="Switch to English">
+            DE
+          </Button>
+          <nav aria-label="Rechtliches" className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-xs">
+            {["Impressum", "Nutzungsbedingungen", "Datenschutz", "Barrierefreiheit"].map((label, i) => (
+              <span key={label} className="flex items-center gap-x-2">
+                {i > 0 && <span aria-hidden="true">·</span>}
+                <a href={`#${label.toLowerCase()}`} className="py-2 hover:text-on-surface">
+                  {label}
+                </a>
+              </span>
+            ))}
+          </nav>
+        </>
       }
     >
       <Stack gap="md">
         <FormItem>
-          <FormLabel>E-Mail</FormLabel>
+          <FormLabel>Benutzername</FormLabel>
           <FormControl>
-            <Input type="email" autoComplete="username" />
+            <Input type="text" autoComplete="username" placeholder="Gib deinen Benutzernamen ein" />
           </FormControl>
         </FormItem>
         <FormItem>
           <FormLabel>Passwort</FormLabel>
           <FormControl>
-            <Input type="password" autoComplete="current-password" />
+            <Input type="password" autoComplete="current-password" placeholder="••••••••" />
           </FormControl>
         </FormItem>
-        <Button className="w-full">Anmelden</Button>
+        <a href="#passwort" className="self-end text-sm underline underline-offset-4 hover:text-on-surface">
+          Passwort vergessen?
+        </a>
+        <Button type="submit" className="w-full">
+          Anmelden
+        </Button>
       </Stack>
     </AuthLayout>
   ),
+  play: async ({ canvas }) => {
+    const headings = canvas.getAllByRole("heading", { level: 1 });
+    await expect(headings.map((h) => h.textContent)).toEqual(["Willkommen zurück"]);
+    await expect(canvas.getByLabelText("Benutzername")).toHaveAttribute("autocomplete", "username");
+    await expect(canvas.getByLabelText("Passwort")).toHaveAttribute("autocomplete", "current-password");
+    // Label in name (WCAG 2.5.3): the accessible name contains the visible „DE".
+    await expect(canvas.getByRole("button", { name: /^DE – Switch to English$/ })).toHaveTextContent("DE");
+    await expect(canvas.getByRole("link", { name: "Passwort vergessen?" })).toBeVisible();
+    const legal = within(canvas.getByRole("navigation", { name: "Rechtliches" }));
+    await expect(legal.getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Impressum",
+      "Nutzungsbedingungen",
+      "Datenschutz",
+      "Barrierefreiheit",
+    ]);
+  },
 };
 
 /** Fehlerzustand — Feld-Story aus den Form-Stories, im Template platziert. */

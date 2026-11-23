@@ -6,7 +6,7 @@ import { Button } from "./button";
 import { Input } from "./input";
 
 const meta = {
-  title: "Layout/PageHeader",
+  title: "Primitives/PageHeader",
   component: PageHeader,
 } satisfies Meta<typeof PageHeader>;
 

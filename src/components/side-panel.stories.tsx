@@ -5,7 +5,7 @@ import { FileText, History, MessageSquare } from "lucide-react";
 import { SidePanel } from "./side-panel";
 
 const meta = {
-  title: "Layout/SidePanel",
+  title: "Primitives/SidePanel",
   component: SidePanel,
   args: {
     side: "left",
@@ -118,7 +118,7 @@ export const Playground: Story = {
 /**
  * Rechte Leiste: Rand und Chevron spiegeln sich über `side` — und der
  * Umschalter wandert mit. Er steht **vor** dem `header`, wieder am zum Inhalt
- * zeigenden Rand, so dass die beiden Kopfzeilen eines Workspace zur Mitte hin
+ * zeigenden Rand, so dass die beiden Kopfzeilen einer Ansicht mit zwei Leisten zur Mitte hin
  * spiegelsymmetrisch sind.
  */
 export const RightSide: Story = {

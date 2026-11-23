@@ -88,7 +88,7 @@ Konformität.
 Zwei Fragen standen offen (Karte KI-597): *welches* Element der Griff
 referenziert und *wer* die `id` prägt. Beide sind entschieden:
 
-**1. Das Ziel ist die Wurzel der Leiste** — im Workspace das `<aside>` des
+**1. Das Ziel ist die Wurzel der Leiste** — in der Shell das `<aside>` des
 `SidePanel`, also das benannte `complementary`-Landmark — und **nicht** der
 innere Inhaltsbereich, auf den die Ein-/Ausklapp-Buttons des `SidePanel` mit
 ihrem eigenen `aria-controls` zeigen. Die beiden Verweise meinen Verschiedenes
@@ -169,7 +169,7 @@ Screenreader kündigen `aria-valuenow` als nackte Zahl an. Wer „320 Pixel" hö
 möchte, gibt zusätzlich ein übersetztes `aria-valuetext` mit — die Prop wird
 durchgereicht.
 
-<Canvas of={ResizeHandleStories.InAWorkspace} />
+<Canvas of={ResizeHandleStories.BetweenTwoPanes} />
 
 ## Entschieden: `separator` statt `slider`
 

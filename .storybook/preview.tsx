@@ -52,12 +52,16 @@ const withTheme: Decorator = (Story, context) => (
         accent={context.globals.accent as AccentColor}
       />
       {/* Full-page templates (parameters.layout: "fullscreen") render edge-to-edge;
-          component stories keep the padded canvas. */}
+          component stories keep the padded canvas. A component story fills the
+          screen on its own page only: on a Docs page every example is inline,
+          and a screen-high canvas each made a page of examples screens long. */}
       <div
         className={
           context.parameters.layout === "fullscreen"
             ? "bg-surface text-on-surface min-h-screen"
-            : "bg-surface text-on-surface min-h-screen p-8"
+            : context.viewMode === "docs"
+              ? "bg-surface text-on-surface p-8"
+              : "bg-surface text-on-surface min-h-screen p-8"
         }
       >
         <Story />
@@ -137,7 +141,10 @@ const preview: Preview = {
           "Tokens",
           "Foundations",
           "Templates",
-          "Layout",
+          // The building blocks templates are made of (Stack, Grid, Container,
+          // the shell's frame pieces) — not „Layout", which read as the
+          // templates' `…Layout` components.
+          "Primitives",
           "Components",
           [
             "Actions",
@@ -151,6 +158,9 @@ const preview: Preview = {
             "AI",
           ],
           "*",
+          // Parts of the DS that are not exported (`AppShell`): for work on
+          // the DS itself, last in the sidebar.
+          "Internals",
         ],
       },
     },

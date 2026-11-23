@@ -45,7 +45,7 @@ export interface SettingsDialogProps {
   emptyLabel?: string;
   /**
    * `default`: a fixed 900×640 window for quick preferences that apply as
-   * they change. `xl`: a workspace for editors — full screen below `sm`, from
+   * they change. `xl`: room for editors — full screen below `sm`, from
    * `sm` the box of `fitTo` (1rem inside it, at least 960px wide) or, without
    * one, 1120×860; either way capped by the viewport.
    */

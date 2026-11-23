@@ -7,7 +7,7 @@ import { Grid } from "./grid";
 import { Stack } from "./stack";
 
 const meta = {
-  title: "Layout/Container",
+  title: "Primitives/Container",
   component: Container,
   parameters: { layout: "fullscreen" },
   argTypes: {

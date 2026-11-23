@@ -4,7 +4,7 @@ import { Grid } from "./grid";
 import { Card, CardHeader, CardTitle, CardDescription } from "./card";
 
 const meta = {
-  title: "Layout/Grid",
+  title: "Primitives/Grid",
   component: Grid,
   argTypes: {
     cols: { control: "select", options: [1, 2, 3, 4, "auto"] },

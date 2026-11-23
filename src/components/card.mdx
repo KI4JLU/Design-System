@@ -1,0 +1,133 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as CardStories from "./card.stories";
+
+<Meta of={CardStories} />
+
+# Card
+
+A surface that holds one item: a topic in a grid, a step in a guide, a row in
+a list. `Card` is the frame — the rounded box, the border, the shadow; its
+parts give the inside its shape. It has **no padding of its own**: the parts
+bring theirs, or the call site sets it.
+
+```tsx
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@ki4jlu/design-system";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Prüfungsordnung</CardTitle>
+    <CardDescription>Fassung 2026</CardDescription>
+  </CardHeader>
+  <CardContent>…</CardContent>
+  <CardFooter>…</CardFooter>
+</Card>
+```
+
+<Canvas of={CardStories.Basic} />
+
+<Controls />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| An item in a grid of items (a topic, a source, a tool) | the **hairline card**: `CardBand` + `CardHairline` + `CardContent` + `CardFooter` |
+| The same items as a list | a **row**: `Card accent tint` with the item's colour as `accentColor` |
+| A step, a callout, a note in a page's flow | `Card accent` |
+| A form section or a settings group | `Card` with padding — or, inside a settings window, `PanelSection` |
+| A choice the user picks from a set of cards | `SelectableCard`, not `Card` |
+| A message that needs reading | `Alert`, not a card |
+
+## The hairline card
+
+The card of an overview page — JustRAG's topic, catalog and tool tiles. On top
+a `CardBand`: the title and the card's own controls (a star, the ⋯ menu), lit
+by a soft glow of the card's colour. It is closed by a `CardHairline`, a rule
+in that colour that can carry **one** item centred on it — a category badge,
+an icon tile. Then `CardContent` and a `CardFooter` pinned to the bottom, so
+every card of a row has its footer on the same line.
+
+`accentColor` is the card's colour — any CSS colour, usually a category's.
+Without one, the band glows faintly in the primary colour and the rule is a
+1px line in the border colour; it is never a grey band.
+
+<Canvas of={CardStories.Hairline} />
+
+The glow in both themes. A dark colour (navy) glows in its lighter self, and a
+colour that would vanish on the card — white on light, black on dark — is
+inverted, so every category stays visible:
+
+<Canvas of={CardStories.HairlineGlow} />
+
+<Canvas of={CardStories.LegibleAccent} />
+
+**The title is one line.** A long title ends in an ellipsis, so the band — and
+with it the rule — sits at the same height on every card of a grid. While the
+pointer rests on the card, or the title's button has the focus, the title
+scrolls to its end (`ScrollingText`); a button in the title is wrapped in
+`ScrollingText asChild`.
+
+<Canvas of={CardStories.HairlineLongTitle} />
+
+The catalog card („Entdecken") is the same parts with a description and one
+line of facts (`CardMeta`):
+
+<Canvas of={CardStories.HairlineCatalog} />
+
+## Accent edge and rows
+
+`accent` draws a 4px edge on the left in `accentColor` (primary without one):
+a step or a callout.
+
+<Canvas of={CardStories.Accent} />
+
+A list row is the same edge plus `tint`, the colour faded in from that edge.
+A row without a category passes `cardNeutralAccent`, a quiet grey, and no tint.
+
+<Canvas of={CardStories.Row} />
+
+## Clickable cards
+
+`interactive` colours the border on hover; the card does not move, so nothing
+around it shifts. The hover is for the pointer only: put a real link or button
+in the card (the title is the usual place) so it can be reached with the
+keyboard, and let a click on the card do the same as that control.
+
+<Canvas of={CardStories.Interactive} />
+
+## Without parts
+
+A card without parts has no padding; set it at the call site.
+
+<Canvas of={CardStories.PaddedContainer} />
+
+## Contrast and reduced colours
+
+With raised contrast (`data-contrast`, set by `AppearanceProvider`) the band's
+glow becomes a solid tint; with reduced colours (`data-colors="reduced"`) the
+band has no tint and the rule keeps the card's colour.
+
+<Canvas of={CardStories.HairlineContrast} />
+
+<Canvas of={CardStories.HairlineReducedColors} />
+
+## Helpers
+
+| Export | What it is for |
+|---|---|
+| `cardAccentStyle(color, style)` | the `style` with the card's colour as `--card-accent` (and `--card-on-accent`, `--card-glow`, the light it casts) — for a custom element that should draw in a card's colour, as `Card` does |
+| `cardNeutralAccent` | the grey `accentColor` of a row without a category |
+
+## Accessibility
+
+- **A card title is not a heading.** `CardTitle` renders a `div`: a grid of
+  `<h2>`s that name nothing in the page's outline is worse than styled text.
+  Where a card *is* a titled section of the page, give the title the element
+  with `asChild` (`<CardTitle asChild><h2>…</h2></CardTitle>`) — the look stays.
+- A clickable card needs a focusable control inside it with an accessible name
+  („Thema öffnen: …"); the card itself is not a button.
+- The colour is decoration. A category must also be written (the badge on the
+  rule), never only shown as a colour.
+- Icons in the band, the meta lines and the footer are decorative
+  (`aria-hidden="true"`); a count shown as icon and number needs the full
+  phrase for screen readers.

@@ -1,0 +1,78 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as InputStories from "./input.stories";
+
+<Meta of={InputStories} />
+
+# Input
+
+The single-line text field. One look for every form; the error look comes
+from `aria-invalid`, not from a prop of its own.
+
+```tsx
+import { Input, Label } from "@ki4jlu/design-system";
+
+<Label htmlFor="topic-name">Name</Label>
+<Input id="topic-name" placeholder="z. B. Prüfungsordnung" />
+```
+
+<Canvas of={InputStories.Playground} />
+
+<Controls />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| One line of text in a form | `Input` with a `Label` (or a `FormField`) |
+| Several lines | `Textarea` |
+| Choosing from a fixed list | `Select` |
+| Typing to filter suggestions | `Combobox` |
+| Several values as chips (addresses, tags) | `TokenInput` |
+| An icon, a hint or a button attached to the field | `InputGroup` |
+| Editing a piece of text where it stands (a title) | `variant="editable"` — see `Components/Forms/EditInPlace` |
+
+## States
+
+<Canvas of={InputStories.Disabled} />
+
+**Invalid.** Set `aria-invalid="true"` — inside a `Form`, `FormControl` does
+it for you — and say what is wrong next to the field, linked with
+`aria-describedby`.
+
+<Canvas of={InputStories.Invalid} />
+
+## Search field
+
+`leadingIcon` puts a decorative icon inside the field. The accessible name
+still comes from the label or `aria-label`. `shortcutHint` shows a keyboard
+shortcut at the end while the pointer is over the field and it has no focus;
+announce the shortcut with `aria-keyshortcuts`.
+
+<Canvas of={InputStories.LeadingIcon} />
+
+## Variants
+
+| `variant` | For |
+|---|---|
+| `default` | the framed field in a form |
+| `inline` | a borderless field inside a row that already has a frame (a rule editor) |
+| `title` | an editable heading in a dialog's header row |
+| `editable` | text edited in place, keeping its own font and colour |
+
+<Canvas of={InputStories.Inline} />
+
+<Canvas of={InputStories.Title} />
+
+A borderless field has no frame to turn red: an invalid `title` colours its
+placeholder instead, and the message beside it is the caller's.
+
+<Canvas of={InputStories.TitleInvalid} />
+
+## Accessibility
+
+- Every field needs a name: a `Label` with `htmlFor`, a `FormLabel`, or
+  `aria-label` where there is no visible label (a search field).
+- A placeholder is a hint, not a label — it disappears as soon as the user
+  types.
+- Errors: `aria-invalid` plus a message the field points at with
+  `aria-describedby`; the red frame alone is not enough.

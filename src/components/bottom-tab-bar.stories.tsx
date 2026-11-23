@@ -6,7 +6,7 @@ import { BottomTabBar, type BottomTabBarItem } from "./bottom-tab-bar";
 const ITEMS: BottomTabBarItem[] = [
   { id: "history", icon: <History />, label: "Verlauf" },
   { id: "chat", icon: <MessageSquare />, label: "Chat" },
-  { id: "workspace", icon: <Sparkles />, label: "Workspace" },
+  { id: "assistant", icon: <Sparkles />, label: "Assistent" },
   { id: "files", icon: <FolderOpen />, label: "Quellen" },
 ];
 

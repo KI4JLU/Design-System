@@ -7,13 +7,13 @@
  *   @source "../node_modules/@ki4jlu/design-system";
  * (see README for full consumer setup, fonts, and the no-flash theme script)
  */
+// `AppShell` itself is internal since 0.93.0: apps get the frame through
+// `AppShellLayout`. What stays exported here is part of that template's API.
 export {
-  AppShell,
   AppShellSidePanel,
   type AppShellSidePanelProps,
   type AppShellSidePanelTab,
   type AppShellSidePanelLauncher,
-  type AppShellProps,
   type AppShellPanel,
   type AppShellPanelResize,
 } from "./components/app-shell";
@@ -512,7 +512,7 @@ export { useScrollbarGutter } from "./lib/use-scrollbar-gutter";
 /** Fade a scroller's content out at the edges that have more to scroll. */
 export { useScrollFade } from "./lib/use-scroll-fade";
 /** A panel that replaces a content area, and its titled sections. */
-export { ContentPanel, PanelSection, type ContentPanelProps, type PanelSectionProps } from "./components/content-panel";
+export { PanelSection, type PanelSectionProps } from "./components/panel-section";
 /** The settings window (section nav + search + rows). */
 export { SettingsDialog, SettingsRow, type SettingsDialogProps, type SettingsSection, type SettingsRowProps } from "./components/settings-dialog";
 export { useSettingsSearch, type SettingsSearch } from "./components/settings-search-context";
@@ -562,6 +562,7 @@ export {
   type DashboardLayoutProps,
 } from "./templates/dashboard-layout";
 export { FormLayout, type FormLayoutProps } from "./templates/form-layout";
+export { GridLayout, type GridLayoutGroup, type GridLayoutProps } from "./templates/grid-layout";
 export {
   SectionedGridLayout,
   type SectionedGridLayoutProps,

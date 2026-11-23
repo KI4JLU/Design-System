@@ -35,7 +35,9 @@ export default defineConfig([globalIgnores(["dist", "storybook-static"]), {
 }, {
   // Stories and Storybook config aren't part of the shipped library —
   // react-refresh constraints don't apply to them.
-  files: ["src/**/*.stories.tsx", ".storybook/**/*.{ts,tsx}"],
+  // Story files, and story-helper modules shared by several of them
+  // (`src/test/fixtures/*-stories.tsx`), mix components and helpers.
+  files: ["src/**/*.stories.tsx", "src/test/fixtures/*-stories.tsx", ".storybook/**/*.{ts,tsx}"],
   rules: {
     "react-refresh/only-export-components": "off",
   },

@@ -245,11 +245,12 @@ Run these in order on every file `shadcn add` produced, before the PR:
 
 ```tsx
 import { Button } from "@ki4jlu/design-system";
+import { Menu } from "lucide-react";
 
 <Button onClick={save}>Speichern</Button>                 // primary
 <Button variant="secondary">Abbrechen</Button>
 <Button variant="outline" size="sm">Filter</Button>
-<Button variant="ghost" size="icon" aria-label="Menü"><Icon name="menu" /></Button>
+<Button variant="ghost" size="icon" aria-label="Menü"><Menu size={20} /></Button>  // icons: Foundations/Icons
 // Delete in a footer / toolbar:
 <Button variant="ghost-destructive">Löschen</Button>
 
@@ -281,7 +282,7 @@ Menus follow the same rule: `<DropdownMenuItem variant="destructive">`, or
 `destructive: true` on an `ActionMenu` action.
 
 ```tsx
-// SettingsDialog / ContentPanel footer: delete + status left, Abbrechen + Speichern right.
+// SettingsDialog footer: delete + status left, Abbrechen + Speichern right.
 // The footer spreads its two children apart, so delete and status share one wrapper.
 footer={(
   <>
@@ -546,7 +547,7 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   page category — never rebuild a page skeleton in the app. Missing slot/variant?
   Extend the template in the design system (owner review), don't fork the
   layout.
-- **Three-pane workspaces** (side pane | content | side pane, one area at a
+- **Three-pane screens** (side pane | content | side pane, one area at a
   time on narrow screens) are `AppShellLayout` with a `rightPanel`: pass each
   column's open state and width and the current mobile tab in as controlled
   props — never a breakpoint check or a pane frame of your own. Hiding the
@@ -569,9 +570,10 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   `activeMobileTab` and `onMobileTabChange` name what is open there, and the
   call site still writes no breakpoint check: which id shows which area is
   data. There is no tab bar.
-  A second column on the right is `rightPanel` (an `AppShellPanel`, the same
-  shape `AppShell.left`/`.right` take). Do not compose `AppShell` +
-  `SidePanel` by hand to get any of this. Every nav row that should collapse
+  A second column on the right is `rightPanel` (an `AppShellPanel`). The frame
+  underneath, `AppShell`, is internal since 0.93.0 — there is no other way to
+  this frame than `AppShellLayout`; do not compose `SidePanel`s by hand to get
+  any of this. Every nav row that should collapse
   into the rail needs a `label` on its `NavItem`. (The legacy standalone
   `Sidebar` was removed in KI-846; there is no nav column outside the
   shell any more.)

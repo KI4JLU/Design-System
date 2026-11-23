@@ -229,8 +229,8 @@ export interface AppShellPanel {
  * opened them. Each node is still mounted once: a column's content is in the
  * drawer below `md` and in the column from `md` up, never in both.
  *
- * **One `<main>`, in every arrangement.** A workspace screen (two side panes
- * around the main area) is this frame too, through `AppShellLayout` +
+ * **One `<main>`, in every arrangement.** A screen with two side columns
+ * around the main area is this frame too, through `AppShellLayout` +
  * `rightPanel`; `mainLabel` and `showRight` (0.37.0) are the props that case
  * needed.
  *
@@ -250,7 +250,7 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * its `isOpen` (default `true`). „Hidden is not collapsed" (0.37.0): an app
    * state that needs the horizontal space must not travel through the user's
    * collapse preference — hiding *by* collapsing leaves the column collapsed
-   * once that state passes, which is the bug recorded for workspace screens
+   * once that state passes, which is the bug recorded for screens with two side columns
    * before this flag moved here in 0.37.0.
    *
    * **Ignored below `md`**, deliberately: hiding buys horizontal space, and
@@ -299,7 +299,7 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
    * the flow: it pushes the whole frame down rather than covering anything.
    * A system state is about the app, not about one column or one area, so it
    * is not placed inside any of them (inside the main column it was narrower
-   * on a workspace screen than on an overview, and read as a card in the
+   * on a screen with two side columns than on an overview, and read as a card in the
    * page). It never scrolls away.
    *
    * The slot is the frame's, the message is the app's: what it says, whether

@@ -46,9 +46,9 @@ export const Basic: Story = {
 };
 
 /**
- * Klickbare Karte im Grid: `interactive` hebt die Karte beim Hover an
- * (Schatten + Translate). Für Tastatur-Nutzer gehört ein fokussierbares
- * Element (Link/Button) in die Karte.
+ * A clickable card in a grid: `interactive` colours the border on hover — the
+ * card does not move. Keyboard users need a focusable element (link/button)
+ * in the card.
  */
 export const Interactive: Story = {
   render: () => (
@@ -150,6 +150,16 @@ export const Hairline: Story = {
     await expect(getComputedStyle(neutral.querySelector("[data-slot=card-band]")!).backgroundImage).toContain("radial-gradient");
     // Its rule is 1px in the border colour: the fill under the top border stays empty.
     await expect(getComputedStyle(neutral.querySelector("[data-slot=card-hairline]")!, "::before").backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    // The title in the band is set in the body face, not the system UI font
+    // Tailwind's `font-sans` falls back to without `--font-sans`. Oracle: the
+    // `--font-body-base` token, resolved through a probe.
+    const probe = document.createElement("span");
+    probe.style.fontFamily = "var(--font-body-base)";
+    canvasElement.appendChild(probe);
+    const bodyFace = getComputedStyle(probe).fontFamily;
+    probe.remove();
+    const title = neutral.querySelector<HTMLElement>("[data-slot=card-title]")!;
+    await expect(getComputedStyle(title).fontFamily).toBe(bodyFace);
   },
 };
 

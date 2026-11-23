@@ -7,7 +7,7 @@ const MIN = 150;
 const MAX = 600;
 
 const meta = {
-  title: "Layout/ResizeHandle",
+  title: "Primitives/ResizeHandle",
   component: ResizeHandle,
   args: {
     side: "left",
@@ -41,8 +41,8 @@ const Pane = ({ label, width, id }: { label: string; width?: number; id?: string
 const SingleHandle = ({ side }: { side: "left" | "right" }) => {
   const [width, setWidth] = useState(320);
   // `controls` points at the pane being resized — the APG splitter's
-  // `aria-controls`. Standalone the consumer provides the id; in the
-  // workspace template the wiring is built in.
+  // `aria-controls`. Standalone the consumer provides the id; in
+  // `AppShellLayout` the wiring is built in.
   const paneId = `resize-handle-story-${side}`;
   const pane = <Pane id={paneId} label={`${width}px`} width={width} />;
   return (
@@ -77,7 +77,7 @@ export const RightPane: Story = {
   render: () => <SingleHandle side="right" />,
 };
 
-const Workspace = () => {
+const TwoPanes = () => {
   const [leftWidth, setLeftWidth] = useState(280);
   const [rightWidth, setRightWidth] = useState(320);
   const [leftOpen, setLeftOpen] = useState(true);
@@ -86,7 +86,7 @@ const Workspace = () => {
   return (
     <div className="flex h-120 overflow-hidden rounded-xl border border-outline-variant bg-surface">
       <SidePanel
-        id="workspace-story-verlauf"
+        id="panes-story-verlauf"
         side="left"
         isOpen={leftOpen}
         width={leftWidth}
@@ -107,7 +107,7 @@ const Workspace = () => {
           min={MIN}
           max={MAX}
           label="Breite der Verlaufsleiste ändern"
-          controls="workspace-story-verlauf"
+          controls="panes-story-verlauf"
           onValueChange={setLeftWidth}
         />
       )}
@@ -121,12 +121,12 @@ const Workspace = () => {
           min={MIN}
           max={MAX}
           label="Breite der Quellenleiste ändern"
-          controls="workspace-story-quellen"
+          controls="panes-story-quellen"
           onValueChange={setRightWidth}
         />
       )}
       <SidePanel
-        id="workspace-story-quellen"
+        id="panes-story-quellen"
         side="right"
         isOpen={rightOpen}
         width={rightWidth}
@@ -149,8 +149,8 @@ const Workspace = () => {
  * `ResizeHandle`. Jede Leiste zeichnet genau **eine** Randlinie (über `side`),
  * das Handle zeichnet keine — deshalb gibt es hier keine doppelten 1px-Linien
  * und keine negativen Margins. Das Zusammensetzen zu einer Seite ist Aufgabe
- * des Workspace-Templates, nicht dieser Story.
+ * von `AppShellLayout`, nicht dieser Story.
  */
-export const InAWorkspace: Story = {
-  render: () => <Workspace />,
+export const BetweenTwoPanes: Story = {
+  render: () => <TwoPanes />,
 };

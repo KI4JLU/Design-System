@@ -351,6 +351,11 @@
   --font-label-sm: "Inter", sans-serif;
   --font-stat-lg: "Inter", sans-serif;
   --font-body-base: "Inter", sans-serif;
+  /* Tailwind's `font-sans` — the body face. Components use it (`CardBand`'s
+     title, `Kbd`); undefined, Tailwind fell back to its system stack and a
+     card title rendered in `ui-sans-serif` instead of Inter, in every app
+     that did not set `--font-sans` itself (JustRAG did, in its index.css). */
+  --font-sans: var(--font-body-base);
   /* Code-box CONTENT only (`font-mono` on CodeBlock's <pre>) — never on
      buttons, including the code box's own copy button. The system's own
      monospace faces; no webfont to ship for one use. */

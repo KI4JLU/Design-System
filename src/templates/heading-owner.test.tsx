@@ -5,6 +5,7 @@ import { AuthLayout } from "./auth-layout";
 import { ChatLayout } from "./chat-layout";
 import { DashboardLayout } from "./dashboard-layout";
 import { FormLayout } from "./form-layout";
+import { GridLayout } from "./grid-layout";
 import { SectionedGridLayout, type SectionedGridSection } from "./sectioned-grid-layout";
 import { TableLayout } from "./table-layout";
 import { PageHeader } from "../components/page-header";
@@ -13,7 +14,7 @@ import { ThemeProvider } from "../theme/ThemeContext";
 
 /**
  * „Who owns the page heading" — the rule in `docs/COMPONENT_GUIDELINES.md`,
- * asserted once for all seven templates instead of per file, because the point
+ * asserted once for all eight templates instead of per file, because the point
  * of the rule is that it is **one** rule.
  *
  * Oracles, all of them outside the code under test:
@@ -98,6 +99,11 @@ const SECTIONS: SectionedGridSection[] = [
   },
 ];
 
+const GRID_GROUPS = [
+  { id: "favorites", label: "Favoriten", items: ["a"] },
+  { id: "rest", label: "Weitere Themen", items: ["b"] },
+];
+
 describe("the page-heading rule — defaults every consumer already ships against", () => {
   it("PageHeader renders the title as a level-1 heading", () => {
     render(<PageHeader title="Elemente" />);
@@ -126,6 +132,14 @@ describe("the page-heading rule — defaults every consumer already ships agains
   it("SectionedGridLayout keeps <h1> for the page and <h2> for every section", () => {
     render(<SectionedGridLayout label="Übersicht" title="Wissensbasen" sections={SECTIONS} />);
     expect(outline()).toEqual(["1: Wissensbasen", "2: Eigene", "2: Geteilte"]);
+  });
+
+  it("GridLayout keeps <h1> for the page and <h2> for its groups — only while there are two", () => {
+    const { unmount } = render(<GridLayout label="Mein Wissen" title="Mein Wissen" groups={GRID_GROUPS} />);
+    expect(outline()).toEqual(["1: Mein Wissen", "2: Favoriten", "2: Weitere Themen"]);
+    unmount();
+    render(<GridLayout label="Mein Wissen" title="Mein Wissen" items={["a"]} />);
+    expect(outline()).toEqual(["1: Mein Wissen"]);
   });
 
   it("SectionedGridLayout without a title keeps its sections at level 2, because the page's <h1> is then the app's", () => {
@@ -225,6 +239,11 @@ describe("the page-heading rule — headingLevel is the call site's decision", (
     render(renderTemplate(2));
     expect(screen.getByRole("heading", { level: 2 })).toHaveAccessibleName("T");
     expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(0);
+  });
+
+  it("moves GridLayout's page title AND its group headings together", () => {
+    render(<GridLayout label="Mein Wissen" title="Mein Wissen" headingLevel={2} groups={GRID_GROUPS} />);
+    expect(outline()).toEqual(["2: Mein Wissen", "3: Favoriten", "3: Weitere Themen"]);
   });
 
   it("moves SectionedGridLayout's page title AND its sections together", () => {
