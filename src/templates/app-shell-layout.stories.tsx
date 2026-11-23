@@ -189,7 +189,7 @@ export const SharedTopics: Story = {
       <GeteiltesWissen />
     </AppShellFixture>
   ),
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     await expectOverviewPage(canvas, "Geteiltes Wissen");
     const page = within(canvas.getByRole("main"));
     const filters = within(page.getByRole("group", { name: "Themen filtern" }));
@@ -200,6 +200,14 @@ export const SharedTopics: Story = {
     await expect(page.getByText("Dr. Anna Weber")).toBeInTheDocument();
     await expect(page.getByText("Öffentlich")).toBeInTheDocument();
     await expect(page.getByRole("button", { name: "Thema hinzufügen" })).toBeVisible();
+
+    // A filter that matches nothing says so — not „Noch nichts geteilt" — and
+    // leads back to „Alle".
+    await userEvent.click(filters.getByRole("button", { name: "Favoriten" }));
+    await expect(await page.findByText("Keine Themen für diesen Filter")).toBeVisible();
+    await expect(page.queryByText("Noch nichts geteilt")).toBeNull();
+    await userEvent.click(page.getByRole("button", { name: "Filter zurücksetzen" }));
+    await expect(await page.findByText("Dr. Anna Weber")).toBeInTheDocument();
   },
 };
 

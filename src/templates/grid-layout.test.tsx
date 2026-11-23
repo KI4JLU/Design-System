@@ -97,6 +97,8 @@ describe("GridLayout", () => {
     expect(screen.getByText("Leer hier")).toBeInTheDocument();
     render(<GridLayout label="Null" items={[0]} emptyState="Nicht leer" />);
     expect(screen.queryByText("Nicht leer")).toBeNull();
+    render(<GridLayout label="Verschachtelt" items={[[], "", [null]]} emptyState="Auch leer" />);
+    expect(screen.getByText("Auch leer")).toBeInTheDocument();
   });
 
   it("keeps a group's cells mounted when the other group empties", () => {

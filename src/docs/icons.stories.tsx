@@ -184,11 +184,13 @@ export const Sizes: Story = {
  * **Menus.** A `DropdownMenuItem` — and `ActionMenu`, built on it — draws its
  * icon at 18px whatever the call site passes.
  *
- * `play` oracle: the open item's icon is 18 × 18 [its box].
+ * `play` oracle: the open item's icon is 18 × 18 [its box]. The menu starts
+ * closed and the `play` opens it — open on load, it would take the keyboard
+ * focus of the Docs page it is shown on.
  */
 export const MenuSizes: Story = {
   render: () => (
-    <DropdownMenu defaultOpen modal={false}>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">Menü</Button>
       </DropdownMenuTrigger>
@@ -200,7 +202,8 @@ export const MenuSizes: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
-  play: async ({ canvasElement }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Menü" }));
     const item = await within(canvasElement.ownerDocument.body).findByRole("menuitem", {
       name: "Umbenennen…",
     });

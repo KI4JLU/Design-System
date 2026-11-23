@@ -125,11 +125,13 @@ const GridLayout = React.forwardRef<HTMLElement, GridLayoutProps>(
     ref,
   ) => {
     const GroupHeading = headingTag(nextHeadingLevel(headingLevel));
-    // A cell of `null`, `undefined` or a boolean renders nothing — e.g. a
-    // filtered record mapped to `null` — so it does not count: a group of
-    // only those is empty. `0` and other values do render and stay.
+    // Only what renders counts as a cell: `null`, `undefined`, booleans, empty
+    // strings and nested arrays of those render nothing — e.g. a filtered
+    // record mapped to `null` — so a group of only those is empty. Nested
+    // arrays are flattened (`Children.toArray`, which keeps the cells' keys).
+    // `0` and other values do render and stay.
     const shown = (groups ?? [{ id: "items", label: null, items: items ?? [] }])
-      .map((group) => ({ ...group, items: group.items.filter(rendersSomething) }))
+      .map((group) => ({ ...group, items: React.Children.toArray(group.items).filter((cell) => cell !== "") }))
       .filter((group) => group.items.length > 0);
     const isEmpty = shown.length === 0;
     const labelled = shown.length > 1;
@@ -215,9 +217,5 @@ const GridLayout = React.forwardRef<HTMLElement, GridLayoutProps>(
   },
 );
 GridLayout.displayName = "GridLayout";
-
-function rendersSomething(node: React.ReactNode): boolean {
-  return node !== null && node !== undefined && typeof node !== "boolean";
-}
 
 export { GridLayout };

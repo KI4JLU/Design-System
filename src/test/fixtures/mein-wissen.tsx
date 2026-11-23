@@ -5,6 +5,7 @@ import { FilterChips } from "../../components/filter-chips";
 import { SegmentedControl } from "../../components/segmented-control";
 import { GridLayout, type GridLayoutProps } from "../../templates/grid-layout";
 import { TopicCard, TopicListHeader, TopicRow } from "./topic-card";
+import { NoMatches } from "./no-matches";
 import { TOPICS, matchesFilter, type Topic } from "./topics";
 
 /* ---------------------------------------------------------------------------
@@ -86,7 +87,8 @@ export function MeinWissen({
             ],
           }
         : { items: shown.map(cell) })}
-      emptyState={<NoTopics />}
+      // An empty collection says so; a filter with no matches offers „Alle".
+      emptyState={topics.length > 0 ? <NoMatches onReset={() => setFilter("all")} /> : <NoTopics />}
     />
   );
 }

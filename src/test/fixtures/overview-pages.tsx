@@ -12,6 +12,7 @@ import {
   TopicListHeader,
   TopicRow,
 } from "./topic-card";
+import { NoMatches } from "./no-matches";
 import { CATALOG, CATEGORIES, SHARED_TOPICS, matchesFilter, type CatalogEntry, type Topic } from "./topics";
 
 /* ---------------------------------------------------------------------------
@@ -121,6 +122,9 @@ export function GeteiltesWissen({
         view === "list" ? <TopicRow key={t.id} topic={t} /> : <TopicCard key={t.id} topic={t} />,
       )}
       emptyState={
+        topics.length > 0 ? (
+          <NoMatches onReset={() => setFilter("all")} />
+        ) : (
         <div className="flex flex-col items-center gap-2 rounded-[var(--ui-radius-box)] border border-dashed border-outline-variant px-6 py-12 text-center">
           <Users size={28} className="text-on-surface" aria-hidden="true" />
           <p className="m-0 font-semibold text-on-surface">Noch nichts geteilt</p>
@@ -132,6 +136,7 @@ export function GeteiltesWissen({
             {addTopic}
           </Button>
         </div>
+        )
       }
     />
   );
@@ -168,12 +173,16 @@ export function Entdecken({
         view === "list" ? <CatalogRow key={e.id} entry={e} /> : <CatalogCard key={e.id} entry={e} />,
       )}
       emptyState={
+        entries.length > 0 ? (
+          <NoMatches onReset={() => setFilter("all")} />
+        ) : (
         <div className="flex flex-col gap-2">
           <p className="m-0 text-lg font-semibold text-on-surface">Keine weiteren Themen verfügbar</p>
           <p className="m-0 text-on-surface-variant">
             Sobald neue Themen für alle Mitglieder der JLU bereitgestellt werden, findest du sie hier.
           </p>
         </div>
+        )
       }
     />
   );
