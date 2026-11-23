@@ -5,7 +5,7 @@ import { FilterChips } from "../../components/filter-chips";
 import { SegmentedControl } from "../../components/segmented-control";
 import { GridLayout, type GridLayoutProps } from "../../templates/grid-layout";
 import { TopicCard, TopicListHeader, TopicRow } from "./topic-card";
-import { TOPICS, type Topic } from "./topics";
+import { TOPICS, matchesFilter, type Topic } from "./topics";
 
 /* ---------------------------------------------------------------------------
  * Story fixture — JLURAG's „Mein Wissen" page as `GridLayout` content: the
@@ -40,8 +40,9 @@ export function MeinWissen({
   const [view, setView] = useState<View>(initialView);
   const [filter, setFilter] = useState("all");
   const cell = (t: Topic) => (view === "list" ? <TopicRow key={t.id} topic={t} /> : <TopicCard key={t.id} topic={t} />);
-  const favorites = topics.filter((t) => t.favorite);
-  const rest = topics.filter((t) => !t.favorite);
+  const shown = topics.filter((t) => matchesFilter(t, filter));
+  const favorites = shown.filter((t) => t.favorite);
+  const rest = shown.filter((t) => !t.favorite);
   return (
     <GridLayout
       label="Mein Wissen"
@@ -84,7 +85,7 @@ export function MeinWissen({
               { id: "rest", label: "Weitere Themen", items: rest.map(cell) },
             ],
           }
-        : { items: topics.map(cell) })}
+        : { items: shown.map(cell) })}
       emptyState={<NoTopics />}
     />
   );

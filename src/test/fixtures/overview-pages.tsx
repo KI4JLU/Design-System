@@ -12,7 +12,7 @@ import {
   TopicListHeader,
   TopicRow,
 } from "./topic-card";
-import { CATALOG, CATEGORIES, SHARED_TOPICS, type CatalogEntry, type Topic } from "./topics";
+import { CATALOG, CATEGORIES, SHARED_TOPICS, matchesFilter, type CatalogEntry, type Topic } from "./topics";
 
 /* ---------------------------------------------------------------------------
  * Story fixture — JLURAG's other two overview pages as `GridLayout` content
@@ -50,14 +50,21 @@ const FAVORITES_CHIP: FilterChipsOption = {
 };
 
 /** „Alle", optionally „Favoriten", the categories, and „+" for the category manager. */
-function TopicFilters({ favorites }: { favorites: boolean }) {
-  const [filter, setFilter] = useState("all");
+function TopicFilters({
+  favorites,
+  value,
+  onChange,
+}: {
+  favorites: boolean;
+  value: string;
+  onChange: (filter: string) => void;
+}) {
   return (
     <FilterChips
       aria-label="Themen filtern"
       options={[{ value: "all", label: "Alle" }, ...(favorites ? [FAVORITES_CHIP] : []), ...CATEGORY_CHIPS]}
-      value={filter}
-      onValueChange={setFilter}
+      value={value}
+      onValueChange={onChange}
       onAdd={() => {}}
       addLabel="Kategorie hinzufügen"
     />
@@ -88,6 +95,7 @@ export function GeteiltesWissen({
   topics?: Topic[];
 }) {
   const [view, setView] = useState<View>(initialView);
+  const [filter, setFilter] = useState("all");
   const addTopic = (
     <>
       <Plus className="size-4" aria-hidden="true" />
@@ -99,7 +107,7 @@ export function GeteiltesWissen({
       label="Geteiltes Wissen"
       title="Geteiltes Wissen"
       description="Themen, die andere mit dir oder deinen Gruppen geteilt haben, und öffentliche Themen, die du abonniert hast."
-      filters={<TopicFilters favorites />}
+      filters={<TopicFilters favorites value={filter} onChange={setFilter} />}
       toolbarActions={
         <>
           <ViewSwitch view={view} onChange={setView} />
@@ -109,7 +117,7 @@ export function GeteiltesWissen({
       view={view}
       listHeader={<TopicListHeader />}
       uniformRows
-      items={topics.map((t) =>
+      items={topics.filter((t) => matchesFilter(t, filter)).map((t) =>
         view === "list" ? <TopicRow key={t.id} topic={t} /> : <TopicCard key={t.id} topic={t} />,
       )}
       emptyState={
@@ -138,12 +146,13 @@ export function Entdecken({
   entries?: CatalogEntry[];
 }) {
   const [view, setView] = useState<View>(initialView);
+  const [filter, setFilter] = useState("all");
   return (
     <GridLayout
       label="Entdecken"
       title="Entdecken"
       description="Entdecke Themen, die von Mitgliedern der JLU für alle bereitgestellt wurden."
-      filters={<TopicFilters favorites={false} />}
+      filters={<TopicFilters favorites={false} value={filter} onChange={setFilter} />}
       toolbarActions={<ViewSwitch view={view} onChange={setView} />}
       view={view}
       listHeader={<CatalogListHeader />}
@@ -155,7 +164,7 @@ export function Entdecken({
           grid
         )
       }
-      items={entries.map((e) =>
+      items={entries.filter((e) => matchesFilter(e, filter)).map((e) =>
         view === "list" ? <CatalogRow key={e.id} entry={e} /> : <CatalogCard key={e.id} entry={e} />,
       )}
       emptyState={

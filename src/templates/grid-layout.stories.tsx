@@ -38,7 +38,8 @@ const cells = (root: HTMLElement) =>
  *    in each group's grid every row is as tall as the tallest
  *    (`uniformRows`) [the boxes; the rem from the CSSOM];
  * 4. „Liste" turns the page into one column of rows under the column labels
- *    [`data-view`; the rows' boxes; the header text].
+ *    [`data-view`; the rows' boxes; the header text]; „Karten" turns it back,
+ *    so the story settles on the cards it is named for.
  */
 export const Cards: Story = {
   render: () => <MeinWissen />,
@@ -75,6 +76,9 @@ export const Cards: Story = {
     await expect(new Set(rows.map((b) => Math.round(b.left))).size).toBe(1);
     await expect(new Set(rows.map((b) => Math.round(b.width))).size).toBe(1);
     await expect(within(region).getByText("Zuletzt aktiv")).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Karten" }));
+    await waitFor(() => expect(region).toHaveAttribute("data-view", "cards"));
   },
 };
 
@@ -135,16 +139,25 @@ export const ListView: Story = {
  * The headings exist only because there are two groups.
  *
  * `play` oracles: two level-2 headings, in order [ARIA `heading`]; the second
- * group starts below the first [the boxes].
+ * group starts below the first [the boxes]; the „Favoriten" chip leaves only
+ * the favourites — one grid, no group heading — and „Alle" brings the rest
+ * back [the cells; ARIA].
  */
 export const WithFavorites: Story = {
   render: () => <MeinWissen withFavorites />,
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
     const headings = canvas.getAllByRole("heading", { level: 2 });
     await expect(headings.map((h) => h.textContent)).toEqual(["Favoriten", "Weitere Themen"]);
     const grids = [...canvasElement.querySelectorAll("[data-slot='grid-layout-grid']")];
     await expect(grids).toHaveLength(2);
     await expect(grids[1].getBoundingClientRect().top).toBeGreaterThan(grids[0].getBoundingClientRect().bottom);
+
+    const chips = within(canvas.getByRole("group", { name: "Themen filtern" }));
+    await userEvent.click(chips.getByRole("button", { name: "Favoriten" }));
+    await waitFor(() => expect(cells(canvasElement)).toHaveLength(TOPICS.filter((t) => t.favorite).length));
+    await expect(canvas.queryByRole("heading", { level: 2 })).toBeNull();
+    await userEvent.click(chips.getByRole("button", { name: "Alle" }));
+    await waitFor(() => expect(cells(canvasElement)).toHaveLength(TOPICS.length));
   },
 };
 

@@ -90,6 +90,21 @@ export const TOPICS: Topic[] = [
 ];
 
 /** The categories every overview page filters by — one set for the platform. */
+/**
+ * Whether an item passes a filter chip: „Alle", „Favoriten", „Privat",
+ * „Geteilt", or a category (its key in `CATEGORIES`). The stories' chips
+ * filter what they show, as the app's do.
+ */
+export function matchesFilter(
+  item: { favorite?: boolean; visibility?: TopicVisibility; category?: { name: string } },
+  filter: string,
+): boolean {
+  if (filter === "all") return true;
+  if (filter === "favorites") return item.favorite === true;
+  if (filter === "personal" || filter === "shared") return item.visibility === filter;
+  return item.category?.name.toLowerCase() === filter;
+}
+
 export const CATEGORIES = {
   studium: { name: "Studium", color: "var(--color-category-1)" },
   lehre: { name: "Lehre", color: "var(--color-category-3)" },

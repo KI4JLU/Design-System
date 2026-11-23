@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useId } from "react";
 import { expect } from "storybook/test";
 import { Input } from "./input";
 import { Label } from "./label";
@@ -11,13 +12,18 @@ const meta = {
   title: "Components/Forms/Label",
   component: Label,
   parameters: { layout: "padded" },
-  args: { children: "Name des Themas", htmlFor: "topic-name" },
-  render: (args) => (
-    <div className="flex w-80 flex-col gap-1.5">
-      <Label {...args} />
-      <Input id="topic-name" placeholder="z. B. Prüfungsordnung" />
-    </div>
-  ),
+  args: { children: "Name des Themas" },
+  render: function Render(args) {
+    // One id per mounted example: on the Docs page every example is in one
+    // document, and a shared id would tie each label to the first field.
+    const id = useId();
+    return (
+      <div className="flex w-80 flex-col gap-1.5">
+        <Label {...args} htmlFor={id} />
+        <Input id={id} placeholder="z. B. Prüfungsordnung" />
+      </div>
+    );
+  },
 } satisfies Meta<typeof Label>;
 
 export default meta;
@@ -44,12 +50,15 @@ export const WithInput: Story = {
  * `play` oracle: the label is less opaque than at rest [computed opacity].
  */
 export const DisabledField: Story = {
-  render: (args) => (
-    <div className="flex w-80 flex-col-reverse gap-1.5">
-      <Input id="topic-name" className="peer" disabled defaultValue="Prüfungsordnung" />
-      <Label {...args} />
-    </div>
-  ),
+  render: function Render(args) {
+    const id = useId();
+    return (
+      <div className="flex w-80 flex-col-reverse gap-1.5">
+        <Input id={id} className="peer" disabled defaultValue="Prüfungsordnung" />
+        <Label {...args} htmlFor={id} />
+      </div>
+    );
+  },
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("textbox", { name: "Name des Themas" })).toBeDisabled();
     await expect(Number(getComputedStyle(canvas.getByText("Name des Themas")).opacity)).toBeLessThan(1);
