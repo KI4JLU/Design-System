@@ -1,8 +1,10 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CopyIcon, PencilIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon, Trash2Icon } from "lucide-react";
-import { expect, fireEvent, screen, waitFor } from "storybook/test";
+import { expect, fireEvent, screen, waitFor, within } from "storybook/test";
 import {
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
@@ -206,5 +208,66 @@ export const StyleParityDark: Story = {
   play: async (context) => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
     await StyleParity.play!(context);
+  },
+};
+
+/**
+ * The rating in JustRAG's message menu (`MessageContextMenu.tsx`):
+ * „Hilfreiche Antwort" / „Nicht hilfreich" as checkbox items — the current
+ * rating is ticked, picking the other moves the tick (the app sends one
+ * rating per answer).
+ */
+function RatedAnswer() {
+  const [feedback, setFeedback] = useState<"positive" | "negative" | null>("positive");
+  const rate = (value: "positive" | "negative") => setFeedback((f) => (f === value ? null : value));
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger className="block max-w-md rounded-lg border border-dashed border-outline-variant p-4 text-sm">
+        Die Anmeldefrist endet am 15. November. (Rechtsklick)
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56" aria-label="Aktionen zur Nachricht">
+        <ContextMenuItem>
+          <CopyIcon />
+          Kopieren
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuCheckboxItem checked={feedback === "positive"} onSelect={() => rate("positive")}>
+          <ThumbsUpIcon aria-hidden="true" />
+          Hilfreiche Antwort
+        </ContextMenuCheckboxItem>
+        <ContextMenuCheckboxItem checked={feedback === "negative"} onSelect={() => rate("negative")}>
+          <ThumbsDownIcon aria-hidden="true" />
+          Nicht hilfreich
+        </ContextMenuCheckboxItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+/**
+ * `play` oracles [ARIA]: the two ratings are `menuitemcheckbox`es, the
+ * current one checked; choosing the other closes the menu, and when it opens
+ * again the tick has moved.
+ */
+export const RatingChecks: Story = {
+  render: () => <RatedAnswer />,
+  play: async ({ canvas, userEvent }) => {
+    const trigger = canvas.getByText(/Anmeldefrist/);
+    const open = async () => {
+      await userEvent.pointer({ keys: "[MouseRight]", target: trigger });
+      return within(await screen.findByRole("menu"));
+    };
+    let menu = await open();
+    await expect(menu.getByRole("menuitemcheckbox", { name: "Hilfreiche Antwort" })).toHaveAttribute("aria-checked", "true");
+    await expect(menu.getByRole("menuitemcheckbox", { name: "Nicht hilfreich" })).toHaveAttribute("aria-checked", "false");
+
+    await userEvent.click(menu.getByRole("menuitemcheckbox", { name: "Nicht hilfreich" }));
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+
+    menu = await open();
+    await expect(menu.getByRole("menuitemcheckbox", { name: "Hilfreiche Antwort" })).toHaveAttribute("aria-checked", "false");
+    await expect(menu.getByRole("menuitemcheckbox", { name: "Nicht hilfreich" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
   },
 };
