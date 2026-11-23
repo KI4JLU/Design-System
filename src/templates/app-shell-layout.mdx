@@ -15,9 +15,10 @@ fill its slots — the frame is **never** rebuilt in the app.
 which frame renders them. Where a view has a chrome bar, **a central search
 is its standard fill**: the mechanism stories on this page pass `search`. The
 prop stays optional — an app without search omits it and keeps the bar's
-geometry (see „The chrome bar" below). JLURAG's overview has **no bar at all**
-(`bar={false}`): navigation and search („Suchen", a palette) live in the left
-column, and the page brings its own heading — the `Overview` story.
+geometry (see „The chrome bar" below). A view can also do **without a bar**
+(`bar={false}`), as the `Overview` story does: navigation and search
+(„Suchen", a palette) live in the left column, and the page brings its own
+heading.
 
 <Canvas of={AppShellLayoutStories.Overview} />
 
@@ -72,12 +73,19 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
   „Darstellung" section is `AppearanceSettings`, the only place they are
   switched. The `SettingsFromUserMenu` story walks that route in its `play`
   function.
-- **Tables and forms live in settings windows, not on pages of the shell.**
-  In JLURAG the gear of a topic opens „Thema-Einstellungen", a
-  `SettingsDialog` whose sections hold the rights per role (a `Table`), the
-  members and the version history; the admin console is a `SettingsDialog`
-  too. The `ChatWorkspaceSettings` story opens it from the gear and ends on
-  the rights table.
+- **Page content is a content template**, hung in as `children` — the shell
+  brings the chrome and the one `<main>`, the template brings the page's
+  heading. A table or a form page goes in like the grid:
+
+<Canvas of={AppShellLayoutStories.TablePage} />
+
+<Canvas of={AppShellLayoutStories.FormPage} />
+
+- **An item's settings open in a settings window.** The gear of a topic opens
+  „Thema-Einstellungen", a `SettingsDialog` whose sections hold the rights
+  per role (a `Table`), the members and the version history. The
+  `ChatWorkspaceSettings` story opens it from the gear and ends on the rights
+  table.
 
 <Canvas of={AppShellLayoutStories.ChatWorkspaceSettings} />
 

@@ -21,6 +21,8 @@ import {
 } from "../test/fixtures/app-shell";
 import * as chatStageStories from "../components/chat-stage.stories";
 import * as dashboardStories from "./dashboard-layout.stories";
+import * as formStories from "./form-layout.stories";
+import * as tableStories from "./table-layout.stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
 import { Entdecken, GeteiltesWissen } from "../test/fixtures/overview-pages";
 import {
@@ -33,19 +35,24 @@ import {
 } from "../test/fixtures/topic-chat";
 import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
 
+const { Admin: TablePageContent } = composeStories(tableStories, {});
+const { Settings: FormPageContent } = composeStories(formStories, {});
+
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
  * shared `AppShellFixture` (`src/test/fixtures/app-shell.tsx`) in one of the
- * two contexts of the reference consumer — `overview` (JLURAG `AppChrome.tsx`)
- * or `workspace` (JLURAG `KbWorkspaceLayout.tsx`). The overview's page is
- * JLURAG's „Mein Wissen" (`GridLayout`, the `mein-wissen` fixture), which renders
- * its title itself — the reason `pageLabel` is optional: with a label, „Mein
- * Wissen" would stand twice. The mechanism stories fill the
- * central `search`, the bar's mechanism other apps use; the page stories do
- * not, as JLURAG does not: its overview has no bar, and its workspace bar no
- * search („Suchen" is in the history column). The first seven stories are
- * JLURAG's screens — the overview and its settings, a topic in three states
- * and its settings — then `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
+ * template's two contexts — `overview` (a list of pages in the column) or
+ * `workspace` (one item open, with its history and its sources). The sample
+ * content is JustRAG's, the DS's consumer, so the stories show the features
+ * an app really uses. The overview's page is a `GridLayout` (the
+ * `mein-wissen` fixture), which renders its title itself — the reason
+ * `pageLabel` is optional: with a label, the title would stand twice. The
+ * mechanism stories fill the central `search`; the page stories show the
+ * shell without it (`bar={false}` on the overview, a bar with a breadcrumb
+ * and no search in the workspace). The first seven stories are the page
+ * stories — the overview and its settings, a workspace in three states and
+ * its settings — then `TablePage` and `FormPage` (other content templates
+ * in the shell) and `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
  *
@@ -180,17 +187,18 @@ const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.
 /* ======================================================================== */
 
 /**
- * **The overview context** — JLURAG's „Mein Wissen" as `development` renders
- * it (`AppChrome.tsx`, screenshots of 20.11.2026): no chrome bar
- * (`bar={false}`); the brand, the NavItem rows — „Suchen" (the search palette
- * in the app), „Mein Wissen", „Geteiltes Wissen", „Entdecken" — in a
- * `SidebarPanel`, the user menu pinned to the column's foot. The page is
- * `GridLayout` with the topic cards, and it renders the page's `<h1>` itself.
+ * **The overview context** — a list of pages in the column and one page of
+ * the user's items: no chrome bar (`bar={false}`); the brand, the NavItem
+ * rows — „Suchen" (opens a search palette), „Mein Wissen", „Geteiltes
+ * Wissen", „Entdecken" — in a `SidebarPanel`, the user menu pinned to the
+ * column's foot. The page is `GridLayout` with the favourites row
+ * („Favoriten" over „Weitere Themen") and the hairline accent cards, and it
+ * renders the page's `<h1>` itself.
  *
  * `play` (Chromium), oracles in brackets:
  * 1. no chrome bar: the page starts at the frame's top [the DOM; the boxes];
  * 2. the column stands left of `<main>` [the layout engine's boxes];
- * 3. the navigation's rows in JLURAG's order, „Mein Wissen" current
+ * 3. the navigation's rows in order, „Mein Wissen" current
  *    [ARIA `navigation`, `button` names, `aria-current`];
  * 4. the page is the region „Mein Wissen" with the only `<h1>`, inside
  *    `<main>` [ARIA `region`, `heading`].
@@ -248,8 +256,8 @@ async function expectOverviewPage(canvas: ReturnType<typeof within>, name: strin
 }
 
 /**
- * **„Geteiltes Wissen"** — JLURAG's `SharedTopicsView.tsx` (`development`;
- * screenshot of rag-test, 20.11.2026): the topics somebody shared with you
+ * **„Geteiltes Wissen"** — an overview page of items owned by others: the
+ * topics somebody shared with you
  * and the public topics you subscribed to in „Entdecken", on the same
  * `GridLayout` as „Mein Wissen" (`overview-pages` fixture). A shared card
  * names its owner („von …") and its sharing („Geteilt (2)", „Öffentlich").
@@ -281,12 +289,11 @@ export const SharedTopics: Story = {
 };
 
 /**
- * **„Entdecken"** — JLURAG's catalog (`DiscoverView.tsx`,
- * `KbCatalogPanel.tsx`): public topics anyone at the university may
+ * **„Entdecken"** — a catalog page: public topics anyone at the university may
  * subscribe to. A catalog card carries „Abonnieren" — or, once subscribed,
  * „Abonniert" as a pressed toggle — in its band, the description, the size
  * and „Stand …". No „Favoriten" chip (a favourite is a topic you already
- * hold) and no primary action. JLURAG lays the catalog out at most two cards
+ * hold) and no primary action. The catalog is laid out at most two cards
  * per row with its own list — the band holds the name and the subscribe
  * button, too much for a 17.5rem cell; the fixture uses `GridLayout` and sets
  * the two columns through `renderGroup`, since the template has no option
@@ -364,8 +371,7 @@ export const SettingsFromUserMenu: Story = {
 };
 
 /**
- * **The workspace context** — a topic in JLURAG (`KbWorkspaceLayout.tsx`,
- * `ChatView.tsx`; `development`, screenshots of 20.11.2026):
+ * **The workspace context** — one item open (here a topic):
  * - the bar: the breadcrumb „Mein Wissen / ‹topic›" as `pageLabel`, a ghost
  *   gear in `headerActions` — **no search field**: the topic's search is
  *   „Suchen" in the history column, which opens a palette in the app;
@@ -490,11 +496,9 @@ async function expectCentredStart(main: HTMLElement) {
 }
 
 /**
- * **A new chat in a topic** — the topic's start page as JLURAG renders it
- * once it has sources: the topic's name, the model, „1 Dokument · Stand …",
+ * **A new chat in a topic** — the topic's start page once it has sources: the topic's name, the model, „1 Dokument · Stand …",
  * the description, then the composer and the suggested questions, centred
- * in the column (`ChatStage empty`). JLURAG's own start-page parts (title
- * card, glow) are left out; the fixture builds the page from DS parts.
+ * in the column (`ChatStage empty`), built from DS parts only.
  *
  * `play` oracles: the topic's name is the page's only `<h1>`, above the
  * composer, and the suggestions follow [ARIA `heading`, `textbox`; the
@@ -524,7 +528,7 @@ export const ChatWorkspaceStart: Story = {
 };
 
 /**
- * **A new topic, no sources yet** — JLURAG after „Neues Thema": „Füge deine
+ * **A new topic, no sources yet** — right after „Neues Thema": „Füge deine
  * erste Quelle hinzu" in the middle over the composer, „Noch kein Verlauf
  * vorhanden." in the history, and the sources card's list is a
  * `FileDropzone` (`emptyTopic`). The card stays open: adding the first
@@ -561,8 +565,8 @@ export const ChatWorkspaceEmpty: Story = {
 };
 
 /**
- * **A topic's settings** — the gear in the workspace bar opens JLURAG's
- * „Thema-Einstellungen" (`KbSettingsDialog.tsx`; screenshots of 20.11.2026):
+ * **A topic's settings** — the gear in the workspace bar opens
+ * „Thema-Einstellungen":
  * a `SettingsDialog` (`size="xl"`, maximizable) with Startseite, Verhalten,
  * Berechtigungen, Mitglieder and Versionsverlauf (`topic-settings` fixture).
  * This is where the app's tables and forms are — in settings windows, not on
@@ -632,6 +636,57 @@ export const ChatWorkspaceSettings: Story = {
     await expect(await d.findByRole("table", { name: "Rechte je Rolle" })).toBeVisible();
   },
 };
+
+/**
+ * **A table page in the overview shell** — `TableLayout` (its `Admin` story)
+ * as `children`. The shell brings the chrome and the one `<main>`; the
+ * content template brings the page's heading.
+ *
+ * `play` oracle: the ARIA tree — exactly one `main`, the table inside it, and
+ * the content template's `<h1>` as the page's only level-1 heading (the
+ * shell contributes none; `pageLabel` would be a `<p>`).
+ */
+export const TablePage: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={<ShellSearch />}>
+      <TablePageContent />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const mains = canvas.getAllByRole("main");
+    await expect(mains).toHaveLength(1);
+    await expect(within(mains[0]).getByRole("table")).toBeVisible();
+    await expect(
+      within(mains[0]).getByRole("heading", { level: 1, name: "Elemente" }),
+    ).toBeVisible();
+    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  },
+};
+
+/**
+ * **A form page in the overview shell** — `FormLayout` (its `Settings` story)
+ * as `children`. Same composition rule and the same oracle as `TablePage`:
+ * one `main`, the form's submit button inside it, one `<h1>` — the form's.
+ */
+export const FormPage: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={<ShellSearch />}>
+      <FormPageContent />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    await expectBarHeight(canvasElement);
+    const mains = canvas.getAllByRole("main");
+    await expect(mains).toHaveLength(1);
+    await expect(within(mains[0]).getByRole("button", { name: "Speichern" })).toBeVisible();
+    await expect(
+      within(mains[0]).getByRole("heading", { level: 1, name: "Element-Einstellungen" }),
+    ).toBeVisible();
+    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  },
+};
+
 
 /**
  * Die Anordnung unter `lg`, hier im Workspace-Kontext mit seinen drei

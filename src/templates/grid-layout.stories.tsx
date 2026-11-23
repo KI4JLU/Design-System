@@ -6,10 +6,11 @@ import { TopicCard } from "../test/fixtures/topic-card";
 import { TOPICS } from "../test/fixtures/topics";
 
 /* ---------------------------------------------------------------------------
- * `GridLayout` as JLURAG's „Mein Wissen" uses it (screenshots of the app on
- * `development`, 20.11.2026): filters at the start of the toolbar, the
- * „Karten / Liste" switch and „Neues Thema" at its end, topic cards or rows
- * below. The cards are the `topic-card` fixture, built from DS parts.
+ * `GridLayout` with sample content from JustRAG's „Mein Wissen": filters at
+ * the start of the toolbar, the „Karten / Liste" switch and „Neues Thema" at
+ * its end, then the favourites row („Favoriten" over „Weitere Themen") of
+ * hairline accent cards, or rows. The cards are the `topic-card` fixture,
+ * built from DS parts.
  * ------------------------------------------------------------------------- */
 
 const meta = {
@@ -34,8 +35,8 @@ const cells = (root: HTMLElement) =>
  * 2. the toolbar: filters at its start edge, the view switch and „Neues
  *    Thema" at its end edge [the layout boxes];
  * 3. the cards fill more than one column, each at least 17.5rem wide, and
- *    every row is as tall as the tallest (`uniformRows`) [the boxes; the rem
- *    from the CSSOM];
+ *    in each group's grid every row is as tall as the tallest
+ *    (`uniformRows`) [the boxes; the rem from the CSSOM];
  * 4. „Liste" turns the page into one column of rows under the column labels
  *    [`data-view`; the rows' boxes; the header text].
  */
@@ -50,7 +51,7 @@ export const Cards: Story = {
     const create = canvas.getByRole("button", { name: "Neues Thema" }).getBoundingClientRect();
     await expect(filters.left).toBeCloseTo(toolbar.left, 0);
     await expect(create.right).toBeCloseTo(toolbar.right, 0);
-    // The toolbar's icons are 16px, as JLURAG sets them (`h-4 w-4`) — an
+    // The toolbar's icons are 16px (`size-4`) — an
     // unsized lucide icon would be 24px [the icons' boxes].
     for (const name of ["Karten", "Liste", "Neues Thema"]) {
       const icon = canvas.getByRole("button", { name }).querySelector("svg")!.getBoundingClientRect();
@@ -61,7 +62,12 @@ export const Cards: Story = {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     await expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBeGreaterThan(1);
     for (const b of boxes) await expect(b.width).toBeGreaterThanOrEqual(17.5 * rem);
-    await expect(new Set(boxes.map((b) => Math.round(b.height))).size).toBe(1);
+    const grids = [...canvasElement.querySelectorAll<HTMLElement>("[data-slot='grid-layout-grid']")];
+    await expect(grids).toHaveLength(2); // the favourites row and the rest
+    for (const grid of grids) {
+      const heights = [...grid.children].map((c) => Math.round(c.getBoundingClientRect().height));
+      await expect(new Set(heights).size).toBe(1);
+    }
 
     await userEvent.click(canvas.getByRole("button", { name: "Liste" }));
     await waitFor(() => expect(region).toHaveAttribute("data-view", "list"));
@@ -173,8 +179,8 @@ export const Empty: Story = {
 };
 
 /**
- * **The topic card in its states** — the `topic-card` fixture, as JLURAG's
- * `KbCard` draws it: with and without a category, a favourite, a name too
+ * **The topic card in its states** — the hairline card of the `topic-card`
+ * fixture: with and without a category, a favourite, a name too
  * long for the line, a topic shared by someone else, a public one.
  *
  * `play` (Chromium), oracles in brackets:

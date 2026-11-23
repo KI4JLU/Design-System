@@ -7,9 +7,9 @@ import { GridLayout } from "./grid-layout";
 # GridLayout
 
 A page that is **one grid of cards, or one list of rows**: the overview of a
-user's items. JLURAG's „Mein Wissen", „Geteiltes Wissen" and „Werkzeuge" are
-this page — until now built in the app itself (`TopicGridPage.tsx`); this
-template is that page in the design system.
+user's items, e.g. JustRAG's „Mein Wissen", „Geteiltes Wissen" and
+„Entdecken". Its cells can be split into groups — the favourites row
+(„Favoriten" over „Weitere Themen") is one.
 
 ```tsx
 import { GridLayout } from "@ki4jlu/design-system";
@@ -82,7 +82,7 @@ toolbar stay, so the primary action is where it always is.
 
 ## The topic card
 
-The stories fill the grid with JLURAG's topic card, built from DS parts only —
+The stories fill the grid with a topic card — the hairline accent card, built from DS parts only —
 `Card`, `CardBand`, `CardHairline`, `Badge`, `ScrollingText`, `ActionMenu`.
 It is a story fixture (`src/test/fixtures/topic-card.tsx`), not a component
 of the package.
@@ -93,7 +93,7 @@ of the package.
 
 The template holds no drag state. To make the cells sortable, wrap each
 group's grid with `renderGroup` — e.g. in `SortableGroup asChild` — and the
-groups in `Sortable` around the template, as JLURAG does today.
+groups in `Sortable` around the template.
 
 ## Accessibility
 
@@ -107,7 +107,7 @@ groups in `Sortable` around the template, as JLURAG does today.
 ## Open points
 
 - **The name** (`GridLayout`) and the API are proposals for the owner.
-- **Empty states differ across JLURAG's pages** — a dashed box with an icon
+- **Empty states differ across JustRAG's pages** — a dashed box with an icon
   and a button on „Mein Wissen", one line of text on „Entdecken". The DS has
   no empty-state component; shadcn/ui's `Empty` would be the one to import
   (premade components first).

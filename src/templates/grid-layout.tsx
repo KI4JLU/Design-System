@@ -14,6 +14,7 @@ export interface GridLayoutGroup {
    * a heading over the only group would name the whole page a second time.
    */
   label: React.ReactNode;
+  /** The group's cells, each with a `key`. */
   items: React.ReactNode[];
 }
 
@@ -61,7 +62,10 @@ export interface GridLayoutProps extends Omit<React.HTMLAttributes<HTMLElement>,
    * row; a card that should fill it needs `h-full`.
    */
   uniformRows?: boolean;
-  /** The cells of a page without groups. Ignored when `groups` is given. */
+  /**
+   * The cells of a page without groups. Ignored when `groups` is given. Each
+   * cell needs a `key`, as in any list.
+   */
   items?: React.ReactNode[];
   /** The cells in groups, in order. Groups without cells are left out. */
   groups?: GridLayoutGroup[];

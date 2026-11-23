@@ -31,7 +31,7 @@ type View = NonNullable<GridLayoutProps["view"]>;
 export function MeinWissen({
   initialView = "cards",
   topics = TOPICS,
-  withFavorites = false,
+  withFavorites = true,
 }: {
   initialView?: View;
   topics?: Topic[];

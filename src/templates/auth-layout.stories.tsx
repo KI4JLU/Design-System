@@ -58,17 +58,15 @@ export const SSO: Story = {
 };
 
 /**
- * Local accounts (the fallback without SSO), as JustRAG's `Login.tsx`
- * (`development`) renders it: the wordmark over the card, „Willkommen zurück"
- * as the page's `<h1>` (`headingLevel={1}`), username and password with
- * their placeholders, „Anmelden"; under the card the language switch and the
- * legal links (JustRAG's `Footer.tsx`). The fields come from the form
- * primitives.
+ * Local accounts (the fallback without SSO): the wordmark over the card,
+ * the title as the page's `<h1>` (`headingLevel={1}`), username and password
+ * from the form primitives, „Passwort vergessen?", „Anmelden"; under the card
+ * the language switch and the legal links. Sample copy from JustRAG.
  *
  * `play` oracles [ARIA]: „Willkommen zurück" is the page's only `<h1>`; the
  * two fields are labelled „Benutzername" and „Passwort" and fill in as
- * username and current password (`autocomplete`); the footer holds the
- * language switch and the four legal links in JustRAG's order.
+ * username and current password (`autocomplete`); the language switch's name
+ * contains its visible text; the footer holds the four legal links.
  */
 export const Login: Story = {
   args: {
@@ -82,7 +80,7 @@ export const Login: Story = {
       logo={<Logo product="RAG" size="lg" />}
       footer={
         <>
-          <Button variant="outline" size="icon" type="button" aria-label="Switch to English" title="Switch to English">
+          <Button variant="outline" size="icon" type="button" aria-label="DE – Switch to English" title="Switch to English">
             DE
           </Button>
           <nav aria-label="Rechtliches" className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-xs">
@@ -111,6 +109,9 @@ export const Login: Story = {
             <Input type="password" autoComplete="current-password" placeholder="••••••••" />
           </FormControl>
         </FormItem>
+        <a href="#passwort" className="self-end text-sm underline underline-offset-4 hover:text-on-surface">
+          Passwort vergessen?
+        </a>
         <Button type="submit" className="w-full">
           Anmelden
         </Button>
@@ -122,7 +123,9 @@ export const Login: Story = {
     await expect(headings.map((h) => h.textContent)).toEqual(["Willkommen zurück"]);
     await expect(canvas.getByLabelText("Benutzername")).toHaveAttribute("autocomplete", "username");
     await expect(canvas.getByLabelText("Passwort")).toHaveAttribute("autocomplete", "current-password");
-    await expect(canvas.getByRole("button", { name: "Switch to English" })).toHaveTextContent("DE");
+    // Label in name (WCAG 2.5.3): the accessible name contains the visible „DE".
+    await expect(canvas.getByRole("button", { name: /^DE – Switch to English$/ })).toHaveTextContent("DE");
+    await expect(canvas.getByRole("link", { name: "Passwort vergessen?" })).toBeVisible();
     const legal = within(canvas.getByRole("navigation", { name: "Rechtliches" }));
     await expect(legal.getAllByRole("link").map((l) => l.textContent)).toEqual([
       "Impressum",
