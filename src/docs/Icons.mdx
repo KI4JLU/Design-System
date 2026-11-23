@@ -1,0 +1,135 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as IconStories from "./icons.stories";
+
+<Meta of={IconStories} />
+
+# Icons
+
+Every icon in the system comes from **[lucide](https://lucide.dev/icons/)**
+(`lucide-react`, a dependency of this package). There is no `Icon` wrapper:
+import the icon by name and put it where it belongs. This page says how big
+it is, where its colour comes from, how it is named for screen readers, and
+which icon stands for which action.
+
+```tsx
+import { Trash2 } from "lucide-react";
+
+<Button variant="ghost-destructive" size="icon" aria-label="Quelle entfernen">
+  <Trash2 size={20} />
+</Button>
+```
+
+The full set is on [lucide.dev](https://lucide.dev/icons/); this page does not
+repeat it.
+
+## Size
+
+**Most components size their icon themselves** — pass the icon without a size
+and the component draws it at its size. The checks below measure it in the
+browser, so the table stays true.
+
+| Size | Where the component sets it |
+|---|---|
+| **20px** | the column toggles of `AppShell`, the `Alert` icon |
+| **18px** | `NavItem`, `SidebarAction`, `SidebarRailItem`, a `DropdownMenuItem` (and `ActionMenu`, built on it) |
+| **16px** | `SidebarCard`'s tile, a second-level `NavItem`, `Input`'s `leadingIcon` |
+
+<Canvas of={IconStories.Sizes} />
+
+<Canvas of={IconStories.MenuSizes} />
+
+A size the call site passes is overridden here: `NavItem` draws 18px although
+JLURAG passes `size={20}`.
+
+**`Button`, `MenuItem` and `Badge` do not size an icon.** Without a size,
+lucide draws 24px — too large beside their text. Pass one:
+
+| Where | Size |
+|---|---|
+| An icon-only `Button` in a bar or a toolbar | `size={20}` |
+| An icon beside a `Button`'s text | `size={16}` |
+| An icon in a filled `Badge` | `size={12}` |
+
+<Canvas of={IconStories.SizesFromTheCallSite} />
+
+The sizes are numbers in the components today, not tokens — see
+„Open points" below.
+
+## Colour
+
+lucide strokes with `currentColor`: **an icon is the colour of the text around
+it**, in every tone and both themes. Do not pass `color` — set the text colour
+of the element around it (a tone, a variant, `text-…`).
+
+<Canvas of={IconStories.ColourFromText} />
+
+## Naming for screen readers
+
+- **An icon beside text is decoration.** lucide marks it `aria-hidden="true"`
+  by itself when it is given no accessible name; writing `aria-hidden="true"`
+  as well (as the DS code does) is harmless.
+- **An icon-only button needs `aria-label`** — the icon cannot name it
+  (COMPONENT_GUIDELINES, rule for icon-only controls).
+- **An icon never carries a status alone.** A status icon goes with text that
+  says the status (`Alert`, `Badge`); colour alone is not enough either.
+
+<Canvas of={IconStories.Naming} />
+
+## Which icon for which action
+
+One icon per action, everywhere — so a user who has seen „delete" once
+recognises it in every list. The table is what JLURAG and the DS use today
+(files in `web/src` on `development` that import the icon, Nov 2026).
+
+<Canvas of={IconStories.Dictionary} />
+
+| Action | Icon | In use |
+|---|---|---|
+| Add, create | `Plus` | 21 files |
+| Delete | `Trash2` — always with a destructive `Button` variant | 25 |
+| Close; remove from a list | `X` | 22 |
+| Edit, rename | `Pencil` | 19 — **and `PenLine` in 2** (as `Edit3` and `PenLine`), see below |
+| Search | `Search` | 18 |
+| Download / Upload | `Download` / `Upload` | 20 / 6 |
+| Copy | `Copy` | 11 |
+| Reload, retry | `RefreshCw` | 17 |
+| Reset to the default | `RotateCcw` | 3 |
+| Restore, undo | `Undo2` | 3 |
+| Settings of an item | `Settings` | 6 |
+| View options (columns, layout) | `SlidersHorizontal` | 4 |
+| More actions | `Ellipsis` (`ActionMenu`'s trigger) | — |
+| Opens another page of the app | `ArrowUpRight` (`ActionMenu` `opensPage`) | — |
+| Opens outside the app, a new tab | `ExternalLink` | 8 |
+| Back, previous (a direction) | `ChevronLeft` (history, pagination, `BreadcrumbBack`) | 6 |
+| Expand / collapse | `ChevronDown` / `ChevronRight` | 14 / 17 |
+| Full screen | `Maximize2` / `Minimize2` | 5 / 4 |
+| Show / hide | `Eye` / `EyeOff` | 9 / 4 |
+| Locked | `Lock` | 5 |
+| Send | `ArrowUp` | 8 |
+| Information | `Info` | 11 |
+| Success / warning / error | `CircleCheck` / `TriangleAlert` / `CircleX` (`Alert`'s tones) | see below |
+| Loading | the `Spinner` component | see below |
+
+Several lucide icons have two names for one glyph: `CheckCircle2` is
+`CircleCheck`, `AlertTriangle` is `TriangleAlert`, `Loader2` is
+`LoaderCircle`, `Edit3` is `PenLine`. Prefer the current name.
+
+## Open points — proposals for the owner
+
+These are not rules yet. Rules are proposed and the owner decides
+(`docs/PATTERN_GOVERNANCE.md`); each point below is a proposal.
+
+1. **Edit is `Pencil`.** JLURAG uses `Pencil` in 19 files and `PenLine` in 2.
+2. **Error is `CircleX`, as in `Alert`.** JLURAG draws `AlertCircle`
+   (= `CircleAlert`, an exclamation mark — a different glyph) in 6 files.
+3. **„Back to …" is `BreadcrumbBack`.** COMPONENT_GUIDELINES already asks for
+   it instead of a bare ← button; JLURAG still draws `ArrowLeft` for back links
+   and buttons in 7 files.
+4. **Loading is `Spinner`.** JLURAG draws `Loader2` with `animate-spin` by
+   hand in 34 files; `Spinner` brings the same glyph with `role="status"` and
+   a label.
+5. **Icon sizes become tokens** (`--icon-size-sm/md/lg` = 16/18/20px) instead
+   of numbers in about 30 places — part of the planned token audit. lucide's
+   `LucideProvider` could then set the default size for an app.
+6. **`MenuItem` sizes its icon like `DropdownMenuItem` (18px).** Today it
+   leaves the icon at lucide's 24px.
