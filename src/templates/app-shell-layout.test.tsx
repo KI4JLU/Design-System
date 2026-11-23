@@ -27,9 +27,9 @@ import type { MobilePaneTab } from "../lib/pane-layout";
  *    anything this template writes; no assertion below reads a class name.
  * 2. **`Node.compareDocumentPosition`** for the order of the bar's three
  *    regions — the DOM's own answer, and the order a keyboard user meets.
- *    *Where* the centre region sits on the screen is measured in Chromium by
- *    `app-shell-layout.stories.tsx` (`WithCenteredSearch`), because jsdom
- *    applies no stylesheet and every box is 0×0.
+ *    *Where* the centre region sits on the screen was measured in Chromium by
+ *    the story `WithCenteredSearch` until 0.93.0, when it went with the
+ *    deprecated `search` slot (jsdom applies no stylesheet; every box is 0×0).
  * 3. **The bar's own accessibility tree** for „the template mounted a
  *    control": with `headerActions` empty, the `banner` holds no `button` and
  *    no `group` at all. Until KI-846 the fingerprint was `ThemeToggle`'s
@@ -204,8 +204,8 @@ describe("AppShellLayout — the optional pageLabel (0.29.0)", () => {
 
 /**
  * The centre region (0.30.0). What it *contains* is checkable here; that it is
- * centred **on the bar** is a layout fact and is measured in Chromium by the
- * stories `WithCenteredSearch` (with a label) and `Overview` (without one).
+ * centred **on the bar** is a layout fact; its Chromium stories went with the
+ * slot's deprecation in 0.93.0.
  */
 describe("AppShellLayout — the centred search slot (0.30.0)", () => {
   it("holds the node it is given, reachable by its accessible name", () => {
@@ -634,7 +634,7 @@ describe("AppShellLayout — the left column's width (0.36.0)", () => {
  * changes. There is no accessibility-tree fact and no jsdom box that can
  * distinguish 24px from 40px — jsdom applies no stylesheet and every box is
  * 0×0 — so the choice is a class assertion here or no jsdom coverage at all.
- * The *measured* half lives in Chromium (`BarInsetIsTheColumnGutter` in
+ * The *measured* half lives in Chromium (`ChatWorkspace` in
  * `app-shell-layout.stories.tsx`), where the rendered inset is compared
  * against the `--spacing-gutter` token read back from the CSSOM rather than
  * against a number typed into the test. This block pins the four utilities

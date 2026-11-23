@@ -32,7 +32,6 @@ import {
 } from "../../components/breadcrumb";
 import { Button } from "../../components/button";
 import { FileDropzone } from "../../components/file-dropzone";
-import { Input } from "../../components/input";
 import { Logo } from "../../components/logo";
 import { NavItem } from "../../components/nav-item";
 import { SidebarAction } from "../../components/sidebar-action";
@@ -77,10 +76,9 @@ import { UserMenuWithSettings } from "./user-menu";
  *    bar has no search here; the page stories pass `search={null}`. The page
  *    itself is the `topic-chat` fixture.
  *
- * `search` is REQUIRED here although it is optional on the component: a
- * central search is the convention of every shell, so a story has to decide
- * it — and the one story that pins the empty bar says `search={null}` out
- * loud. The component's API is unchanged.
+ * The bar carries no central search: JustRAG's overview has no bar at all
+ * (`bar={false}`) and its workspace bar holds the breadcrumb and the gear —
+ * „Suchen" is a row of the column that opens a palette.
  *
  * Everything else a story passes overrides the context's value (spread last),
  * which is how the mechanism stories fix a width or add a label without a
@@ -91,10 +89,8 @@ import { UserMenuWithSettings } from "./user-menu";
 export type ShellContext = "overview" | "workspace";
 
 export interface AppShellFixtureProps
-  extends Omit<Partial<AppShellLayoutProps>, "search" | "children" | "rightPanel"> {
+  extends Omit<Partial<AppShellLayoutProps>, "children" | "rightPanel"> {
   context: ShellContext;
-  /** The bar's centre region — required by the fixture, see the note above. */
-  search: ReactNode;
   children: ReactNode;
   /** `workspace` only: a fixed sources-card width instead of the persisted one. */
   rightWidth?: number;
@@ -128,18 +124,6 @@ export const WORKSPACE_TITLE = "Prüfungsordnung Informatik (Master of Science),
 
 /** The overview section the workspace's breadcrumb leads back to. */
 export const WORKSPACE_SECTION = "Mein Wissen";
-
-/**
- * The search field of the bar's centre region: a DS `Input` with a leading
- * search icon. JLURAG renders a `Combobox` input with the same leading icon
- * there (`GlobalSearch.tsx`); the dropdown is not the fixture's subject — see
- * `Components/Forms/Combobox → Default` for it.
- */
-export function ShellSearch({ label = "Suchen" }: { label?: string }) {
-  return (
-    <Input type="search" aria-label={label} placeholder={`${label} …`} leadingIcon={<Search />} />
-  );
-}
 
 export function AppShellFixture({
   context,

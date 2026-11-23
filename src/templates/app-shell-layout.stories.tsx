@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useLayoutEffect, useState, type ReactNode } from "react";
-import { composeStories } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { ChevronLeft, ChevronRight, LayoutGrid, Menu, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, Menu } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
 import { AppShellSidePanel } from "../components/app-shell";
@@ -13,16 +12,11 @@ import { SIDE_PANEL_RAIL_WIDTH } from "../components/side-panel-variants";
 import {
   AppShellFixture,
   NO_HISTORY,
-  ShellSearch,
   SOURCES_LOCKED_LABEL,
   SOURCES_LOCKED_REASON,
   WORKSPACE_SECTION,
-  WORKSPACE_TITLE,
 } from "../test/fixtures/app-shell";
 import * as chatStageStories from "../components/chat-stage.stories";
-import * as dashboardStories from "./dashboard-layout.stories";
-import * as formStories from "./form-layout.stories";
-import * as tableStories from "./table-layout.stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
 import { Entdecken, GeteiltesWissen } from "../test/fixtures/overview-pages";
 import {
@@ -34,9 +28,6 @@ import {
   TopicStart,
 } from "../test/fixtures/topic-chat";
 import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
-
-const { Admin: TablePageContent } = composeStories(tableStories, {});
-const { Settings: FormPageContent } = composeStories(formStories, {});
 
 /* ---------------------------------------------------------------------------
  * One shell, adapted per context. Every story below renders the
@@ -51,8 +42,7 @@ const { Settings: FormPageContent } = composeStories(formStories, {});
  * shell without it (`bar={false}` on the overview, a bar with a breadcrumb
  * and no search in the workspace). The first seven stories are the page
  * stories — the overview and its settings, a workspace in three states and
- * its settings — then `TablePage` and `FormPage` (other content templates
- * in the shell) and `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
+ * its settings — then `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
  *
@@ -63,7 +53,6 @@ const { Settings: FormPageContent } = composeStories(formStories, {});
 
 // Portable Stories: page content is the content templates' own stories —
 // templates compose into each other, nothing is mocked again.
-const { Standard: DashboardPage } = composeStories(dashboardStories, {});
 
 /**
  * The chat column of the workspace: `ChatStage` with the args of its own
@@ -74,9 +63,6 @@ const { Standard: DashboardPage } = composeStories(dashboardStories, {});
 function ChatPage() {
   return <ChatStage {...chatStageStories.default.args} {...chatStageStories.Conversation.args} />;
 }
-
-/** The workspace search's accessible name (the field is scoped to the topic). */
-const WORKSPACE_SEARCH = "Im Thema suchen";
 
 const meta = {
   title: "Templates/AppShellLayout",
@@ -130,54 +116,8 @@ async function expectBarHeight(canvasElement: HTMLElement) {
   await expect(getComputedStyle(bar(canvasElement)).height).toBe("56px");
 }
 
-/**
- * The boxes of the workspace bar's four controls — the breadcrumb's section
- * link, the topic title, the search field, the gear — plus the two boxes that
- * can clip them: the bar's row and the label's `<div>` (`truncate` =
- * `overflow: hidden`, so whatever sticks out of it is cut off, not shown).
- */
-function measureWorkspaceBar(canvasElement: HTMLElement) {
-  const header = bar(canvasElement);
-  const q = within(header);
-  const titleEl = q.getByText(WORKSPACE_TITLE);
-  return {
-    row: header.getBoundingClientRect(),
-    label: (titleEl.closest("[data-slot='app-shell-page-label']") as HTMLElement).getBoundingClientRect(),
-    section: q.getByRole("link", { name: WORKSPACE_SECTION }).getBoundingClientRect(),
-    title: titleEl.getBoundingClientRect(),
-    field: q.getByRole("searchbox", { name: WORKSPACE_SEARCH }).getBoundingClientRect(),
-    gear: q.getByRole("button", { name: "Einstellungen des Themas" }).getBoundingClientRect(),
-  };
-}
-type WorkspaceBarBoxes = ReturnType<typeof measureWorkspaceBar>;
-
 /** Sub-pixel slack for "touches but does not overlap". */
 const EDGE_SLACK = 0.5;
-
-/**
- * Nothing overlaps and nothing is clipped. Oracle: the layout engine's boxes
- * against each other — the four controls read left to right with no box
- * reaching into the next, the section link and the title lie inside the
- * label's clip box, and the gear inside the bar. No number from the
- * component's code enters.
- */
-async function expectNoOverlap(g: WorkspaceBarBoxes) {
-  const sequence = [g.section, g.title, g.field, g.gear];
-  for (let i = 0; i + 1 < sequence.length; i++) {
-    await expect(sequence[i].right).toBeLessThanOrEqual(sequence[i + 1].left + EDGE_SLACK);
-  }
-  await expect(g.section.left).toBeGreaterThanOrEqual(g.label.left - EDGE_SLACK);
-  await expect(g.section.right).toBeLessThanOrEqual(g.label.right + EDGE_SLACK);
-  await expect(g.title.right).toBeLessThanOrEqual(g.label.right + EDGE_SLACK);
-  await expect(g.gear.right).toBeLessThanOrEqual(g.row.right + EDGE_SLACK);
-}
-
-/** The field's centre is the bar's centre, within 1px. Oracle: the bar's own box. */
-async function expectCentred(g: WorkspaceBarBoxes) {
-  const fieldCentre = (g.field.left + g.field.right) / 2;
-  const barCentre = (g.row.left + g.row.right) / 2;
-  await expect(Math.abs(fieldCentre - barCentre)).toBeLessThanOrEqual(1);
-}
 
 /** Portalled layers (menu, dialog) render into `<body>`, outside the canvas. */
 const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body);
@@ -209,7 +149,7 @@ const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.
  */
 export const Overview: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={null} bar={false}>
+    <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
     </AppShellFixture>
   ),
@@ -270,7 +210,7 @@ async function expectOverviewPage(canvas: ReturnType<typeof within>, name: strin
  */
 export const SharedTopics: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={null} bar={false} section="shared">
+    <AppShellFixture context="overview" bar={false} section="shared">
       <GeteiltesWissen />
     </AppShellFixture>
   ),
@@ -310,7 +250,7 @@ export const SharedTopics: Story = {
  */
 export const DiscoverTopics: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={null} bar={false} section="discover">
+    <AppShellFixture context="overview" bar={false} section="discover">
       <Entdecken />
     </AppShellFixture>
   ),
@@ -352,7 +292,7 @@ export const DiscoverTopics: Story = {
  */
 export const SettingsFromUserMenu: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={null} bar={false}>
+    <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
     </AppShellFixture>
   ),
@@ -384,9 +324,9 @@ export const SettingsFromUserMenu: Story = {
  *   `Message`, `ChainOfThought`, `Sources`) over the composer and the
  *   answer disclaimer (`topic-chat` fixture).
  *
- * Only the history column is resizable; the card has no handle. The bar's
- * search, which other apps put there, is pinned by the mechanism stories
- * below (`NarrowBarKeepsTheLabel` …).
+ * Only the history column is resizable; the card has no handle. The bar has
+ * no search (the slot is deprecated); its inset is the column gutter, checked
+ * below.
  *
  * `play` (Chromium, the runner's 1280px window, the history column and the
  * card at their 320px default), oracles in brackets:
@@ -410,7 +350,7 @@ export const SettingsFromUserMenu: Story = {
  */
 export const ChatWorkspace: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
       <TopicConversation />
     </AppShellFixture>
   ),
@@ -445,6 +385,11 @@ export const ChatWorkspace: Story = {
 
     const label = header.querySelector<HTMLElement>("[data-slot='app-shell-page-label']")!;
     await expect(label.tagName).toBe("DIV");
+    // The bar's inset is the column gutter: the label starts that far from the
+    // history column. Oracle: the token, read back from the CSSOM.
+    const gutter = getComputedStyle(document.documentElement).getPropertyValue("--spacing-gutter").trim();
+    await expect(gutter).toMatch(/^\d+(\.\d+)?px$/);
+    await expect(label.getBoundingClientRect().left - history.right).toBeCloseTo(parseFloat(gutter), 0);
     await expect(
       within(label).getByRole("navigation", { name: "Navigationspfad" }),
     ).toBeVisible();
@@ -509,7 +454,7 @@ async function expectCentredStart(main: HTMLElement) {
  */
 export const ChatWorkspaceStart: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
       <TopicStart />
     </AppShellFixture>
   ),
@@ -541,7 +486,7 @@ export const ChatWorkspaceStart: Story = {
  */
 export const ChatWorkspaceEmpty: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME} emptyTopic>
+    <AppShellFixture context="workspace" topic={TOPIC_NAME} emptyTopic>
       <TopicNew />
     </AppShellFixture>
   ),
@@ -590,7 +535,7 @@ export const ChatWorkspaceEmpty: Story = {
  */
 export const ChatWorkspaceSettings: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={null} topic={TOPIC_NAME}>
+    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
       <TopicConversation />
     </AppShellFixture>
   ),
@@ -638,57 +583,6 @@ export const ChatWorkspaceSettings: Story = {
 };
 
 /**
- * **A table page in the overview shell** — `TableLayout` (its `Admin` story)
- * as `children`. The shell brings the chrome and the one `<main>`; the
- * content template brings the page's heading.
- *
- * `play` oracle: the ARIA tree — exactly one `main`, the table inside it, and
- * the content template's `<h1>` as the page's only level-1 heading (the
- * shell contributes none; `pageLabel` would be a `<p>`).
- */
-export const TablePage: Story = {
-  render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <TablePageContent />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const mains = canvas.getAllByRole("main");
-    await expect(mains).toHaveLength(1);
-    await expect(within(mains[0]).getByRole("table")).toBeVisible();
-    await expect(
-      within(mains[0]).getByRole("heading", { level: 1, name: "Elemente" }),
-    ).toBeVisible();
-    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-  },
-};
-
-/**
- * **A form page in the overview shell** — `FormLayout` (its `Settings` story)
- * as `children`. Same composition rule and the same oracle as `TablePage`:
- * one `main`, the form's submit button inside it, one `<h1>` — the form's.
- */
-export const FormPage: Story = {
-  render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <FormPageContent />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const mains = canvas.getAllByRole("main");
-    await expect(mains).toHaveLength(1);
-    await expect(within(mains[0]).getByRole("button", { name: "Speichern" })).toBeVisible();
-    await expect(
-      within(mains[0]).getByRole("heading", { level: 1, name: "Element-Einstellungen" }),
-    ).toBeVisible();
-    await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-  },
-};
-
-
-/**
  * Die Anordnung unter `lg`, hier im Workspace-Kontext mit seinen drei
  * Reitern (Verlauf · Chat · Quellen): Top-Bar mit der Marke und den
  * `headerActions` (das Zahnrad bleibt erreichbar), **ein** Bereich,
@@ -712,7 +606,7 @@ export const Mobile: Story = {
   },
   globals: { viewport: { value: "phone" } },
   render: () => (
-    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+    <AppShellFixture context="workspace">
       <ChatPage />
     </AppShellFixture>
   ),
@@ -721,125 +615,6 @@ export const Mobile: Story = {
 /* ======================================================================== */
 /* Mechanism regressions, on the same fixture                               */
 /* ======================================================================== */
-
-/**
- * A second, narrower control for the right-hand region of an overview bar —
- * the overview context has none of its own (JLURAG's `AppChrome` passes no
- * `headerActions`). An icon button, so the two side regions hold content of
- * clearly different widths.
- */
-const viewOptions = (
-  <Button variant="ghost" size="icon" aria-label="Ansicht anpassen">
-    <SlidersHorizontal size={20} aria-hidden="true" />
-  </Button>
-);
-
-/**
- * **`search` is the centre of the bar**: the centre of the *bar*, not of
- * the space the label leaves, so the field does not move when a label
- * appears or changes length.
- *
- * The `play` function measures it in Chromium: field centre = bar centre,
- * although the label on the left and the icon button on the right differ in
- * width. The check requires that difference, so the story cannot pass on two
- * equal sides. The centring rests on the two equal-width side regions, not
- * on the bar's inset (`BarInsetIsTheColumnGutter`). The release measurement
- * is in the Changelog, 0.30.0.
- */
-export const WithCenteredSearch: Story = {
-  render: () => (
-    <AppShellFixture
-      context="overview"
-      pageLabel="Dashboard"
-      search={<ShellSearch />}
-      headerActions={viewOptions}
-    >
-      <DashboardPage />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-
-    // Orakel: die Symmetrie der Zeile, gerechnet aus den Boxen der
-    // Layout-Engine. In jsdom wäre dieselbe Prüfung wertlos (kein Stylesheet,
-    // alle Boxen 0×0), deshalb steht sie hier.
-    // A string label is a `<p>` — words, not a node (`ChatWorkspace` pins the
-    // `<div>` a node gets).
-    const labelEl = await canvas.findByText("Dashboard");
-    await expect(labelEl.tagName).toBe("P");
-    await expect(labelEl).toHaveAttribute("data-slot", "app-shell-page-label");
-
-    const row = bar(canvasElement).getBoundingClientRect();
-    const label = labelEl.getBoundingClientRect();
-    const action = (
-      await canvas.findByRole("button", { name: "Ansicht anpassen" })
-    ).getBoundingClientRect();
-    const field = (
-      await canvas.findByRole("searchbox", { name: "Suchen" })
-    ).getBoundingClientRect();
-
-    await expect((field.left + field.right) / 2).toBeCloseTo((row.left + row.right) / 2, 0);
-    // …und das ist nicht trivial: links und rechts vom Feld steht
-    // unterschiedlich viel. Ohne die beiden gleich breiten Randregionen wäre
-    // die Mitte um die halbe Differenz verschoben.
-    await expect(Math.abs(label.width - action.width)).toBeGreaterThan(1);
-    // Das Feld füllt die Zeile nicht aus (dann wäre die Mitte trivial gleich):
-    // `max-w-md` deckelt es, links und rechts bleibt Luft.
-    await expect(field.left).toBeGreaterThan(label.right);
-    await expect(field.right).toBeLessThan(action.left);
-  },
-};
-
-/**
- * **The search without a label**: an overview with a bar and no `pageLabel`
- * — the content template renders the page's title — keeps the field on the
- * bar's centre, and the bar renders no label element at all.
- *
- * `play` (Chromium), oracles in brackets: the field's centre is the bar's
- * centre, and the field lies inside the bar [the bar's own box]; there is no
- * label element [the DOM].
- */
-export const SearchWithoutLabel: Story = {
-  render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
-      <MeinWissen />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const row = bar(canvasElement).getBoundingClientRect();
-    const field = (await canvas.findByRole("searchbox", { name: "Suchen" })).getBoundingClientRect();
-    await expect((field.left + field.right) / 2).toBeCloseTo((row.left + row.right) / 2, 0);
-    await expect(field.left).toBeGreaterThan(row.left);
-    await expect(field.right).toBeLessThan(row.right);
-    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
-  },
-};
-
-/**
- * Weder Label noch Suche noch Aktionen — die leere Zeile. Sie bleibt trotzdem
- * **56px hoch**: Consumer legen Overlays unter dieser Kante ab (JustRAGs
- * `Toast.css`: `top: 68px` = 56 + 12), und eine Zeile, die beim Weglassen der
- * letzten Prop zusammenfiele, wäre für eine unveränderte Aufrufstelle eine
- * brechende Geometrie-Änderung.
- *
- * **The one story that opts out of the search convention**, and it says so:
- * `null` as its search. `search` stays optional on the component, and what an app
- * gets when it omits every slot is exactly the contract this story pins.
- */
-export const WithoutPageLabelOrActions: Story = {
-  render: () => (
-    <AppShellFixture context="overview" search={null}>
-      <MeinWissen />
-    </AppShellFixture>
-  ),
-  play: async ({ canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    // Leer heißt leer: die Zeile trägt keinen Text und keinen Absatz.
-    await expect(bar(canvasElement).textContent).toBe("");
-    await expect(bar(canvasElement).querySelector("[data-slot='app-shell-page-label']")).toBeNull();
-  },
-};
 
 /**
  * **`bar={false}`: a view with no chrome bar** (0.80.0) — the overview as
@@ -857,7 +632,7 @@ export const WithoutPageLabelOrActions: Story = {
  */
 export const WithoutChromeBar: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={null} bar={false}>
+    <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
     </AppShellFixture>
   ),
@@ -881,266 +656,6 @@ export const WithoutChromeBar: Story = {
   },
 };
 
-/* ------------------------------------------------------------------------ */
-/* Short bar: the search gives way before the side regions                 */
-/* ------------------------------------------------------------------------ */
-
-/**
- * The history column at the measured 320px (also the workspace default). The
- * sources card gets the same width, but it floats and takes none from the bar.
- */
-const COLUMN_WIDTH = 320;
-
-/**
- * **The narrow bar keeps its label.** The reproduction of
- * JustRAG's measured case (KI-838, `KbWorkspaceLayout ›
- * WorkspaceBarWithScopedSearch`, Chromium, the history column open at
- * 320px): a **560px** bar holding the breadcrumb „Mein Wissen / ‹topic›", a
- * search field and a gear — the workspace context's own bar. The shell is
- * fixed at 880px (= 560 + 320; the sources card takes no width) and the width
- * is pinned, so the bar is 560 whatever the Storybook viewport — only the
- * bar's own width enters its flex computation. (The history column carries a
- * resize handle; a handle has no layout width, see `HandleHasNoLayoutWidth`.)
- * The failure this pins is in the Changelog, 0.44.1.
- *
- * The search shrinks first, down to its floor of 8rem, while each side region
- * keeps its own floor of 11rem. Asserted in Chromium, the rem read back from
- * the CSSOM:
- *
- * 1. the label's region keeps **at least 11rem**, the section link is shown
- *    whole, and the title is what gives way — clipped, not wrapped;
- * 2. nothing overlaps and nothing is clipped (`expectNoOverlap`);
- * 3. the field's centre is the bar's centre **within 1px**;
- * 4. the bar is 56px.
- *
- * Preconditions are asserted too, so the story cannot pass by measuring a
- * different case: the bar IS 560px and the search IS at its floor. (Until the
- * breadcrumb, the label was a 36px back button + title, and the card's
- * acceptance number was a 120px title; the section link is wider, so the
- * floor of the region is the oracle now.)
- */
-export const NarrowBarKeepsTheLabel: Story = {
-  render: () => (
-    <AppShellFixture
-      context="workspace"
-      search={<ShellSearch label={WORKSPACE_SEARCH} />}
-      leftWidth={COLUMN_WIDTH}
-      rightWidth={COLUMN_WIDTH}
-      style={{ width: 560 + COLUMN_WIDTH }}
-    >
-      <ChatPage />
-    </AppShellFixture>
-  ),
-  play: async ({ canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const g = measureWorkspaceBar(canvasElement);
-    await expect(g.row.width).toBe(560);
-    // The search is at its floor here — the case this story is about.
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    await expect(g.field.width).toBe(8 * rem);
-
-    // The label's region holds its floor of 11rem, and the section link is
-    // shown whole: the title is what gives way.
-    await expect(g.label.width).toBeGreaterThanOrEqual(11 * rem);
-    await expect(g.section.right).toBeLessThan(g.title.left);
-    await expect(g.title.width).toBeGreaterThan(0);
-    // …and `truncate` still does its job: the title is clipped, not wrapped
-    // and not pushing anything aside.
-    const titleEl = within(bar(canvasElement)).getByText(WORKSPACE_TITLE);
-    await expect(titleEl.scrollWidth).toBeGreaterThan(titleEl.clientWidth);
-    await expectNoOverlap(g);
-    await expectCentred(g);
-  },
-};
-
-/**
- * **The wide bar keeps the search at its maximum**: with room to spare it is
- * still capped at **28rem** and centred on the bar, and the side regions share
- * the rest equally. The shell is fixed at 1280px with the left column at
- * 256px and the sources card out of the desktop arrangement
- * (`showRight={false}`), so the bar is 1024px.
- *
- * Oracle for the width: 28 × the root font size read back from the CSSOM —
- * the documented `max-w-md` contract of `search`, not a class name or a
- * number read out of the component.
- */
-export const WideBarKeepsTheSearchAtItsMaximum: Story = {
-  render: () => (
-    <AppShellFixture
-      context="workspace"
-      search={<ShellSearch label={WORKSPACE_SEARCH} />}
-      leftWidth={256}
-      showRight={false}
-      style={{ width: 1280 }}
-    >
-      <ChatPage />
-    </AppShellFixture>
-  ),
-  play: async ({ canvasElement }) => {
-    await expectBarHeight(canvasElement);
-    const g = measureWorkspaceBar(canvasElement);
-    await expect(g.row.width).toBe(1024);
-
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    await expect(g.field.width).toBe(28 * rem);
-    await expectCentred(g);
-    await expectNoOverlap(g);
-    // Room to spare really is spare: the field does not touch its neighbours.
-    await expect(g.field.left).toBeGreaterThan(g.title.right);
-    await expect(g.field.right).toBeLessThan(g.gear.left);
-  },
-};
-
-/**
- * **The order in which the bar gives way**, measured in one shell
- * narrowed step by step — the history column at 320px (the sources card
- * takes no width), the bar at 1024, 900, 800, 560, 480 and 300px:
- *
- * - **At every step** the field is centred on the bar within 1px and the bar
- *   is 56px; down to 480px nothing overlaps, and at 300px, where a side
- *   region is narrower than the breadcrumb's section link, the label's clip
- *   box still keeps clear of the search. That is the centring rule: the two side
- *   regions are identical flex items in every state, so the search sits on
- *   the bar's exact centre down to the width where the side regions reach
- *   0 — a bar of 208px (search floor 128 + 2 × 16px gap + 2 × 24px inset),
- *   which two open columns on an `lg` window do not reach. That last range is
- *   not asserted.
- * - **1024 → 900: spare room goes first.** The field stays at its cap, and
- *   the title loses half of the 124px, 62px — the other half comes off the
- *   gear's side.
- * - **800 → 560: then the search.** The bar loses 240px, the field loses
- *   exactly those 240px, and the title does not lose a pixel.
- * - **560 → 480: only then the sides.** The field holds its floor, and the
- *   title loses half of the 80px the bar lost: 40px.
- *
- * The oracles are relational — widths at one step against widths at another,
- * all from Chromium's layout — so they pin the ORDER rather than restating
- * the component's constants. The bar width is set on the shell's own box
- * between measurements; React does not re-render, the layout engine re-flows.
- */
-export const BarGivesWayInOrder: Story = {
-  render: () => (
-    <AppShellFixture
-      context="workspace"
-      id="shrink-order-shell"
-      search={<ShellSearch label={WORKSPACE_SEARCH} />}
-      leftWidth={COLUMN_WIDTH}
-      rightWidth={COLUMN_WIDTH}
-    >
-      <ChatPage />
-    </AppShellFixture>
-  ),
-  play: async ({ canvasElement }) => {
-    const shell = document.getElementById("shrink-order-shell") as HTMLElement;
-    const at = async (barWidth: number) => {
-      shell.style.width = `${barWidth + COLUMN_WIDTH}px`;
-      const g = measureWorkspaceBar(canvasElement);
-      await expect(g.row.width).toBe(barWidth);
-      await expectBarHeight(canvasElement);
-      await expectCentred(g);
-      return g;
-    };
-
-    const w1024 = await at(1024);
-    const w900 = await at(900);
-    const w800 = await at(800);
-    const w560 = await at(560);
-    const w480 = await at(480);
-    for (const g of [w1024, w900, w800, w560, w480]) await expectNoOverlap(g);
-    // At 300px a side region is narrower than the section link, which never
-    // truncates (as in JLURAG): the label's clip box cuts the breadcrumb off.
-    // What must still hold is that the clip box keeps clear of the search.
-    const w300 = await at(300);
-    await expect(w300.label.right).toBeLessThanOrEqual(w300.field.left + EDGE_SLACK);
-    await expect(w300.gear.right).toBeLessThanOrEqual(w300.row.right + EDGE_SLACK);
-
-    // 1024 → 900: the field is at its cap, the side regions give the 124px.
-    await expect(w900.field.width).toBeCloseTo(w1024.field.width, 1);
-    await expect(w1024.title.width - w900.title.width).toBeCloseTo(62, 1);
-    // 800 → 560: the search absorbs the whole 240px, the title none of it.
-    await expect(w800.field.width - w560.field.width).toBeCloseTo(240, 1);
-    await expect(w560.title.width).toBeCloseTo(w800.title.width, 1);
-    // 560 → 480: the search holds, the two sides split the 80px.
-    await expect(w480.field.width).toBeCloseTo(w560.field.width, 1);
-    await expect(w560.title.width - w480.title.width).toBeCloseTo(40, 1);
-  },
-};
-
-/**
- * **The bar takes the column gutter**, not the page measure of a
- * `Container`: the bar is not a page-content column but chrome between two
- * `SidePanel`s. (The measurement that led here: Changelog, 0.37.0.)
- *
- * **It is the bar's own measure.** A `SidePanel`'s `h-14` header row is
- * `px-4` (16px), because its toggle sits on the first control of the
- * **column body**, not on this bar. The two insets differ on purpose, so
- * neither can be the other's oracle.
- *
- * **The oracle is the token, not a number in the code.** The `play` function
- * reads `--spacing-gutter` back from the CSSOM and measures the rendered
- * inset (`pageLabel.left − aside.right`) against it; a literal „24" would
- * stay green even if the utility compiled to nothing or the token moved. It
- * also pins that the column's header row does **not** share that measure:
- * 16px, the body's measure.
- */
-export const BarInsetIsTheColumnGutter: Story = {
-  render: () => (
-    <AppShellFixture context="overview" pageLabel="Dashboard" search={<ShellSearch />}>
-      <DashboardPage />
-    </AppShellFixture>
-  ),
-  play: async ({ canvas, canvasElement }) => {
-    const column = (
-      await canvas.findByRole("complementary", { name: "Hauptnavigation" })
-    ).getBoundingClientRect();
-
-    // Die Kopfzeile der Spalte über ihren Schalter gefunden — nicht über eine
-    // Klasse: der Schalter ist das einzige Element, das `SidePanel` dort
-    // garantiert rendert, und sein Elternknoten IST die Zeile.
-    const toggle = await canvas.findByRole("button", { name: "Navigation einklappen" });
-    const headerRow = toggle.parentElement as HTMLElement;
-    const columnFirst = headerRow.firstElementChild as HTMLElement;
-    // Links liest die Zeile [Marke … Schalter]; das Erstkind ist also die
-    // Marke und nicht der Schalter. Ohne diese Prüfung würde die Messung
-    // stillschweigend den Schalter vermessen.
-    await expect(columnFirst).not.toBe(toggle);
-
-    const label = (await canvas.findByText("Dashboard")).getBoundingClientRect();
-    const columnInset = columnFirst.getBoundingClientRect().left - column.left;
-    const barInset = label.left - column.right;
-
-    // Oracle: the declared token, read back from the CSSOM — not the column's
-    // header row (which deliberately has a different measure) and not the
-    // number 24 in the test.
-    const gutter = getComputedStyle(document.documentElement)
-      .getPropertyValue("--spacing-gutter")
-      .trim();
-    await expect(gutter).toMatch(/^\d+(\.\d+)?px$/);
-    await expect(barInset).toBeCloseTo(parseFloat(gutter), 0);
-
-    // Und die Kopfzeile der Spalte ist ausdrücklich NICHT auf demselben Maß:
-    // sie folgt der Polsterung des Rumpfs (`p-4`), damit ihr Umschalter auf
-    // dem ersten Bedienelement des Rumpfs steht. Gegen die gerenderte
-    // Polsterung der Zeile geprüft, nicht gegen eine Zahl.
-    await expect(columnInset).toBeCloseTo(
-      parseFloat(getComputedStyle(headerRow).paddingLeft),
-      0,
-    );
-    await expect(columnInset).not.toBeCloseTo(parseFloat(gutter), 0);
-
-    // Und die Zeile ist so breit wie die Hauptspalte: kein `max-w-*`-Deckel,
-    // kein `mx-auto`. (Bei 1280px bände der alte 1440px-Deckel noch nicht —
-    // diese Zusicherung gilt dem breiten Fenster, in dem er es täte.)
-    const barRow = (canvasElement.querySelector("header") as HTMLElement)
-      .firstElementChild as HTMLElement;
-    const main = canvasElement.querySelector("main") as HTMLElement;
-    await expect(barRow.getBoundingClientRect().width).toBeCloseTo(
-      main.getBoundingClientRect().width,
-      0,
-    );
-  },
-};
-
 /**
  * Both states of the left column in one story, because the toggle is the
  * only way back: a click shows the 60px **rail**, a second click the full
@@ -1148,7 +663,7 @@ export const BarInsetIsTheColumnGutter: Story = {
  */
 export const WithCollapsibleColumns: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
+    <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
     </AppShellFixture>
   ),
@@ -1223,7 +738,7 @@ export const WithCollapsibleColumns: Story = {
  */
 export const CollapsedRailKeepsVerticalPositions: Story = {
   render: () => (
-    <AppShellFixture context="overview" search={<ShellSearch />}>
+    <AppShellFixture context="overview" bar={false}>
       <MeinWissen />
     </AppShellFixture>
   ),
@@ -1294,7 +809,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
  */
 export const WithResizableColumns: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+    <AppShellFixture context="workspace">
       <ChatPage />
     </AppShellFixture>
   ),
@@ -1350,7 +865,7 @@ export const WithResizableColumns: Story = {
  */
 export const HandleHasNoLayoutWidth: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+    <AppShellFixture context="workspace">
       <ChatPage />
     </AppShellFixture>
   ),
@@ -1452,7 +967,6 @@ export const WithLockedSources: Story = {
   render: () => (
     <AppShellFixture
       context="workspace"
-      search={<ShellSearch label={WORKSPACE_SEARCH} />}
       sourcesLocked
     >
       <ChatPage />
@@ -1501,8 +1015,7 @@ export const WithLockedSources: Story = {
 export const WithSystemNotice: Story = {
   render: () => (
     <AppShellFixture
-      context="overview"
-      search={<ShellSearch />}
+      context="workspace"
       notice={
         <Alert tone="error" layout="banner" live="assertive">
           <AlertTitle>Dienst nicht verfügbar</AlertTitle>
@@ -1520,7 +1033,7 @@ export const WithSystemNotice: Story = {
         </Alert>
       }
     >
-      <MeinWissen />
+      <ChatPage />
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
@@ -1531,7 +1044,7 @@ export const WithSystemNotice: Story = {
     const frame = region.parentElement!.getBoundingClientRect();
     const header = bar(canvasElement).getBoundingClientRect();
     const column = canvas
-      .getByRole("complementary", { name: "Hauptnavigation" })
+      .getByRole("complementary", { name: "Verlauf" })
       .getBoundingClientRect();
 
     await expect(notice.top).toBeCloseTo(frame.top, 0);
@@ -1560,8 +1073,7 @@ export const WithSystemNotice: Story = {
 export const WithSystemStatus: Story = {
   render: () => (
     <AppShellFixture
-      context="overview"
-      search={<ShellSearch />}
+      context="workspace"
       status={
         <Alert tone="warning" layout="pill" live="polite" onDismiss={() => {}}>
           <AlertTitle>Hohe Auslastung</AlertTitle>
@@ -1597,8 +1109,7 @@ export const WithSystemStatus: Story = {
 export const WithSystemStatusBottomEnd: Story = {
   render: () => (
     <AppShellFixture
-      context="overview"
-      search={<ShellSearch />}
+      context="workspace"
       statusPosition="bottom-end"
       status={
         <Alert tone="warning" layout="toast" live="polite" onDismiss={() => {}}>
@@ -1636,8 +1147,7 @@ export const WithSystemStatusBottomEnd: Story = {
 export const WithSystemStatusTopEnd: Story = {
   render: () => (
     <AppShellFixture
-      context="overview"
-      search={<ShellSearch />}
+      context="workspace"
       statusPosition="top-end"
       status={
         <Alert tone="info" layout="toast" live="polite">
@@ -1678,8 +1188,7 @@ export const WithSystemStatusTopEnd: Story = {
 export const WithSystemStatusBottomEndTall: Story = {
   render: () => (
     <AppShellFixture
-      context="overview"
-      search={<ShellSearch />}
+      context="workspace"
       statusPosition="bottom-end"
       status={
         <Alert tone="info" layout="toast" live="polite" onDismiss={() => {}}>
@@ -1799,8 +1308,7 @@ export const NativeShell: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="overview"
-        search={<ShellSearch />}
+        context="overview" bar={false}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
@@ -1809,7 +1317,6 @@ export const NativeShell: Story = {
     </NativeShellHost>
   ),
   play: async ({ canvas, canvasElement }) => {
-    await expectBarHeight(canvasElement);
     const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
     const content = canvasElement.querySelector("[data-slot='app-shell-content']") as HTMLElement;
     const frame = content.parentElement!.parentElement!;
@@ -1846,10 +1353,12 @@ export const NativeShell: Story = {
       await expect(box.left).toBeGreaterThanOrEqual(controls.right);
       await expect(mid(box)).toBeCloseTo(mid(controls), 0);
     }
-    // …on one line with the controls and the chrome bar.
+    // …on one line with the controls, at the frame's top; the overview has no
+    // chrome bar, so the page itself starts on that line too.
     const rowBox = headerRow.getBoundingClientRect();
     await expect(rowBox.top).toBeCloseTo(frame.getBoundingClientRect().top, 0);
-    await expect(bar(canvasElement).getBoundingClientRect().top).toBeCloseTo(rowBox.top, 0);
+    await expect(canvasElement.querySelector("[data-slot='app-shell-titlebar']")).toBeNull();
+    await expect(content.getBoundingClientRect().top).toBeCloseTo(rowBox.top, 0);
     await expect((controls.top + controls.bottom) / 2).toBeCloseTo((rowBox.top + rowBox.bottom) / 2, 0);
 
     // Labels in the column are not selectable; it is the navigation.
@@ -1858,7 +1367,6 @@ export const NativeShell: Story = {
     // The row drags the window, its button does not.
     const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
     await expect(region(headerRow)).toBe("drag");
-    await expect(region(bar(canvasElement))).toBe("drag");
     await expect(region(toggle)).toBe("no-drag");
   },
 };
@@ -1873,8 +1381,7 @@ export const NativeShellFullScreen: Story = {
   render: () => (
     <NativeShellHost titlebar="hidden">
       <AppShellFixture
-        context="overview"
-        search={<ShellSearch />}
+        context="overview" bar={false}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
@@ -1902,32 +1409,32 @@ export const NativeShellFullScreen: Story = {
 /**
  * A collapsed column does not reach into the title bar: the bar spans the
  * window's full width and carries the column's toggle where it stands while
- * expanded; the rail starts below.
+ * expanded; the rail starts below. In the workspace, where JustRAG has a bar:
+ * after the toggle the app's back / forward, then the breadcrumb.
  */
 export const NativeShellCollapsed: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="overview"
-        search={<ShellSearch />}
+        context="workspace"
         leftOpen={false}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
-        <MeinWissen />
+        <ChatPage />
       </AppShellFixture>
     </NativeShellHost>
   ),
   play: async ({ canvas, canvasElement }) => {
     const header = bar(canvasElement);
-    const toggle = await within(header).findByRole("button", { name: "Navigation ausklappen" });
+    const toggle = await within(header).findByRole("button", { name: "Verlauf ausklappen" });
     const expand = toggle.getBoundingClientRect();
     const controls = canvasElement
       .querySelector("[data-slot='window-controls']")!
       .getBoundingClientRect();
     const headerBox = header.getBoundingClientRect();
-    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
+    const column = canvas.getByRole("complementary", { name: "Verlauf" });
     const frameLeft = column.getBoundingClientRect().left;
 
     // The bar is the whole title row: from the window's edge, opaque, over the rail.
@@ -1958,8 +1465,44 @@ export const NativeShellCollapsed: Story = {
     // Then the app's window controls, then the bar's own content.
     const forward = within(header).getByRole("button", { name: "Vor" }).getBoundingClientRect();
     await expect(within(header).getByRole("button", { name: "Zurück" }).getBoundingClientRect().left).toBeGreaterThanOrEqual(expand.right);
-    const search = within(header).getByRole("searchbox");
-    await expect(search.getBoundingClientRect().left).toBeGreaterThan(forward.right);
+    const breadcrumb = within(header).getByRole("link", { name: WORKSPACE_SECTION });
+    await expect(breadcrumb.getBoundingClientRect().left).toBeGreaterThan(forward.right);
+  },
+};
+
+/**
+ * The overview collapsed in a native shell — JustRAG's overview has no chrome
+ * bar, so the title bar is the shell's empty title-bar row: it holds the
+ * column's toggle after the window controls and drags the window; the rail
+ * starts below it and the page beside it.
+ */
+export const NativeShellOverviewCollapsed: Story = {
+  parameters: OWN_IFRAME_IN_DOCS,
+  render: () => (
+    <NativeShellHost>
+      <AppShellFixture context="overview" bar={false} leftOpen={false} titlebarControls={historyControls} logo={nativeLogo}>
+        <MeinWissen />
+      </AppShellFixture>
+    </NativeShellHost>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>("[data-slot='app-shell-titlebar']");
+    await expect(row).not.toBeNull();
+    const rowBox = row!.getBoundingClientRect();
+    const controls = canvasElement.querySelector("[data-slot='window-controls']")!.getBoundingClientRect();
+    const toggle = await within(row!).findByRole("button", { name: "Navigation ausklappen" });
+    const toggleBox = toggle.getBoundingClientRect();
+    // The toggle stands after the window controls, on their centre line.
+    await expect(toggleBox.left).toBeGreaterThanOrEqual(controls.right);
+    await expect((toggleBox.top + toggleBox.bottom) / 2).toBeCloseTo((controls.top + controls.bottom) / 2, 0);
+    // The rail's own content starts below the row.
+    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" });
+    const firstIcon = column.querySelector("a, button") as HTMLElement;
+    await expect(firstIcon.getBoundingClientRect().top).toBeGreaterThanOrEqual(rowBox.bottom);
+    // The row drags the window; its button does not.
+    const region = (el: Element) => getComputedStyle(el).getPropertyValue("-webkit-app-region");
+    await expect(region(row!)).toBe("drag");
+    await expect(region(toggle)).toBe("no-drag");
   },
 };
 
@@ -1974,7 +1517,6 @@ export const NativeShellWorkspace: Story = {
     <NativeShellHost>
       <AppShellFixture
         context="workspace"
-        search={<ShellSearch label={WORKSPACE_SEARCH} />}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
@@ -2023,8 +1565,7 @@ export const NativeShellWithNotice: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="overview"
-        search={<ShellSearch />}
+        context="workspace"
         titlebarControls={historyControls}
         logo={nativeLogo}
         notice={
@@ -2033,7 +1574,7 @@ export const NativeShellWithNotice: Story = {
           </Alert>
         }
       >
-        <MeinWissen />
+        <ChatPage />
       </AppShellFixture>
     </NativeShellHost>
   ),
@@ -2042,7 +1583,7 @@ export const NativeShellWithNotice: Story = {
     const notice = region.getBoundingClientRect();
     const frame = region.parentElement!.getBoundingClientRect();
     const header = bar(canvasElement).getBoundingClientRect();
-    const column = canvas.getByRole("complementary", { name: "Hauptnavigation" }).getBoundingClientRect();
+    const column = canvas.getByRole("complementary", { name: "Verlauf" }).getBoundingClientRect();
     // Title bar on top, one row: column header and chrome bar start at the frame's edge.
     await expect(column.top).toBeCloseTo(frame.top, 0);
     await expect(header.top).toBeCloseTo(frame.top, 0);
@@ -2148,7 +1689,7 @@ const expectPanelBesideCard = async (canvas: ReturnType<typeof within>, canvasEl
  */
 export const ChatWorkspaceWithSidePanel: Story = {
   render: () => (
-    <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+    <AppShellFixture context="workspace">
       <ChatPage />
       <SidePanelDemo />
     </AppShellFixture>
@@ -2196,7 +1737,7 @@ export const NativeShellWorkspaceWithSidePanel: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
-      <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+      <AppShellFixture context="workspace" titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
         <ChatPage />
         <SidePanelDemo />
       </AppShellFixture>
@@ -2221,7 +1762,7 @@ export const NativeShellWorkspaceWithSidePanel: Story = {
 export const SidePanelInNarrowFrame: Story = {
   render: () => (
     <div style={{ width: 900 }}>
-      <AppShellFixture context="workspace" search={<ShellSearch label={WORKSPACE_SEARCH} />}>
+      <AppShellFixture context="workspace">
         <ChatPage />
         <SidePanelDemo />
       </AppShellFixture>

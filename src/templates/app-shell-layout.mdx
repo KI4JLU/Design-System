@@ -12,13 +12,11 @@ fill its slots — the frame is **never** rebuilt in the app.
 
 **One shell, adapted per context.** Every view of an app is this one
 `AppShellLayout`; what changes between views is what goes into the slots, not
-which frame renders them. Where a view has a chrome bar, **a central search
-is its standard fill**: the mechanism stories on this page pass `search`. The
-prop stays optional — an app without search omits it and keeps the bar's
-geometry (see „The chrome bar" below). A view can also do **without a bar**
-(`bar={false}`), as the `Overview` story does: navigation and search
-(„Suchen", a palette) live in the left column, and the page brings its own
-heading.
+which frame renders them. The overview has **no chrome bar**
+(`bar={false}`): navigation and search („Suchen", a palette) live in the left
+column, and the page brings its own heading. A workspace has a bar with the
+breadcrumb (`pageLabel`) and its controls (`headerActions`) — see „The chrome
+bar" below.
 
 <Canvas of={AppShellLayoutStories.Overview} />
 
@@ -33,7 +31,7 @@ catalog of public topics with „Abonnieren".
 
 ```
 | left SidePanel column    | main column                                  | right column (optional)  |
-| header: logo + toggle    | bar h-14: pageLabel | search | headerActions | header: toggle + title   |
+| header: logo + toggle    | bar h-14: pageLabel … headerActions (opt.)   | header: toggle + title   |
 | nav … sidebarFooter      | <main> scrolls on its own                    | content … footer         |
 ```
 
@@ -75,11 +73,8 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
   function.
 - **Page content is a content template**, hung in as `children` — the shell
   brings the chrome and the one `<main>`, the template brings the page's
-  heading. A table or a form page goes in like the grid:
-
-<Canvas of={AppShellLayoutStories.TablePage} />
-
-<Canvas of={AppShellLayoutStories.FormPage} />
+  heading. A table or a form page (`TableLayout`, `FormLayout`) goes in like
+  the grid.
 
 - **An item's settings open in a settings window.** The gear of a topic opens
   „Thema-Einstellungen", a `SettingsDialog` whose sections hold the rights
@@ -98,7 +93,7 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 | `sidebarFooter` | `ReactNode` | — | Pinned foot of the left column: the user menu. |
 | `navLabel` | `string` | — | Accessible name of the `<nav>` landmark **and** of the column around it (default „Hauptnavigation"). |
 | `pageLabel` | `ReactNode` | — | Current location — headline-sized and bold, but a `<p>` and **not** a heading, on the left of the bar. Optional: omitted, the template renders **no element** for it. Truncates when the bar is short. |
-| `search` | `ReactNode` | — | The bar's **centre** and **the standard fill of every view**: a search field, capped at 28rem and centred on the *bar*, with or without a label. On a short bar it gives way first, down to 8rem. Not rendered below `md`. |
+| `search` | `ReactNode` | — | **Deprecated (0.93.0).** A field in the bar's centre. No view uses one any more — JustRAG searches through „Suchen" in the column, which opens a palette; still rendered for existing call sites, and to be removed. |
 | `headerActions` | `ReactNode` | — | Chrome controls at the **right** end of the bar — an icon button, a menu, several, or nothing. The template renders no control of its own there. Below `lg` this region sits next to the logo in the narrow bar. |
 | `leftOpen` | `boolean` | ✅ | Left column expanded (`true`) or the rail (`false`). |
 | `onLeftOpenChange` | `(isOpen: boolean) => void` | ✅ | The toggle was pressed; receives the **requested** state. |
@@ -120,83 +115,26 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 
 <ArgTypes />
 
-## The chrome bar: three regions
+## The chrome bar
 
-<Canvas of={AppShellLayoutStories.WithCenteredSearch} />
+Only a view that needs one has a bar — in JustRAG the workspace: the
+breadcrumb „Mein Wissen / ‹topic›" as `pageLabel`, the topic's gear and the
+sources toggle at the end. `bar={false}` leaves it out, and nothing is
+reserved: the page starts at the frame's top.
 
-- **`pageLabel` on the left, `search` in the centre, `headerActions` on the
-  right.** The two side regions are identical flex children (`flex-1`, basis
-  0, the same floor) — exactly that centres the search on the **bar**, not on
-  the space the label leaves.
-- **Measured in Chromium**: the story's `play` function requires the field's
-  centre to be the bar's centre while the label and the right-hand control (a
-  36px icon button) differ in width. The release measurement is in the
-  Changelog, 0.30.0.
-- **A search field goes in `search`, not in `headerActions`.** Centred
-  inside `headerActions` with `mx-auto`, it would centre in the space
-  *after* the label, and move whenever the page name changes.
-- **Without a label the centre is the same** — with no `pageLabel` (the
-  content template renders the page's title) the field still sits on the
-  bar's centre; `SearchWithoutLabel` asserts it.
-- **The bar stays 56px high** — with label, search only, actions only, all,
-  and none:
+<Canvas of={AppShellLayoutStories.WithoutChromeBar} />
 
-<Canvas of={AppShellLayoutStories.WithoutPageLabelOrActions} />
-
-  That is a contract outside this repo: JustRAG places its toasts at
-  `top: 68px` (= 56 + 12) under this edge. A bar that collapsed once the last
-  prop was omitted would be a **breaking geometry change** for an unchanged
-  call site. This story is the one that opts out of the search convention,
-  explicitly (`search={null}`): it pins what an app gets when it omits every
-  slot.
-
-### Short bar: the search gives way first
-
-<Canvas of={AppShellLayoutStories.NarrowBarKeepsTheLabel} />
-
-- **The order is: spare room, then the search, then the sides.**
-  The centre is a 28rem flex basis that shrinks down to an **8rem** floor;
-  each side region keeps an **11rem** floor (a 36px icon button plus a ~120px
-  truncated title) until the search has reached its own. Only then do the
-  side floors shrink with the row, both equally. In the 560px case the title
-  keeps 132px and the field is 128px.
-- **The search stays on the bar's exact centre** at every width down to a
-  208px bar (search floor + gaps + inset), because the two side regions stay
-  identical flex items in every step. Narrower than that the sides are 0 and
-  the search overflows — not reachable with two open columns on an `lg`
-  window.
-- **Known limit:** the floor is a length, not the content's own minimum.
-  `headerActions` wider than 11rem is not reserved for and reaches toward the
-  search on a short bar. A content-derived floor would switch `truncate` off
-  for the label (its min-content is the full text) and break the symmetry the
-  centring rests on.
-- The three stories measure the **workspace context's own bar** (back button
-  and title, scoped search, gear); `ChatWorkspace` checks the same no-overlap
-  and centring rules at the consumer's default widths. The wide bar is
-  unchanged — the search at its 28rem cap, centred:
-
-<Canvas of={AppShellLayoutStories.WideBarKeepsTheSearchAtItsMaximum} />
-
-- `BarGivesWayInOrder` narrows one shell from a 1024px to a 300px bar and
-  asserts the order relationally: 1024 → 900 the field holds its cap, 800 →
-  560 the field loses all 240px and the title none, 560 → 480 the field holds
-  its floor and the title loses 40px (half of 80).
-
-### The bar's inset
-
-<Canvas of={AppShellLayoutStories.BarInsetIsTheColumnGutter} />
-
+- **`pageLabel` on the left, `headerActions` on the right.** The label is a
+  `<p>` (or a breadcrumb), not a heading, and truncates when the bar is short.
+- **The bar is 56px high**, whatever it holds. That is a contract outside
+  this repo: JustRAG places its toasts at `top: 68px` (= 56 + 12) under this
+  edge. The workspace stories assert it.
 - **The bar takes the column gutter: `px-gutter`, 24px**, not the page
-  measure of a `Container`. The bar is not page content but **chrome between
-  two `SidePanel`s**, so it takes the plain column measure.
-- **It is the bar's own measure, not a mirror of the column.** A
-  `SidePanel`'s `h-14` header row is `px-2` (8px), like the `p-2` column body
-  under it. The two insets are different on
-  purpose.
-- **The story's oracle is the token, not a number**:
-  `BarInsetIsTheColumnGutter` measures `pageLabel.left − aside.right` against
-  `--spacing-gutter` from the CSSOM and also pins that the column's header row
-  sits on a different measure.
+  measure of a `Container` — it is chrome between two columns, not page
+  content. `ChatWorkspace` measures the label's distance from the history
+  column against `--spacing-gutter` from the CSSOM.
+- **No central search.** The `search` slot is deprecated (see the props): a
+  search is a row of the column that opens a palette.
 
 ### `headerActions` — the right-hand position belongs to the app
 
@@ -222,7 +160,6 @@ const [leftOpen, setLeftOpen] = useState(true);   // or URL, context, localStora
   logo={logo}
   nav={nav}
   sidebarFooter={userMenu}
-  search={searchField}
   leftOpen={leftOpen}
   onLeftOpenChange={setLeftOpen}
   collapseLabel={t("collapseNavigation")}   // optional, the default is German
@@ -326,7 +263,6 @@ const [rightWidth, setRightWidth] = usePersistedWidth("myapp.kb.rightWidth", {
 
 <AppShellLayout
   logo={logo} nav={history} leftOpen={leftOpen} onLeftOpenChange={setLeftOpen}
-  search={searchField}
   leftWidth={leftWidth}
   leftResize={{
     minWidth: 150, maxWidth: 600,
@@ -402,8 +338,7 @@ import { usePersistedWidth } from "@ki4jlu/design-system";
 - **below `md`**: the bar and the page stay on screen. The navigation is a
   drawer from the left edge, opened by a toggle at the start of the bar; the
   right panel is a `BottomSheet`, opened by its toggle at the end of the bar;
-  a shown side panel fills the frame. `search` is not rendered there: a field
-  capped at 28rem and centred has no centre on a 390px bar.
+  a shown side panel fills the frame.
 
 <Canvas of={AppShellLayoutStories.Mobile} />
 
@@ -431,21 +366,20 @@ and Style switches and `WorkspaceLayout`.
 
 - ✅ **One `AppShellLayout` for every view of an app** — adapt the slots per
   context (overview, workspace), never switch to a second frame.
-- ✅ **Fill `search`** — the central search is the standard; leave it out only
-  where a view has nothing to search.
+- ✅ **Search lives in the column** — a „Suchen" row that opens a palette;
+  the bar's `search` slot is deprecated.
 - ✅ Put appearance (colour scheme, contrast, accent, Style) behind the user
   menu's „Einstellungen" (`SettingsDialog` + `AppearanceSettings`), not into
   the bar.
 - ✅ Set the active state through `NavItem active` (sets `aria-current="page"`).
-- ✅ Hang page content in as a **content** template (`SectionedGridLayout`,
+- ✅ Hang page content in as a **content** template (`GridLayout`, `SectionedGridLayout`,
   `DashboardLayout`, `FormLayout`, `TableLayout`, `ChatLayout`) or a
   `ChatStage`.
 - ❌ **Nothing that brings its own chrome goes inside**, and `AuthLayout`
   stays outside the shell: `docs/DESIGN_SYSTEM.md` §4 → „Page templates".
-- ✅ `headerActions` and `search` take **chrome**: search, small tools, a
-  menu. No page content, no forms, no business logic.
-- ❌ **No heading in `headerActions` or `search`.** Both are chrome positions
-  in the same bar, not a way around the `pageLabel` rule. Pinned in
+- ✅ `headerActions` takes **chrome**: small tools, a menu. No page content, no forms, no business logic.
+- ❌ **No heading in `headerActions`.** It is a chrome position, not a way
+  around the `pageLabel` rule. Pinned in
   `heading-owner.test.tsx` — with filled slots the template still delivers
   **zero** headings.
 - ✅ **Omit** `pageLabel` when the content template already renders the page
