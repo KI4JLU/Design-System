@@ -63,7 +63,7 @@ import { UserMenuWithSettings } from "./user-menu";
  *    tabs. JLURAG renders this view with `bar={false}` (`Overview` does too);
  *    the mechanism stories keep the bar and pass a `search` to pin its
  *    behaviour, which other apps use.
- *  - `workspace` — `KbWorkspaceLayout.tsx` (`development`, Nov 2026): the
+ *  - `topic` — `AppChrome.tsx` with a topic open (`development`, Nov 2026): the
  *    chat history as the left column (`history/HistoryPanel.tsx`:
  *    `SidebarPanel` with „Neuer Chat" and „Suchen" in its head and the chats
  *    grouped by day, `SidebarRail` collapsed), the breadcrumb „Mein Wissen /
@@ -77,7 +77,7 @@ import { UserMenuWithSettings } from "./user-menu";
  *    itself is the `topic-chat` fixture.
  *
  * The bar carries no central search: JustRAG's overview has no bar at all
- * (`bar={false}`) and its workspace bar holds the breadcrumb and the gear —
+ * (`bar={false}`) and its topic view's bar holds the breadcrumb and the gear —
  * „Suchen" is a row of the column that opens a palette.
  *
  * Everything else a story passes overrides the context's value (spread last),
@@ -86,25 +86,25 @@ import { UserMenuWithSettings } from "./user-menu";
  * state here — in an app it is the app's (context, URL, `localStorage`).
  * ------------------------------------------------------------------------- */
 
-export type ShellContext = "overview" | "workspace";
+export type ShellContext = "overview" | "topic";
 
 export interface AppShellFixtureProps
   extends Omit<Partial<AppShellLayoutProps>, "children" | "rightPanel"> {
   context: ShellContext;
   children: ReactNode;
-  /** `workspace` only: a fixed sources-card width instead of the persisted one. */
+  /** `topic` only: a fixed sources-card width instead of the persisted one. */
   rightWidth?: number;
   /**
-   * `workspace` only: this user may not see the sources — the card is locked
-   * (`rightPanel.locked`), as JLURAG's `KbWorkspaceLayout.tsx` does without
+   * `topic` only: this user may not see the sources — the card is locked
+   * (`rightPanel.locked`), as JLURAG's `AppChrome.tsx` does without
    * the `seeSources` capability.
    */
   sourcesLocked?: boolean;
-  /** `workspace` only: a new topic — no chats in the history, a dropzone for the sources. */
+  /** `topic` only: a new topic — no chats in the history, a dropzone for the sources. */
   emptyTopic?: boolean;
   /**
-   * `workspace` only: the topic's name in the breadcrumb. Default
-   * `WORKSPACE_TITLE`, long enough to truncate in every bar the mechanism
+   * `topic` only: the topic's name in the breadcrumb. Default
+   * `LONG_TOPIC_TITLE`, long enough to truncate in every bar the mechanism
    * stories measure; the page stories pass the name their page shows.
    */
   topic?: string;
@@ -119,11 +119,11 @@ export const SOURCES_LOCKED_REASON =
 /** The locked toggle's accessible name (JLURAG: „‹sources› – ‹locked›"). */
 export const SOURCES_LOCKED_LABEL = "Quellen – gesperrt";
 
-/** The workspace's topic title — long enough to truncate in every bar measured. */
-export const WORKSPACE_TITLE = "Prüfungsordnung Informatik (Master of Science), Fassung 2026";
+/** The topic title of the topic view — long enough to truncate in every bar measured. */
+export const LONG_TOPIC_TITLE = "Prüfungsordnung Informatik (Master of Science), Fassung 2026";
 
-/** The overview section the workspace's breadcrumb leads back to. */
-export const WORKSPACE_SECTION = "Mein Wissen";
+/** The overview section the topic view's breadcrumb leads back to. */
+export const TOPIC_SECTION = "Mein Wissen";
 
 export function AppShellFixture({
   context,
@@ -137,7 +137,7 @@ export function AppShellFixture({
   return context === "overview" ? (
     <OverviewShell section={section} {...props} />
   ) : (
-    <WorkspaceShell
+    <TopicShell
       rightWidth={rightWidth}
       sourcesLocked={sourcesLocked}
       emptyTopic={emptyTopic}
@@ -233,9 +233,9 @@ function OverviewShell({ section = "mine", ...props }: ContextProps & { section?
   );
 }
 
-/* -- workspace (KbWorkspaceLayout.tsx) --------------------------------------- */
+/* -- topic (AppChrome.tsx, a topic open) ------------------------------------- */
 
-const WORKSPACE_TABS: MobilePaneTab[] = [
+const TOPIC_TABS: MobilePaneTab[] = [
   { id: "history", icon: <History aria-hidden="true" />, label: "Verlauf", pane: "left" },
   { id: "chat", icon: <MessageSquare aria-hidden="true" />, label: "Chat", pane: "main" },
   { id: "files", icon: <FolderOpen aria-hidden="true" />, label: "Quellen", pane: "right" },
@@ -467,18 +467,18 @@ function memoryStorage(): Storage {
 }
 
 /**
- * The workspace's `pageLabel`: the path back to the overview section and the
- * topic, as JLURAG's `KbWorkspaceLayout.tsx` renders it. The section is a real
+ * The topic view's `pageLabel`: the path back to the overview section and the
+ * topic, as JLURAG's `AppChrome.tsx` renders it. The section is a real
  * link (the app opens it in a new tab on a modified click); the topic is the
  * current page and truncates, the section never does.
  */
-function WorkspaceBreadcrumb({ topic }: { topic: string }) {
+function TopicBreadcrumb({ topic }: { topic: string }) {
   return (
     <Breadcrumb className="min-w-0">
       <BreadcrumbList className="flex-nowrap">
         <BreadcrumbItem className="shrink-0">
           <BreadcrumbLink href="#" onClick={(event) => event.preventDefault()}>
-            {WORKSPACE_SECTION}
+            {TOPIC_SECTION}
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator>/</BreadcrumbSeparator>
@@ -495,11 +495,11 @@ const LEFT_BOUNDS = { min: 150, max: 600 };
 const RIGHT_BOUNDS = { min: 300, max: 800 };
 const DEFAULT_COLUMN_WIDTH = 320;
 
-function WorkspaceShell({
+function TopicShell({
   rightWidth,
   sourcesLocked,
   emptyTopic,
-  topic = WORKSPACE_TITLE,
+  topic = LONG_TOPIC_TITLE,
   ...props
 }: ContextProps & {
   rightWidth?: number;
@@ -515,14 +515,14 @@ function WorkspaceShell({
   const [settingsOpen, setSettingsOpen] = useState(false);
   // `usePersistedWidth` is exactly the wiring an app writes, except for the
   // injected `storage`; the consumer passes the WHOLE key.
-  const [leftWidth, setLeftWidth] = usePersistedWidth("storybook.workspace.leftWidth", {
+  const [leftWidth, setLeftWidth] = usePersistedWidth("storybook.topic.leftWidth", {
     defaultWidth: DEFAULT_COLUMN_WIDTH,
     minWidth: LEFT_BOUNDS.min,
     maxWidth: LEFT_BOUNDS.max,
     storage,
   });
   const [persistedRightWidth, setRightWidth] = usePersistedWidth(
-    "storybook.workspace.rightWidth",
+    "storybook.topic.rightWidth",
     {
       defaultWidth: DEFAULT_COLUMN_WIDTH,
       minWidth: RIGHT_BOUNDS.min,
@@ -536,7 +536,7 @@ function WorkspaceShell({
       logo={<Logo product="RAG" />}
       nav={<HistoryNav empty={emptyTopic} />}
       navLabel="Verlauf"
-      pageLabel={<WorkspaceBreadcrumb topic={topic} />}
+      pageLabel={<TopicBreadcrumb topic={topic} />}
       headerActions={
         <>
           <Button
@@ -586,7 +586,7 @@ function WorkspaceShell({
           : {
               content: <SourcesContent empty={emptyTopic} />,
               // The card's title sits in its header row, beside the close
-              // button (JLURAG `KbWorkspaceLayout.tsx`: 15px, medium).
+              // button (JLURAG `AppChrome.tsx`: 15px, medium).
               header: (
                 <h2 className="m-0 truncate text-[15px] font-medium text-on-surface">
                   Quellen hinzufügen
@@ -608,7 +608,7 @@ function WorkspaceShell({
               collapseLabel: "Quellen einklappen",
             }
       }
-      mobileTabs={WORKSPACE_TABS}
+      mobileTabs={TOPIC_TABS}
       activeMobileTab={tab}
       onMobileTabChange={setTab}
       mobileTabBarLabel="Bereich wechseln"

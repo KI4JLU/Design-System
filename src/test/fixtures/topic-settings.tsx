@@ -37,7 +37,7 @@ import {
 /* ---------------------------------------------------------------------------
  * Story fixture — a topic's settings as JLURAG renders them
  * (`KbSettingsDialog.tsx`, `development`, screenshots of 20.11.2026): the
- * gear in the workspace bar opens a `SettingsDialog` („Thema-Einstellungen",
+ * gear in the topic view's bar opens a `SettingsDialog` („Thema-Einstellungen",
  * `size="xl"`, maximizable) with five sections — Startseite, Verhalten,
  * Berechtigungen, Mitglieder, Versionsverlauf — and a footer with the draft
  * state and „Abbrechen / Speichern" (none in Versionsverlauf).

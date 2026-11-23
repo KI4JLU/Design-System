@@ -66,9 +66,9 @@ export const Overview: Story = {
  * as the page. The history is a drawer from the left (toggle at the start of
  * the bar), the sources a `BottomSheet` (toggle at its end).
  */
-export const Workspace: Story = {
+export const Topic: Story = {
   render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
+    <AppShellFixture context="topic" topic={TOPIC_NAME}>
       <TopicConversation />
     </AppShellFixture>
   ),

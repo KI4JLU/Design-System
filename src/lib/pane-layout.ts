@@ -70,8 +70,8 @@ export type PaneId = "left" | "main" | "right";
 /**
  * A tab of the narrow-screen bar plus the area it shows. The mapping is
  * **declared by the consumer**, not derived by a frame: an app may well have
- * two tabs that show the same area (JustRAG's „Chat" and „Workspace" both
- * render the main area and are told apart by its own view state).
+ * two tabs that show the same area (both render the main area and are told
+ * apart by the app's own view state).
  */
 export interface MobilePaneTab extends BottomTabBarItem {
   /** Which area this tab shows below `lg`. */

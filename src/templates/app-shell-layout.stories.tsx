@@ -11,7 +11,7 @@ import {
   NO_HISTORY,
   SOURCES_LOCKED_LABEL,
   SOURCES_LOCKED_REASON,
-  WORKSPACE_SECTION,
+  TOPIC_SECTION,
 } from "../test/fixtures/app-shell";
 import {
   bar,
@@ -37,15 +37,15 @@ import {
  * One shell, adapted per context. Every story below renders the
  * shared `AppShellFixture` (`src/test/fixtures/app-shell.tsx`) in one of the
  * template's two contexts — `overview` (a list of pages in the column) or
- * `workspace` (one item open, with its history and its sources). The sample
+ * `topic` (one topic open, with its history and its sources). The sample
  * content is JustRAG's, the DS's consumer, so the stories show the features
  * an app really uses. The overview's page is a `GridLayout` (the
  * `mein-wissen` fixture), which renders its title itself — the reason
  * `pageLabel` is optional: with a label, the title would stand twice. The
  * mechanism stories fill the central `search`; the page stories show the
  * shell without it (`bar={false}` on the overview, a bar with a breadcrumb
- * and no search in the workspace). The first seven stories are the page
- * stories — the overview and its settings, a workspace in three states and
+ * and no search in the topic view). The first seven stories are the page
+ * stories — the overview and its settings, a topic view in three states and
  * its settings — then `Mobile`; the rest are the mechanism regressions (centring, empty bar, short bar, inset,
  * collapse, rail positions, resize, handle), on the same fixture instead of a
  * hand-built shell of their own.
@@ -255,7 +255,7 @@ export const DiscoverTopics: Story = {
 };
 
 /**
- * **The workspace context** — one item open (here a topic):
+ * **The topic context** — one topic open:
  * - the bar: the breadcrumb „Mein Wissen / ‹topic›" as `pageLabel`, a ghost
  *   gear in `headerActions` — **no search field**: the topic's search is
  *   „Suchen" in the history column, which opens a palette in the app;
@@ -292,9 +292,9 @@ export const DiscoverTopics: Story = {
  * 8. the page is the chat: the composer, the answer with its one cited
  *    source, the disclaimer [ARIA `textbox`, `button` names; text].
  */
-export const ChatWorkspace: Story = {
+export const TopicView: Story = {
   render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
+    <AppShellFixture context="topic" topic={TOPIC_NAME}>
       <TopicConversation />
     </AppShellFixture>
   ),
@@ -321,7 +321,7 @@ export const ChatWorkspace: Story = {
     const header = bar(canvasElement);
     const q = within(header);
     await expect(q.queryByRole("searchbox")).toBeNull();
-    const section = q.getByRole("link", { name: WORKSPACE_SECTION }).getBoundingClientRect();
+    const section = q.getByRole("link", { name: TOPIC_SECTION }).getBoundingClientRect();
     const title = q.getByText(TOPIC_NAME).getBoundingClientRect();
     const gear = q.getByRole("button", { name: "Einstellungen des Themas" }).getBoundingClientRect();
     await expect(section.right).toBeLessThanOrEqual(title.left + EDGE_SLACK);
@@ -396,9 +396,9 @@ async function expectCentredStart(main: HTMLElement) {
  * between the composer's block and the disclaimer, within 1px
  * (`expectCentredStart`) [`data-empty`; the boxes].
  */
-export const ChatWorkspaceStart: Story = {
+export const TopicNewChat: Story = {
   render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
+    <AppShellFixture context="topic" topic={TOPIC_NAME}>
       <TopicStart />
     </AppShellFixture>
   ),
@@ -424,13 +424,13 @@ export const ChatWorkspaceStart: Story = {
  * source is the one thing to do.
  *
  * `play` oracles [ARIA `heading`, `button`; text; the boxes]: the call is the
- * page's `<h1>`, centred with the composer as in `ChatWorkspaceStart`; the
+ * page's `<h1>`, centred with the composer as in `TopicNewChat`; the
  * history has no chat and says so; the card offers the dropzone (a button
  * that opens the file picker) and lists no source.
  */
-export const ChatWorkspaceEmpty: Story = {
+export const TopicWithoutSources: Story = {
   render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME} emptyTopic>
+    <AppShellFixture context="topic" topic={TOPIC_NAME} emptyTopic>
       <TopicNew />
     </AppShellFixture>
   ),
@@ -632,7 +632,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
 };
 
 /**
- * **The left column is draggable**, shown in the workspace context (the
+ * **The left column is draggable**, shown in the topic context (the
  * sources float as a card and have no separator). The shell composes `SidePanel` + `ResizeHandle` for it; there is no
  * second mechanism and no storage in the package. The widths are **the
  * app's state**: `onWidthChange` reports every clamped value, and the app
@@ -654,7 +654,7 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
 export const WithResizableColumns: Story = {
   tags: CHECK_ONLY,
   render: () => (
-    <AppShellFixture context="workspace">
+    <AppShellFixture context="topic">
       <ChatPage />
     </AppShellFixture>
   ),
@@ -711,7 +711,7 @@ export const WithResizableColumns: Story = {
 export const HandleHasNoLayoutWidth: Story = {
   tags: CHECK_ONLY,
   render: () => (
-    <AppShellFixture context="workspace">
+    <AppShellFixture context="topic">
       <ChatPage />
     </AppShellFixture>
   ),
@@ -795,7 +795,7 @@ export const HandleHasNoLayoutWidth: Story = {
 
 /**
  * **A locked sources card** (`rightPanel.locked`, 0.81.0) — JLURAG's
- * `KbWorkspaceLayout.tsx` for a user whose role may not see the sources: the
+ * `AppChrome.tsx` for a user whose role may not see the sources: the
  * toggle keeps its place in the bar so it does not jump between users, but
  * there is no card behind it.
  *
@@ -812,7 +812,7 @@ export const HandleHasNoLayoutWidth: Story = {
 export const WithLockedSources: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace"
+      context="topic"
       sourcesLocked
     >
       <ChatPage />
@@ -861,7 +861,7 @@ export const WithLockedSources: Story = {
 export const WithSystemNotice: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace" topic={TOPIC_NAME}
+      context="topic" topic={TOPIC_NAME}
       notice={
         <Alert tone="error" layout="banner" live="assertive">
           <AlertTitle>Dienst nicht verfügbar</AlertTitle>
@@ -919,7 +919,7 @@ export const WithSystemNotice: Story = {
 export const WithSystemStatus: Story = {
   render: () => (
     <AppShellFixture
-      context="workspace" topic={TOPIC_NAME}
+      context="topic" topic={TOPIC_NAME}
       status={
         <Alert tone="warning" layout="pill" live="polite" onDismiss={() => {}}>
           <AlertTitle>Hohe Auslastung</AlertTitle>
@@ -956,7 +956,7 @@ export const WithSystemStatusBottomEnd: Story = {
   tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
-      context="workspace" topic={TOPIC_NAME}
+      context="topic" topic={TOPIC_NAME}
       statusPosition="bottom-end"
       status={
         <Alert tone="warning" layout="toast" live="polite" onDismiss={() => {}}>
@@ -995,7 +995,7 @@ export const WithSystemStatusTopEnd: Story = {
   tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
-      context="workspace" topic={TOPIC_NAME}
+      context="topic" topic={TOPIC_NAME}
       statusPosition="top-end"
       status={
         <Alert tone="info" layout="toast" live="polite">
@@ -1037,7 +1037,7 @@ export const WithSystemStatusBottomEndTall: Story = {
   tags: CHECK_ONLY,
   render: () => (
     <AppShellFixture
-      context="workspace" topic={TOPIC_NAME}
+      context="topic" topic={TOPIC_NAME}
       statusPosition="bottom-end"
       status={
         <Alert tone="info" layout="toast" live="polite" onDismiss={() => {}}>
@@ -1078,9 +1078,9 @@ export const WithSystemStatusBottomEndTall: Story = {
  * floating sources card stays over the main area, beside the panel. The
  * toggle hides the panel and keeps its tabs; closing the last tab hides it.
  */
-export const ChatWorkspaceWithSidePanel: Story = {
+export const TopicWithSidePanel: Story = {
   render: () => (
-    <AppShellFixture context="workspace">
+    <AppShellFixture context="topic">
       <ChatPage />
       <SidePanelDemo />
     </AppShellFixture>
@@ -1133,7 +1133,7 @@ export const SidePanelInNarrowFrame: Story = {
   tags: CHECK_ONLY,
   render: () => (
     <div style={{ width: 900 }}>
-      <AppShellFixture context="workspace">
+      <AppShellFixture context="topic">
         <ChatPage />
         <SidePanelDemo />
       </AppShellFixture>

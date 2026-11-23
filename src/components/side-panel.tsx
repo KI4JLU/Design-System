@@ -13,9 +13,9 @@ import { SidebarCollapsedContext } from "./sidebar-context";
 
 /**
  * Collapsible pane frame: width, collapsed state and border edge for a
- * workspace side pane (history on the left, sources on the right, …).
+ * side pane beside the main area (history on the left, sources on the right, …).
  *
- * **Controlled only.** `isOpen` and `width` are consumer state — a workspace
+ * **Controlled only.** `isOpen` and `width` are consumer state — an app
  * usually keeps both in a context and persists them, and two panes plus a
  * template have to agree on them. The frame keeps no open/width state of its
  * own, so there is one source of truth.

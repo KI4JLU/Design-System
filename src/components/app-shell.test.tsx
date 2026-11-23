@@ -530,7 +530,7 @@ describe("AppShell — resizable columns", () => {
  *   `main` landmark's name from `aria-label` per the ARIA in HTML mapping.
  *   Nothing here reads a class, and the unnamed case is asserted as the
  *   *absence* of the attribute, so „named" cannot pass by accident.
- * - **„Hidden is not collapsed"**, the rule documented for workspace screens
+ * - **„Hidden is not collapsed"**, the rule documented for screens with two side columns
  *   since 0.23.1 and moved to this frame in 0.37.0: hiding must not travel
  *   through the consumer's `isOpen`, and must be ignored below `lg`, where one
  *   area fills the screen and a tab whose column refused to appear would be

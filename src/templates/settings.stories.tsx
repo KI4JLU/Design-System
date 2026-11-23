@@ -12,7 +12,7 @@ import { TOPIC_SETTINGS_TITLE } from "../test/fixtures/topic-settings";
 
 /* ---------------------------------------------------------------------------
  * The app's settings windows, one story each: the user's settings (from the
- * user menu), a topic's settings (from the workspace's gear) and the admin
+ * user menu), a topic's settings (from the topic view's gear) and the admin
  * console. All three are a `SettingsDialog` — sections in a column, grouped
  * where there are many, each built from `PanelSection` and `SettingsRow`.
  * Content modelled on JustRAG. Tables and forms of the app live here, not on
@@ -82,7 +82,7 @@ export const UserSettings: Story = {
 };
 
 /**
- * **A topic's settings** — the gear in the workspace bar opens
+ * **A topic's settings** — the gear in the topic view's bar opens
  * „Thema-Einstellungen":
  * a `SettingsDialog` (`size="xl"`, maximizable) with Startseite, Verhalten,
  * Berechtigungen, Mitglieder and Versionsverlauf (`topic-settings` fixture).
@@ -107,7 +107,7 @@ export const UserSettings: Story = {
  */
 export const TopicSettings: Story = {
   render: () => (
-    <AppShellFixture context="workspace" topic={TOPIC_NAME}>
+    <AppShellFixture context="topic" topic={TOPIC_NAME}>
       <TopicConversation />
     </AppShellFixture>
   ),

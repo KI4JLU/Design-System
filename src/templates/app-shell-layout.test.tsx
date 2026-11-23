@@ -634,7 +634,7 @@ describe("AppShellLayout — the left column's width (0.36.0)", () => {
  * changes. There is no accessibility-tree fact and no jsdom box that can
  * distinguish 24px from 40px — jsdom applies no stylesheet and every box is
  * 0×0 — so the choice is a class assertion here or no jsdom coverage at all.
- * The *measured* half lives in Chromium (`ChatWorkspace` in
+ * The *measured* half lives in Chromium (`TopicView` in
  * `app-shell-layout.stories.tsx`), where the rendered inset is compared
  * against the `--spacing-gutter` token read back from the CSSOM rather than
  * against a number typed into the test. This block pins the four utilities

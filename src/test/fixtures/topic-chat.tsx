@@ -51,14 +51,14 @@ import { PromptSuggestions } from "../../components/prompt-suggestions";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../../components/sources";
 
 /* ---------------------------------------------------------------------------
- * Story fixture — the main area of the workspace (a topic), as JLURAG's
+ * Story fixture — the main area of the topic view, as JLURAG's
  * `ChatView.tsx` and `MessageBubble.tsx` render it (`development`, Nov 2026),
  * built from DS parts only. Three states, one per story:
  *
- *  - `TopicConversation` — a chat with answers (`ChatWorkspace`);
+ *  - `TopicConversation` — a chat with answers (`TopicView`);
  *  - `TopicStart` — a new chat in a topic that has sources: the topic's
- *    start page, centred (`ChatWorkspaceStart`);
- *  - `TopicNew` — a new topic without sources (`ChatWorkspaceEmpty`).
+ *    start page, centred (`TopicNewChat`);
+ *  - `TopicNew` — a new topic without sources (`TopicWithoutSources`).
  *
  * JLURAG's own pieces are left out or replaced by the nearest DS part: the
  * start page's title card and glow (`StartPageParts.tsx`), the verification

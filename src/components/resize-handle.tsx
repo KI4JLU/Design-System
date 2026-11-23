@@ -37,7 +37,7 @@ import { resizeHandleVariants } from "./resize-handle-variants";
  * along, which is horizontal here; that mismatch was the original defect.
  *
  * **`controls` — decided (owner card KI-597): the id of the pane root**, i.e.
- * the element whose width `aria-valuenow` reports (in a workspace that is
+ * the element whose width `aria-valuenow` reports (in the shell that is
  * `SidePanel`'s `<aside>`, the named `complementary` landmark carrying the
  * inline width — not the inner body region its collapse toggle points at:
  * the toggle controls that region's *visibility*, this handle controls the

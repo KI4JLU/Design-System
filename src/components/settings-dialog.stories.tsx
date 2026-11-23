@@ -78,7 +78,7 @@ export const Default: Story = {
  * `maximizable` adds the toggle next to the close button that lets it fill
  * the window.
  */
-function WorkspaceDemo() {
+function EditorDemo() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const area = useRef<HTMLDivElement>(null);
@@ -127,9 +127,9 @@ function WorkspaceDemo() {
   );
 }
 
-export const Workspace: Story = {
+export const Editor: Story = {
   args: { open: false, onOpenChange: () => {}, sections: [] },
-  render: () => <WorkspaceDemo />,
+  render: () => <EditorDemo />,
 };
 
 /**

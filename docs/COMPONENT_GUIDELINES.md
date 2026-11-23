@@ -547,7 +547,7 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   page category — never rebuild a page skeleton in the app. Missing slot/variant?
   Extend the template in the design system (owner review), don't fork the
   layout.
-- **Three-pane workspaces** (side pane | content | side pane, one area at a
+- **Three-pane screens** (side pane | content | side pane, one area at a
   time on narrow screens) are `AppShellLayout` with a `rightPanel`: pass each
   column's open state and width and the current mobile tab in as controlled
   props — never a breakpoint check or a pane frame of your own. Hiding the

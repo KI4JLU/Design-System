@@ -14,7 +14,7 @@ fill its slots — the frame is **never** rebuilt in the app.
 `AppShellLayout`; what changes between views is what goes into the slots, not
 which frame renders them. The overview has **no chrome bar**
 (`bar={false}`): navigation and search („Suchen", a palette) live in the left
-column, and the page brings its own heading. A workspace has a bar with the
+column, and the page brings its own heading. A topic view has a bar with the
 breadcrumb (`pageLabel`) and its controls (`headerActions`) — see „The chrome
 bar" below.
 
@@ -42,7 +42,7 @@ JLURAG (`web/src/components/`), with neutral content. Both are the same
 component with a different fill; the shared story fixture that renders them is
 `src/test/fixtures/app-shell.tsx`.
 
-| Slot | Overview context — `AppChrome.tsx` | Workspace context — `KbWorkspaceLayout.tsx` |
+| Slot | Overview context — `AppChrome.tsx` | Topic context — `AppChrome.tsx`, a topic open |
 |---|---|---|
 | `logo` | `Logo product="RAG"` | `Logo product="RAG"` (JLURAG wraps it in a ghost button back to the overview; the fixture does not, see its header) |
 | `nav` / `navLabel` | NavItem rows in a `SidebarPanel` („Hauptnavigation"): Suchen, Mein Wissen, Geteiltes Wissen, Entdecken | the chat history („Verlauf"): a `SidebarPanel` with „Neuer Chat" and „Suchen" in its head and the chats as `SidebarCard`s grouped by day; a `SidebarRail` when collapsed |
@@ -55,16 +55,16 @@ component with a different fill; the shared story fixture that renders them is
 | `mobileTabs` | 2 — navigation, content | 3 — history, chat, sources |
 | `children` | `GridLayout` — „Mein Wissen" (also tables, forms) | `ChatStage` — a chat, a new chat's start page, a new topic |
 
-<Canvas of={AppShellLayoutStories.ChatWorkspace} />
+<Canvas of={AppShellLayoutStories.TopicView} />
 
-The workspace's page has three states, each a story: a chat (`ChatWorkspace`,
+The topic view's page has three states, each a story: a chat (`TopicView`,
 above), a new chat in a topic with sources — the start page, centred with
-the composer and the suggestions (`ChatWorkspaceStart`) — and a new topic
-without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
+the composer and the suggestions (`TopicNewChat`) — and a new topic
+without sources, whose sources card is a dropzone (`TopicWithoutSources`).
 
-<Canvas of={AppShellLayoutStories.ChatWorkspaceStart} />
+<Canvas of={AppShellLayoutStories.TopicNewChat} />
 
-<Canvas of={AppShellLayoutStories.ChatWorkspaceEmpty} />
+<Canvas of={AppShellLayoutStories.TopicWithoutSources} />
 
 - **Colour scheme, contrast, accent and Style are not in the bar.** They live
   behind the user menu: „Einstellungen" opens a `SettingsDialog` whose
@@ -85,7 +85,7 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 | Slot / Prop | Type | Required | Content |
 |---|---|---|---|
 | `logo` | `ReactNode` | ✅ | Brand block — in the left column's header row **and** in the narrow top bar. |
-| `nav` | `ReactNode` | ✅ | Navigation content — `<NavItem>` rows (with `asChild` for router links), a `SidebarPanel` around them, or a whole panel like the workspace's history. Lands in a `<nav aria-label={navLabel}>`; a `SidebarPanel` child brings its own insets. |
+| `nav` | `ReactNode` | ✅ | Navigation content — `<NavItem>` rows (with `asChild` for router links), a `SidebarPanel` around them, or a whole panel like the topic view's history. Lands in a `<nav aria-label={navLabel}>`; a `SidebarPanel` child brings its own insets. |
 | `sidebarFooter` | `ReactNode` | — | Pinned foot of the left column: the user menu. |
 | `navLabel` | `string` | — | Accessible name of the `<nav>` landmark **and** of the column around it (default „Hauptnavigation"). |
 | `pageLabel` | `ReactNode` | — | Current location — headline-sized and bold, but a `<p>` and **not** a heading, on the left of the bar. Optional: omitted, the template renders **no element** for it. Truncates when the bar is short. |
@@ -113,7 +113,7 @@ without sources, whose sources card is a dropzone (`ChatWorkspaceEmpty`).
 
 ## The chrome bar
 
-Only a view that needs one has a bar — in JustRAG the workspace: the
+Only a view that needs one has a bar — in JustRAG the topic view: the
 breadcrumb „Mein Wissen / ‹topic›" as `pageLabel`, the topic's gear and the
 sources toggle at the end. `bar={false}` leaves it out, and nothing is
 reserved: the page starts at the frame's top.
@@ -124,10 +124,10 @@ reserved: the page starts at the frame's top.
   `<p>` (or a breadcrumb), not a heading, and truncates when the bar is short.
 - **The bar is 56px high**, whatever it holds. That is a contract outside
   this repo: JustRAG places its toasts at `top: 68px` (= 56 + 12) under this
-  edge. The workspace stories assert it.
+  edge. The topic-view stories assert it.
 - **The bar takes the column gutter: `px-gutter`, 24px**, not the page
   measure of a `Container` — it is chrome between two columns, not page
-  content. `ChatWorkspace` measures the label's distance from the history
+  content. `TopicView` measures the label's distance from the history
   column against `--spacing-gutter` from the CSSOM.
 - **No central search.** The `search` slot is deprecated (see the props): a
   search is a row of the column that opens a palette.
@@ -137,7 +137,7 @@ reserved: the page starts at the frame's top.
 The template renders **no** control of its own there. What goes in is the
 app's decision:
 
-- **One element** (the workspace's gear) sits right-aligned.
+- **One element** (the topic's gear) sits right-aligned.
 - **Several** come as a fragment and stand in a row (`gap-2`).
 - **Empty** means no box in the DOM — the overview context's case.
 
@@ -179,7 +179,7 @@ const [leftOpen, setLeftOpen] = useState(true);   // or URL, context, localStora
 - **Collapsed is the rail** (60px, `SIDE_PANEL_RAIL_WIDTH`). The same `nav`
   node moves into it — `NavItem`s shrink to their icon form, and a
   `nav` that renders differently in the rail reads `useSidebarCollapsed()`
-  (the overview's rows drop their `SidebarPanel`, the workspace's history
+  (the overview's rows drop their `SidebarPanel`, the topic view's history
   becomes a `SidebarRail`).
 - **The rail mirrors the expanded column's rows**, so every control keeps its
   height across a collapse:
@@ -199,8 +199,8 @@ const [leftOpen, setLeftOpen] = useState(true);   // or URL, context, localStora
 exactly the shape `AppShell` itself takes, so there is no second vocabulary
 for the same thing. `content`, `header`, `footer`, `label`, `isOpen`,
 `onOpenChange`, `width` (default 256), `expandLabel`, `collapseLabel`,
-`collapsedPreview` and `resize`. The workspace context above
-(`ChatWorkspace`) is the case: sources on the right, with a `collapsedPreview`
+`collapsedPreview` and `resize`. The topic context above
+(`TopicView`) is the case: sources on the right, with a `collapsedPreview`
 rail of one icon per source.
 
 ## System messages
@@ -360,7 +360,7 @@ and Style switches and `WorkspaceLayout`.
 ## Do's & Don'ts
 
 - ✅ **One `AppShellLayout` for every view of an app** — adapt the slots per
-  context (overview, workspace), never switch to a second frame.
+  context (overview, topic), never switch to a second frame.
 - ✅ **Search lives in the column** — a „Suchen" row that opens a palette;
   the bar's `search` slot is deprecated.
 - ✅ Put appearance (colour scheme, contrast, accent, Style) behind the user

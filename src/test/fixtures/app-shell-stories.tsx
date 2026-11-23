@@ -42,7 +42,7 @@ export const EDGE_SLACK = 0.5;
 export const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body);
 
 /**
- * The chat column of the workspace: `ChatStage` with the args of its own
+ * The chat column of the topic view: `ChatStage` with the args of its own
  * `Conversation` story. Spread rather than `composeStories`, on purpose — that
  * story's meta decorator pins the stage to a 560px box for its own canvas,
  * and in the shell the stage has to fill `<main>` instead.

@@ -4,7 +4,7 @@ import { LayoutGrid, Menu } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertDescription } from "../components/alert";
 import { Logo } from "../components/logo";
-import { AppShellFixture, WORKSPACE_SECTION } from "../test/fixtures/app-shell";
+import { AppShellFixture, TOPIC_SECTION } from "../test/fixtures/app-shell";
 import {
   NativeShellHost,
   OWN_IFRAME_IN_DOCS,
@@ -199,15 +199,15 @@ export const OverviewCollapsed: Story = {
 /**
  * A collapsed column does not reach into the title bar: the bar spans the
  * window's full width and carries the column's toggle where it stands while
- * expanded; the rail starts below. In the workspace, where JustRAG has a bar:
+ * expanded; the rail starts below. In the topic view, where JustRAG has a bar:
  * after the toggle the app's back / forward, then the breadcrumb.
  */
-export const WorkspaceCollapsed: Story = {
+export const TopicCollapsed: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
+        context="topic" topic={TOPIC_NAME}
         leftOpen={false}
         titlebarControls={historyControls}
         logo={nativeLogo}
@@ -255,7 +255,7 @@ export const WorkspaceCollapsed: Story = {
     // Then the app's window controls, then the bar's own content.
     const forward = within(header).getByRole("button", { name: "Vor" }).getBoundingClientRect();
     await expect(within(header).getByRole("button", { name: "Zurück" }).getBoundingClientRect().left).toBeGreaterThanOrEqual(expand.right);
-    const breadcrumb = within(header).getByRole("link", { name: WORKSPACE_SECTION });
+    const breadcrumb = within(header).getByRole("link", { name: TOPIC_SECTION });
     await expect(breadcrumb.getBoundingClientRect().left).toBeGreaterThan(forward.right);
   },
 };
@@ -265,12 +265,12 @@ export const WorkspaceCollapsed: Story = {
  * the right column floats as it does on the web: a card over the main area,
  * below the bar, opened by the last control of the title row.
  */
-export const Workspace: Story = {
+export const Topic: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
+        context="topic" topic={TOPIC_NAME}
         titlebarControls={historyControls}
         logo={nativeLogo}
       >
@@ -319,7 +319,7 @@ export const WithNotice: Story = {
   render: () => (
     <NativeShellHost>
       <AppShellFixture
-        context="workspace" topic={TOPIC_NAME}
+        context="topic" topic={TOPIC_NAME}
         titlebarControls={historyControls}
         logo={nativeLogo}
         notice={
@@ -351,11 +351,11 @@ export const WithNotice: Story = {
 };
 
 /** The same panel in a native shell: opaque, its strip part of the title bar. */
-export const WorkspaceWithSidePanel: Story = {
+export const TopicWithSidePanel: Story = {
   parameters: OWN_IFRAME_IN_DOCS,
   render: () => (
     <NativeShellHost>
-      <AppShellFixture context="workspace" topic={TOPIC_NAME} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
+      <AppShellFixture context="topic" topic={TOPIC_NAME} titlebarControls={historyControls} logo={<Logo product="RAG" size="sm" />}>
         <TopicConversation />
         <SidePanelDemo />
       </AppShellFixture>

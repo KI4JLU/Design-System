@@ -255,14 +255,14 @@ area keeps the window's full width. Its toggle is the last control of the
 title row. Closed, the card is hidden but stays mounted; there is no rail and
 no resize handle. A narrow window shows it as its own area, as on the web.
 
-<Canvas of={NativeShellStories.Workspace} />
+<Canvas of={NativeShellStories.Topic} />
 
 **A collapsed column leaves the title bar, the brand does not.** The chrome
 bar then spans the window's full width, opaque, and carries the column's
 `header` — in the place it has while expanded — followed by the column's
 toggle. The rail starts below the title row and takes the page's colour.
 
-<Canvas of={NativeShellStories.WorkspaceCollapsed} />
+<Canvas of={NativeShellStories.TopicCollapsed} />
 
 **A notice sits at the bottom.** On the web `notice` is the frame's first
 row, full width. Under `data-titlebar` that row is the title bar, so the
