@@ -141,7 +141,10 @@ const preview: Preview = {
           "Tokens",
           "Foundations",
           "Templates",
-          "Layout",
+          // The building blocks templates are made of (Stack, Grid, Container,
+          // the shell's frame pieces) — not „Layout", which read as the
+          // templates' `…Layout` components.
+          "Primitives",
           "Components",
           [
             "Actions",

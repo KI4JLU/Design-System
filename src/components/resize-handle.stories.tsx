@@ -7,7 +7,7 @@ const MIN = 150;
 const MAX = 600;
 
 const meta = {
-  title: "Layout/ResizeHandle",
+  title: "Primitives/ResizeHandle",
   component: ResizeHandle,
   args: {
     side: "left",

@@ -5,7 +5,7 @@ import { FileText, History, MessageSquare } from "lucide-react";
 import { SidePanel } from "./side-panel";
 
 const meta = {
-  title: "Layout/SidePanel",
+  title: "Primitives/SidePanel",
   component: SidePanel,
   args: {
     side: "left",

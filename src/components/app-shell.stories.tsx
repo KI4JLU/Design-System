@@ -25,7 +25,7 @@ const TABS: MobilePaneTab[] = [
 ];
 
 const meta = {
-  title: "Layout/AppShell",
+  title: "Primitives/AppShell",
   component: AppShell,
   parameters: {
     layout: "fullscreen",

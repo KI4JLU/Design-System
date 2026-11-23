@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Stack } from "./stack";
 
 const meta = {
-  title: "Layout/Stack",
+  title: "Primitives/Stack",
   component: Stack,
   argTypes: {
     direction: { control: "select", options: ["column", "row"] },
