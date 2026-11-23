@@ -30,6 +30,7 @@ import { SidebarAction } from "../components/sidebar-action";
 import { SidebarCard, SidebarCardList } from "../components/sidebar-card";
 import { SidebarRailItem } from "../components/sidebar-rail";
 import { Spinner } from "../components/spinner";
+import { ICON_DICTIONARY } from "./icon-dictionary";
 import { ICON_REGISTRY } from "./icon-registry";
 import iconUsage from "./icon-usage.json";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
@@ -342,92 +343,6 @@ const USAGE = iconUsage as {
 /** JustRAG files importing this glyph, under any of its names. */
 const justragFiles = (name: string) => USAGE.justrag.icons[name]?.files ?? 0;
 
-/** One row of the dictionary: the action and its icons by name (`Spinner` is the DS component). */
-interface Entry {
-  action: string;
-  icons: string[];
-  /** Where it applies or what to avoid — `code` in backticks. */
-  note?: string;
-}
-
-const DICTIONARY: { group: string; entries: Entry[] }[] = [
-  {
-    group: "Actions",
-    entries: [
-      { action: "Add, create", icons: ["Plus"] },
-      { action: "Delete", icons: ["Trash2"], note: "always with a destructive `Button` variant" },
-      { action: "Close; remove from a list", icons: ["X"] },
-      { action: "Edit, rename", icons: ["Pencil"], note: "not `PenLine` (`Edit3`)" },
-      { action: "New chat", icons: ["SquarePen"], note: "the head of the history column" },
-      { action: "Search", icons: ["Search"] },
-      { action: "Download / upload", icons: ["Download", "Upload"] },
-      { action: "Copy", icons: ["Copy"] },
-      { action: "Save", icons: ["Save"] },
-      { action: "Reload, retry", icons: ["RefreshCw"] },
-      { action: "Reset to the default", icons: ["RotateCcw"] },
-      { action: "Undo / redo", icons: ["Undo2", "Redo2"] },
-      { action: "Settings of an item", icons: ["Settings"] },
-      { action: "View options (columns, layout)", icons: ["SlidersHorizontal"] },
-      { action: "Filter a list", icons: ["ListFilter"], note: "`SidebarFilterMenu`" },
-      { action: "Sort", icons: ["ArrowUpDown"] },
-      { action: "More actions", icons: ["Ellipsis"], note: "`ActionMenu`'s trigger" },
-      { action: "Opens another page of the app", icons: ["ArrowUpRight"], note: "`ActionMenu` `opensPage`" },
-      { action: "Opens outside the app, a new tab", icons: ["ExternalLink"] },
-      { action: "Send", icons: ["ArrowUp"], note: "the composer's button" },
-      { action: "Share, members", icons: ["Users", "UserPlus"] },
-      { action: "Log out", icons: ["LogOut"] },
-    ],
-  },
-  {
-    group: "Sidebar: sections and rows",
-    entries: [
-      { action: "Fold / unfold a section", icons: ["ChevronDown", "ChevronRight"], note: "`SidebarSection`, also `Accordion`" },
-      { action: "Fold the other sections", icons: ["ChevronsDownUp"] },
-      { action: "New section", icons: ["FolderPlus"] },
-      { action: "Move up / down", icons: ["ArrowUp", "ArrowDown"], note: "a section or a row, in its menu" },
-      { action: "Move a row into / out of a section", icons: ["FolderInput", "FolderMinus"] },
-      { action: "Pin / unpin a row", icons: ["Pin", "PinOff"] },
-      { action: "Drag to reorder", icons: ["GripVertical", "GripHorizontal"], note: "`Sortable`'s handles" },
-      { action: "The chosen option in a menu", icons: ["Check"], note: "`SidebarFilterMenu`, `Select`, menus" },
-      {
-        action: "A row's kind: chat, document, research, academic",
-        icons: ["MessageSquare", "FileText", "Search", "GraduationCap"],
-        note: "a history row's icon",
-      },
-      { action: "A branched chat", icons: ["GitBranch"], note: "instead of the kind's icon" },
-      { action: "Favourite", icons: ["Star"] },
-    ],
-  },
-  {
-    group: "Main navigation: the overview's pages",
-    entries: [
-      { action: "Suchen", icons: ["Search"], note: "opens the search palette" },
-      { action: "Mein Wissen", icons: ["House"], note: "also on a chat of its topics" },
-      { action: "Geteiltes Wissen", icons: ["Users"], note: "also on a chat of its topics" },
-      { action: "Entdecken", icons: ["Compass"], note: "also on a chat of its topics" },
-    ],
-  },
-  {
-    group: "Navigation and panels",
-    entries: [
-      { action: "Back, previous (a direction)", icons: ["ChevronLeft"], note: "history, pagination, `BreadcrumbBack`" },
-      { action: "Open / close the left column", icons: ["PanelLeftOpen", "PanelLeftClose"], note: "`AppShell`, `SidePanel`" },
-      { action: "Open / close the right column", icons: ["PanelRightOpen", "PanelRightClose"], note: "`AppShell`, `SidePanel`" },
-      { action: "Full screen / leave it", icons: ["Maximize2", "Minimize2"] },
-      { action: "Show / hide", icons: ["Eye", "EyeOff"] },
-    ],
-  },
-  {
-    group: "Status",
-    entries: [
-      { action: "Information", icons: ["Info"] },
-      { action: "Success / warning / error", icons: ["CircleCheck", "TriangleAlert", "CircleX"], note: "`Alert`'s tones" },
-      { action: "Locked", icons: ["Lock"] },
-      { action: "Loading", icons: ["Spinner"], note: "the `Spinner` component, not a bare `LoaderCircle`" },
-    ],
-  },
-];
-
 /** `code` spans in a note, as the rest of the page sets them. */
 function withCode(text: string) {
   return text.split(/(`[^`]+`)/).map((part, i) =>
@@ -455,8 +370,9 @@ function DictionaryIcon({ name }: { name: string }) {
 }
 
 /**
- * **The dictionary.** One icon per action, drawn at 20px beside its name, in
- * groups — and in how many JustRAG files each is imported (any of its names).
+ * **The dictionary.** Every icon in use and what it means, drawn at 20px
+ * beside its name, in groups (`icon-dictionary.ts`) — and in how many JustRAG
+ * files each is imported (any of its names).
  *
  * `play` oracle: every row draws as many icons as it names [the DOM].
  */
@@ -465,12 +381,12 @@ export const Dictionary: Story = {
     <Table aria-label="Icon per action" className="max-w-[56rem]">
       <TableHeader>
         <TableRow>
-          <TableHead>Action</TableHead>
+          <TableHead>Meaning</TableHead>
           <TableHead>Icon</TableHead>
           <TableHead>JustRAG files</TableHead>
         </TableRow>
       </TableHeader>
-      {DICTIONARY.map(({ group, entries }) => (
+      {ICON_DICTIONARY.map(({ group, entries }) => (
         <TableBody key={group}>
           <TableRow>
             <TableHead section colSpan={3}>
@@ -478,8 +394,8 @@ export const Dictionary: Story = {
             </TableHead>
           </TableRow>
             {entries.map((e) => (
-              <TableRow key={e.action} data-icons={e.icons.length}>
-                <TableCell>{e.action}</TableCell>
+              <TableRow key={e.meaning} data-icons={e.icons.length}>
+                <TableCell>{e.meaning}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                     {e.icons.map((name) => (
@@ -499,7 +415,7 @@ export const Dictionary: Story = {
   ),
   play: async ({ canvasElement }) => {
     const rows = [...canvasElement.querySelectorAll<HTMLTableRowElement>("tr[data-icons]")];
-    await expect(rows).toHaveLength(DICTIONARY.flatMap((g) => g.entries).length);
+    await expect(rows).toHaveLength(ICON_DICTIONARY.flatMap((g) => g.entries).length);
     for (const row of rows) {
       const drawn = row.querySelectorAll("[data-slot=dictionary-icon] svg").length;
       await expect([row.cells[0].textContent, drawn]).toEqual([row.cells[0].textContent, Number(row.dataset.icons)]);

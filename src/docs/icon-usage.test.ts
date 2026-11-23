@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import * as lucide from "lucide-react";
+import { ICON_DICTIONARY } from "./icon-dictionary";
 import { ICON_REGISTRY } from "./icon-registry";
 import iconUsage from "./icon-usage.json";
 
@@ -40,5 +41,19 @@ describe("icon-usage.json (run `node scripts/icon-usage.mjs` when this fails)", 
     const listed = new Set([...Object.keys(iconUsage.ds), ...Object.keys(iconUsage.justrag.icons)]);
     expect(Object.keys(ICON_REGISTRY).sort()).toEqual([...listed].sort());
     for (const [name, glyph] of Object.entries(ICON_REGISTRY)) expect(canonical.get(glyph)).toBe(name);
+  });
+});
+
+describe("the icon dictionary", () => {
+  const named = new Set(ICON_DICTIONARY.flatMap((g) => g.entries.flatMap((e) => e.icons)));
+
+  it("gives every icon in use a meaning", () => {
+    const withoutRow = Object.keys(ICON_REGISTRY).filter((name) => !named.has(name));
+    expect(withoutRow, "add these to icon-dictionary.ts").toEqual([]);
+  });
+
+  it("names only icons in use, by their current name (or the Spinner component)", () => {
+    const unknown = [...named].filter((name) => name !== "Spinner" && !(name in ICON_REGISTRY));
+    expect(unknown).toEqual([]);
   });
 });
