@@ -10,7 +10,7 @@ const meta = {
     appearance: { control: "select", options: ["filled", "text"] },
     tone: {
       control: "select",
-      options: ["neutral", "primary", "secondary", "success", "warning", "error", "info"],
+      options: ["neutral", "primary", "secondary", "success", "warning", "caution", "error", "info"],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -32,6 +32,7 @@ export const Filled: Story = {
         +14 %
       </Badge>
       <Badge tone="warning">Wartung</Badge>
+      <Badge tone="caution">Zurückgezogen</Badge>
       <Badge tone="error">Fehler</Badge>
       <Badge tone="info">Beta</Badge>
     </div>
