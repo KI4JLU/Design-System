@@ -1,0 +1,1201 @@
+{
+  "ds": {
+    "ArrowDown": [
+      "message-scroller"
+    ],
+    "ArrowLeft": [
+      "carousel"
+    ],
+    "ArrowRight": [
+      "carousel"
+    ],
+    "ArrowUpRight": [
+      "action-menu"
+    ],
+    "AudioLines": [
+      "prompt-input"
+    ],
+    "Bold": [
+      "rich-text-editor"
+    ],
+    "Book": [
+      "sources"
+    ],
+    "Brain": [
+      "chain-of-thought",
+      "reasoning"
+    ],
+    "Check": [
+      "action-menu",
+      "checkbox",
+      "code-block",
+      "color-field",
+      "context-menu",
+      "filter-menu",
+      "image-viewer",
+      "rich-text-editor",
+      "select",
+      "sidebar-filter-menu"
+    ],
+    "ChevronDown": [
+      "accordion",
+      "chain-of-thought",
+      "pdf-viewer",
+      "reasoning",
+      "select",
+      "sidebar-section",
+      "sidebar-user-menu",
+      "sources",
+      "task"
+    ],
+    "ChevronLeft": [
+      "breadcrumb",
+      "message",
+      "prompt-suggestions"
+    ],
+    "ChevronRight": [
+      "breadcrumb",
+      "context-menu",
+      "dropdown-menu",
+      "message",
+      "prompt-suggestions",
+      "sidebar-section"
+    ],
+    "ChevronUp": [
+      "pdf-viewer"
+    ],
+    "Circle": [
+      "context-menu"
+    ],
+    "CircleAlert": [
+      "prompt-input"
+    ],
+    "CircleCheck": [
+      "alert",
+      "toast"
+    ],
+    "CircleX": [
+      "alert",
+      "toast",
+      "token-input"
+    ],
+    "CloudUpload": [
+      "file-dropzone"
+    ],
+    "Code": [
+      "rich-text-editor"
+    ],
+    "Copy": [
+      "code-block",
+      "image-viewer",
+      "rich-text-editor"
+    ],
+    "CornerDownLeft": [
+      "prompt-input"
+    ],
+    "Dot": [
+      "chain-of-thought"
+    ],
+    "Ellipsis": [
+      "action-menu",
+      "breadcrumb"
+    ],
+    "File": [
+      "file-preview"
+    ],
+    "GripHorizontal": [
+      "sortable"
+    ],
+    "GripVertical": [
+      "sortable"
+    ],
+    "Heading1": [
+      "rich-text-editor"
+    ],
+    "Heading2": [
+      "rich-text-editor"
+    ],
+    "Heading3": [
+      "rich-text-editor"
+    ],
+    "Image": [
+      "prompt-input"
+    ],
+    "Info": [
+      "alert",
+      "toast"
+    ],
+    "Italic": [
+      "rich-text-editor"
+    ],
+    "Lightbulb": [
+      "prompt-suggestions"
+    ],
+    "List": [
+      "rich-text-editor"
+    ],
+    "ListFilter": [
+      "sidebar-filter-menu"
+    ],
+    "ListIndentDecrease": [
+      "rich-text-editor"
+    ],
+    "ListIndentIncrease": [
+      "rich-text-editor"
+    ],
+    "ListOrdered": [
+      "rich-text-editor"
+    ],
+    "LoaderCircle": [
+      "combobox",
+      "file-preview",
+      "image-viewer",
+      "pdf-viewer",
+      "prompt-input",
+      "sidebar-card",
+      "spinner"
+    ],
+    "Lock": [
+      "app-shell"
+    ],
+    "Maximize2": [
+      "app-shell",
+      "image-viewer",
+      "pdf-viewer",
+      "rich-text-editor",
+      "settings-dialog"
+    ],
+    "Mic": [
+      "prompt-input"
+    ],
+    "Minimize2": [
+      "app-shell",
+      "image-viewer",
+      "pdf-viewer",
+      "rich-text-editor",
+      "settings-dialog"
+    ],
+    "Minus": [
+      "checkbox",
+      "code-block",
+      "image-viewer",
+      "pdf-viewer"
+    ],
+    "PanelLeftClose": [
+      "app-shell",
+      "side-panel"
+    ],
+    "PanelLeftOpen": [
+      "side-panel"
+    ],
+    "PanelRightClose": [
+      "app-shell",
+      "side-panel"
+    ],
+    "PanelRightOpen": [
+      "app-shell",
+      "side-panel"
+    ],
+    "Paperclip": [
+      "prompt-input"
+    ],
+    "Pipette": [
+      "color-field"
+    ],
+    "Plus": [
+      "app-shell",
+      "code-block",
+      "filter-chips",
+      "image-viewer",
+      "pdf-viewer",
+      "prompt-input"
+    ],
+    "Redo2": [
+      "rich-text-editor"
+    ],
+    "Search": [
+      "command",
+      "settings-dialog",
+      "task"
+    ],
+    "Square": [
+      "prompt-input"
+    ],
+    "SquareCode": [
+      "rich-text-editor"
+    ],
+    "SquareMenu": [
+      "app-shell"
+    ],
+    "Strikethrough": [
+      "rich-text-editor"
+    ],
+    "Table": [
+      "rich-text-editor"
+    ],
+    "TextAlignStart": [
+      "app-shell"
+    ],
+    "TextQuote": [
+      "rich-text-editor"
+    ],
+    "TriangleAlert": [
+      "alert",
+      "toast",
+      "token-input"
+    ],
+    "Undo2": [
+      "rich-text-editor"
+    ],
+    "X": [
+      "alert",
+      "app-shell",
+      "content-panel",
+      "dialog",
+      "prompt-input",
+      "prompt-suggestions",
+      "settings-dialog",
+      "toast",
+      "token-input"
+    ]
+  },
+  "justrag": {
+    "ref": "development 06da7459, 2026-11-22",
+    "icons": {
+      "Accessibility": {
+        "files": 1,
+        "names": [
+          "Accessibility"
+        ]
+      },
+      "Activity": {
+        "files": 2,
+        "names": [
+          "Activity"
+        ]
+      },
+      "ArrowDown": {
+        "files": 5,
+        "names": [
+          "ArrowDown"
+        ]
+      },
+      "ArrowLeft": {
+        "files": 5,
+        "names": [
+          "ArrowLeft"
+        ]
+      },
+      "ArrowRight": {
+        "files": 1,
+        "names": [
+          "ArrowRight"
+        ]
+      },
+      "ArrowUp": {
+        "files": 8,
+        "names": [
+          "ArrowUp"
+        ]
+      },
+      "ArrowUpDown": {
+        "files": 1,
+        "names": [
+          "ArrowUpDown"
+        ]
+      },
+      "AtSign": {
+        "files": 1,
+        "names": [
+          "AtSign"
+        ]
+      },
+      "Ban": {
+        "files": 1,
+        "names": [
+          "Ban"
+        ]
+      },
+      "Blocks": {
+        "files": 1,
+        "names": [
+          "Blocks"
+        ]
+      },
+      "Bold": {
+        "files": 1,
+        "names": [
+          "Bold"
+        ]
+      },
+      "BookOpen": {
+        "files": 8,
+        "names": [
+          "BookOpen"
+        ]
+      },
+      "Bookmark": {
+        "files": 1,
+        "names": [
+          "Bookmark"
+        ]
+      },
+      "Bot": {
+        "files": 1,
+        "names": [
+          "Bot"
+        ]
+      },
+      "Brain": {
+        "files": 2,
+        "names": [
+          "Brain"
+        ]
+      },
+      "Building2": {
+        "files": 1,
+        "names": [
+          "Building2"
+        ]
+      },
+      "CalendarClock": {
+        "files": 2,
+        "names": [
+          "CalendarClock"
+        ]
+      },
+      "ChartArea": {
+        "files": 1,
+        "names": [
+          "AreaChart"
+        ]
+      },
+      "ChartColumn": {
+        "files": 2,
+        "names": [
+          "BarChart3"
+        ]
+      },
+      "ChartLine": {
+        "files": 1,
+        "names": [
+          "LineChart"
+        ]
+      },
+      "ChartPie": {
+        "files": 1,
+        "names": [
+          "PieChart"
+        ]
+      },
+      "ChartScatter": {
+        "files": 1,
+        "names": [
+          "ScatterChart"
+        ]
+      },
+      "Check": {
+        "files": 20,
+        "names": [
+          "Check"
+        ]
+      },
+      "CheckCheck": {
+        "files": 1,
+        "names": [
+          "CheckCheck"
+        ]
+      },
+      "ChevronDown": {
+        "files": 10,
+        "names": [
+          "ChevronDown"
+        ]
+      },
+      "ChevronLeft": {
+        "files": 4,
+        "names": [
+          "ChevronLeft"
+        ]
+      },
+      "ChevronRight": {
+        "files": 12,
+        "names": [
+          "ChevronRight"
+        ]
+      },
+      "ChevronUp": {
+        "files": 2,
+        "names": [
+          "ChevronUp"
+        ]
+      },
+      "ChevronsDownUp": {
+        "files": 1,
+        "names": [
+          "ChevronsDownUp"
+        ]
+      },
+      "CircleAlert": {
+        "files": 4,
+        "names": [
+          "AlertCircle"
+        ]
+      },
+      "CircleCheck": {
+        "files": 4,
+        "names": [
+          "CheckCircle2",
+          "CircleCheck"
+        ]
+      },
+      "CircleCheckBig": {
+        "files": 1,
+        "names": [
+          "CheckCircle"
+        ]
+      },
+      "CircleX": {
+        "files": 1,
+        "names": [
+          "XCircle"
+        ]
+      },
+      "Clock": {
+        "files": 3,
+        "names": [
+          "Clock"
+        ]
+      },
+      "CloudOff": {
+        "files": 1,
+        "names": [
+          "CloudOff"
+        ]
+      },
+      "Columns2": {
+        "files": 3,
+        "names": [
+          "Columns"
+        ]
+      },
+      "Compass": {
+        "files": 3,
+        "names": [
+          "Compass"
+        ]
+      },
+      "Copy": {
+        "files": 10,
+        "names": [
+          "Copy"
+        ]
+      },
+      "Cpu": {
+        "files": 2,
+        "names": [
+          "Cpu"
+        ]
+      },
+      "Crown": {
+        "files": 3,
+        "names": [
+          "Crown"
+        ]
+      },
+      "Database": {
+        "files": 2,
+        "names": [
+          "Database"
+        ]
+      },
+      "Dot": {
+        "files": 1,
+        "names": [
+          "Dot"
+        ]
+      },
+      "Download": {
+        "files": 11,
+        "names": [
+          "Download"
+        ]
+      },
+      "ExternalLink": {
+        "files": 6,
+        "names": [
+          "ExternalLink"
+        ]
+      },
+      "Eye": {
+        "files": 9,
+        "names": [
+          "Eye"
+        ]
+      },
+      "EyeOff": {
+        "files": 4,
+        "names": [
+          "EyeOff"
+        ]
+      },
+      "File": {
+        "files": 1,
+        "names": [
+          "File"
+        ]
+      },
+      "FileBraces": {
+        "files": 1,
+        "names": [
+          "FileJson"
+        ]
+      },
+      "FileCheck": {
+        "files": 1,
+        "names": [
+          "FileCheck"
+        ]
+      },
+      "FileCode": {
+        "files": 1,
+        "names": [
+          "FileCode"
+        ]
+      },
+      "FileHeadphone": {
+        "files": 3,
+        "names": [
+          "FileAudio"
+        ]
+      },
+      "FileImage": {
+        "files": 3,
+        "names": [
+          "FileImage"
+        ]
+      },
+      "FilePen": {
+        "files": 3,
+        "names": [
+          "FilePen"
+        ]
+      },
+      "FilePlay": {
+        "files": 3,
+        "names": [
+          "FileVideo"
+        ]
+      },
+      "FileSearch": {
+        "files": 1,
+        "names": [
+          "FileSearch"
+        ]
+      },
+      "FileSpreadsheet": {
+        "files": 3,
+        "names": [
+          "FileSpreadsheet"
+        ]
+      },
+      "FileText": {
+        "files": 19,
+        "names": [
+          "FileText"
+        ]
+      },
+      "FileType": {
+        "files": 3,
+        "names": [
+          "FileType"
+        ]
+      },
+      "FlaskConical": {
+        "files": 1,
+        "names": [
+          "FlaskConical"
+        ]
+      },
+      "FolderInput": {
+        "files": 1,
+        "names": [
+          "FolderInput"
+        ]
+      },
+      "FolderMinus": {
+        "files": 1,
+        "names": [
+          "FolderMinus"
+        ]
+      },
+      "FolderOpen": {
+        "files": 1,
+        "names": [
+          "FolderOpen"
+        ]
+      },
+      "FolderPlus": {
+        "files": 2,
+        "names": [
+          "FolderPlus"
+        ]
+      },
+      "Funnel": {
+        "files": 1,
+        "names": [
+          "Filter"
+        ]
+      },
+      "GitBranch": {
+        "files": 6,
+        "names": [
+          "GitBranch"
+        ]
+      },
+      "Globe": {
+        "files": 11,
+        "names": [
+          "Globe"
+        ]
+      },
+      "GraduationCap": {
+        "files": 3,
+        "names": [
+          "GraduationCap"
+        ]
+      },
+      "GripVertical": {
+        "files": 2,
+        "names": [
+          "GripVertical"
+        ]
+      },
+      "HardDrive": {
+        "files": 1,
+        "names": [
+          "HardDrive"
+        ]
+      },
+      "Hash": {
+        "files": 2,
+        "names": [
+          "Hash"
+        ]
+      },
+      "Heading1": {
+        "files": 1,
+        "names": [
+          "Heading1"
+        ]
+      },
+      "Heading2": {
+        "files": 1,
+        "names": [
+          "Heading2"
+        ]
+      },
+      "History": {
+        "files": 3,
+        "names": [
+          "History"
+        ]
+      },
+      "Hourglass": {
+        "files": 1,
+        "names": [
+          "Hourglass"
+        ]
+      },
+      "House": {
+        "files": 3,
+        "names": [
+          "Home",
+          "House"
+        ]
+      },
+      "Info": {
+        "files": 11,
+        "names": [
+          "Info"
+        ]
+      },
+      "Italic": {
+        "files": 1,
+        "names": [
+          "Italic"
+        ]
+      },
+      "Key": {
+        "files": 1,
+        "names": [
+          "Key"
+        ]
+      },
+      "KeyRound": {
+        "files": 1,
+        "names": [
+          "KeyRound"
+        ]
+      },
+      "LayoutGrid": {
+        "files": 2,
+        "names": [
+          "LayoutGrid"
+        ]
+      },
+      "LifeBuoy": {
+        "files": 2,
+        "names": [
+          "LifeBuoy"
+        ]
+      },
+      "Lightbulb": {
+        "files": 1,
+        "names": [
+          "Lightbulb"
+        ]
+      },
+      "Link": {
+        "files": 2,
+        "names": [
+          "Link"
+        ]
+      },
+      "Link2": {
+        "files": 3,
+        "names": [
+          "Link2"
+        ]
+      },
+      "List": {
+        "files": 2,
+        "names": [
+          "List"
+        ]
+      },
+      "ListChecks": {
+        "files": 1,
+        "names": [
+          "ListChecks"
+        ]
+      },
+      "ListTree": {
+        "files": 1,
+        "names": [
+          "ListTree"
+        ]
+      },
+      "LoaderCircle": {
+        "files": 25,
+        "names": [
+          "Loader2"
+        ]
+      },
+      "Lock": {
+        "files": 5,
+        "names": [
+          "Lock"
+        ]
+      },
+      "LogOut": {
+        "files": 2,
+        "names": [
+          "LogOut"
+        ]
+      },
+      "Maximize2": {
+        "files": 5,
+        "names": [
+          "Maximize2"
+        ]
+      },
+      "Megaphone": {
+        "files": 2,
+        "names": [
+          "Megaphone"
+        ]
+      },
+      "Menu": {
+        "files": 1,
+        "names": [
+          "Menu"
+        ]
+      },
+      "MessageCircleQuestionMark": {
+        "files": 1,
+        "names": [
+          "MessageCircleQuestion"
+        ]
+      },
+      "MessageSquare": {
+        "files": 8,
+        "names": [
+          "MessageSquare"
+        ]
+      },
+      "MessageSquarePlus": {
+        "files": 2,
+        "names": [
+          "MessageSquarePlus"
+        ]
+      },
+      "MessagesSquare": {
+        "files": 1,
+        "names": [
+          "MessagesSquare"
+        ]
+      },
+      "Minimize2": {
+        "files": 3,
+        "names": [
+          "Minimize2"
+        ]
+      },
+      "Network": {
+        "files": 3,
+        "names": [
+          "Network"
+        ]
+      },
+      "PanelRight": {
+        "files": 1,
+        "names": [
+          "PanelRight"
+        ]
+      },
+      "PanelsTopLeft": {
+        "files": 2,
+        "names": [
+          "Layout"
+        ]
+      },
+      "Paperclip": {
+        "files": 1,
+        "names": [
+          "Paperclip"
+        ]
+      },
+      "Pause": {
+        "files": 1,
+        "names": [
+          "Pause"
+        ]
+      },
+      "PenLine": {
+        "files": 3,
+        "names": [
+          "Edit3",
+          "PenLine"
+        ]
+      },
+      "Pencil": {
+        "files": 19,
+        "names": [
+          "Pencil"
+        ]
+      },
+      "Pin": {
+        "files": 1,
+        "names": [
+          "Pin"
+        ]
+      },
+      "PinOff": {
+        "files": 1,
+        "names": [
+          "PinOff"
+        ]
+      },
+      "Play": {
+        "files": 3,
+        "names": [
+          "Play"
+        ]
+      },
+      "Plug": {
+        "files": 1,
+        "names": [
+          "Plug"
+        ]
+      },
+      "Plus": {
+        "files": 17,
+        "names": [
+          "Plus"
+        ]
+      },
+      "Presentation": {
+        "files": 2,
+        "names": [
+          "Presentation"
+        ]
+      },
+      "Quote": {
+        "files": 1,
+        "names": [
+          "Quote"
+        ]
+      },
+      "RefreshCw": {
+        "files": 15,
+        "names": [
+          "RefreshCw"
+        ]
+      },
+      "RotateCcw": {
+        "files": 3,
+        "names": [
+          "RotateCcw"
+        ]
+      },
+      "RotateCw": {
+        "files": 1,
+        "names": [
+          "RotateCw"
+        ]
+      },
+      "Rows3": {
+        "files": 1,
+        "names": [
+          "Rows3"
+        ]
+      },
+      "Rss": {
+        "files": 5,
+        "names": [
+          "Rss"
+        ]
+      },
+      "Save": {
+        "files": 11,
+        "names": [
+          "Save"
+        ]
+      },
+      "Scale": {
+        "files": 1,
+        "names": [
+          "Scale"
+        ]
+      },
+      "Search": {
+        "files": 15,
+        "names": [
+          "Search"
+        ]
+      },
+      "SearchX": {
+        "files": 1,
+        "names": [
+          "SearchX"
+        ]
+      },
+      "SendHorizontal": {
+        "files": 1,
+        "names": [
+          "SendHorizontal"
+        ]
+      },
+      "Server": {
+        "files": 1,
+        "names": [
+          "Server"
+        ]
+      },
+      "Settings": {
+        "files": 6,
+        "names": [
+          "Settings"
+        ]
+      },
+      "Shield": {
+        "files": 6,
+        "names": [
+          "Shield"
+        ]
+      },
+      "ShieldAlert": {
+        "files": 3,
+        "names": [
+          "ShieldAlert"
+        ]
+      },
+      "ShieldCheck": {
+        "files": 3,
+        "names": [
+          "ShieldCheck"
+        ]
+      },
+      "ShieldUser": {
+        "files": 1,
+        "names": [
+          "ShieldUser"
+        ]
+      },
+      "Signpost": {
+        "files": 1,
+        "names": [
+          "Signpost"
+        ]
+      },
+      "SlidersHorizontal": {
+        "files": 4,
+        "names": [
+          "SlidersHorizontal"
+        ]
+      },
+      "Sparkles": {
+        "files": 7,
+        "names": [
+          "Sparkles"
+        ]
+      },
+      "SquareArrowOutUpRight": {
+        "files": 1,
+        "names": [
+          "SquareArrowOutUpRight"
+        ]
+      },
+      "SquarePen": {
+        "files": 1,
+        "names": [
+          "SquarePen"
+        ]
+      },
+      "Star": {
+        "files": 3,
+        "names": [
+          "Star"
+        ]
+      },
+      "Tag": {
+        "files": 1,
+        "names": [
+          "Tag"
+        ]
+      },
+      "Telescope": {
+        "files": 1,
+        "names": [
+          "Telescope"
+        ]
+      },
+      "TextQuote": {
+        "files": 1,
+        "names": [
+          "TextQuote"
+        ]
+      },
+      "ThumbsDown": {
+        "files": 2,
+        "names": [
+          "ThumbsDown"
+        ]
+      },
+      "ThumbsUp": {
+        "files": 2,
+        "names": [
+          "ThumbsUp"
+        ]
+      },
+      "ToggleLeft": {
+        "files": 1,
+        "names": [
+          "ToggleLeft"
+        ]
+      },
+      "ToggleRight": {
+        "files": 1,
+        "names": [
+          "ToggleRight"
+        ]
+      },
+      "Trash2": {
+        "files": 23,
+        "names": [
+          "Trash2"
+        ]
+      },
+      "TriangleAlert": {
+        "files": 5,
+        "names": [
+          "AlertTriangle",
+          "TriangleAlert"
+        ]
+      },
+      "Type": {
+        "files": 3,
+        "names": [
+          "Type"
+        ]
+      },
+      "Undo2": {
+        "files": 3,
+        "names": [
+          "Undo2"
+        ]
+      },
+      "Upload": {
+        "files": 5,
+        "names": [
+          "Upload"
+        ]
+      },
+      "User": {
+        "files": 5,
+        "names": [
+          "User"
+        ]
+      },
+      "UserCog": {
+        "files": 1,
+        "names": [
+          "UserCog"
+        ]
+      },
+      "UserPlus": {
+        "files": 3,
+        "names": [
+          "UserPlus"
+        ]
+      },
+      "UserRound": {
+        "files": 1,
+        "names": [
+          "UserRound"
+        ]
+      },
+      "Users": {
+        "files": 8,
+        "names": [
+          "Users"
+        ]
+      },
+      "WandSparkles": {
+        "files": 2,
+        "names": [
+          "WandSparkles"
+        ]
+      },
+      "Workflow": {
+        "files": 1,
+        "names": [
+          "Workflow"
+        ]
+      },
+      "Wrench": {
+        "files": 2,
+        "names": [
+          "Wrench"
+        ]
+      },
+      "X": {
+        "files": 14,
+        "names": [
+          "X"
+        ]
+      }
+    }
+  }
+}

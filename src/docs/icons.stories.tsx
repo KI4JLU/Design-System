@@ -1,36 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 import { expect, within } from "storybook/test";
 import {
-  ArrowUp,
-  ArrowUpRight,
-  ChevronDown,
-  ChevronLeft,
   CircleCheck,
-  CircleX,
-  Copy,
   Download,
   Ellipsis,
-  ExternalLink,
-  Eye,
-  EyeOff,
   Home,
   Info,
-  Lock,
-  Maximize2,
   MessageSquare,
   Pencil,
   Plus,
-  RefreshCw,
-  RotateCcw,
   Search,
   Settings,
-  SlidersHorizontal,
   Trash2,
-  TriangleAlert,
-  Undo2,
-  Upload,
-  X,
 } from "lucide-react";
 import { Alert, AlertDescription } from "../components/alert";
 import { Badge } from "../components/badge";
@@ -47,6 +29,10 @@ import { PANE_TOGGLE_CLASS } from "../components/side-panel-variants";
 import { SidebarAction } from "../components/sidebar-action";
 import { SidebarCard, SidebarCardList } from "../components/sidebar-card";
 import { SidebarRailItem } from "../components/sidebar-rail";
+import { Spinner } from "../components/spinner";
+import { ICON_REGISTRY } from "./icon-registry";
+import iconUsage from "./icon-usage.json";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
 
 /* ---------------------------------------------------------------------------
  * The stories behind `Foundations/Icons` (Icons.mdx). They render real DS
@@ -345,56 +331,226 @@ export const Naming: Story = {
   },
 };
 
-/** One row of the dictionary. */
+/* -- The dictionary and the inventory -------------------------------------- */
+
+/** Which glyphs the DS components and JustRAG use — scripts/icon-usage.mjs writes both files. */
+const USAGE = iconUsage as {
+  ds: Record<string, string[]>;
+  justrag: { ref: string; icons: Record<string, { files: number; names: string[] }> };
+};
+
+/** JustRAG files importing this glyph, under any of its names. */
+const justragFiles = (name: string) => USAGE.justrag.icons[name]?.files ?? 0;
+
+/** One row of the dictionary: the action and its icons by name (`Spinner` is the DS component). */
 interface Entry {
   action: string;
-  icon: ReactNode;
-  name: string;
+  icons: string[];
+  /** Where it applies or what to avoid — `code` in backticks. */
+  note?: string;
 }
 
-/** The dictionary's icons, drawn — the table with the usage counts is in the MDX. */
-const DICTIONARY: Entry[] = [
-  { action: "Add, create", icon: <Plus size={20} />, name: "Plus" },
-  { action: "Delete", icon: <Trash2 size={20} />, name: "Trash2" },
-  { action: "Close, remove from a list", icon: <X size={20} />, name: "X" },
-  { action: "Edit, rename", icon: <Pencil size={20} />, name: "Pencil" },
-  { action: "Search", icon: <Search size={20} />, name: "Search" },
-  { action: "Download", icon: <Download size={20} />, name: "Download" },
-  { action: "Upload", icon: <Upload size={20} />, name: "Upload" },
-  { action: "Copy", icon: <Copy size={20} />, name: "Copy" },
-  { action: "Reload, retry", icon: <RefreshCw size={20} />, name: "RefreshCw" },
-  { action: "Reset to default", icon: <RotateCcw size={20} />, name: "RotateCcw" },
-  { action: "Restore, undo", icon: <Undo2 size={20} />, name: "Undo2" },
-  { action: "Settings of an item", icon: <Settings size={20} />, name: "Settings" },
-  { action: "View options", icon: <SlidersHorizontal size={20} />, name: "SlidersHorizontal" },
-  { action: "More actions", icon: <Ellipsis size={20} />, name: "Ellipsis" },
-  { action: "Opens another page", icon: <ArrowUpRight size={20} />, name: "ArrowUpRight" },
-  { action: "Opens outside the app", icon: <ExternalLink size={20} />, name: "ExternalLink" },
-  { action: "Back (direction)", icon: <ChevronLeft size={20} />, name: "ChevronLeft" },
-  { action: "Expand, collapse", icon: <ChevronDown size={20} />, name: "ChevronDown" },
-  { action: "Full screen", icon: <Maximize2 size={20} />, name: "Maximize2" },
-  { action: "Show / hide", icon: <><Eye size={20} /><EyeOff size={20} /></>, name: "Eye · EyeOff" },
-  { action: "Locked", icon: <Lock size={20} />, name: "Lock" },
-  { action: "Send", icon: <ArrowUp size={20} />, name: "ArrowUp" },
-  { action: "Information", icon: <Info size={20} />, name: "Info" },
-  { action: "Success", icon: <CircleCheck size={20} />, name: "CircleCheck" },
-  { action: "Warning", icon: <TriangleAlert size={20} />, name: "TriangleAlert" },
-  { action: "Error", icon: <CircleX size={20} />, name: "CircleX" },
+const DICTIONARY: { group: string; entries: Entry[] }[] = [
+  {
+    group: "Actions",
+    entries: [
+      { action: "Add, create", icons: ["Plus"] },
+      { action: "Delete", icons: ["Trash2"], note: "always with a destructive `Button` variant" },
+      { action: "Close; remove from a list", icons: ["X"] },
+      { action: "Edit, rename", icons: ["Pencil"], note: "not `PenLine` (`Edit3`)" },
+      { action: "New chat", icons: ["SquarePen"], note: "the head of the history column" },
+      { action: "Search", icons: ["Search"] },
+      { action: "Download / upload", icons: ["Download", "Upload"] },
+      { action: "Copy", icons: ["Copy"] },
+      { action: "Save", icons: ["Save"] },
+      { action: "Reload, retry", icons: ["RefreshCw"] },
+      { action: "Reset to the default", icons: ["RotateCcw"] },
+      { action: "Undo / redo", icons: ["Undo2", "Redo2"] },
+      { action: "Settings of an item", icons: ["Settings"] },
+      { action: "View options (columns, layout)", icons: ["SlidersHorizontal"] },
+      { action: "Filter a list", icons: ["ListFilter"], note: "`SidebarFilterMenu`" },
+      { action: "Sort", icons: ["ArrowUpDown"] },
+      { action: "More actions", icons: ["Ellipsis"], note: "`ActionMenu`'s trigger" },
+      { action: "Opens another page of the app", icons: ["ArrowUpRight"], note: "`ActionMenu` `opensPage`" },
+      { action: "Opens outside the app, a new tab", icons: ["ExternalLink"] },
+      { action: "Send", icons: ["ArrowUp"], note: "the composer's button" },
+      { action: "Share, members", icons: ["Users", "UserPlus"] },
+      { action: "Log out", icons: ["LogOut"] },
+    ],
+  },
+  {
+    group: "Sidebar: sections and rows",
+    entries: [
+      { action: "Fold / unfold a section", icons: ["ChevronDown", "ChevronRight"], note: "`SidebarSection`, also `Accordion`" },
+      { action: "Fold the other sections", icons: ["ChevronsDownUp"] },
+      { action: "New section", icons: ["FolderPlus"] },
+      { action: "Move up / down", icons: ["ArrowUp", "ArrowDown"], note: "a section or a row, in its menu" },
+      { action: "Move a row into / out of a section", icons: ["FolderInput", "FolderMinus"] },
+      { action: "Pin / unpin a row", icons: ["Pin", "PinOff"] },
+      { action: "Drag to reorder", icons: ["GripVertical", "GripHorizontal"], note: "`Sortable`'s handles" },
+      { action: "The chosen option in a menu", icons: ["Check"], note: "`SidebarFilterMenu`, `Select`, menus" },
+      { action: "A chat / a branched chat", icons: ["MessageSquare", "GitBranch"] },
+      { action: "Favourite", icons: ["Star"] },
+    ],
+  },
+  {
+    group: "Navigation and panels",
+    entries: [
+      { action: "Back, previous (a direction)", icons: ["ChevronLeft"], note: "history, pagination, `BreadcrumbBack`" },
+      { action: "Open / close the left column", icons: ["PanelLeftOpen", "PanelLeftClose"], note: "`AppShell`, `SidePanel`" },
+      { action: "Open / close the right column", icons: ["PanelRightOpen", "PanelRightClose"], note: "`AppShell`, `SidePanel`" },
+      { action: "Full screen / leave it", icons: ["Maximize2", "Minimize2"] },
+      { action: "Show / hide", icons: ["Eye", "EyeOff"] },
+      { action: "Home", icons: ["House"] },
+    ],
+  },
+  {
+    group: "Status",
+    entries: [
+      { action: "Information", icons: ["Info"] },
+      { action: "Success / warning / error", icons: ["CircleCheck", "TriangleAlert", "CircleX"], note: "`Alert`'s tones" },
+      { action: "Locked", icons: ["Lock"] },
+      { action: "Loading", icons: ["Spinner"], note: "the `Spinner` component, not a bare `LoaderCircle`" },
+    ],
+  },
 ];
 
-/** **The dictionary, drawn.** One icon per action, at 20px. */
+/** `code` spans in a note, as the rest of the page sets them. */
+function withCode(text: string) {
+  return text.split(/(`[^`]+`)/).map((part, i) =>
+    part.startsWith("`") ? (
+      <code key={i} className="font-mono text-xs">
+        {part.slice(1, -1)}
+      </code>
+    ) : (
+      part
+    ),
+  );
+}
+
+function DictionaryIcon({ name }: { name: string }) {
+  // A looked-up lucide component, the same object on every render.
+  const glyph = ICON_REGISTRY[name];
+  return (
+    <span data-slot="dictionary-icon" className="flex items-center gap-2">
+      <span className="flex size-5 shrink-0 items-center justify-center text-on-surface">
+        {name === "Spinner" ? <Spinner label="Beispiel: wird geladen" /> : glyph && createElement(glyph, { size: 20, "aria-hidden": true })}
+      </span>
+      <code className="font-mono text-xs text-on-surface-variant">{name}</code>
+    </span>
+  );
+}
+
+/**
+ * **The dictionary.** One icon per action, drawn at 20px beside its name, in
+ * groups — and in how many JustRAG files each is imported (any of its names).
+ *
+ * `play` oracle: every row draws as many icons as it names [the DOM].
+ */
 export const Dictionary: Story = {
   render: () => (
-    <div className="grid w-[720px] grid-cols-3 gap-x-6 gap-y-2">
-      {DICTIONARY.map((e) => (
-        <div key={e.name} className="flex items-center gap-3 text-sm text-on-surface">
-          <span className="flex w-11 shrink-0 gap-1 text-on-surface-variant">{e.icon}</span>
-          <span className="min-w-0">
-            {e.action}
-            <span className="block font-mono text-xs text-on-surface-variant">{e.name}</span>
-          </span>
-        </div>
+    <Table aria-label="Icon per action" className="max-w-[56rem]">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Action</TableHead>
+          <TableHead>Icon</TableHead>
+          <TableHead>JustRAG files</TableHead>
+        </TableRow>
+      </TableHeader>
+      {DICTIONARY.map(({ group, entries }) => (
+        <TableBody key={group}>
+          <TableRow>
+            <TableHead section colSpan={3}>
+              {group}
+            </TableHead>
+          </TableRow>
+            {entries.map((e) => (
+              <TableRow key={e.action} data-icons={e.icons.length}>
+                <TableCell>{e.action}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    {e.icons.map((name) => (
+                      <DictionaryIcon key={name} name={name} />
+                    ))}
+                  </div>
+                  {e.note && <div className="mt-1 text-xs text-on-surface-variant">{withCode(e.note)}</div>}
+                </TableCell>
+                <TableCell className="text-on-surface-variant">
+                  {e.icons.map((name) => (name === "Spinner" ? "—" : String(justragFiles(name)))).join(" / ")}
+                </TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
       ))}
-    </div>
+    </Table>
   ),
+  play: async ({ canvasElement }) => {
+    const rows = [...canvasElement.querySelectorAll<HTMLTableRowElement>("tr[data-icons]")];
+    await expect(rows).toHaveLength(DICTIONARY.flatMap((g) => g.entries).length);
+    for (const row of rows) {
+      const drawn = row.querySelectorAll("[data-slot=dictionary-icon] svg").length;
+      await expect([row.cells[0].textContent, drawn]).toEqual([row.cells[0].textContent, Number(row.dataset.icons)]);
+    }
+  },
+};
+
+interface InventoryItem {
+  name: string;
+  aliases: string[];
+  components: string[];
+  justrag: number;
+}
+
+/** Every glyph a DS component draws or JustRAG imports, by its current name. */
+const INVENTORY: InventoryItem[] = Object.keys(ICON_REGISTRY)
+  .sort()
+  .map((name) => ({
+    name,
+    aliases: (USAGE.justrag.icons[name]?.names ?? []).filter((n) => n !== name),
+    components: USAGE.ds[name] ?? [],
+    justrag: justragFiles(name),
+  }));
+
+function InventoryGlyph({ name }: { name: string }) {
+  return createElement(ICON_REGISTRY[name], { size: 20, "aria-hidden": true, className: "mt-0.5 shrink-0" });
+}
+
+/**
+ * **Every icon in use** — each one a DS component draws or JustRAG imports
+ * (`src/docs/icon-usage.json`, written by `scripts/icon-usage.mjs`). One tile
+ * per glyph: its current name, the other names JustRAG imports it as, the
+ * components that draw it, the JustRAG files that import it.
+ *
+ * `play` oracle: every tile draws its icon, and `SidebarSection`'s chevrons
+ * and `Sortable`'s grips are among them [the DOM].
+ */
+export const Inventory: Story = {
+  render: () => (
+    <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-x-6 gap-y-3 p-0">
+      {INVENTORY.map(({ name, aliases, components, justrag }) => (
+        <li key={name} data-slot="inventory-icon" data-name={name} className="flex items-start gap-3 text-sm text-on-surface">
+          <InventoryGlyph name={name} />
+          <span className="min-w-0">
+            <code className="font-mono text-xs">{name}</code>
+            {aliases.length > 0 && (
+              <span className="block text-xs text-on-surface-variant">imported as {aliases.join(", ")}</span>
+            )}
+            <span className="block text-xs text-on-surface-variant">
+              {[components.length > 0 && `DS: ${components.join(", ")}`, justrag > 0 && `JustRAG: ${justrag}`]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  ),
+  play: async ({ canvasElement }) => {
+    const tiles = [...canvasElement.querySelectorAll<HTMLElement>("[data-slot=inventory-icon]")];
+    for (const tile of tiles) await expect([tile.dataset.name, tile.querySelectorAll("svg").length]).toEqual([tile.dataset.name, 1]);
+    const names = tiles.map((t) => t.dataset.name);
+    for (const name of ["ChevronDown", "ChevronRight", "GripVertical", "GripHorizontal", "ListFilter"]) {
+      await expect(names).toContain(name);
+    }
+  },
 };
