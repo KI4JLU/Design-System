@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import { List, Search, Settings } from "lucide-react";
@@ -11,6 +11,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
+  ComboboxLoading,
   ComboboxSeparator,
 } from "./combobox";
 import { Button } from "./button";
@@ -664,5 +665,147 @@ export const Invalid: Story = {
         Math.abs(panel.getBoundingClientRect().height - input.getBoundingClientRect().height),
       ).toBeLessThan(0.5);
     });
+  },
+};
+
+/* ------------------------------------------------------------------------ */
+/* Server mode: the app filters, the list waits                             */
+/* ------------------------------------------------------------------------ */
+
+/** The „server's" index: a name, and words from the document's text. */
+const INDEX: { group: string; name: string; text: string }[] = [
+  { group: "Themen", name: "Prüfungsordnung Informatik", text: "Fristen Wiederholung Anerkennung" },
+  { group: "Themen", name: "Modulhandbuch", text: "Leistungspunkte Module" },
+  { group: "Themen", name: "Promotionsordnung", text: "Gutachten Disputation" },
+  { group: "Quellen", name: "Prüfungsordnung.docx", text: "Anmeldefrist Rücktritt Prüfungsamt" },
+  { group: "Quellen", name: "Modulhandbuch_2026.pdf", text: "Module Leistungspunkte" },
+];
+
+/** The answer the „server" gives: matches by name OR by text, per group. */
+function search(query: string) {
+  const q = query.trim().toLowerCase();
+  const hits = INDEX.filter((e) => e.name.toLowerCase().includes(q) || e.text.toLowerCase().includes(q));
+  return ["Themen", "Quellen"]
+    .map((group) => [group, hits.filter((h) => h.group === group).map((h) => h.name)] as const)
+    .filter(([, names]) => names.length > 0);
+}
+
+/**
+ * JustRAG's global search (`GlobalSearch.tsx`): `shouldFilter={false}` — the
+ * app asks its server and renders what comes back — with a controlled
+ * `open` that opens from two characters. While a request runs,
+ * `ComboboxLoading` stands in the panel; `ComboboxEmpty` only once an answer
+ * came back empty. A newer query supersedes an older one (the app's job).
+ */
+function ServerSearch({ delay = 400 }: { delay?: number }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<ReturnType<typeof search>>([]);
+  const latest = useRef(0);
+
+  const onQuery = (value: string) => {
+    setQuery(value);
+    setOpen(true);
+    const id = ++latest.current;
+    if (value.trim().length < 2) {
+      setLoading(false);
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    window.setTimeout(() => {
+      // An answer to an older query is dropped.
+      if (latest.current !== id) return;
+      setResults(search(value));
+      setLoading(false);
+    }, delay);
+  };
+
+  return (
+    <div className="max-w-md">
+      <Combobox shouldFilter={false} open={open && query.trim().length >= 2} onOpenChange={setOpen}>
+        <ComboboxInput
+          aria-label="Themen, Quellen und Chats durchsuchen"
+          placeholder="Themen, Quellen und Chats durchsuchen"
+          leadingIcon={<Search />}
+          value={query}
+          onValueChange={onQuery}
+        />
+        <ComboboxContent>
+          {loading ? <ComboboxLoading label="Suche läuft …">Suche läuft …</ComboboxLoading> : null}
+          {loading ? null : <ComboboxEmpty>Keine Treffer</ComboboxEmpty>}
+          <ComboboxList>
+            {loading
+              ? null
+              : results.map(([group, names], i) => (
+                  <div key={group}>
+                    {i > 0 ? <ComboboxSeparator alwaysRender /> : null}
+                    <ComboboxGroup heading={group}>
+                      {names.map((name) => (
+                        <ComboboxItem key={name} value={name}>
+                          {name}
+                        </ComboboxItem>
+                      ))}
+                    </ComboboxGroup>
+                  </div>
+                ))}
+          </ComboboxList>
+          <ComboboxFooter>In allen Themen</ComboboxFooter>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  );
+}
+
+/**
+ * **Server mode**, as JustRAG's search runs. `play` oracles [ARIA; text]:
+ * - one character opens nothing (the app's two-character rule);
+ * - while the answer is pending the panel shows a `progressbar` named
+ *   „Suche läuft …" and no option, and no „Keine Treffer" — an answer that
+ *   has not come is not an empty one;
+ * - the answer brings its groups and options as sent; a hit in a
+ *   document's text („Anmeldefrist" → „Prüfungsordnung.docx") is shown
+ *   although its name does not match — cmdk does not filter again;
+ * - an empty answer shows „Keine Treffer" and no option.
+ */
+export const ServerMode: Story = {
+  render: () => <ServerSearch />,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const body = page(canvasElement);
+    const input = canvas.getByRole("combobox", { name: "Themen, Quellen und Chats durchsuchen" });
+
+    await userEvent.type(input, "p");
+    await expect(body.queryByRole("listbox")).toBeNull();
+
+    await userEvent.type(input, "r");
+    await expect(await body.findByRole("progressbar", { name: "Suche läuft …" })).toBeVisible();
+    await expect(body.queryAllByRole("option")).toHaveLength(0);
+    await expect(body.queryByText("Keine Treffer")).toBeNull();
+
+    await waitFor(() => expect(body.queryByRole("progressbar")).toBeNull(), { timeout: 3000 });
+    const listbox = await body.findByRole("listbox");
+    await waitFor(() => expect(within(listbox).getAllByRole("group").length).toBe(2));
+    await expect(within(listbox).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Prüfungsordnung Informatik",
+      "Promotionsordnung",
+      "Prüfungsordnung.docx",
+    ]);
+
+    // A hit in the document's text, not in its name: only the server knows
+    // it, and the list must show it as sent (cmdk would filter it out).
+    await userEvent.clear(input);
+    await userEvent.type(input, "Anmeldefrist");
+    await waitFor(() => expect(body.queryByRole("progressbar")).toBeNull(), { timeout: 3000 });
+    await waitFor(() =>
+      expect(within(body.getByRole("listbox")).getAllByRole("option").map((o) => o.textContent)).toEqual([
+        "Prüfungsordnung.docx",
+      ]),
+    );
+
+    await userEvent.type(input, "xyz");
+    await waitFor(() => expect(body.queryByRole("progressbar")).toBeNull(), { timeout: 3000 });
+    await expect(await body.findByText("Keine Treffer")).toBeVisible();
+    await expect(body.queryAllByRole("option")).toHaveLength(0);
   },
 };
