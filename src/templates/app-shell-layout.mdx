@@ -21,6 +21,15 @@ column, and the page brings its own heading — the `Overview` story.
 
 <Canvas of={AppShellLayoutStories.Overview} />
 
+The overview's other two pages are the same shell with another page and
+another current row (fixture prop `section`): „Geteiltes Wissen" — topics
+shared with you and public topics you subscribed to — and „Entdecken", the
+catalog of public topics with „Abonnieren".
+
+<Canvas of={AppShellLayoutStories.SharedTopics} />
+
+<Canvas of={AppShellLayoutStories.DiscoverTopics} />
+
 ```
 | left SidePanel column    | main column                                  | right column (optional)  |
 | header: logo + toggle    | bar h-14: pageLabel | search | headerActions | header: toggle + title   |

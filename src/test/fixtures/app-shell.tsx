@@ -112,6 +112,8 @@ export interface AppShellFixtureProps
    * stories measure; the page stories pass the name their page shows.
    */
   topic?: string;
+  /** `overview` only: the page the navigation marks as current. Default „Mein Wissen". */
+  section?: OverviewSection;
 }
 
 /** The reason a locked sources card gives (JLURAG `sourcesLockedReason`). */
@@ -145,10 +147,11 @@ export function AppShellFixture({
   sourcesLocked,
   emptyTopic,
   topic,
+  section,
   ...props
 }: AppShellFixtureProps) {
   return context === "overview" ? (
-    <OverviewShell {...props} />
+    <OverviewShell section={section} {...props} />
   ) : (
     <WorkspaceShell
       rightWidth={rightWidth}
@@ -162,7 +165,7 @@ export function AppShellFixture({
 
 type ContextProps = Omit<
   AppShellFixtureProps,
-  "context" | "rightWidth" | "sourcesLocked" | "emptyTopic" | "topic"
+  "context" | "rightWidth" | "sourcesLocked" | "emptyTopic" | "topic" | "section"
 >;
 
 const userMenu = <UserMenuWithSettings initials="JL" name="Jamie Lee" role="Admin" />;
@@ -174,30 +177,33 @@ const OVERVIEW_TABS: MobilePaneTab[] = [
   { id: "page", icon: <LayoutGrid aria-hidden="true" />, label: "Inhalt", pane: "main" },
 ];
 
+/** The overview's pages, in JLURAG's order (`AppChrome.tsx`). */
+const OVERVIEW_SECTIONS = [
+  { id: "mine", label: "Mein Wissen", icon: Home },
+  { id: "shared", label: "Geteiltes Wissen", icon: Users },
+  { id: "discover", label: "Entdecken", icon: Compass },
+] as const;
+
+export type OverviewSection = (typeof OVERVIEW_SECTIONS)[number]["id"];
+
 /**
  * The overview's NavItem rows, bare. Every row carries `label` and wraps its
  * text in a `<span>`: the first permits the icon-only form in the rail, the
  * second is what the collapsed variant hides.
  */
-function OverviewNavRows() {
+function OverviewNavRows({ section }: { section: OverviewSection }) {
   return (
     <>
       <NavItem type="button" label="Suchen">
         <Search size={20} aria-hidden="true" />
         <span>Suchen</span>
       </NavItem>
-      <NavItem type="button" label="Mein Wissen" active>
-        <Home size={20} aria-hidden="true" />
-        <span>Mein Wissen</span>
-      </NavItem>
-      <NavItem type="button" label="Geteiltes Wissen">
-        <Users size={20} aria-hidden="true" />
-        <span>Geteiltes Wissen</span>
-      </NavItem>
-      <NavItem type="button" label="Entdecken">
-        <Compass size={20} aria-hidden="true" />
-        <span>Entdecken</span>
-      </NavItem>
+      {OVERVIEW_SECTIONS.map(({ id, label, icon: Icon }) => (
+        <NavItem key={id} type="button" label={label} active={id === section}>
+          <Icon size={20} aria-hidden="true" />
+          <span>{label}</span>
+        </NavItem>
+      ))}
     </>
   );
 }
@@ -209,25 +215,25 @@ function OverviewNavRows() {
  * it renders no head and its list starts on the rail's 16px inset (KI-852):
  * `CollapsedRailKeepsVerticalPositions` measures exactly this composition.
  */
-function OverviewNav() {
+function OverviewNav({ section }: { section: OverviewSection }) {
   const collapsed = useSidebarCollapsed();
-  if (collapsed) return <OverviewNavRows />;
+  if (collapsed) return <OverviewNavRows section={section} />;
   return (
     <SidebarPanel>
       <div className="flex flex-col gap-2">
-        <OverviewNavRows />
+        <OverviewNavRows section={section} />
       </div>
     </SidebarPanel>
   );
 }
 
-function OverviewShell(props: ContextProps) {
+function OverviewShell({ section = "mine", ...props }: ContextProps & { section?: OverviewSection }) {
   const [leftOpen, setLeftOpen] = useState(true);
   const [tab, setTab] = useState("page");
   return (
     <AppShellLayout
       logo={<Logo product="RAG" />}
-      nav={<OverviewNav />}
+      nav={<OverviewNav section={section} />}
       navLabel="Hauptnavigation"
       sidebarFooter={userMenu}
       leftOpen={leftOpen}

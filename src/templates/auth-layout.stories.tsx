@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { composeStories } from "@storybook/react-vite";
 import { KeyRound } from "lucide-react";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { AuthLayout } from "./auth-layout";
 import { Logo } from "../components/logo";
 import { Button } from "../components/button";
@@ -57,39 +57,80 @@ export const SSO: Story = {
   ),
 };
 
-/** Fallback-Variante für lokale Konten (ohne SSO) — Felder aus den Form-Primitives. */
+/**
+ * Local accounts (the fallback without SSO), as JustRAG's `Login.tsx`
+ * (`development`) renders it: the wordmark over the card, „Willkommen zurück"
+ * as the page's `<h1>` (`headingLevel={1}`), username and password with
+ * their placeholders, „Anmelden"; under the card the language switch and the
+ * legal links (JustRAG's `Footer.tsx`). The fields come from the form
+ * primitives.
+ *
+ * `play` oracles [ARIA]: „Willkommen zurück" is the page's only `<h1>`; the
+ * two fields are labelled „Benutzername" and „Passwort" and fill in as
+ * username and current password (`autocomplete`); the footer holds the
+ * language switch and the four legal links in JustRAG's order.
+ */
 export const Login: Story = {
   args: {
-    title: "Anmelden",
-    description: "Plattform-Verwaltung der JLU.",
+    title: "Willkommen zurück",
+    headingLevel: 1,
+    description: "Melde dich an, um auf deine Knowledge Base zuzugreifen",
   },
   render: (args) => (
     <AuthLayout
       {...args}
-      logo={brand}
+      logo={<Logo product="RAG" size="lg" />}
       footer={
-        <a href="#passwort" className="underline underline-offset-4 hover:text-on-surface">
-          Passwort vergessen?
-        </a>
+        <>
+          <Button variant="outline" size="icon" type="button" aria-label="Switch to English" title="Switch to English">
+            DE
+          </Button>
+          <nav aria-label="Rechtliches" className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-xs">
+            {["Impressum", "Nutzungsbedingungen", "Datenschutz", "Barrierefreiheit"].map((label, i) => (
+              <span key={label} className="flex items-center gap-x-2">
+                {i > 0 && <span aria-hidden="true">·</span>}
+                <a href={`#${label.toLowerCase()}`} className="py-2 hover:text-on-surface">
+                  {label}
+                </a>
+              </span>
+            ))}
+          </nav>
+        </>
       }
     >
       <Stack gap="md">
         <FormItem>
-          <FormLabel>E-Mail</FormLabel>
+          <FormLabel>Benutzername</FormLabel>
           <FormControl>
-            <Input type="email" autoComplete="username" />
+            <Input type="text" autoComplete="username" placeholder="Gib deinen Benutzernamen ein" />
           </FormControl>
         </FormItem>
         <FormItem>
           <FormLabel>Passwort</FormLabel>
           <FormControl>
-            <Input type="password" autoComplete="current-password" />
+            <Input type="password" autoComplete="current-password" placeholder="••••••••" />
           </FormControl>
         </FormItem>
-        <Button className="w-full">Anmelden</Button>
+        <Button type="submit" className="w-full">
+          Anmelden
+        </Button>
       </Stack>
     </AuthLayout>
   ),
+  play: async ({ canvas }) => {
+    const headings = canvas.getAllByRole("heading", { level: 1 });
+    await expect(headings.map((h) => h.textContent)).toEqual(["Willkommen zurück"]);
+    await expect(canvas.getByLabelText("Benutzername")).toHaveAttribute("autocomplete", "username");
+    await expect(canvas.getByLabelText("Passwort")).toHaveAttribute("autocomplete", "current-password");
+    await expect(canvas.getByRole("button", { name: "Switch to English" })).toHaveTextContent("DE");
+    const legal = within(canvas.getByRole("navigation", { name: "Rechtliches" }));
+    await expect(legal.getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Impressum",
+      "Nutzungsbedingungen",
+      "Datenschutz",
+      "Barrierefreiheit",
+    ]);
+  },
 };
 
 /** Fehlerzustand — Feld-Story aus den Form-Stories, im Template platziert. */

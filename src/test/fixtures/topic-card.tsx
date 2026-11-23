@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import {
+  Check,
   Clock,
   FileText,
   Globe,
   Lock,
   MessageSquare,
   Pencil,
+  Plus,
   RefreshCw,
   Settings,
   Star,
@@ -21,15 +23,17 @@ import {
   Card,
   CardBand,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHairline,
+  CardMeta,
   CardTitle,
 } from "../../components/card";
 import { cardNeutralAccent } from "../../components/card-variants";
 import { ScrollingText } from "../../components/scrolling-text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../components/tooltip";
 import { cn } from "../../lib/utils";
-import type { Topic } from "./topics";
+import type { CatalogEntry, Topic } from "./topics";
 
 /* ---------------------------------------------------------------------------
  * Story fixture — the topic card of JLURAG's overview pages („Mein Wissen",
@@ -191,7 +195,7 @@ export function TopicCard({ topic }: { topic: Topic }) {
               <MetaLine icon={<RefreshCw size={16} aria-hidden="true" />} label="Aktualisiert" value={topic.updated} />
             )}
             {topic.owner && (
-              <MetaLine icon={<User size={16} aria-hidden="true" />} label="Geteilt von" value={topic.owner} />
+              <MetaLine icon={<User size={16} aria-hidden="true" />} label="von" value={topic.owner} />
             )}
           </div>
         </CardContent>
@@ -267,6 +271,108 @@ export function TopicRow({ topic }: { topic: Topic }) {
           label={`Aktionen: ${topic.name}`}
           triggerClassName="size-7 rounded-[var(--ui-radius-control)]"
         />
+      </div>
+    </Card>
+  );
+}
+
+/* -- „Entdecken": the catalog (JLURAG `KbCatalogPanel.tsx`) ---------------- */
+
+/** „Abonnieren", or — once subscribed — „Abonniert" as a pressed toggle. */
+function SubscribeButton({ entry }: { entry: CatalogEntry }) {
+  return (
+    <Button
+      size="sm"
+      variant={entry.subscribed ? "outline" : "default"}
+      className="shrink-0"
+      aria-pressed={entry.subscribed}
+      aria-label={`${entry.subscribed ? "Abonniert" : "Abonnieren"}: ${entry.name}`}
+      title={entry.subscribed ? "Abbestellen" : undefined}
+    >
+      {entry.subscribed ? (
+        <Check className="size-4" aria-hidden="true" />
+      ) : (
+        <Plus className="size-4" aria-hidden="true" />
+      )}
+      {entry.subscribed ? "Abonniert" : "Abonnieren"}
+    </Button>
+  );
+}
+
+function Documents({ n }: { n: number }) {
+  return (
+    <Badge>
+      <FileText size={12} aria-hidden="true" />
+      {n === 1 ? "1 Dokument" : `${n} Dokumente`}
+    </Badge>
+  );
+}
+
+/**
+ * A catalog topic as a card: name and „Abonnieren" in the band, the category
+ * on the rule, the description, then size and „Stand".
+ */
+export function CatalogCard({ entry }: { entry: CatalogEntry }) {
+  return (
+    <Card interactive accentColor={entry.category?.color} data-topic={entry.id} className="h-full cursor-pointer">
+      <CardBand>
+        <CardTitle>
+          <button type="button" className="cursor-pointer text-left" aria-label={`Thema öffnen: ${entry.name}`}>
+            {entry.name}
+          </button>
+        </CardTitle>
+        <SubscribeButton entry={entry} />
+      </CardBand>
+      <CardHairline>{entry.category && <CategoryPill category={entry.category} onHairline />}</CardHairline>
+      <CardContent>
+        <CardDescription className="line-clamp-3 leading-6 text-on-surface">{entry.description}</CardDescription>
+      </CardContent>
+      <CardFooter>
+        <CardMeta className="text-xs">
+          <Documents n={entry.files} />
+          <span>Stand {entry.asOf}</span>
+        </CardMeta>
+      </CardFooter>
+    </Card>
+  );
+}
+
+/** The catalog list's columns: topic, sources, „Stand", subscribe. */
+const CATALOG_COLUMNS = "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 md:grid-cols-[minmax(0,1fr)_7rem_7rem_9rem] [&>*:nth-child(2)]:max-md:hidden [&>*:nth-child(3)]:max-md:hidden";
+
+/** The catalog rows' column labels — `GridLayout`'s `listHeader`. */
+export function CatalogListHeader() {
+  return (
+    <div aria-hidden="true" className={`${CATALOG_COLUMNS} border-l-4 border-transparent pr-3 pl-4 text-xs font-medium text-on-surface-variant`}>
+      <span>Thema</span>
+      <span className="text-right">Quellen</span>
+      <span className="text-right">Stand</span>
+      <span />
+    </div>
+  );
+}
+
+/** A catalog topic as a row — the `list` view. */
+export function CatalogRow({ entry }: { entry: CatalogEntry }) {
+  return (
+    <Card
+      accent
+      tint={!!entry.category}
+      accentColor={entry.category?.color ?? cardNeutralAccent}
+      interactive
+      data-topic={entry.id}
+      className={`${CATALOG_COLUMNS} cursor-pointer items-center py-3 pr-3 pl-4`}
+    >
+      <div className="flex min-w-0 flex-col items-start gap-1">
+        <span className="max-w-full truncate font-semibold text-on-surface">{entry.name}</span>
+        {entry.category && <CategoryPill category={entry.category} />}
+      </div>
+      <div className="flex justify-end">
+        <Documents n={entry.files} />
+      </div>
+      <span className="truncate text-right text-sm text-on-surface-variant">{entry.asOf}</span>
+      <div className="flex justify-end">
+        <SubscribeButton entry={entry} />
       </div>
     </Card>
   );

@@ -22,6 +22,7 @@ import {
 import * as chatStageStories from "../components/chat-stage.stories";
 import * as dashboardStories from "./dashboard-layout.stories";
 import { MeinWissen } from "../test/fixtures/mein-wissen";
+import { Entdecken, GeteiltesWissen } from "../test/fixtures/overview-pages";
 import {
   CHAT_FOOTER,
   FIRST_SOURCE_TITLE,
@@ -227,6 +228,107 @@ export const Overview: Story = {
     const region = within(main).getByRole("region", { name: "Mein Wissen" });
     await expect(within(region).getByRole("heading", { level: 1, name: "Mein Wissen" })).toBeVisible();
     await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  },
+};
+
+/**
+ * The navigation marks `name` as the current page, and `<main>` holds the
+ * region of that name with the page's only `<h1>`. Oracle: the ARIA tree
+ * (`aria-current`, `region`, `heading`).
+ */
+async function expectOverviewPage(canvas: ReturnType<typeof within>, name: string) {
+  const nav = within(canvas.getByRole("navigation", { name: "Hauptnavigation" }));
+  await expect(nav.getByRole("button", { name })).toHaveAttribute("aria-current");
+  for (const other of ["Mein Wissen", "Geteiltes Wissen", "Entdecken"].filter((n) => n !== name)) {
+    await expect(nav.getByRole("button", { name: other })).not.toHaveAttribute("aria-current");
+  }
+  const region = within(canvas.getByRole("main")).getByRole("region", { name });
+  await expect(within(region).getByRole("heading", { level: 1, name })).toBeVisible();
+  await expect(canvas.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+}
+
+/**
+ * **„Geteiltes Wissen"** — JLURAG's `SharedTopicsView.tsx` (`development`;
+ * screenshot of rag-test, 20.11.2026): the topics somebody shared with you
+ * and the public topics you subscribed to in „Entdecken", on the same
+ * `GridLayout` as „Mein Wissen" (`overview-pages` fixture). A shared card
+ * names its owner („von …") and its sharing („Geteilt (2)", „Öffentlich").
+ *
+ * `play` oracles [ARIA; text]: the navigation marks the page, which holds
+ * the only `<h1>` (`expectOverviewPage`); the filters offer „Favoriten" but
+ * not „Privat" / „Geteilt" — every topic here is shared; no card is private,
+ * the shared ones name their owner; the primary action is „Thema
+ * hinzufügen", the way to „Entdecken".
+ */
+export const SharedTopics: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={null} bar={false} section="shared">
+      <GeteiltesWissen />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas }) => {
+    await expectOverviewPage(canvas, "Geteiltes Wissen");
+    const page = within(canvas.getByRole("main"));
+    const filters = within(page.getByRole("group", { name: "Themen filtern" }));
+    await expect(filters.getByRole("button", { name: "Favoriten" })).toBeInTheDocument();
+    await expect(filters.queryByRole("button", { name: "Privat" })).toBeNull();
+    await expect(filters.queryByRole("button", { name: "Geteilt" })).toBeNull();
+    await expect(page.queryByText("Privat")).toBeNull();
+    await expect(page.getByText("Dr. Anna Weber")).toBeInTheDocument();
+    await expect(page.getByText("Öffentlich")).toBeInTheDocument();
+    await expect(page.getByRole("button", { name: "Thema hinzufügen" })).toBeVisible();
+  },
+};
+
+/**
+ * **„Entdecken"** — JLURAG's catalog (`DiscoverView.tsx`,
+ * `KbCatalogPanel.tsx`): public topics anyone at the university may
+ * subscribe to. A catalog card carries „Abonnieren" — or, once subscribed,
+ * „Abonniert" as a pressed toggle — in its band, the description, the size
+ * and „Stand …". No „Favoriten" chip (a favourite is a topic you already
+ * hold) and no primary action. JLURAG lays the catalog out at most two cards
+ * per row with its own list — the band holds the name and the subscribe
+ * button, too much for a 17.5rem cell; the fixture uses `GridLayout` and sets
+ * the two columns through `renderGroup`, since the template has no option
+ * for wider cells (an open point for the owner).
+ *
+ * `play` oracles [ARIA; text]: the navigation marks the page, which holds the
+ * only `<h1>`; no „Favoriten" chip, no „Thema hinzufügen" / „Neues Thema";
+ * exactly one entry is subscribed — its toggle pressed — and the others
+ * offer „Abonnieren", not pressed; two cards per row at the runner's 1280px
+ * window [the boxes] — at that width the template's own grid gives two as
+ * well, so the check does not tell the fixture's cap from it; the cap
+ * matters on wider screens, which the runner does not reach; the
+ * subscribed card shows „1 Dokument" and its „Stand".
+ */
+export const DiscoverTopics: Story = {
+  render: () => (
+    <AppShellFixture context="overview" search={null} bar={false} section="discover">
+      <Entdecken />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas }) => {
+    await expectOverviewPage(canvas, "Entdecken");
+    const page = within(canvas.getByRole("main"));
+    const filters = within(page.getByRole("group", { name: "Themen filtern" }));
+    await expect(filters.queryByRole("button", { name: "Favoriten" })).toBeNull();
+    await expect(page.queryByRole("button", { name: /Thema hinzufügen|Neues Thema/ })).toBeNull();
+
+    const subscribed = page.getAllByRole("button", { name: /^Abonniert: / });
+    await expect(subscribed).toHaveLength(1);
+    await expect(subscribed[0]).toHaveAttribute("aria-pressed", "true");
+    const offers = page.getAllByRole("button", { name: /^Abonnieren: / });
+    await expect(offers.length).toBeGreaterThan(0);
+    for (const offer of offers) await expect(offer).toHaveAttribute("aria-pressed", "false");
+
+    // Two cards per row: the second card starts on the first one's row.
+    const cards = Array.from(canvas.getByRole("main").querySelectorAll<HTMLElement>("[data-topic]"));
+    await expect(cards[1].getBoundingClientRect().top).toBe(cards[0].getBoundingClientRect().top);
+    await expect(cards[2].getBoundingClientRect().top).toBeGreaterThan(cards[0].getBoundingClientRect().bottom);
+
+    const card = subscribed[0].closest("[data-topic]") as HTMLElement;
+    await expect(within(card).getByText("1 Dokument")).toBeInTheDocument();
+    await expect(within(card).getByText("Stand 16.10.2026")).toBeInTheDocument();
   },
 };
 

@@ -21,7 +21,7 @@ export interface Topic {
   visibility: TopicVisibility;
   /** With `shared`: members including the owner. */
   members?: number;
-  /** Someone else's topic: shown as „Geteilt von …". */
+  /** Someone else's topic: shown as „von …" (JLURAG `sharedBy`). */
   owner?: string;
   favorite?: boolean;
 }
@@ -86,5 +86,99 @@ export const TOPICS: Topic[] = [
     visibility: "shared",
     members: 4,
     owner: "Dr. Anna Weber",
+  },
+];
+
+/** The categories every overview page filters by — one set for the platform. */
+export const CATEGORIES = {
+  studium: { name: "Studium", color: "var(--color-category-1)" },
+  lehre: { name: "Lehre", color: "var(--color-category-3)" },
+  recherche: { name: "Recherche", color: "var(--color-category-5)" },
+};
+
+/**
+ * „Geteiltes Wissen": topics somebody shared with you, and public topics you
+ * subscribed to in „Entdecken" (JLURAG `SharedTopicsView.tsx`) — the last one
+ * is the catalog's subscribed entry.
+ */
+export const SHARED_TOPICS: Topic[] = [
+  {
+    id: "mhb-bio",
+    name: "Modulhandbuch Biologie",
+    description: "Die Module des Bachelorstudiengangs Biologie mit Leistungspunkten und Prüfungsformen.",
+    used: "vor 28 Tagen",
+    updated: "vor 29 Tagen",
+    files: 29,
+    chats: 2,
+    visibility: "shared",
+    members: 2,
+    owner: "Dr. Anna Weber",
+  },
+  {
+    id: "didaktik",
+    name: "Hochschuldidaktik",
+    description: "Material des Zentrums für Hochschuldidaktik: Lehrformate, Prüfen, Feedback.",
+    category: CATEGORIES.lehre,
+    used: "vor 25 Tagen",
+    updated: "vor 25 Tagen",
+    files: 1,
+    chats: 2,
+    visibility: "shared",
+    members: 2,
+    owner: "Jonas Becker",
+  },
+  {
+    id: "klima",
+    name: "Klimaschutz an der JLU",
+    description: "Maßnahmenpläne nach dem Klimaschutzgesetz, mit Prioritäten und Anmerkungen.",
+    category: CATEGORIES.recherche,
+    used: "vor 4 Tagen",
+    updated: "letzten Monat",
+    files: 1,
+    chats: 7,
+    visibility: "public",
+  },
+];
+
+/** A topic of the „Entdecken" catalog (JLURAG `KbCatalogEntry`). */
+export interface CatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  category?: { name: string; color: string };
+  files: number;
+  /** „Stand …" — the last ingest, as a date. */
+  asOf: string;
+  subscribed: boolean;
+}
+
+/** The catalog: public topics anyone at the university may subscribe to. */
+export const CATALOG: CatalogEntry[] = [
+  {
+    id: "klima",
+    name: "Klimaschutz an der JLU",
+    description:
+      "Maßnahmenpläne nach dem Klimaschutzgesetz. Beantwortet Fragen zu Prioritäten und Anmerkungen.",
+    category: CATEGORIES.recherche,
+    files: 1,
+    asOf: "16.10.2026",
+    subscribed: true,
+  },
+  {
+    id: "lehramt",
+    name: "Studienordnung Lehramt",
+    description: "Studien- und Prüfungsordnungen der Lehramtsstudiengänge, mit Modulbeschreibungen.",
+    category: CATEGORIES.studium,
+    files: 4,
+    asOf: "02.11.2026",
+    subscribed: false,
+  },
+  {
+    id: "bib",
+    name: "Universitätsbibliothek",
+    description: "Ausleihe, Fernleihe, Öffnungszeiten und Zugänge zu Datenbanken.",
+    files: 12,
+    asOf: "10.11.2026",
+    subscribed: false,
   },
 ];
