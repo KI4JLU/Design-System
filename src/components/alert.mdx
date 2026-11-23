@@ -1,0 +1,89 @@
+import { Meta, Canvas, Controls } from "@storybook/addon-docs/blocks";
+import * as AlertStories from "./alert.stories";
+
+<Meta of={AlertStories} />
+
+# Alert
+
+A message that stays in the page until the situation changes: a list that
+failed to load, a form that did not save, a note about the service. It is the
+one component for inline messages — `Notice` is a deprecated wrapper over it.
+
+```tsx
+import { Alert, AlertTitle, AlertDescription, AlertAction } from "@ki4jlu/design-system";
+
+<Alert tone="error" live="assertive">
+  <AlertTitle>Speichern fehlgeschlagen</AlertTitle>
+  <AlertDescription>Die Änderungen wurden nicht übernommen.</AlertDescription>
+</Alert>
+```
+
+<Canvas of={AlertStories.Playground} />
+
+<Controls />
+
+## When to use it — and when not
+
+| Situation | Use |
+|---|---|
+| A state the user has to know about while they stay on the page (load failed, read-only, maintenance) | `Alert` |
+| A short static hint in a form or a settings section | `Alert` without a title (`AlertDescription` only), `tone="neutral"` |
+| A confirmation that fades after a few seconds („Gespeichert") | `Toast` |
+| A message for the whole app (outage) | `Alert layout="banner"` in `AppShellLayout`'s `notice` |
+| A question the user must answer before going on | `AlertDialog` |
+| A single field's error | the field's own `aria-invalid` and message (`Form`) |
+
+## Tones
+
+Every status tone brings its icon, so the status is never told by colour
+alone. `neutral` has none — there is no status to signal.
+
+<Canvas of={AlertStories.Tones} />
+
+`icon` replaces the tone's icon; `icon={null}` drops it.
+
+## Parts
+
+- **`AlertTitle`** — the short headline. A `div`; give it a heading level with
+  `asChild` only where the alert is a section of the outline.
+- **`AlertDescription`** — the message, or the detail under a title. A
+  one-line alert is just this.
+- **`AlertAction`** — follow-up buttons on their own row under the text
+  („Erneut versuchen"), so neither text nor button is squeezed.
+
+<Canvas of={AlertStories.DescriptionOnly} />
+
+<Canvas of={AlertStories.WithAction} />
+
+## Dismissing
+
+`onDismiss` adds a close button. The alert does not hide itself: the call site
+unmounts it — and moves the focus somewhere sensible, because the focused
+close button goes with it.
+
+<Canvas of={AlertStories.Dismissible} />
+
+## In context
+
+An alert brings its own tinted surface; in a card it needs no card of its own.
+After a failed save in a form dialog it stands above the fields.
+
+<Canvas of={AlertStories.InCard} />
+
+<Canvas of={AlertStories.InFormDialog} />
+
+## Layouts
+
+`layout="box"` (default) is the block in the page. `banner`, `pill` and `toast`
+are for `AppShellLayout`'s `notice` and `status` slots — see
+`Templates/AppShellLayout → WithSystemNotice` and `WithSystemStatus`.
+
+## Accessibility
+
+- **`live` decides what a screen reader hears.** `off` (default): no role —
+  a message that is there when the page loads needs no announcement.
+  `assertive` (`role="alert"`): a message that appears because of what the
+  user just did and says it failed. `polite` (`role="status"`): a non-urgent
+  change; mount the region before its text changes, or it may not be read.
+- The icon is `aria-hidden`: the text has to say everything on its own.
+- `dismissLabel` names the close button (default „Schließen").

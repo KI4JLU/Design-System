@@ -1,0 +1,138 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Utilities and hooks" />
+
+# Utilities and hooks
+
+What the package exports besides components: functions and hooks with no look
+of their own, which an app still needs. Each entry says what it is for, how it
+is called and where it is used. All are imported from the package root:
+
+```tsx
+import { cn, usePersistedWidth, setPdfWorkerSrc } from "@ki4jlu/design-system";
+```
+
+## Setup — once at app start
+
+### `setPdfWorkerSrc(url)`
+
+**Required before any PDF is shown** (`PdfViewer`, `FilePreview`, `PdfThumbnail`,
+`renderPdfFirstPage`). `pdfjs-dist` is a peer dependency, and its worker is the
+app's file: pass the URL your own build gives it, so the worker is a
+same-origin file that a strict CSP allows. Bundling it inside the package does
+not work — library mode would inline it as a `data:` URL.
+
+```tsx
+// main.tsx
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { setPdfWorkerSrc } from "@ki4jlu/design-system";
+
+setPdfWorkerSrc(workerUrl);
+```
+
+Storybook does the same in `.storybook/preview.tsx`.
+
+### `preloadPdfjs()`
+
+Starts loading pdf.js and its worker ahead of the first PDF — e.g. when a list
+with PDF sources mounts — so the first preview does not wait for the download.
+pdf.js is otherwise loaded lazily: an app that never shows a PDF never pays for
+it.
+
+## Composing classes
+
+### `cn(...classes)`
+
+Merges Tailwind classes and resolves conflicts so **the last one wins**:
+`cn("p-2", isWide && "p-4")` gives `p-4`. The required way to add classes to a
+DS component — `className` on every component goes through it.
+
+```tsx
+<Card className={cn("h-full", selected && "ring-2 ring-primary")} />
+```
+
+### `*Variants` and class constants
+
+Each component's look is also exported as a class function
+(`buttonVariants`, `fieldVariants`, `badgeVariants`, `navItemVariants`, …) or a
+class string (`selectableCardClassName`, `sidebarRowInsetX`). They are for **an
+element of your own that has to look exactly like a DS component** — not for
+restyling the component itself.
+
+| Export | For |
+|---|---|
+| `buttonVariants({ variant, size })` | a router link or a third-party trigger that must look like a `Button` (prefer `<Button asChild>` when you can) |
+| `fieldVariants({ variant })` | a custom control that must look like an `Input` |
+| `selectableCardClassName` | a card-shaped button beside `SelectableCard`s — an „add" tile |
+| `sidebarRowInsetX`, `sidebarRowInset` | a row of your own in a side column, on the same inset as `SidebarCard` |
+
+## Colour
+
+Free colours — a category or role colour an admin picked — must stay readable
+on the card in both themes. These helpers do that in CSS, so the same value
+works per theme without JavaScript.
+
+| Export | Returns | For |
+|---|---|---|
+| `cardAccentStyle(color)` | a `style` object with `--card-accent` (and its on-colour and glow) | a `Card` in a topic's colour: `<Card style={cardAccentStyle(topic.color)}>` |
+| `cardNeutralAccent` | a CSS colour | a row with no category, as `accentColor` |
+| `categoryColor(key)` | `var(--color-category-N)` | a stable palette colour per key — the same key always gets the same colour |
+| `categoryTone(color)` | a CSS colour | a free colour drawn like the palette: dimmed in dark mode, inverted if it would vanish |
+| `legibleColor(color)` | a CSS colour | any free colour that may be too close to the surface (white on light, black on dark) |
+| `onColor(color)` | black or white | a glyph on a coloured background (an icon tile, a swatch's check) |
+| `normalizeHex(value)` | `#RRGGBB` (upper case) or `null` | cleaning up what a user typed into a colour field — `null` for anything but six hex digits |
+
+## Hooks
+
+### `usePersistedWidth(key, options)`
+
+A column width that survives a reload, per device. Plug it into
+`AppShellLayout`'s `leftWidth` and `leftResize.onWidthChange`.
+
+```tsx
+const [leftWidth, setLeftWidth] = usePersistedWidth("justrag.kb.leftWidth", {
+  defaultWidth: 320, minWidth: 150, maxWidth: 600,
+});
+```
+
+- **Pass the whole key.** The package adds no prefix — apps on the same origin
+  would collide on a shared one.
+- A stored width is clamped to the current bounds when read; a storage that
+  throws (Safari private mode, a full quota) falls back to plain state.
+- `storage` replaces `localStorage` — tests and stories pass an in-memory one.
+
+### `useWindowFileDrag(enabled?)`
+
+`true` while files from the operating system are dragged anywhere over the
+window — so a dropzone can appear before the pointer reaches it (JLURAG shows
+its sources dropzone this way). Text or element drags do not count. While on,
+it also stops the browser from opening a file dropped outside any target.
+
+### `useSidebarCollapsed()`
+
+Inside a side column: `true` while the column is collapsed to its 60px rail.
+For your own node in a column's `header`/`footer`, to shrink it as `NavItem`
+and `SidebarUserMenu` do. `false` outside a `SidePanel`.
+
+### `useScrollFade(ref, { size, axis })` and `useScrollbarGutter(ref, gutter)`
+
+For a scroll container of your own. `useScrollFade` fades the content out at an
+edge that has more to scroll, instead of a hard crop. `useScrollbarGutter`
+keeps the content full width when a classic scrollbar appears, by moving the
+bar into the right gutter — give the element that much room on the right and
+no right padding of its own. `SidebarScrollArea` uses both.
+
+### `usePdfPreviewImage(url, mediaType, width?, height?)` and `renderPdfFirstPage(src, width, height)`
+
+A PDF's first page as an image, rendered before it is needed — so a hover
+preview opens with a picture already in memory. The hook returns `undefined`
+for anything that is not a PDF, `null` while rendering or on failure, then a
+data URL. `renderPdfFirstPage` is the same as a plain async function.
+
+### Hooks inside a component
+
+| Hook | Inside | Gives |
+|---|---|---|
+| `useCarousel`, `useCarouselSlides` | `Carousel` | the Embla API; the slides and which of them are in view, kept current while it scrolls |
+| `useSettingsSearch` | a `SettingsDialog` section | the search `query` and whether it is `filtering` — open collapsed parts while filtering, so their rows can be found |
+| `useAccent`, `useColors`, `useContrast` | `AppearanceProvider` | the appearance settings — see Theming |
