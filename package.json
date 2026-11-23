@@ -33,7 +33,7 @@
     "build": "vite build && npm run build:tokens",
     "build:tokens": "cp src/tokens.css dist/tokens.css",
     "prepare": "npm run build",
-    "test": "vitest run --project unit && vitest run --project storybook",
+    "test": "node scripts/test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
