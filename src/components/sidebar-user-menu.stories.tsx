@@ -13,8 +13,8 @@ const meta = {
     name: "Jamie Lee",
     role: "Admin",
   },
-  // Im echten Einsatz sitzt die Zeile im 256px breiten Sidebar-Footer —
-  // hier nachgestellt, damit Truncation und volle Breite sichtbar sind.
+  // In real use the row sits in the 256px-wide sidebar footer — recreated
+  // here so truncation and full width are visible.
   decorators: [
     (Story) => (
       <div className="w-64 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
@@ -45,7 +45,7 @@ export const Playground: Story = {
   },
 };
 
-/** Ohne `role`: nur der Name, vertikal zentriert neben dem Avatar. */
+/** Without `role`: only the name, vertically centered next to the avatar. */
 export const WithoutRole: Story = {
   args: {
     role: undefined,
@@ -58,7 +58,7 @@ export const WithoutRole: Story = {
   },
 };
 
-/** Lange Werte werden abgeschnitten, statt die Spalte zu verbreitern. */
+/** Long values are truncated instead of widening the column. */
 export const TruncatesLongValues: Story = {
   args: {
     initials: "MB",
@@ -78,15 +78,15 @@ export const TruncatesLongValues: Story = {
 const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body);
 
 /**
- * Der Weg zu den Einstellungen: „Einstellungen" im Nutzermenü öffnet per
- * `onSelect` den `SettingsDialog`, dessen Abschnitt „Darstellung" die
- * `AppearanceSettings` trägt — verdrahtet mit den echten Providern, die der
- * Storybook-Decorator mountet. Eine Wahl im Dialog stellt also die ganze
- * Canvas um (die nächste Änderung in der Toolbar gewinnt wieder).
+ * The way to the settings: "Einstellungen" in the user menu opens the
+ * `SettingsDialog` via `onSelect`, whose "Darstellung" section carries the
+ * `AppearanceSettings` — wired to the real providers the Storybook decorator
+ * mounts. A choice in the dialog therefore switches the whole canvas (the next
+ * change in the toolbar wins again).
  *
- * Die Verdrahtung ist die gemeinsame Story-Fixture `UserMenuWithSettings`
- * (`src/test/fixtures/user-menu.tsx`) — dieselbe, die jede
- * `Templates/AppShellLayout`-Story im Spaltenfuß mountet (KI-847).
+ * The wiring is the shared story fixture `UserMenuWithSettings`
+ * (`src/test/fixtures/user-menu.tsx`) — the same one every
+ * `Templates/AppShellLayout` story mounts in the column footer (KI-847).
  */
 export const OpensSettings: Story = {
   args: { children: null },

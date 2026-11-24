@@ -24,8 +24,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Aktionsmenü: Escape, Pfeiltasten, Typeahead und Fokus-Rückgabe kommen von
- * Radix. Der Outline-Trigger zeigt seinen Offen-Zustand automatisch
+ * Action menu: Escape, arrow keys, typeahead and focus return come from
+ * Radix. The outline trigger shows its open state automatically
  * (`data-state="open"`).
  */
 export const Actions: Story = {
@@ -55,7 +55,7 @@ export const Actions: Story = {
   ),
 };
 
-/** Nutzermenü-Muster (Sidebar): Avatar-Trigger, Label-Kopf, destruktives Abmelden. */
+/** User menu pattern (sidebar): avatar trigger, label header, destructive sign-out. */
 export const UserMenu: Story = {
   render: () => (
     <DropdownMenu>

@@ -194,10 +194,10 @@ export const NotOpenable: Story = {
 };
 
 /**
- * Das ⋯-Menü reserviert keinen Platz: Steht am Zeilenende sonst nichts, läuft
- * der Titel bis zum Rand, und der Auslöser liegt bei Hover, Fokus oder
- * offenem Menü als deckender Chip über dem Titelende. Neben einer Checkbox
- * oder einem `extra` bleibt er in der Spalte.
+ * The ⋯ menu reserves no space: if nothing else is at the end of the row, the
+ * title runs to the edge, and on hover, focus or with the menu open the
+ * trigger sits as an opaque chip over the end of the title. Next to a
+ * checkbox or an `extra` it stays in the column.
  */
 export const MenuOverTitle: Story = {
   args: { title: "" },

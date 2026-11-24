@@ -25,7 +25,7 @@ export const Disabled: Story = {
   args: { disabled: true, value: "Nicht editierbar" },
 };
 
-/** In den Form-Primitives: Label, aria-Verdrahtung und Fehlertext inklusive. */
+/** In the form primitives: label, aria wiring and error text included. */
 export const InFormItem: Story = {
   render: () => (
     <FormItem className="max-w-sm" error="Der Prompt darf nicht leer sein.">
@@ -39,8 +39,8 @@ export const InFormItem: Story = {
 };
 
 /**
- * Randloses In-Flow-Feld für Composer in einer Card — die Card liefert den
- * Rahmen, das Feld selbst bleibt unsichtbar (Antwort-Composer-Muster).
+ * Borderless in-flow field for composers in a card — the card provides the
+ * frame, the field itself stays invisible (reply composer pattern).
  */
 export const Inline: Story = {
   render: () => (

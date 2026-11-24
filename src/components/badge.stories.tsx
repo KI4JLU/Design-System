@@ -20,7 +20,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
-/** Gefüllte Pills: Status-Labels, KPI-Deltas. */
+/** Filled pills: status labels, KPI deltas. */
 export const Filled: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-2">
@@ -40,9 +40,9 @@ export const Filled: Story = {
 };
 
 /**
- * Status-Punkt (`dot`): Live-/Online-Pills (Verbindungsstatus, Kanal-Chips).
- * Der Punkt läuft in der Textfarbe des Tons mit — dekorativ, die Bedeutung
- * trägt der Text.
+ * Status dot (`dot`): live/online pills (connection status, channel chips).
+ * The dot follows the tone's text color — decorative; the text carries the
+ * meaning.
  */
 export const WithDot: Story = {
   render: () => (
@@ -63,7 +63,7 @@ export const WithDot: Story = {
   ),
 };
 
-/** Text-Chips: Health-Checks und Meta-Zeilen (Icon + Text in Tonfarbe). */
+/** Text chips: health checks and meta lines (icon + text in the tone color). */
 export const TextAppearance: Story = {
   render: () => (
     <div className="flex flex-col items-start gap-2">

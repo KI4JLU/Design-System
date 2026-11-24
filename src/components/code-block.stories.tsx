@@ -18,13 +18,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Bewusst fix-dunkel in BEIDEN Themes (Editor-Optik) — die `code-surface`-
- * Tokens haben absichtlich keinen Dark-Mode-Override. Der Kopieren-Button
- * schreibt den Code in die Zwischenablage und bestätigt für ~2 s.
+ * Deliberately fixed dark in BOTH themes (editor look) — the `code-surface`
+ * tokens deliberately have no dark-mode override. The copy button writes the
+ * code to the clipboard and confirms for ~2 s.
  */
 export const Playground: Story = {};
 
-/** Mit Sprache im Kopf und einklappbar. */
+/** With the language in the header, and collapsible. */
 export const WithLanguage: Story = {
   args: {
     code: 'print("Hello, World!")',
@@ -33,7 +33,7 @@ export const WithLanguage: Story = {
   },
 };
 
-/** Eigene Labels, z. B. für englischsprachige Oberflächen. */
+/** Custom labels, e.g. for English-language interfaces. */
 export const CustomLabels: Story = {
   args: {
     code: 'npm install "@ki4jlu/design-system"',

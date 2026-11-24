@@ -1,40 +1,41 @@
 import { Meta } from "@storybook/addon-docs/blocks";
 
-<Meta title="Einführung" />
+<Meta title="Introduction" />
 
 # JLU Design System
 
-Gemeinsame Design-Tokens, Theming und React-UI-Komponenten für JLU-Projekte —
-**ein** Look & Feel, als Dependency konsumiert statt pro Projekt kopiert.
+Shared design tokens, theming and React UI components for JLU projects —
+**one** look and feel, consumed as a dependency instead of copied into each
+project.
 
-- **Tokens**: zweischichtig (Primitive `--p-*` → semantische Tokens wie
-  `--color-primary`, `--color-surface-container-*`), hell + dunkel.
-- **Komponenten**: shadcn/ui-basiert (Radix + Tailwind 4), ausschließlich über
-  semantische Tokens gestylt — Theming funktioniert automatisch.
-- **Enforcement**: ESLint-Plugin (`no-hardcoded-colors`, `no-raw-ui-elements`)
-  wird mitgeliefert.
+- **Tokens**: two layers (primitives `--p-*` → semantic tokens such as
+  `--color-primary`, `--color-surface-container-*`), light + dark.
+- **Components**: based on shadcn/ui (Radix + Tailwind 4), styled only through
+  semantic tokens — theming works automatically.
+- **Enforcement**: an ESLint plugin (`no-hardcoded-colors`,
+  `no-raw-ui-elements`) ships with the package.
 
 ## Installation
 
-Das Paket liegt in der GitHub Packages Registry (privat). Einmalig im Projekt
-eine `.npmrc` anlegen:
+The package lives in the GitHub Packages registry (private). Add an `.npmrc`
+to the project once:
 
 ```ini
 @ki4jlu:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-Token mit `read:packages`-Scope bereitstellen (lokal z. B. über
-`gh auth refresh -s read:packages` und `export NODE_AUTH_TOKEN=$(gh auth token)`),
-dann:
+Provide a token with the `read:packages` scope (locally, for example, with
+`gh auth refresh -s read:packages` and `export NODE_AUTH_TOKEN=$(gh auth token)`),
+then:
 
 ```bash
 npm install @ki4jlu/design-system
 ```
 
-## Einbindung (Tailwind 4 App)
+## Setup (Tailwind 4 app)
 
-Im zentralen CSS des Projekts:
+In the project's main CSS file:
 
 ```css
 @import "tailwindcss";
@@ -42,12 +43,12 @@ Im zentralen CSS des Projekts:
 @source "../node_modules/@ki4jlu/design-system";
 ```
 
-Der `@source`-Eintrag lässt Tailwind die Klassen der Bibliothek mitkompilieren
-(Pfad relativ zur CSS-Datei). Die Fonts **Inter, Manrope** lädt
-die App selbst (wie bisher, z. B. über `index.html`).
+The `@source` entry makes Tailwind compile the library's classes too (the path
+is relative to the CSS file). The app loads the fonts **Inter, Manrope**
+itself (as before, for example from `index.html`).
 
-In der App-Wurzel den ThemeProvider mounten und das No-Flash-Skript in die
-`index.html` übernehmen (siehe Seite „Theming“):
+Mount the ThemeProvider at the app root and copy the no-flash script into
+`index.html` (see the "Theming" page):
 
 ```tsx
 import { ThemeProvider, Button } from "@ki4jlu/design-system";
@@ -57,7 +58,7 @@ import { ThemeProvider, Button } from "@ki4jlu/design-system";
 </ThemeProvider>
 ```
 
-## ESLint-Enforcement (empfohlen)
+## ESLint enforcement (recommended)
 
 ```js
 // eslint.config.js
@@ -75,6 +76,6 @@ import designSystem from "@ki4jlu/design-system/eslint-plugin";
 
 ## Governance
 
-Änderungen an Tokens, Komponenten-APIs und Varianten reviewt der
-Design-System-Owner (CODEOWNERS). Prozess und Regeln: siehe
-`docs/DESIGN_SYSTEM.md` im Repository.
+Changes to tokens, component APIs and variants are reviewed by the design
+system owner (CODEOWNERS). Process and rules: see `docs/DESIGN_SYSTEM.md` in
+the repository.

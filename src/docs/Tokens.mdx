@@ -2,76 +2,77 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 <Meta title="Tokens" />
 
-# Design-Tokens
+# Design tokens
 
-Zwei Ebenen, definiert in `tokens.css`:
+Two layers, defined in `tokens.css`:
 
-1. **Primitive** (`--p-blue-600`, `--p-gray-100`, …) — Rohwerte ohne Bedeutung,
-   **niemals direkt verwenden**.
-2. **Semantische Tokens** (`--color-primary`, `--color-surface`, …) — beschreiben
-   Absicht, referenzieren Primitive und erzeugen die Tailwind-Utilities
-   (`bg-primary`, `text-on-surface`, `shadow-card`, …). **Nur diese verwenden.**
+1. **Primitives** (`--p-blue-600`, `--p-gray-100`, …) — raw values without
+   meaning, **never use them directly**.
+2. **Semantic tokens** (`--color-primary`, `--color-surface`, …) — describe
+   intent, reference primitives and generate the Tailwind utilities
+   (`bg-primary`, `text-on-surface`, `shadow-card`, …). **Use only these.**
 
-Der Dark-Mode überschreibt ausschließlich die semantische Ebene
-(`[data-theme="dark"]`) — Komponenten brauchen keine `dark:`-Varianten.
+Dark mode overrides only the semantic layer (`[data-theme="dark"]`) —
+components need no `dark:` variants.
 
-## Farben → Token-Spickzettel
+## Colors → token cheat sheet
 
-| Bedarf | Token-Utility |
+| Need | Token utility |
 |--------|---------------|
-| Seiten-/App-Hintergrund | `bg-surface` (Text: `text-on-surface`) |
-| Karte / erhöhte Fläche | `bg-surface-container-lowest` + `border-outline-variant` (nutze `<Card>`) |
-| Gedämpfter Text | `text-on-surface-variant` |
-| Primäraktion | `bg-primary text-on-primary` (nutze `<Button>`) |
-| Sekundäraktion | `bg-secondary-container text-on-secondary-container` |
-| Ränder / Trenner | `border-outline-variant` (stärker: `border-outline`) |
-| Fokusring | `ring-focus-ring` (in den Komponenten bereits enthalten) |
-| Erfolg / online | `bg-success` / `text-success`; Badge: `bg-success-container text-on-success-container` |
-| Info / ausstehend | `text-info` / `bg-info-container text-on-info-container` |
-| Warnung | `text-warning` / `bg-warning-container text-on-warning-container` |
-| Hinweis „beendet" (Caution) | `text-caution` / `bg-caution-container text-on-caution-container` |
-| Fehler / destruktiv | `text-error`; Button: `<Button variant="destructive">` |
-| Marken-Wortmarke (nutze `<Logo>`) | `text-brand-wordmark` + `bg-brand text-on-brand` (Badge theme-invariant) |
-| Abdunkelung unter Modalen | `bg-scrim/50` (steckt in `<Dialog>`) |
-| Elevation | siehe Leiter unten |
+| Page / app background | `bg-surface` (text: `text-on-surface`) |
+| Card / raised surface | `bg-surface-container-lowest` + `border-outline-variant` (use `<Card>`) |
+| Muted text | `text-on-surface-variant` |
+| Primary action | `bg-primary text-on-primary` (use `<Button>`) |
+| Secondary action | `bg-secondary-container text-on-secondary-container` |
+| Borders / dividers | `border-outline-variant` (stronger: `border-outline`) |
+| Focus ring | `ring-focus-ring` (already built into the components) |
+| Success / online | `bg-success` / `text-success`; badge: `bg-success-container text-on-success-container` |
+| Info / pending | `text-info` / `bg-info-container text-on-info-container` |
+| Warning | `text-warning` / `bg-warning-container text-on-warning-container` |
+| "Ended" notice (caution) | `text-caution` / `bg-caution-container text-on-caution-container` |
+| Error / destructive | `text-error`; button: `<Button variant="destructive">` |
+| Brand wordmark (use `<Logo>`) | `text-brand-wordmark` + `bg-brand text-on-brand` (badge is theme-invariant) |
+| Scrim under modals | `bg-scrim/50` (built into `<Dialog>`) |
+| Elevation | see the ladder below |
 
-Fehlt ein Token: **keinen Hex-Wert erfinden**, sondern ein neues Token über den
-Prozess in `docs/DESIGN_SYSTEM.md` §6 vorschlagen.
+If a token is missing: **don't invent a hex value**; propose a new token
+through the process in `docs/DESIGN_SYSTEM.md` §6.
 
-## Primary kippt im Dark Mode
+## Primary flips in dark mode
 
-`--color-primary` ist im hellen Theme ein **dunkles** Blau und im dunklen ein
-**helles** — mit `--color-on-primary` als jeweiligem Gegenstück (M3). Das heißt:
+`--color-primary` is a **dark** blue in the light theme and a **light** one in
+the dark theme — with `--color-on-primary` as its counterpart in each (M3).
+That means:
 
-- `bg-primary` **immer** zusammen mit `text-on-primary` — nie mit `text-white`.
-  Ein Token kann nicht gleichzeitig Fläche und Schrift bedienen.
-- `text-primary` / `border-primary` funktionieren in **beiden** Themes auf
-  allen Flächen (im Dunkeln 10,8:1 auf `surface`, im schlechtesten Fall 6,6:1
-  auf `surface-container-highest`).
-- Wer umgekehrt eine *dunkle* Fläche mit hellem Primary-Akzent braucht (etwa
-  auf `inverse-surface`), nutzt `text-inverse-primary`.
+- `bg-primary` **always** goes with `text-on-primary` — never with
+  `text-white`. One token cannot serve as both surface and text.
+- `text-primary` / `border-primary` work in **both** themes on every surface
+  (10.8:1 on `surface` in the dark, 6.6:1 at worst on
+  `surface-container-highest`).
+- If you need the reverse — a *dark* surface with a light primary accent (for
+  example on `inverse-surface`) — use `text-inverse-primary`.
 
-`--color-brand` bleibt davon unberührt: die Markenfarbe ist Identität und in
-beiden Themes gleich.
+`--color-brand` is not affected: the brand color is identity and stays the
+same in both themes.
 
-## Elevation — vier Stufen
+## Elevation — four levels
 
-| Stufe | Utility | Wofür |
+| Level | Utility | For |
 |-------|---------|-------|
-| 1 | `shadow-card` | ruhende Karte |
-| 2 | `hover:shadow-card-hover` | angehobene Karte |
-| 3 | `shadow-overlay` | Popover, Dropdown, Select |
-| 4 | `shadow-modal` | Dialog, Drawer |
+| 1 | `shadow-card` | resting card |
+| 2 | `hover:shadow-card-hover` | raised card |
+| 3 | `shadow-overlay` | popover, dropdown, select |
+| 4 | `shadow-modal` | dialog, drawer |
 
-Im Dark Mode steigt die Deckkraft automatisch (0.05 → 0.4 auf Stufe 1) — auf
-dunklem Grund verschwände ein Schatten sonst. Die Werte liegen in der
-`--elevation-*`-Rampe in `tokens.css`; **in Komponenten nur die vier Utilities
-verwenden**.
+In dark mode the opacity rises automatically (0.05 → 0.4 on level 1) —
+otherwise a shadow would vanish on a dark background. The values live in the
+`--elevation-*` ramp in `tokens.css`; **in components use only the four
+utilities**.
 
-## Transparente Farbflächen (Tints)
+## Transparent color fills (tints)
 
-Für „Primary mit 8 % Deckkraft" **keinen Hex-Wert spiegeln** — das veraltet
-still, sobald sich das Blau ändert. Stattdessen aus dem Token ableiten:
+For "primary at 8 % opacity", **don't mirror a hex value** — it goes stale
+silently as soon as the blue changes. Derive it from the token instead:
 
 ```css
 /* CSS */
@@ -79,26 +80,26 @@ background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 ```
 
 ```tsx
-/* Tailwind — dasselbe, kürzer */
+/* Tailwind — the same, shorter */
 <div className="bg-primary/10" />
 ```
 
-Beide Wege folgen dem Token und schalten mit dem Theme mit. Ein
-`--color-primary-rgb`-Token gibt es bewusst **nicht**: es müsste von Hand mit
-dem Primitiv synchron gehalten werden und wäre damit genau die Fehlerquelle,
-die es lösen soll.
+Both follow the token and switch with the theme. There is deliberately **no**
+`--color-primary-rgb` token: it would have to be kept in sync with the
+primitive by hand, and would be exactly the source of errors it is meant to
+solve.
 
-## Weitere Skalen
+## Other scales
 
-- **Typografie**: `text-display-lg`, `text-headline-md`, `text-label-sm`,
-  `text-stat-lg`, `text-body-base` (+ zugehörige `font-*`-Familien).
+- **Typography**: `text-display-lg`, `text-headline-md`, `text-label-sm`,
+  `text-stat-lg`, `text-body-base` (+ the matching `font-*` families).
 - **Spacing**: `gutter`, `stack-sm/md/lg`, `margin-page`.
-- **Seitenbreiten**: `container-max` (1440px), `container-content` (1000px),
-  `container-reading` (42rem/672px) — die drei Breiten, die `Container size`
-  als `page` / `content` / `reading` benennt. Referenziert werden sie als
-  `max-w-(--max-width-container-*)`; warum nicht als `max-w-container-*`,
-  steht in `container.mdx`.
+- **Page widths**: `container-max` (1440px), `container-content` (1000px),
+  `container-reading` (42rem/672px) — the three widths that `Container size`
+  names `page` / `content` / `reading`. They are referenced as
+  `max-w-(--max-width-container-*)`; why not as `max-w-container-*` is
+  explained in `container.mdx`.
 - **Radius**: `rounded`, `rounded-lg`, `rounded-xl`, `rounded-full`.
-- **Interaktionszustände**: `primary-hover`, `primary-active`, `focus-ring`,
-  `disabled`, `on-disabled`. Im Dark Mode hellen `hover`/`active` gegenüber
-  `primary` weiter auf, statt abzudunkeln.
+- **Interaction states**: `primary-hover`, `primary-active`, `focus-ring`,
+  `disabled`, `on-disabled`. In dark mode `hover`/`active` get lighter than
+  `primary` instead of darker.

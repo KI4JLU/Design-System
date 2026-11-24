@@ -14,9 +14,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Der Standardfall: ein Icon-Button behält seinen zugänglichen Namen
- * (`aria-label`), der Tooltip *beschreibt* ihn nur (`aria-describedby`).
- * Öffnet bei Hover und Tastaturfokus, Escape schließt.
+ * The standard case: an icon button keeps its accessible name
+ * (`aria-label`), and the tooltip only *describes* it (`aria-describedby`).
+ * Opens on hover and keyboard focus, Escape closes.
  */
 export const IconButton: Story = {
   render: () => (
@@ -31,7 +31,7 @@ export const IconButton: Story = {
   ),
 };
 
-/** Alle vier Seiten über `side`; hier dauerhaft offen für den Vergleich. */
+/** All four sides via `side`; permanently open here for comparison. */
 export const Placements: Story = {
   render: () => (
     <div className="flex flex-wrap items-center justify-center gap-16 p-16">
@@ -49,8 +49,8 @@ export const Placements: Story = {
   ),
 };
 
-/** Längere Hinweise brechen bei `max-w-72` um — Tooltips bleiben kurz,
- * alles Längere gehört in ein Popover oder auf die Seite selbst. */
+/** Longer hints wrap at `max-w-72` — tooltips stay short; anything longer
+ * belongs in a popover or on the page itself. */
 export const LongContent: Story = {
   render: () => (
     <Tooltip open>
@@ -76,9 +76,9 @@ export const LongContent: Story = {
 const OWN_IFRAME_IN_DOCS = { docs: { story: { inline: false, iframeHeight: 320 } } };
 
 /**
- * Deaktivierte Controls feuern keine Pointer-Events — der Trigger umschließt
- * deshalb einen fokussierbaren `<span>` um den Button, damit der Grund der
- * Deaktivierung erreichbar bleibt (Hover *und* Tastatur).
+ * Disabled controls fire no pointer events — so the trigger wraps a
+ * focusable `<span>` around the button, keeping the reason it is disabled
+ * reachable (hover *and* keyboard).
  */
 export const DisabledTrigger: Story = {
   render: () => (
@@ -116,10 +116,10 @@ function HiddenTitlebar({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Unter einer versteckten Titelleiste (`<html data-titlebar>`, „Native
- * shell") bleibt die oberste Fensterzeile frei: Ein Tooltip, der dort landen
- * würde — hier mit `side="top"` direkt unter der Zeile —, weicht aus, egal
- * welche Seite der Aufrufer verlangt. Die Regel sitzt in `TooltipContent`.
+ * Under a hidden title bar (`<html data-titlebar>`, "Native shell") the top
+ * window row stays free: a tooltip that would land there — here with
+ * `side="top"` directly below the row — moves aside, whatever side the caller
+ * asks for. The rule lives in `TooltipContent`.
  */
 export const KeepsOutOfTheTitleBar: Story = {
   parameters: { layout: "fullscreen", ...OWN_IFRAME_IN_DOCS },
@@ -162,9 +162,9 @@ const desktopOnly = (
 );
 
 /**
- * `data-desktop-only`: im Web nicht sichtbar, in der Desktop-App
- * (`<html data-host="desktop">`) mit der Darstellung, die die eigenen Klassen
- * des Elements vorgeben.
+ * `data-desktop-only`: not visible on the web; in the desktop app
+ * (`<html data-host="desktop">`) shown the way the element's own classes
+ * specify.
  */
 export const DesktopOnlyHiddenOnTheWeb: Story = {
   parameters: OWN_IFRAME_IN_DOCS,

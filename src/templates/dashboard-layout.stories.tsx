@@ -54,9 +54,9 @@ const FOOTER_ACTIONS = [
   { icon: Share2, label: "Aktion 2" },
 ];
 
-// Bewusst anwendungsneutrale Platzhalter: die Karte behält die Feld- und
-// Aktionsdichte einer echten Listen-Karte (Icon, Status, Zuordnung, drei
-// Kennzahlen, zwei Aktionen), bindet das Template aber an keine konkrete App.
+// Deliberately app-neutral placeholders: the card keeps the field and action
+// density of a real list card (icon, status, assignment, three metrics, two
+// actions), but ties the template to no particular app.
 const ITEMS = [
   {
     icon: Box,
@@ -214,9 +214,9 @@ const StandardExample = () => {
 };
 
 /**
- * Toolbar (Suche + Filter/Sortieren) zuerst, dann Titel mit gedämpfter
- * Anzahl in derselben Zeile, Erklärtext darunter — das Listen-Dashboard-
- * Muster. Karten-Grid max. 4 pro Reihe (`Grid cols={4}`).
+ * Toolbar (search + filter/sort) first, then the title with a muted count in
+ * the same row, explanatory text below — the list dashboard pattern. Card
+ * grid at most 4 per row (`Grid cols={4}`).
  */
 export const Standard: Story = {
   args: { title: "Elemente" },
@@ -224,20 +224,20 @@ export const Standard: Story = {
 };
 
 /**
- * **Das Template in einer Seite, die schon ein `<h1>` hat** — der Regelfall,
- * nicht der Sonderfall: ein Admin-Rahmen, eine CMS-Seite oder ein
- * Redaktionssystem trägt die Seitenüberschrift, das Template ist ein
- * Abschnitt darin. Genau diese Situation hat in JustRAG **zwei `<h1>`** und
- * damit einen WCAG-1.3.1-Fehler erzeugt, weil `PageHeader` die Stufe erzwang.
+ * **The template in a page that already has an `<h1>`** — the normal case,
+ * not the exception: an admin frame, a CMS page or an editorial system
+ * carries the page heading, and the template is a section inside it. Exactly
+ * this situation produced **two `<h1>`s** in JustRAG, and with them a WCAG
+ * 1.3.1 failure, because `PageHeader` forced the level.
  *
- * `headingLevel={2}` gibt die Stufe an den Aufrufer zurück. Optisch ändert
- * sich nichts — die Typo-Tokens hängen nicht an der Stufe.
+ * `headingLevel={2}` hands the level back to the caller. Nothing changes
+ * visually — the typography tokens don't depend on the level.
  */
 export const NestedInPageWithOwnHeading: Story = {
   args: { title: "Systemzustand" },
   render: () => (
-    // Der Rahmen steht für die Seite des Konsumenten (in JustRAG: `AdminUI`,
-    // dessen eigenes <h1> in Zeile 497 steht).
+    // The frame stands for the consumer's page (in JustRAG: `AdminUI`, whose
+    // own <h1> is on line 497).
     <div className="flex flex-col gap-stack-md p-8">
       <h1 className="m-0 font-headline-md text-display-lg text-on-surface">Administration</h1>
       <p className="m-0 text-body-base text-on-surface-variant">
@@ -256,9 +256,9 @@ export const NestedInPageWithOwnHeading: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // Orakel: der Dokument-Outline über die Rollen-Ebene (ARIA in HTML bildet
-    // h1–h6 auf `heading` + `aria-level` ab) — keine Klassennamen, kein
-    // Tag-Name. Vor `headingLevel` waren hier zwei Elemente mit Stufe 1.
+    // Oracle: the document outline via the role layer (ARIA in HTML maps
+    // h1–h6 to `heading` + `aria-level`) — no class names, no tag name.
+    // Before `headingLevel` there were two elements at level 1 here.
     const levels = [...canvasElement.querySelectorAll("h1, h2, h3, h4, h5, h6")].map(
       (heading) => `${heading.tagName}:${heading.textContent}`,
     );

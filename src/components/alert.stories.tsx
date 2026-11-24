@@ -53,9 +53,9 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {};
 
 /**
- * Die fünf Töne. Jeder Status-Ton bringt sein Icon mit (Status nicht nur über
- * Farbe, WCAG 1.4.1); `neutral` hat keins, wie beim Toast — es gibt keinen
- * Status zu signalisieren.
+ * The five tones. Every status tone brings its icon (status not by color
+ * alone, WCAG 1.4.1); `neutral` has none, as with the toast — there is no
+ * status to signal.
  */
 export const Tones: Story = {
   render: () => (
@@ -93,7 +93,7 @@ export const Tones: Story = {
   ),
 };
 
-/** Der häufigste Fall in der App: eine Zeile, kein Titel. */
+/** The most common case in the app: one line, no title. */
 export const DescriptionOnly: Story = {
   render: () => (
     <Alert tone="error">
@@ -103,9 +103,9 @@ export const DescriptionOnly: Story = {
 };
 
 /**
- * Mit Aktion: DS-Buttons in `AlertAction`, auf eigener Zeile unter dem Text —
- * so wird weder Text noch Button gestaucht. Die Buttons liegen in der normalen
- * Tab-Reihenfolge.
+ * With an action: DS buttons in `AlertAction`, on their own line below the
+ * text — so neither text nor button is squeezed. The buttons are in the normal
+ * tab order.
  */
 export const WithAction: Story = {
   render: () => (
@@ -147,9 +147,9 @@ function DismissibleDemo() {
 }
 
 /**
- * `onDismiss` rendert einen Schließen-Button („Schließen", per `dismissLabel`
- * überschreibbar). Das Ausblenden übernimmt die Aufrufstelle — und sie setzt
- * den Fokus neu, weil der fokussierte Button mit dem Alert verschwindet.
+ * `onDismiss` renders a close button ("Schließen", overridable via
+ * `dismissLabel`). The call site does the hiding — and it moves focus,
+ * because the focused button disappears with the alert.
  */
 export const Dismissible: Story = {
   render: () => <DismissibleDemo />,
@@ -163,8 +163,8 @@ export const Dismissible: Story = {
 };
 
 /**
- * In einer Karte: der Alert bringt seine getönte Fläche mit und braucht keine
- * eigene Karte (Ersatz für die Card-+-Badge-Komposition der Transkription).
+ * In a card: the alert brings its tinted surface and needs no card of its own
+ * (replaces the card + badge composition of the transcription view).
  */
 export const InCard: Story = {
   render: () => (
@@ -185,8 +185,8 @@ export const InCard: Story = {
 };
 
 /**
- * Im Formulardialog: die Fehlermeldung nach einem fehlgeschlagenen Speichern
- * steht über den Feldern und wird mit `live="assertive"` sofort angesagt.
+ * In a form dialog: the error message after a failed save sits above the
+ * fields and is announced immediately with `live="assertive"`.
  */
 export const InFormDialog: Story = {
   render: () => (

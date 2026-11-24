@@ -5,41 +5,41 @@ import * as DashboardLayoutStories from "./dashboard-layout.stories";
 
 # DashboardLayout
 
-Übersichtsseiten: optionale Toolbar-Zeile (Suche/Filter) zuerst, dann
-`PageHeader` (Titel, Beschreibung, Aktionen), optionale KPI-Zeile im
-responsiven Raster, freier Inhalt darunter. Sitzt im Regelfall als `children`
-in `AppShellLayout`. Daten holen und aggregieren bleibt in der App — das
-Template besitzt nur das Skelett.
+Overview pages: an optional toolbar row (search/filter) first, then the
+`PageHeader` (title, description, actions), an optional KPI row in a
+responsive grid, and free content below. Usually sits as `children` in
+`AppShellLayout`. Fetching and aggregating data stays in the app — the
+template owns only the skeleton.
 
 <Canvas of={DashboardLayoutStories.Standard} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `toolbar` | `ReactNode` | — | Such-/Filter-Zeile über dem Titel, z. B. `ListToolbar` mit `FilterMenu`s. |
-| `title` | `ReactNode` | ✅ | Seitentitel — echte Überschrift, Stufe über `headingLevel`. |
-| `headingLevel` | `1`–`6` | — | Stufe des Titels im Dokument-Outline. Standard `1` (also `<h1>`) — unverändert für jede bestehende Aufrufstelle. `2` oder tiefer für eine Seite, deren `<h1>` schon der Rahmen trägt (Admin-Shell, CMS). Die Typografie hängt **nicht** an der Stufe. |
-| `description` | `ReactNode` | — | Gedämpfte Erklärzeile unter dem Titel. |
-| `actions` | `ReactNode` | — | Rechte Header-Aktionen, in derselben Zeile wie der Titel — z. B. Zeitraum-Umschalter, Export, oder eine gedämpfte Anzahl der Einträge (`text-on-surface-variant`). |
-| `stats` | `ReactNode` | — | KPI-Kacheln — werden im 4er-Grid angeordnet (`Grid cols={4}`). |
-| `children` | `ReactNode` | ✅ | Freier Inhalt; für Kartenraster `<Grid>` verwenden. |
+| `toolbar` | `ReactNode` | — | Search/filter row above the title, e.g. `ListToolbar` with `FilterMenu`s. |
+| `title` | `ReactNode` | ✅ | Page title — a real heading, level set by `headingLevel`. |
+| `headingLevel` | `1`–`6` | — | Level of the title in the document outline. Default `1` (so `<h1>`) — unchanged for every existing call site. `2` or lower for a page whose `<h1>` is already carried by the frame (admin shell, CMS). The typography does **not** depend on the level. |
+| `description` | `ReactNode` | — | Muted explanatory line below the title. |
+| `actions` | `ReactNode` | — | Header actions on the right, in the same row as the title — e.g. a time-range switch, export, or a muted count of entries (`text-on-surface-variant`). |
+| `stats` | `ReactNode` | — | KPI tiles — laid out in a 4-column grid (`Grid cols={4}`). |
+| `children` | `ReactNode` | ✅ | Free content; use `<Grid>` for card grids. |
 
 <Controls />
 
-## Responsives Verhalten
+## Responsive behavior
 
-- Inhalt liegt in einem `Container` (Seitenränder `gutter` → `margin-page`,
-  Maximalbreite `container-max`).
-- Die Stats-Zeile bricht 4 → 2 → 1 Spalten um (`Grid cols={4}`), der
-  `PageHeader` stapelt Titel und Aktionen auf Mobil.
+- The content sits in a `Container` (page margins `gutter` → `margin-page`,
+  max width `container-max`).
+- The stats row wraps 4 → 2 → 1 columns (`Grid cols={4}`); the `PageHeader`
+  stacks title and actions on mobile.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Inhalts-Raster mit `<Grid>` bauen, Abstände nur über Token-Gaps.
-- ✅ Vorhandene Komponenten (Card, Badge, SegmentedControl) als Inhalt nutzen.
+- ✅ Build content grids with `<Grid>`, spacing only via token gaps.
+- ✅ Use existing components (Card, Badge, SegmentedControl) as content.
 - ❌ No second `<h1>` on the page: the rule and the `headingLevel` it calls for are in `docs/COMPONENT_GUIDELINES.md` → "Page headings: who owns them".
-- ❌ Keine eigenen Breakpoint-Leitern an der Aufrufstelle — die Raster-Umbrüche
-  liegen in `Grid`.
-- ❌ Keine Daten-/Ladelogik ins Template ziehen; Spinner/Empty-States sind
-  Inhalt, kein Layout.
+- ❌ No breakpoint ladders of your own at the call site — the grid
+  breakpoints live in `Grid`.
+- ❌ Don't pull data/loading logic into the template; spinners and empty
+  states are content, not layout.

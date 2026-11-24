@@ -55,15 +55,15 @@ const Interactive = () => {
 };
 
 /**
- * Der mobile Bereichswechsel: `<nav>`-Landmark, N Reiter aus Icon + Label, der
- * aktive trägt `aria-current="page"`. Welcher Bereich zu einer Id gehört,
- * entscheidet der Konsument.
+ * The mobile area switch: a `<nav>` landmark, N tabs of icon + label, the
+ * active one carries `aria-current="page"`. Which area belongs to an id is
+ * the consumer's decision.
  */
 export const Playground: Story = {
   render: () => <Interactive />,
 };
 
-/** Zwei Reiter — die Leiste verteilt gleichmäßig, unabhängig von der Anzahl. */
+/** Two tabs — the bar distributes them evenly, whatever their number. */
 export const TwoTabs: Story = {
   args: { items: ITEMS.slice(0, 2), activeId: "history" },
   render: (args) => (

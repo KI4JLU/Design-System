@@ -16,20 +16,19 @@ import * as chatStageStories from "../../components/chat-stage.stories";
  * ------------------------------------------------------------------------- */
 
 /**
- * Die Chrome-Zeile selbst: das `banner`-Landmark der Shell. Über die Rolle
- * gesucht und nicht über eine Klasse — `h-14` ist genau die Behauptung, die
- * hier geprüft wird, und ein Selektor `.h-14` wäre auch dann grün, wenn das
- * Utility zu nichts kompilierte.
+ * The chrome row itself: the shell's `banner` landmark. Found by its role and
+ * not by a class — `h-14` is exactly the claim checked here, and a selector
+ * `.h-14` would be green even if the utility compiled to nothing.
  */
 export const bar = (canvasElement: HTMLElement) =>
   canvasElement.querySelector("header") as HTMLElement;
 
 /**
- * **56px, in jeder Kombination** (nur Label / nur Suche / nur Aktionen /
- * alles / nichts). Die Zahl ist kein aus diesem Code abgelesenes Maß, sondern
- * der veröffentlichte Geometrie-Vertrag dieser Zeile: JustRAG positioniert
- * seine Toasts mit `top: 68px` = 56 + 12 darunter und misst dieselbe 56 in
- * einem eigenen Chromium-Test (`AppShellGeometry` in HomeView.stories.tsx).
+ * **56px, in every combination** (label only / search only / actions only /
+ * everything / nothing). The number is not a measure read off this code but
+ * the published geometry contract of this row: JustRAG positions its toasts
+ * below it with `top: 68px` = 56 + 12 and measures the same 56 in a Chromium
+ * test of its own (`AppShellGeometry` in HomeView.stories.tsx).
  */
 export async function expectBarHeight(canvasElement: HTMLElement) {
   await expect(getComputedStyle(bar(canvasElement)).height).toBe("56px");

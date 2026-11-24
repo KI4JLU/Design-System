@@ -10,8 +10,8 @@ import { Stack } from "../components/stack";
 import { FormItem, FormLabel, FormControl } from "../components/form";
 import * as formStories from "../components/form.stories";
 
-// Portable Stories: das Fehlerzustands-Beispiel der Form-Stories dient als
-// Inhalt der Fehler-Variante — kein neu gemockter Formular-Content.
+// Portable stories: the error-state example from the form stories serves as
+// the content of the error variant — no newly mocked form content.
 const { WithError: FieldWithError } = composeStories(formStories, {});
 
 const meta = {
@@ -27,9 +27,9 @@ type Story = StoryObj<typeof meta>;
 const brand = <Logo product="App" size="lg" />;
 
 /**
- * Der Standardfall: Single Sign-on über OIDC/Keycloak — ein einziger
- * primärer Button, der zum Identity Provider weiterleitet. Keine lokalen
- * Felder; der Redirect (`window.location`/Router) gehört in die App.
+ * The standard case: single sign-on via OIDC/Keycloak — a single primary
+ * button that redirects to the identity provider. No local fields; the
+ * redirect (`window.location`/router) belongs in the app.
  */
 export const SSO: Story = {
   args: {
@@ -136,7 +136,7 @@ export const Login: Story = {
   },
 };
 
-/** Fehlerzustand — Feld-Story aus den Form-Stories, im Template platziert. */
+/** Error state — a field story from the form stories, placed in the template. */
 export const WithFieldError: Story = {
   args: { title: "Anmelden" },
   render: (args) => (
@@ -150,9 +150,10 @@ export const WithFieldError: Story = {
 };
 
 /**
- * Rechtstext für die `width="prose"`-Stories — bewusst lang, weil genau die
- * Länge der Fall ist, an dem `max-w-md` gescheitert ist. Eine Zahl im Test
- * belegt die Breite; ob der Text darin *lesbar* ist, entscheidet das Auge.
+ * Legal text for the `width="prose"` stories — deliberately long, because
+ * length is exactly the case where `max-w-md` failed. A number in the test
+ * proves the width; whether the text in it is *readable* is for the eye to
+ * judge.
  */
 const legalProse = (
   <Stack gap="md">
@@ -188,12 +189,12 @@ const legalProse = (
 );
 
 /**
- * Die Breiten-Einschränkung sitzt auf der **inneren** Spalte von
- * `AuthLayout` — das Wurzelelement, in das ein `className` des Aufrufers
- * hineinfließt, trägt keine. Genau deshalb existiert die `width`-Prop. Die
- * Messung muss also dieses eine Element erreichen: das einzige Kind der
- * Wurzel. Die Kopplung an den inneren Aufbau ist hier Absicht — sie ist der
- * Grund für die Prop und wäre von außen nicht messbar.
+ * The width limit sits on `AuthLayout`'s **inner** column — the root element,
+ * which a caller's `className` flows into, has none. That is exactly why the
+ * `width` prop exists. The measurement therefore has to reach this one
+ * element: the root's only child. Coupling to the inner structure is
+ * intentional here — it is the reason for the prop and wouldn't be measurable
+ * from outside.
  */
 function readColumn(canvasElement: HTMLElement): Element {
   const root = canvasElement.querySelector("[data-testid='auth-root']");
@@ -203,10 +204,9 @@ function readColumn(canvasElement: HTMLElement): Element {
 }
 
 /**
- * Der Fall, der diese Prop nötig gemacht hat: eine Rechtstext-Seite
- * (Nutzungsbedingungen, Barrierefreiheitserklärung, Datenschutzerklärung) im
- * Auth-Template. `width="prose"` gibt der Spalte 672px statt der 448px eines
- * Anmeldeformulars.
+ * The case that made this prop necessary: a legal page (terms of use,
+ * accessibility statement, privacy policy) in the auth template.
+ * `width="prose"` gives the column 672px instead of a sign-in form's 448px.
  */
 export const LegalPage: Story = {
   args: {
@@ -228,18 +228,18 @@ export const LegalPage: Story = {
     </AuthLayout>
   ),
   play: async ({ canvasElement }) => {
-    // Oracle: Tailwinds veröffentlichte Skala, nicht diese Komponente.
-    // `max-w-2xl` ist 42rem, bei der 16px-Wurzelgröße also 672px — die
-    // Chromium-CSS-Engine löst das auf, hier wird nur das Ergebnis abgefragt.
+    // Oracle: Tailwind's published scale, not this component.
+    // `max-w-2xl` is 42rem, so 672px at a 16px root size — Chromium's CSS
+    // engine resolves it; only the result is queried here.
     await expect(getComputedStyle(readColumn(canvasElement)).maxWidth).toBe("672px");
   },
 };
 
 /**
- * Derselbe Rechtstext in der Standardbreite — **der abgelehnte Zustand**,
- * absichtlich als Story erhalten, damit die beiden Breiten nebeneinander
- * beurteilbar sind. Pinnt gleichzeitig die Standardbreite auf 448px, damit
- * bestehende Anmeldeseiten sich nicht verschieben.
+ * The same legal text at the default width — **the rejected state**, kept as
+ * a story on purpose so the two widths can be judged side by side. At the
+ * same time it pins the default width to 448px, so existing sign-in pages
+ * don't shift.
  */
 export const LegalPageAtDefaultWidth: Story = {
   args: {
@@ -252,22 +252,22 @@ export const LegalPageAtDefaultWidth: Story = {
     </AuthLayout>
   ),
   play: async ({ canvasElement }) => {
-    // `max-w-md` = 28rem = 448px, wieder aus Tailwinds Skala.
+    // `max-w-md` = 28rem = 448px, again from Tailwind's scale.
     await expect(getComputedStyle(readColumn(canvasElement)).maxWidth).toBe("448px");
   },
 };
 
 /**
- * **`headingLevel` — der Titel als echte Überschrift.** Ohne die Prop landet
- * `title` in `CardTitle` und ist damit *keine* Überschrift: die Seite hat
- * keinen `<h1>`, es sei denn der Aufrufer bringt einen mit. Das ist der
- * Standard und bleibt es, weil ein Konsument genau deshalb sein eigenes
- * `<h1>`-Element **in** den Slot gibt — ein hier automatisch erzeugtes `<h1>`
- * würde eines im anderen verschachteln.
+ * **`headingLevel` — the title as a real heading.** Without the prop, `title`
+ * lands in `CardTitle` and is therefore *not* a heading: the page has no
+ * `<h1>` unless the caller brings one. That is the default and stays so,
+ * because a consumer puts its own `<h1>` element **into** the slot for exactly
+ * that reason — an `<h1>` generated automatically here would nest one inside
+ * the other.
  *
- * Mit `headingLevel={1}` übernimmt das Template die Überschrift (über
- * `CardTitle asChild`, die Typografie bleibt also dieselbe), und der Aufrufer
- * gibt nur noch Text.
+ * With `headingLevel={1}` the template takes over the heading (via
+ * `CardTitle asChild`, so the typography stays the same), and the caller only
+ * passes text.
  *
  * This is `SSO` with one more arg, so it reuses that story's body. It stays
  * a separate story because `SSO` has to keep showing the default (no
@@ -280,15 +280,14 @@ export const TitleAsHeading: Story = {
     const heading = canvasElement.querySelector("h1");
     await expect(heading).not.toBeNull();
     await expect(heading!.textContent).toBe("Anmelden");
-    // Orakel: die Schriftgröße aus tokens.css (`--text-headline-md: 24px`) —
-    // sie kommt weiter aus `CardTitle`, nicht aus einer Kopie am Aufrufort.
+    // Oracle: the font size from tokens.css (`--text-headline-md: 24px`) —
+    // it still comes from `CardTitle`, not from a copy at the call site.
     await expect(getComputedStyle(heading!).fontSize).toBe("24px");
     await expect(getComputedStyle(heading!).marginTop).toBe("0px");
-    // Und die Überschrift ist das Element, das `CardTitle` gestylt hat — nicht
-    // ein nacktes `<h1>` in einem zusätzlichen `<div>`. Eine reine
-    // Größenmessung kann das nicht unterscheiden (die Größe würde vererbt),
-    // deshalb hier ausnahmsweise die Klasse: nur `asChild` bringt sie auf das
-    // Überschriften-Element selbst.
+    // And the heading is the element `CardTitle` styled — not a bare `<h1>`
+    // in an extra `<div>`. A size measurement alone can't tell the two apart
+    // (the size would be inherited), so as an exception the class is checked
+    // here: only `asChild` puts it on the heading element itself.
     await expect(heading!.className).toContain("font-headline-md");
   },
 };

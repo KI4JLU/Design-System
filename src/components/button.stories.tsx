@@ -37,7 +37,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Spielwiese: Variante/Größe über die Controls unten umschalten. */
+/** Playground: switch variant/size with the controls below. */
 export const Playground: Story = {};
 
 export const Variants: Story = {
@@ -77,19 +77,19 @@ const ActiveTriggerExample = () => {
 };
 
 /**
- * Toggle/aktiver Trigger: `outline` und `ghost` stylen sich selbst, sobald die
- * Aufrufstelle `aria-pressed` setzt (Filter-Toggles) oder ein Radix-Trigger
- * `data-state="open"` trägt (Dropdown offen). Das ARIA-Attribut ist die API —
- * kein zusätzliches Prop.
+ * Toggle/active trigger: `outline` and `ghost` style themselves as soon as the
+ * call site sets `aria-pressed` (filter toggles) or a Radix trigger carries
+ * `data-state="open"` (dropdown open). The ARIA attribute is the API — no
+ * extra prop.
  */
 export const ActiveTrigger: Story = {
   render: () => <ActiveTriggerExample />,
 };
 
 /**
- * Semantische Outline-Toggles: Aktivieren (`primary-outline`) /
- * Deaktivieren (`destructive-outline`) — plus `ghost-destructive` für
- * destruktive Icon-Aktionen in Zeilen (z. B. Vorlage löschen).
+ * Semantic outline toggles: activate (`primary-outline`) / deactivate
+ * (`destructive-outline`) — plus `ghost-destructive` for destructive icon
+ * actions in rows (e.g. deleting a template).
  */
 export const SemanticOutlines: Story = {
   render: () => (
@@ -108,13 +108,13 @@ export const SemanticOutlines: Story = {
 };
 
 /**
- * Löschen und Entfernen sind immer destruktiv — nie `ghost` oder `outline`
- * mit einem Papierkorb. Welche Variante wohin gehört:
+ * Delete and remove are always destructive — never `ghost` or `outline` with
+ * a trash can. Which variant goes where:
  *
- * - `ghost-destructive` in Dialog-Fußzeilen, Werkzeugleisten und Zeilen
- *   (rote Schrift, auf Hover der Fehler-Container),
- * - `destructive-outline` für eine zweitrangige Gefahr neben anderen Aktionen,
- * - `destructive` für den Bestätigungsschritt („Wirklich löschen?").
+ * - `ghost-destructive` in dialog footers, toolbars and rows
+ *   (red text, the error container on hover),
+ * - `destructive-outline` for a secondary danger next to other actions,
+ * - `destructive` for the confirmation step ("Wirklich löschen?").
  */
 export const DeleteActions: Story = {
   render: () => (
@@ -158,7 +158,7 @@ export const Sizes: Story = {
   ),
 };
 
-/** Interaktionstest: Klick löst onClick aus, Tastatur (Enter) ebenso. */
+/** Interaction test: a click fires onClick, and so does the keyboard (Enter). */
 export const ClickInteraction: Story = {
   args: { children: "Absenden", onClick: fn() },
   play: async ({ args, canvas, userEvent }) => {

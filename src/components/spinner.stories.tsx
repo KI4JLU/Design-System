@@ -22,7 +22,7 @@ export const Sizes: Story = {
   ),
 };
 
-/** Erbt die Textfarbe — funktioniert in Buttons und auf getönten Flächen. */
+/** Inherits the text color — works in buttons and on tinted surfaces. */
 export const InButton: Story = {
   render: () => (
     <div className="flex gap-4">

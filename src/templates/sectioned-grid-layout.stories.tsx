@@ -12,16 +12,16 @@ import { Button } from "../components/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "../components/card";
 import * as menuItemStories from "../components/menu-item.stories";
 
-// Portable Story: der freiformige Sektions-Body (`body`) ist eine bestehende
-// Komponenten-Story — die MenuItem-Liste steht hier für ein ganzes Panel im
-// Sektionskörper (Katalog/Entdecken), das kein Karten-Grid ist.
+// Portable story: the free-form section body (`body`) is an existing
+// component story — the MenuItem list stands in here for a whole panel in the
+// section body (catalog/discover) that isn't a card grid.
 const { SelectMenu: PanelBody } = composeStories(menuItemStories, {});
 
-// Die Grid-Zellen sind hier lokal gebaut und bewusst app-neutral: keine
-// bestehende Card-Story hat die Form einer Rasterzelle (Card.Basic bringt ein
-// `max-w-sm` und einen Statistik-Körper mit, Card.Interactive rendert sein
-// eigenes zweispaltiges Grid). Die Dichte einer echten Zelle bleibt erhalten:
-// Titel, Meta-Zeile, ein Status-Badge, eine Aktion.
+// The grid cells are built locally here and deliberately app-neutral: no
+// existing Card story has the shape of a grid cell (Card.Basic brings a
+// `max-w-sm` and a stats body, Card.Interactive renders its own two-column
+// grid). The density of a real cell is kept: title, meta line, a status
+// badge, an action.
 const CELLS = [
   { name: "Sammlung A", meta: "Zuletzt aktiv vor 2 Std.", tone: "primary", state: "Geteilt" },
   { name: "Sammlung B", meta: "Zuletzt aktiv vor 3 Tagen", tone: "neutral", state: "Privat" },
@@ -52,7 +52,7 @@ function DemoCells({ count = CELLS.length }: { count?: number }) {
   );
 }
 
-/** „Neu anlegen"-Zelle: erste Zelle desselben Grids, nicht eine eigene Zeile. */
+/** The "Neu anlegen" cell: the first cell of the same grid, not a row of its own. */
 function CreateCell({ label }: { label: string }) {
   return (
     <Button
@@ -71,9 +71,9 @@ const meta = {
   component: SectionedGridLayout,
   tags: ["!autodocs"],
   parameters: { layout: "fullscreen" },
-  // Basis-Args nur für die Props-Tabelle: jede Story rendert über `render` mit
-  // eigenem Zustand, weil der Auf-/Zu-Zustand beim Konsumenten liegt und in
-  // Storybook nur als lokaler State existieren kann.
+  // Base args only for the props table: every story renders through `render`
+  // with its own state, because the open/closed state lives with the consumer
+  // and can only exist as local state in Storybook.
   args: {
     label: "Sammlungen",
     title: "Sammlungen",
@@ -92,10 +92,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Vier Sektionen, wie sie eine Übersichtsseite hat — und alle drei
- * Body-Formen: Karten-Grid mit Create-Zelle, freiformiges Panel, Leerzustand.
- * Der Zustand liegt (wie in einer App) außerhalb des Templates; hier ist es
- * lokaler Story-State statt eines Contexts.
+ * Four sections, as an overview page has them — and all three body forms:
+ * card grid with a create cell, free-form panel, empty state. The state lives
+ * (as in an app) outside the template; here it is local story state instead
+ * of a context.
  */
 const Interactive = ({
   title,
@@ -173,8 +173,8 @@ const Interactive = ({
 };
 
 /**
- * Standard: Titelzeile, dann Sektionen. Zwei sind offen, zwei zu — der
- * Zustand kommt von außen, das Template ändert ihn nie selbst.
+ * Standard: a title row, then sections. Two are open, two closed — the state
+ * comes from outside, and the template never changes it itself.
  */
 export const Standard: Story = {
   render: () => <Interactive title="Sammlungen" />,
@@ -197,23 +197,23 @@ const AllClosed = () => {
 };
 
 /**
- * Alle Sektionen zu: nur die Kopfzeilen bleiben stehen. Der Body ist dabei
- * **ausgehängt**, nicht per CSS versteckt — das Aufklappen montiert ihn neu
- * (und löst damit ein Nachladen aus, wenn der Body eins mitbringt).
+ * All sections closed: only the header rows remain. The body is
+ * **unmounted**, not hidden with CSS — expanding mounts it again (and so
+ * triggers a reload, if the body brings one).
  */
 export const AllCollapsed: Story = {
   render: () => <AllClosed />,
 };
 
 /**
- * **Eine Stufe tiefer, komplett.** `headingLevel={2}` verschiebt den
- * Seitentitel **und** jede Sektionsüberschrift zusammen — Titel `h2`,
- * Sektionen `h3`. Die beiden Stufen sind eine einzige Zahl und ihr Nachfolger,
- * keine zwei festen Werte mehr: vorher standen ein erzwungenes `h1` und ein
- * erzwungenes `h2` nebeneinander und konnten sich nicht gemeinsam bewegen.
+ * **One level lower, all of it.** `headingLevel={2}` shifts the page title
+ * **and** every section heading together — title `h2`, sections `h3`. The two
+ * levels are a single number and its successor, no longer two fixed values:
+ * before, a forced `h1` and a forced `h2` stood side by side and couldn't move
+ * together.
  *
- * Für eine Seite, deren `<h1>` woanders steht (Admin-Rahmen, CMS) — dort ist
- * das der Unterschied zwischen einem sauberen Outline und einem zweiten `<h1>`.
+ * For a page whose `<h1>` is elsewhere (admin frame, CMS) — there it is the
+ * difference between a clean outline and a second `<h1>`.
  */
 export const NestedHeadingLevels: Story = {
   render: () => (
@@ -225,9 +225,9 @@ export const NestedHeadingLevels: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // Orakel: der Dokument-Outline (ARIA in HTML: h1–h6 -> `heading` + Stufe).
-    // Genau ein Element auf Stufe 1, und es gehört dem Rahmen, nicht dem
-    // Template; die vier Sektionen liegen auf Stufe 3.
+    // Oracle: the document outline (ARIA in HTML: h1–h6 -> `heading` + level).
+    // Exactly one element at level 1, and it belongs to the frame, not the
+    // template; the four sections are at level 3.
     const levels = [...canvasElement.querySelectorAll("h1, h2, h3, h4, h5, h6")].map(
       (heading) => heading.tagName,
     );

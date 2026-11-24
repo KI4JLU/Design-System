@@ -18,7 +18,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Grundform: Trigger im Formularfeld-Look, Optionen im MenuItem-Vokabular. */
+/** Basic form: the trigger in the form-field look, the options in the MenuItem vocabulary. */
 export const Basic: Story = {
   render: () => (
     <div className="max-w-xs">
@@ -36,7 +36,7 @@ export const Basic: Story = {
   ),
 };
 
-/** Gruppierte Optionen mit Label. */
+/** Grouped options with a label. */
 export const Grouped: Story = {
   render: () => (
     <div className="max-w-xs">
@@ -61,7 +61,7 @@ export const Grouped: Story = {
   ),
 };
 
-/** Im Formularkontext: FormItem verdrahtet Label und Beschreibung. */
+/** In a form context: FormItem wires up the label and description. */
 export const InForm: Story = {
   render: () => (
     <div className="max-w-xs">

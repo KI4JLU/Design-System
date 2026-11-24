@@ -6,25 +6,24 @@ import * as SidebarUserMenuStories from "./sidebar-user-menu.stories";
 
 # SettingsDialog
 
-Das Einstellungsfenster einer App: links eine Spalte mit Suche und einer Zeile
-je Abschnitt, rechts der gewählte Abschnitt unter seinem Titel, oben rechts
-der Schließen-Button wie bei jedem `Dialog`. Radix-Dialog darunter —
-Fokusfalle, Escape und Scroll-Sperre inklusive.
+An app's settings window: on the left a column with search and one row per
+section, on the right the selected section under its title, and the close
+button at the top right as in every `Dialog`. Radix Dialog underneath — focus
+trap, Escape and scroll lock included.
 
-Der Inhalt gehört der App: jeder Abschnitt ist eine Liste von
-`SettingsRow`s (Beschriftung + Beschreibung links, Bedienelement rechts,
-Linie darunter). Für die Darstellung liefert das Paket die fertigen Zeilen
-mit — **`AppearanceSettings`**.
+The content belongs to the app: every section is a list of `SettingsRow`s
+(label + description on the left, control on the right, a line below). For
+appearance the package ships the ready-made rows — **`AppearanceSettings`**.
 
 <Canvas of={SettingsDialogStories.Default} />
 
-## Gruppen
+## Groups
 
-Hat das Fenster viele Abschnitte, sagt eine flache Liste nicht, welche
-zusammengehören (das Admin-Fenster einer App hat ein Dutzend). `group` am
-Abschnitt setzt eine kleine graue Überschrift über jeden Block aufeinander
-folgender Abschnitte mit demselben Wert — in der Schrift des Listentitels der
-Seitenleiste, als `role="group"`, benannt nach der Überschrift.
+When the window has many sections, a flat list doesn't say which belong
+together (an app's admin window has a dozen). `group` on a section puts a
+small gray heading above every block of consecutive sections with the same
+value — in the font of the sidebar's list title, as a `role="group"`, named
+after the heading.
 
 <Canvas of={SettingsDialogStories.Groups} />
 
@@ -36,75 +35,74 @@ sections={[
 ]}
 ```
 
-- **Titel.** Sobald ein Abschnitt eine `group` hat, zeigt die Spalte keinen
-  eigenen Titel mehr: das graue Listenlabel entfällt, damit es nicht über der
-  ersten Gruppenüberschrift steht. `title` bleibt der Name des Fensters für
-  Screenreader. Ohne Gruppen bleibt alles wie bisher.
-- **Zusammenhalten.** Die Überschrift steht vor jedem Block; liegen die
-  Abschnitte einer Gruppe nicht nebeneinander, erscheint sie mehrfach.
-- **Ohne `group`** steht ein Abschnitt lose, ohne Überschrift — Fenster, die
-  `group` nicht nutzen, sehen aus wie bisher.
-- **Suche:** eine Gruppe ohne Treffer verliert ihre Überschrift mit.
+- **Title.** As soon as a section has a `group`, the column no longer shows a
+  title of its own: the gray list label is dropped so it doesn't sit above the
+  first group heading. `title` stays the window's name for screen readers.
+  Without groups everything stays as before.
+- **Keep them together.** The heading stands before every block; if a group's
+  sections aren't next to each other, it appears more than once.
+- **Without `group`** a section stands loose, without a heading — windows that
+  don't use `group` look as before.
+- **Search:** a group without matches loses its heading too.
 
-## Suche in den Einstellungen
+## Search in the settings
 
-Die Suche oben links findet nicht nur Abschnitte (nach `label` und
-`keywords`), sondern im offenen Abschnitt auch die einzelnen `SettingsRow`s:
-Beschriftung und Beschreibung jeder Zeile werden durchsucht.
+The search at the top left finds not only sections (by `label` and
+`keywords`), but also the individual `SettingsRow`s in the open section: the
+label and description of every row are searched.
 
-- **Treffer** werden markiert, überall im Abschnitt — auch in Listen,
-  Tabellen und Überschriften (CSS Custom Highlight API, der Text selbst bleibt
-  unverändert). Gefiltert wird nur nach Zeilen.
-- **Alles andere wird ausgeblendet:** Zeilen ohne Treffer, aber auch
-  Überschriften, Einleitungen und Karten, die keine passende Zeile enthalten.
-  Die Regeln stehen in `tokens.css`.
-- **Nennt die Suche den Abschnitt selbst** („Agenten"), bleibt er ganz
-  sichtbar; nur markiert wird.
-- **Kein Treffer in den Zeilen:** der Abschnitt bleibt ganz, statt leer zu
-  erscheinen. Der offene Abschnitt bleibt in der Liste, solange seine Zeilen
-  passen, auch wenn Name und `keywords` nicht passen — andere Abschnitte
-  findet die Suche weiterhin nur über Name und `keywords`, weil nur der offene
-  Abschnitt gerendert ist.
+- **Matches** are highlighted everywhere in the section — in lists, tables and
+  headings too (CSS Custom Highlight API; the text itself stays unchanged).
+  Only rows are filtered.
+- **Everything else is hidden:** rows without a match, but also headings,
+  introductions and cards that contain no matching row. The rules are in
+  `tokens.css`.
+- **If the search names the section itself** ("Agenten"), it stays fully
+  visible; it is only highlighted.
+- **No match in the rows:** the section stays whole instead of appearing
+  empty. The open section stays in the list as long as its rows match, even if
+  its name and `keywords` don't — the search still finds other sections only
+  by name and `keywords`, because only the open section is rendered.
 
-Jede gerenderte `SettingsRow` im Fenster nimmt teil. Zwei Hilfen für den Inhalt:
+Every rendered `SettingsRow` in the window takes part. Two helpers for the
+content:
 
-- **`useSettingsSearch()`** liefert `{ query, filtering }`. Zeilen in nicht
-  gerenderten Teilen (zugeklappte `Collapsible`s) findet die Suche nicht —
-  solche Teile öffnet der Inhalt, solange `filtering` gilt; Teile ohne Treffer
-  blendet das Fenster aus.
-- **`data-search-keep`** an einer Gruppenüberschrift hält sie sichtbar, solange
-  ihr Container sichtbar ist. `PanelSection` setzt es an ihrer Titelzeile.
+- **`useSettingsSearch()`** returns `{ query, filtering }`. The search doesn't
+  find rows in parts that aren't rendered (collapsed `Collapsible`s) — the
+  content opens such parts while `filtering` holds; the window hides parts
+  without matches.
+- **`data-search-keep`** on a group heading keeps it visible as long as its
+  container is visible. `PanelSection` sets it on its title row.
 
-## Maximieren
+## Maximize
 
-`maximizable` setzt links neben den Schließen-Button einen Umschalter
-(„Maximieren" / „Wiederherstellen"): maximiert füllt das Fenster den
-Bildschirm — ab `sm` 1rem nach innen, darunter randlos —, gleich was `size`
-und `fitTo` sagen. Gedacht für Editoren mit langen Formularen oder breiten
-Tabellen. Ohne `maximized` merkt sich das Fenster den Zustand selbst (startet
-normal); mit `maximized` + `onMaximizedChange` hält ihn die App, etwa um ihn
-über Sitzungen zu behalten.
+`maximizable` puts a toggle to the left of the close button ("Maximieren" /
+"Wiederherstellen"): when maximized the window fills the screen — 1rem inset
+from `sm` up, edge to edge below that — whatever `size` and `fitTo` say.
+Meant for editors with long forms or wide tables. Without `maximized` the
+window remembers the state itself (it starts normal); with `maximized` +
+`onMaximizedChange` the app holds it, for example to keep it across sessions.
 
 ```tsx
 <SettingsDialog size="xl" fitTo={area} maximizable … />
 ```
 
-## `AppearanceSettings` — der Abschnitt „Darstellung"
+## `AppearanceSettings` — the "Darstellung" section
 
-Drei `SettingsRow`s, jede mit einem DS-`Select`, jede direkt an den Provider
-gebunden, dem die Einstellung gehört:
+Three `SettingsRow`s, each with a DS `Select`, each bound directly to the
+provider that owns the setting:
 
-| Zeile | Werte | Hook | Wirkung |
+| Row | Values | Hook | Effect |
 |---|---|---|---|
-| Farbschema | System / Hell / Dunkel | `useTheme` (`ThemeProvider`) | `<html data-theme>` |
-| Kontrast | System / Standard / Mittel / Hoch | `useContrast` (`AppearanceProvider`) | `<html data-contrast>` |
-| Akzentfarbe | die sechs `ACCENT_COLORS`, je mit `AccentSwatch` | `useAccent` (`AppearanceProvider`) | `<html data-accent>` |
+| Farbschema (color scheme) | System / Hell / Dunkel | `useTheme` (`ThemeProvider`) | `<html data-theme>` |
+| Kontrast (contrast) | System / Standard / Mittel / Hoch | `useContrast` (`AppearanceProvider`) | `<html data-contrast>` |
+| Akzentfarbe (accent color) | the six `ACCENT_COLORS`, each with an `AccentSwatch` | `useAccent` (`AppearanceProvider`) | `<html data-accent>` |
 
-Die Komponente hält **keinen eigenen Zustand**: eine Wahl ruft den Setter des
-Providers, der Provider speichert sie (`localStorage`) und spiegelt sie auf
-`<html>` — genau wie für jeden anderen Aufrufer. Was die Zeilen anzeigen, ist
-daher immer das, was gerade gilt, auch wenn es anderswo (z. B. über die
-Storybook-Toolbar) umgestellt wurde.
+The component holds **no state of its own**: a choice calls the provider's
+setter, the provider stores it (`localStorage`) and mirrors it onto
+`<html>` — just as for every other caller. What the rows show is therefore
+always what currently applies, even if it was changed elsewhere (for example
+from the Storybook toolbar).
 
 ```tsx
 import { AppearanceSettings, SettingsDialog } from "@ki4jlu/design-system";
@@ -117,28 +115,27 @@ import { AppearanceSettings, SettingsDialog } from "@ki4jlu/design-system";
       value: "appearance",
       label: "Darstellung",
       icon: <Palette aria-hidden="true" />,
-      // Die Zeilenbeschriftungen, damit die Suche den Abschnitt findet.
+      // The row labels, so the search finds the section.
       keywords: ["Farbschema", "Kontrast", "Akzentfarbe", "Stil"],
       content: <AppearanceSettings />,
     },
-    // … die eigenen Abschnitte der App (Profil, API-Schlüssel, …)
+    // … the app's own sections (profile, API keys, …)
   ]}
 />
 ```
 
-- **Voraussetzung:** ein `ThemeProvider` darüber (`useTheme` wirft ohne ihn)
-  und ein `AppearanceProvider`. Fehlt der `AppearanceProvider`, zeigen
-  Kontrast, Akzent und Stil ihre Defaults und eine Wahl bewirkt nichts — das
-  dokumentierte Nur-Lese-Verhalten der Hooks.
-- **Fragment, kein Wrapper.** Die Zeilen werden ohne umschließendes Element
-  gerendert. So lassen sie sich im selben Abschnitt mit eigenen Zeilen der App
-  mischen (z. B. eine Sprachwahl darunter), und die Linien zwischen den
-  Zeilen bleiben durchgehend.
-- **Beschriftungen:** alle Texte sind über `labels` überschreibbar
-  (`AppearanceSettingsLabels`, deutsche Defaults). Nicht gesetzte oder
-  `undefined` gesetzte Schlüssel behalten den Default; `null` oder `""` an
-  einer `*Description` entfernt die Beschreibung. `accents` überschreibt nur
-  die Namen, die es enthält.
+- **Prerequisite:** a `ThemeProvider` above it (`useTheme` throws without
+  one) and an `AppearanceProvider`. Without the `AppearanceProvider`,
+  contrast, accent and style show their defaults and a choice does nothing —
+  the hooks' documented read-only behavior.
+- **A fragment, not a wrapper.** The rows are rendered without an enclosing
+  element. That way they can be mixed with the app's own rows in the same
+  section (for example a language choice below), and the lines between the
+  rows stay continuous.
+- **Labels:** every text can be overridden through `labels`
+  (`AppearanceSettingsLabels`, German defaults). Keys that are not set, or set
+  to `undefined`, keep the default; `null` or `""` on a `*Description` removes
+  the description. `accents` overrides only the names it contains.
 
 ```tsx
 <AppearanceSettings
@@ -150,22 +147,22 @@ import { AppearanceSettings, SettingsDialog } from "@ki4jlu/design-system";
 />
 ```
 
-- **Barrierefreiheit:** jeder `Select` ist per `aria-labelledby` nach seiner
-  Zeilenbeschriftung benannt und per `aria-describedby` mit der
-  Zeilenbeschreibung verknüpft, sofern es eine gibt.
+- **Accessibility:** every `Select` is named after its row label via
+  `aria-labelledby` and linked to the row description via `aria-describedby`,
+  if there is one.
 
-### Bewusst nicht enthalten
+### Deliberately not included
 
-Sprache, Profilfelder, API-Schlüssel und app-eigene Schalter (Vorschläge,
-Folgefragen, …) bleiben in der App. Sie hängen an App-Zustand und i18n, die
-das Paket nicht kennt; die App setzt sie als eigene `SettingsRow`s neben
-`<AppearanceSettings />` oder in eigene Abschnitte.
+Language, profile fields, API keys and app-specific switches (suggestions,
+follow-up questions, …) stay in the app. They depend on app state and i18n
+the package doesn't know; the app adds them as its own `SettingsRow`s next to
+`<AppearanceSettings />` or in sections of its own.
 
-## Öffnen aus dem Nutzermenü
+## Opening from the user menu
 
-Der übliche Weg ins Fenster ist „Einstellungen" im `SidebarUserMenu`: der
-Menüeintrag setzt per `onSelect` den `open`-Zustand, den der `SettingsDialog`
-kontrolliert bekommt.
+The usual way into the window is "Einstellungen" in the `SidebarUserMenu`: the
+menu item sets the `open` state via `onSelect`, which the `SettingsDialog`
+receives as a controlled prop.
 
 <Canvas of={SidebarUserMenuStories.OpensSettings} />
 
@@ -181,16 +178,16 @@ const [settingsOpen, setSettingsOpen] = useState(false);
 <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} sections={sections} />
 ```
 
-Die Story prüft im Browser (Chromium), dass das Menü hinter dem Dialog
-schließt und die Seite nach dem Schließen wieder bedienbar ist (kein
-hängendes `pointer-events: none` auf `<body>`).
+The story checks in the browser (Chromium) that the menu closes behind the
+dialog and that the page is usable again after closing (no leftover
+`pointer-events: none` on `<body>`).
 
-### Bekannte Lücke: Fokus nach dem Schließen
+### Known gap: focus after closing
 
-Nach dem Schließen landet der Fokus auf `<body>`, nicht wieder auf dem
-Element, das das Fenster geöffnet hat (WCAG 2.4.3). Ursache: Radix' modaler
-Dialog setzt den Fokus beim Schließen immer auf seinen eigenen
-`DialogTrigger` — `SettingsDialog` rendert keinen, weil er kontrolliert
-geöffnet wird. Das gilt für jeden Öffnungsweg, ein einfacher Button
-eingeschlossen; `setOpen` zu verzögern (`setTimeout`, `requestAnimationFrame`)
-ändert daran nichts (gemessen). Noch nicht behoben — als Folgekarte gemeldet.
+After closing, focus lands on `<body>`, not back on the element that opened
+the window (WCAG 2.4.3). The cause: Radix's modal dialog always moves focus
+to its own `DialogTrigger` on close — `SettingsDialog` renders none, because
+it is opened as a controlled component. That applies to every way of opening
+it, a plain button included; delaying `setOpen` (`setTimeout`,
+`requestAnimationFrame`) changes nothing (measured). Not fixed yet — reported
+as a follow-up card.

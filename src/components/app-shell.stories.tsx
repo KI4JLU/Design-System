@@ -38,9 +38,9 @@ const meta = {
       },
     },
   },
-  // Basis-Args nur für die Props-Tabelle: jede Story rendert über `render` mit
-  // eigenem Zustand, weil Einklapp-Zustand und aktiver Reiter beim Konsumenten
-  // liegen und in Storybook nur als lokaler State existieren können.
+  // Base args only for the props table: every story renders through `render`
+  // with its own state, because the collapsed state and the active tab live
+  // with the consumer and can only exist as local state in Storybook.
   args: {
     mobileTabs: TABS,
     activeMobileTab: "page",
@@ -85,8 +85,8 @@ const collapsedPreview = (
 );
 
 /**
- * Der Zustand beider Spalten liegt — wie in einer App — außerhalb der Shell.
- * Hier ist es lokaler Story-State statt eines Contexts oder `localStorage`.
+ * The state of both columns lives — as in an app — outside the shell. Here it
+ * is local story state instead of a context or `localStorage`.
  */
 function Frame() {
   const [leftOpen, setLeftOpen] = useState(true);
@@ -170,19 +170,19 @@ function Frame() {
 export const Reference: Story = {
   render: () => <Frame />,
   play: async ({ canvas, canvasElement, userEvent }) => {
-    // Orakel: die Layout-Boxen, die Chromiums Engine liefert — keine
-    // Klassennamen. Reihenfolge und Nebeneinander sind die Behauptung der
-    // Skizze; in jsdom (0×0-Boxen) wäre dieselbe Prüfung wertlos.
+    // Oracle: the layout boxes Chromium's engine returns — no class names.
+    // Order and side-by-side placement are the sketch's claim; in jsdom
+    // (0×0 boxes) the same check would be worthless.
     const left = await canvas.findByRole("complementary", { name: "Hauptnavigation" });
     const right = await canvas.findByRole("complementary", { name: "Quellen" });
     const main = canvasElement.querySelector("main")!;
-    // Die Chrome-Zeile strukturell gesucht, nicht über `banner`: `PageHeader`
-    // im Seiteninhalt rendert ebenfalls ein `<header>`, und aria-query (hinter
-    // `getByRole`) bildet ein `<header>` **in** `<main>` noch auf `banner` ab,
-    // während axe-core dafür den aktuellen Geltungsbereich `article, aside,
-    // main, nav, section` verwendet und es nicht als Landmark zählt (geprüft in
-    // `node_modules/axe-core`, `landmarkHasBodyContextMatches`). Das erste
-    // `<header>` im Baum ist die Zeile der Shell.
+    // The chrome row is found structurally, not via `banner`: `PageHeader` in
+    // the page content renders a `<header>` too, and aria-query (behind
+    // `getByRole`) still maps a `<header>` **inside** `<main>` to `banner`,
+    // while axe-core uses the current scope `article, aside, main, nav,
+    // section` for it and doesn't count it as a landmark (checked in
+    // `node_modules/axe-core`, `landmarkHasBodyContextMatches`). The first
+    // `<header>` in the tree is the shell's row.
     const bar = canvasElement.querySelector("header") as HTMLElement;
 
     const l = left.getBoundingClientRect();
@@ -193,26 +193,26 @@ export const Reference: Story = {
     await expect(r.left).toBeGreaterThan(m.left);
     await expect(r.right).toBeLessThanOrEqual(m.right);
 
-    // Eine Chrome-Einheit: die Zeile über dem Inhalt ist 56px hoch und liegt
-    // auf der Oberkante beider Spalten.
+    // One chrome unit: the row above the content is 56px tall and sits on the
+    // top edge of both columns.
     await expect(bar.getBoundingClientRect().height).toBe(56);
     await expect(Math.round(bar.getBoundingClientRect().top)).toBe(Math.round(l.top));
     await expect(Math.round(r.top)).toBe(Math.round(bar.getBoundingClientRect().bottom));
 
-    // Beide Spalten eingeklappt: zwei 60px-Schienen (`SIDE_PANEL_RAIL_WIDTH`),
-    // die linke mit `collapsedPreview`-Icons. **Die eingeklappte Form ist die
-    // Schiene** — es gibt keinen Icon-Navigationsmodus mehr (Entscheidung des
-    // Entwicklers, 17.09.2026). Bis KI-847 die Story `ColumnsCollapsed`, die
-    // eingeklappt startete; hier über die beiden Schalter erreicht.
+    // Both columns collapsed: two 60px rails (`SIDE_PANEL_RAIL_WIDTH`), the
+    // left one with `collapsedPreview` icons. **The collapsed form is the
+    // rail** — there is no icon navigation mode any more (developer decision,
+    // 2026-09-17). Until KI-847 this was the story `ColumnsCollapsed`, which
+    // started collapsed; here it is reached through the two toggles.
     await userEvent.click(await canvas.findByRole("button", { name: "Navigation einklappen" }));
     await userEvent.click(await canvas.findByRole("button", { name: "Quellen einklappen" }));
-    // Orakel: die exportierte Designkonstante — kein literales 60 hier.
+    // Oracle: the exported design constant — no literal 60 here.
     const rail = await canvas.findByRole("complementary", { name: "Hauptnavigation" });
     await expect(rail.getBoundingClientRect().width).toBe(SIDE_PANEL_RAIL_WIDTH);
     // The closed card is hidden, with no rail of its own.
     await expect(canvas.queryByRole("complementary", { name: "Quellen" })).toBeNull();
     await expect(await canvas.findByRole("button", { name: "Quellen ausklappen" })).toBeVisible();
-    // Nur der Weg zurück ist erreichbar; die Kopfzeilen sind abgeräumt.
+    // Only the way back is reachable; the header rows are cleared away.
     await expect(
       await canvas.findByRole("button", { name: "Navigation ausklappen" }),
     ).toBeVisible();

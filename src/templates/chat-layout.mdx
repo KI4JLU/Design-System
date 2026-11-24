@@ -5,35 +5,35 @@ import * as ChatLayoutStories from "./chat-layout.stories";
 
 # ChatLayout
 
-Das Chat-Widget-Gerüst: Card-gerahmte Spalte mit optionalem Header (Avatar,
-Name, Status), scrollbarem Nachrichtenbereich und unten gepinntem Composer.
-Nachrichten-State, Auto-Scroll und Senden bleiben in der App/dem Widget.
+The chat widget scaffold: a card-framed column with an optional header
+(avatar, name, status), a scrollable message area and a composer pinned at the
+bottom. Message state, auto-scroll and sending stay in the app/widget.
 
 <Canvas of={ChatLayoutStories.Widget} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `header` | `ReactNode` | — | Widget-Kopf: `Avatar` (mit `online`), Name, Status. |
-| `children` | `ReactNode` | ✅ | Der Gesprächsverlauf — `<ChatBubble>`s, vertikal gestapelt (`gap` = `stack-sm`). |
-| `composer` | `ReactNode` | — | Eingabezeile: `Textarea variant="inline"` + Senden-`Button` (`aria-label`!). |
+| `header` | `ReactNode` | — | Widget header: `Avatar` (with `online`), name, status. |
+| `children` | `ReactNode` | ✅ | The conversation — `<ChatBubble>`s, stacked vertically (`gap` = `stack-sm`). |
+| `composer` | `ReactNode` | — | Input row: `Textarea variant="inline"` + a send `Button` (`aria-label`!). |
 
 <Controls />
 
-## Responsives Verhalten
+## Responsive behavior
 
-- Füllt die Höhe des **Eltern-Containers** (`h-full`) — der Einbettungskontext
-  bestimmt die Widget-Größe (siehe Story: `h-96`-Rahmen).
-- Nur der Nachrichtenbereich scrollt; Header und Composer bleiben stehen
-  (`overflow-y-auto` in der Mitte, `shrink-0` außen).
+- Fills the height of the **parent container** (`h-full`) — the embedding
+  context decides the widget size (see the story: an `h-96` frame).
+- Only the message area scrolls; header and composer stay put
+  (`overflow-y-auto` in the middle, `shrink-0` on the outside).
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Dem einbettenden Element eine feste Höhe geben — ohne Höhe kein
-  scrollender Verlauf.
-- ✅ Nachrichten als `<ChatBubble from="user|assistant">` übergeben.
-- ❌ Kein eigenes Scroll-Handling im Verlauf nachbauen; Auto-Scroll gehört in
-  die App (Ref auf das Ende der Liste), nicht ins Template.
-- ❌ Composer-Buttons nie verkleinern/quetschen — Icon-Button mit `aria-label`
-  verwenden (Guidelines Regel 5).
+- ✅ Give the embedding element a fixed height — without a height there is no
+  scrolling conversation.
+- ✅ Pass messages as `<ChatBubble from="user|assistant">`.
+- ❌ Don't rebuild scroll handling in the conversation; auto-scroll belongs in
+  the app (a ref on the end of the list), not in the template.
+- ❌ Never shrink or squeeze composer buttons — use an icon button with an
+  `aria-label` (guidelines rule 5).

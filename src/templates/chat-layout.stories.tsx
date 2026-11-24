@@ -7,7 +7,7 @@ import { Button } from "../components/button";
 import { Textarea } from "../components/textarea";
 import * as chatBubbleStories from "../components/chat-bubble.stories";
 
-// Portable Stories: der Gesprächsverlauf kommt 1:1 aus den ChatBubble-Stories.
+// Portable stories: the conversation comes 1:1 from the ChatBubble stories.
 const { Conversation } = composeStories(chatBubbleStories, {});
 
 const meta = {
@@ -19,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Das Widget füllt seinen Eltern-Container — hier ein h-96-Rahmen wie im Einbettungskontext. */
+/** The widget fills its parent container — here an h-96 frame, as in the embedding context. */
 export const Widget: Story = {
   render: () => (
     <div className="h-96 max-w-md">
@@ -54,7 +54,7 @@ export const Widget: Story = {
   ),
 };
 
-/** Ohne Header — eingebettet in einen Kontext, der die Identität schon zeigt. */
+/** Without a header — embedded in a context that already shows the identity. */
 export const Headless: Story = {
   render: () => (
     <div className="h-96 max-w-md">

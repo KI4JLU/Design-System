@@ -31,9 +31,9 @@ const KEYS = [
 ];
 
 /**
- * Der Normalfall: eine dichte Datentabelle in einer `Card`. Zahlen- und
- * Aktionsspalten werden am Zellenaufruf rechtsbündig gesetzt (`text-right`),
- * die Kopfzeile ist ruhiger als der Inhalt (`on-surface-variant`).
+ * The normal case: a dense data table in a `Card`. Number and action columns
+ * are right-aligned where the cell is used (`text-right`); the header row is
+ * quieter than the content (`on-surface-variant`).
  */
 export const DataTable: Story = {
   render: () => (
@@ -71,10 +71,9 @@ export const DataTable: Story = {
 };
 
 /**
- * `TableCaption` benennt die Tabelle (zugänglicher Name, unten dargestellt),
- * `TableFooter` trägt die Summenzeile. Das `<caption>` steht im DOM als
- * **erstes** Kind des `<table>` — `caption-bottom` schiebt es optisch nach
- * unten.
+ * `TableCaption` names the table (accessible name, shown at the bottom);
+ * `TableFooter` carries the totals row. The `<caption>` is the `<table>`'s
+ * **first** child in the DOM — `caption-bottom` moves it down visually.
  */
 export const CaptionAndFooter: Story = {
   render: () => (
@@ -117,11 +116,11 @@ export const CaptionAndFooter: Story = {
 };
 
 /**
- * Breite Tabellen scrollen in ihrem **eigenen** Container statt die Seite zu
- * sprengen — der Container gehört zu `Table`, es braucht kein `overflow-x-auto`
- * am Aufrufort. Der Rahmen hier ist absichtlich schmal, damit der Scrollbalken
- * sichtbar wird. Spalten, die nie umbrechen sollen (Datum, Zahlen), bekommen
- * `whitespace-nowrap` an der Zelle.
+ * Wide tables scroll in their **own** container instead of bursting the
+ * page — the container belongs to `Table`, so no `overflow-x-auto` is needed
+ * at the call site. The frame here is deliberately narrow so the scrollbar
+ * shows. Columns that should never wrap (dates, numbers) get
+ * `whitespace-nowrap` on the cell.
  */
 export const WideScrolls: Story = {
   render: () => (
@@ -163,11 +162,11 @@ export const WideScrolls: Story = {
 };
 
 /**
- * Vertikal scrollende Tabelle: die Höhe gehört an den Scroll-Container, nicht
- * an die Tabelle — dafür ist `containerClassName` da. (Ohne diesen Zugriff
- * wäre der „Low-Score-Queries"-Block im JustRAG-Dashboard nicht baubar.)
- * Eine mitlaufende Kopfzeile bringt `Table` bewusst noch **nicht** mit,
- * siehe „Bewusst nicht enthalten" in der Doku.
+ * A vertically scrolling table: the height belongs on the scroll container,
+ * not on the table — that is what `containerClassName` is for. (Without this
+ * access the "Low-Score-Queries" block in the JustRAG dashboard couldn't be
+ * built.) `Table` deliberately does **not** bring a sticky header yet; see
+ * "Deliberately not included" in the docs.
  */
 export const BoundedHeightScrolls: Story = {
   render: () => (
@@ -195,9 +194,9 @@ export const BoundedHeightScrolls: Story = {
 };
 
 /**
- * Leerzustand: eine einzelne Zeile mit `colSpan` über alle Spalten. Die
- * Kopfzeile bleibt stehen, damit die Struktur der Tabelle lesbar bleibt —
- * ein leeres `<tbody>` wäre für Screenreader eine Tabelle ohne Aussage.
+ * Empty state: a single row with `colSpan` across all columns. The header row
+ * stays, so the table's structure stays readable — an empty `<tbody>` would
+ * be a table that says nothing to screen readers.
  */
 export const Empty: Story = {
   render: () => (
@@ -224,9 +223,9 @@ export const Empty: Story = {
 };
 
 /**
- * Markdown-Tabelle: beliebiger Inhalt, schmale Spalte. Zellen umbrechen von
- * Haus aus, lange ungetrennte Zeichenketten (Hashes, URLs) brechen per
- * `wrap-anywhere` innerhalb der Zelle statt die Tabelle zu sprengen.
+ * Markdown table: arbitrary content, a narrow column. Cells wrap by default,
+ * and long unbroken strings (hashes, URLs) break inside the cell via
+ * `wrap-anywhere` instead of bursting the table.
  */
 export const ArbitraryContent: Story = {
   render: () => (
@@ -265,7 +264,7 @@ const RIGHT_GROUPS = [
   { label: "Quellen in Sidebar", columns: ["Quellen sehen", "Quellen auswählen", "Quellen herunterladen"] },
   { label: "Antworten", columns: ["Zitate sehen"] },
 ];
-/** `true`/`false` = fest durch die Rolle, `"edit"` = hier einstellbar. */
+/** `true`/`false` = fixed by the role, `"edit"` = adjustable here. */
 const RIGHT_ROWS: { role: string; cells: (boolean | "edit")[] }[] = [
   { role: "Eigentümer", cells: [true, true, true, true, true, true] },
   { role: "Admin", cells: [true, true, true, true, true, true] },
@@ -331,13 +330,13 @@ function RightsMatrix({ density, className }: { density?: TableDensity; classNam
 }
 
 /**
- * Spaltengruppen: eine Kopfzeile mit `group`-Überschriften (`colSpan`,
- * `scope="colgroup"`, Label in Primärfarbe unterstrichen) über der
- * Spaltenzeile; `divider` zieht die Grenze zwischen zwei Gruppen durch Kopf
- * und Rumpf. Unter dem Kopf steht **eine** Linie — die zwischen den beiden
- * Kopfzeilen entfällt, die Unterstreichung trennt dort. Kopfzeilen brechen mit
- * `wrap="words"` nur zwischen Wörtern. Feste Werte sind `Checkbox locked`,
- * einstellbare normale Checkboxen.
+ * Column groups: a header row with `group` headings (`colSpan`,
+ * `scope="colgroup"`, label underlined in the primary color) above the column
+ * row; `divider` draws the boundary between two groups through header and
+ * body. There is **one** line under the header — the one between the two
+ * header rows is dropped, and the underline separates them there. Header
+ * cells wrap only between words with `wrap="words"`. Fixed values are
+ * `Checkbox locked`, adjustable ones normal checkboxes.
  */
 export const GroupedColumns: Story = {
   render: () => <RightsMatrix className="max-w-4xl p-0" />,
@@ -366,10 +365,10 @@ export const GroupedColumns: Story = {
 };
 
 /**
- * Dieselbe Matrix mit `density="compact"`: `text-xs`, 32px Kopfzeilen,
- * `p-1.5` in den Zellen, kleinere Gruppenüberschrift — für dichte Matrizen,
- * die in eine schmale Spalte passen müssen (JustRAGs Rollen-×-Rechte-Tabelle,
- * ~670px). Der Aufrufort setzt keine Schriftgrößen- oder Padding-Klassen.
+ * The same matrix with `density="compact"`: `text-xs`, 32px header rows,
+ * `p-1.5` in the cells, a smaller group heading — for dense matrices that have
+ * to fit a narrow column (JustRAG's roles × permissions table, ~670px). The
+ * call site sets no font-size or padding classes.
  */
 export const GroupedColumnsCompact: Story = {
   render: () => <RightsMatrix density="compact" className="w-[670px] p-0" />,
@@ -404,7 +403,7 @@ const ROTATED_ROLES = [
   { role: "Bearbeiter", fixed: false },
   { role: "Leser", fixed: false },
 ];
-/** Je Recht: Werte für Bearbeiter und Leser (`"edit"` = hier einstellbar). */
+/** Per permission: values for editor and reader (`"edit"` = adjustable here). */
 const ROTATED_SECTIONS: { section: string; rights: { right: string; cells: (boolean | "edit")[] }[] }[] = [
   {
     section: "Thema",
@@ -425,9 +424,9 @@ const ROTATED_SECTIONS: { section: string; rights: { right: string; cells: (bool
 ];
 
 /**
- * `banded`: Abschnitte als Band mit Anzahl (`section="band"`, `count`) und
- * die beiden festen Spalten als EIN Band (`mutedJoin` start/end). Sonst die
- * Grundform: schlichte Abschnittsbeschriftung, je feste Spalte ein Band.
+ * `banded`: sections as a band with a count (`section="band"`, `count`) and
+ * the two fixed columns as ONE band (`mutedJoin` start/end). Otherwise the
+ * basic form: plain section labels, one band per fixed column.
  */
 function RightsByRole({ banded }: { banded: boolean }) {
   const fixedCount = ROTATED_ROLES.filter((r) => r.fixed).length;
@@ -506,18 +505,19 @@ const band = (el: Element) => getComputedStyle(el, "::before");
 const cellOf = (el: HTMLElement) => el.closest("td") as HTMLElement;
 
 /**
- * Gedrehte Matrix: Rechte als Zeilen, Rollen als Spalten. Besitzer und Admin
- * haben immer jedes Recht — ihre Spalten sind `muted` und mit `mutedJoin`
- * (`start` / `end`) zu EINEM Band verbunden: kein Spalt dazwischen, gerundet
- * nur an den äußeren Ecken (oben am Kopf mit `mutedEdge="top"`, unten an der
- * letzten Zeile mit `mutedEdge="bottom"`).
+ * Rotated matrix: permissions as rows, roles as columns. Owner and admin
+ * always have every permission — their columns are `muted` and joined into
+ * ONE band with `mutedJoin` (`start` / `end`): no gap between them, rounded
+ * only at the outer corners (at the top on the header with
+ * `mutedEdge="top"`, at the bottom on the last row with
+ * `mutedEdge="bottom"`).
  *
- * Die Rechte sind in Gruppen gegliedert: je Gruppe ein `TableBody`, erste
- * Zeile eine Abschnittsüberschrift `TableHead section="band"` mit `count` —
- * die ganze Zeile ist ein getöntes Band, die Anzahl steht ruhiger hinter dem
- * Label. Die Überschrift steht nur in der ersten Spalte; wo das Abschnittsband
- * das gedämpfte Spaltenband kreuzt, ist die Kreuzung eine Stufe dunkler, das
- * Spaltenband läuft also sichtbar durch.
+ * The permissions are divided into groups: one `TableBody` per group, the
+ * first row a section heading `TableHead section="band"` with `count` — the
+ * whole row is a tinted band, the count sits quieter after the label. The
+ * heading sits only in the first column; where the section band crosses the
+ * muted column band, the crossing is one step darker, so the column band
+ * visibly runs through.
  */
 export const RotatedMatrix: Story = {
   render: () => <RightsByRole banded />,
@@ -581,10 +581,10 @@ export const RotatedMatrix: Story = {
 };
 
 /**
- * Die Grundform derselben Matrix: schlichte Abschnittsbeschriftung
- * (`section`, ohne Band) mit Abstand nach oben, und jede feste Spalte als
- * eigenes Band (ohne `mutedJoin`, 2px Abstand zwischen den Bändern). Zwischen
- * zwei gedämpften Zellen läuft das Band über die Zeilenlinie hinweg.
+ * The basic form of the same matrix: plain section labels (`section`, without
+ * a band) with space above, and each fixed column as its own band (without
+ * `mutedJoin`, a 2px gap between the bands). Between two muted cells the band
+ * runs across the row line.
  */
 export const RotatedMatrixPlain: Story = {
   render: () => <RightsByRole banded={false} />,

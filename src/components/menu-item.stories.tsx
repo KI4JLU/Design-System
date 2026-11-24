@@ -20,7 +20,7 @@ export const Playground: Story = {
   args: { children: "Menüeintrag" },
 };
 
-/** Dropdown mit Auswahl: selected bekommt Farbe/Gewicht + Check (ml-auto). */
+/** Dropdown with a selection: selected gets color/weight + a check mark (ml-auto). */
 export const SelectMenu: Story = {
   render: () => (
     <div className="w-64 rounded-xl border border-outline-variant bg-surface-container-lowest py-1 shadow-overlay">
@@ -36,7 +36,7 @@ export const SelectMenu: Story = {
   ),
 };
 
-/** Popover-Menü mit Link (asChild), Icons und destruktiver Aktion. */
+/** Popover menu with a link (asChild), icons and a destructive action. */
 export const PopoverMenu: Story = {
   render: () => (
     <div className="w-64 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-overlay">

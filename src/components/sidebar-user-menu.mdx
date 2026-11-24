@@ -5,21 +5,21 @@ import * as SidebarUserMenuStories from "./sidebar-user-menu.stories";
 
 # SidebarUserMenu
 
-Das Nutzermenü im Footer der Seitenleiste: Initialen-Avatar, Name über Rolle,
-ein Chevron — die ganze Zeile ist der Trigger eines `DropdownMenu`. Ersetzt den
-Block, den jede App in ihrem Sidebar-Footer selbst gebaut hatte. Name und
-Rolle werden abgeschnitten, lange Werte verbreitern die 256px-Spalte also nie.
+The user menu in the sidebar footer: an initials avatar, the name above the
+role, a chevron — the whole row is the trigger of a `DropdownMenu`. Replaces
+the block every app had built itself in its sidebar footer. Name and role are
+truncated, so long values never widen the 256px column.
 
 <Canvas of={SidebarUserMenuStories.Playground} />
 
 <Controls />
 
-## Aufteilung
+## Division of work
 
-Die Komponente besitzt den **Trigger und den Rahmen des Menüs**; die
-Einträge sind `children` (`DropdownMenuItem`s) und gehören der App — mit ihren
-Aktionen und ihrem Routing. Ein Link wird mit `asChild` zum Menüeintrag
-(siehe „TruncatesLongValues").
+The component owns the **trigger and the menu frame**; the items are
+`children` (`DropdownMenuItem`s) and belong to the app — with its actions and
+its routing. A link becomes a menu item with `asChild` (see
+"TruncatesLongValues").
 
 ```tsx
 <SidebarUserMenu initials="JL" name="Jamie Lee" role="Admin">
@@ -35,32 +35,31 @@ Aktionen und ihrem Routing. Ein Link wird mit `asChild` zum Menüeintrag
 </SidebarUserMenu>
 ```
 
-| Prop | Typ | Bedeutung |
+| Prop | Type | Meaning |
 |---|---|---|
-| `initials` | `string` | 1–2 Zeichen für den Avatar, z. B. „JL". |
-| `name` | `ReactNode` | Anzeigename, die hervorgehobene erste Zeile. |
-| `role` | `ReactNode` | Zweite Zeile (Rolle, E-Mail, Mandant …); optional. |
-| `children` | `ReactNode` | Die Menüeinträge. |
+| `initials` | `string` | 1–2 characters for the avatar, e.g. "JL". |
+| `name` | `ReactNode` | Display name, the emphasized first line. |
+| `role` | `ReactNode` | Second line (role, email, tenant …); optional. |
+| `children` | `ReactNode` | The menu items. |
 
-## „Einstellungen" öffnet den SettingsDialog
+## "Einstellungen" opens the SettingsDialog
 
-Der Eintrag „Einstellungen" setzt per `onSelect` den `open`-Zustand eines
-kontrollierten `SettingsDialog`; dessen Abschnitt „Darstellung" ist
-`AppearanceSettings` (Farbschema, Kontrast, Akzentfarbe, Stil). In dieser
-Story an die echten Provider des Storybook-Decorators gebunden — eine Wahl im
-Dialog stellt die ganze Canvas um. Details und die bekannte Fokus-Lücke nach
-dem Schließen: Storybook „Components/Overlays/SettingsDialog" → Docs.
+The "Einstellungen" item sets the `open` state of a controlled
+`SettingsDialog` via `onSelect`; its "Darstellung" section is
+`AppearanceSettings` (color scheme, contrast, accent color, style). In this
+story it is bound to the real providers of the Storybook decorator — a choice
+in the dialog switches the whole canvas. Details and the known focus gap after
+closing: Storybook "Components/Overlays/SettingsDialog" → Docs.
 
 <Canvas of={SidebarUserMenuStories.OpensSettings} />
 
-## Eingeklappt
+## Collapsed
 
-In einer eingeklappten Seitenleiste schrumpft der Trigger auf den Avatar
-allein (rund, Icon-Größe, ohne Chevron). Das Menü wird **behalten**, nicht
-versteckt: es ist der einzige Weg zum Abmelden, und ein Bedienelement, das
-beim Einklappen verschwindet, würde das Einklappen verlustbehaftet machen. Name
-und Rolle bleiben als `sr-only` im DOM, damit der zugängliche Name des
-Triggers in beiden Zuständen **derselbe String** ist.
+In a collapsed sidebar the trigger shrinks to the avatar alone (round, icon
+size, no chevron). The menu is **kept**, not hidden: it is the only way to
+sign out, and a control that disappears on collapsing would make collapsing
+lossy. Name and role stay in the DOM as `sr-only`, so the trigger's accessible
+name is **the same string** in both states.
 
-Der Trigger ist eine Zeile wie die `SidebarCard`s darüber: derselbe
-Zeilenradius (`--ui-radius-row`), dieselbe Einrückung.
+The trigger is a row like the `SidebarCard`s above it: the same row radius
+(`--ui-radius-row`), the same inset.

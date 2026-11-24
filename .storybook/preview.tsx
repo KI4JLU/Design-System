@@ -128,7 +128,7 @@ const preview: Preview = {
   decorators: [withTheme],
   parameters: {
     // Sidebar order. Without it Storybook keeps the index in import order,
-    // which put `Layout/BottomTabBar` first and the landing page `Einführung`
+    // which put `Layout/BottomTabBar` first and the landing page `Introduction`
     // third. `Components` is grouped by purpose, in the order a page is
     // usually built; a new group must be added here or it sorts last. Keep it
     // a plain object literal: Storybook reads `storySort` statically when it
@@ -136,7 +136,7 @@ const preview: Preview = {
     options: {
       storySort: {
         order: [
-          "Einführung",
+          "Introduction",
           "Theming",
           "Tokens",
           "Foundations",

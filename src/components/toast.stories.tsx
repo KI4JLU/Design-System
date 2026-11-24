@@ -22,11 +22,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Doku-Rahmen: derselbe Provider/Viewport wie in der App, aber der Viewport
- * steht **im Fluss** (`static`) statt fixiert in der Bildschirmecke — sonst
- * würden sich alle Beispiele dieser Seite in derselben Ecke stapeln.
- * `flex-col` dreht die Stapelrichtung zurück, damit die Reihenfolge im Doku-
- * Beispiel der Quelltextreihenfolge entspricht.
+ * Docs frame: the same provider/viewport as in the app, but the viewport sits
+ * **in the flow** (`static`) instead of fixed in the screen corner — otherwise
+ * all examples on this page would stack in the same corner. `flex-col` turns
+ * the stacking direction back, so the order in the docs example matches the
+ * source order.
  */
 function DocsToasts({
   children,
@@ -49,11 +49,11 @@ function DocsToasts({
 }
 
 /**
- * Die fünf Varianten. `neutral` ist der Default und trägt bewusst kein Icon —
- * es gibt keinen Status zu signalisieren. Alle hier mit `duration={Infinity}`,
- * damit sie stehen bleiben.
+ * The five variants. `neutral` is the default and deliberately has no icon —
+ * there is no status to signal. All of them here with `duration={Infinity}`,
+ * so they stay.
  */
-export const Varianten: Story = {
+export const Variants: Story = {
   render: () => (
     <DocsToasts>
       <Toast variant="neutral" duration={Infinity}>
@@ -85,15 +85,15 @@ export const Varianten: Story = {
 };
 
 /**
- * Mit Aktion. Die Aktion steht auf einer eigenen Zeile, nicht neben dem Text —
- * der Toast ist maximal `sm` breit, ein Button daneben würde Text oder Button
- * stauchen (Regel 5 der COMPONENT_GUIDELINES). `altText` ist Pflicht und ist
- * das, was ein Screenreader **statt** der Beschriftung vorliest.
+ * With an action. The action sits on its own line, not next to the text — the
+ * toast is at most `sm` wide, and a button next to it would squeeze text or
+ * button (rule 5 of the COMPONENT_GUIDELINES). `altText` is required and is
+ * what a screen reader reads **instead of** the label.
  *
- * Ein Toast mit Aktion bekommt `duration={Infinity}`: eine Aktion, die sich
- * nach vier Sekunden selbst wegräumt, ist nicht benutzbar.
+ * A toast with an action gets `duration={Infinity}`: an action that clears
+ * itself away after four seconds is not usable.
  */
-export const MitAktion: Story = {
+export const WithAction: Story = {
   render: () => (
     <DocsToasts>
       <Toast variant="neutral" duration={Infinity}>
@@ -116,12 +116,11 @@ export const MitAktion: Story = {
 };
 
 /**
- * Langer Inhalt bricht um; unteilbare Zeichenketten (IDs, URLs) brechen dank
- * `wrap-anywhere` innerhalb des Wortes, statt den Toast zu sprengen. Trotzdem:
- * ein Toast ist eine Meldung, kein Fehlerbericht — Details gehören auf die
- * Seite oder in ein Dialog.
+ * Long content wraps; unbreakable strings (IDs, URLs) break inside the word
+ * thanks to `wrap-anywhere` instead of bursting the toast. Still: a toast is a
+ * message, not an error report — details belong on the page or in a dialog.
  */
-export const LangerInhalt: Story = {
+export const LongContent: Story = {
   render: () => (
     <DocsToasts>
       <Toast variant="error" duration={Infinity}>
@@ -138,8 +137,8 @@ export const LangerInhalt: Story = {
   ),
 };
 
-/** `icon={false}` unterdrückt das Status-Icon, `icon={…}` ersetzt es. */
-export const OhneIcon: Story = {
+/** `icon={false}` suppresses the status icon, `icon={…}` replaces it. */
+export const WithoutIcon: Story = {
   render: () => (
     <DocsToasts>
       <Toast variant="success" icon={false} duration={Infinity}>
@@ -158,9 +157,9 @@ type QueuedToast = {
 };
 
 /**
- * Die Warteschlange gehört der App, nicht dem Design System — genau wie in
- * JustRAG (`ToastContext.tsx`), inklusive Obergrenze. Hier 5, ältere fallen
- * hinten raus.
+ * The queue belongs to the app, not the design system — just as in JustRAG
+ * (`ToastContext.tsx`), including the limit. Here 5; older ones drop off the
+ * end.
  */
 function useToastQueue(max: number) {
   const [items, setItems] = React.useState<QueuedToast[]>([]);
@@ -234,12 +233,12 @@ function StackDemo() {
 }
 
 /**
- * Der echte, fixierte Viewport unten rechts (unter `sm` volle Breite unten).
- * Neue Toasts erscheinen **oben** auf dem Stapel — dieselbe Richtung, in der
- * Radix auch die Tab-Reihenfolge vergibt. Ab dem sechsten Toast fällt der
- * älteste heraus; diese Grenze setzt die App.
+ * The real, fixed viewport at the bottom right (full width at the bottom below
+ * `sm`). New toasts appear at the **top** of the stack — the same direction in
+ * which Radix assigns the tab order. From the sixth toast on, the oldest drops
+ * out; the app sets that limit.
  */
-export const Stapel: Story = {
+export const Stack: Story = {
   render: () => <StackDemo />,
 };
 
@@ -297,9 +296,9 @@ function AutoDismissDemo() {
 }
 
 /**
- * Auto-Dismiss mit den Standardzeiten pro Variante (Erfolg 4 s, Fehler 6 s)
- * und dem Pausemechanismus für WCAG 2.2.1: Hover **und** Fokus halten die Uhr
- * an, F8 springt per Tastatur in den Viewport.
+ * Auto-dismiss with the default durations per variant (success 4 s, error
+ * 6 s) and the pause mechanism for WCAG 2.2.1: hover **and** focus stop the
+ * clock, and F8 jumps into the viewport by keyboard.
  */
 export const AutoDismiss: Story = {
   render: () => <AutoDismissDemo />,

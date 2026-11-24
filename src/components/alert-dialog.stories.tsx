@@ -20,7 +20,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Eine Rückfrage: Escape und „Abbrechen“ schließen, ein Klick daneben nicht. */
+/** A confirmation question: Escape and "Abbrechen" close it, a click outside doesn't. */
 export const Confirm: Story = {
   render: () => (
     <AlertDialog>
@@ -43,4 +43,4 @@ export const Confirm: Story = {
   ),
 };
 
-/** Ein Hinweis, der beantwortet werden muss, ist ein eigener Baustein: NoticeDialog. */
+/** A notice that has to be answered is a building block of its own: NoticeDialog. */

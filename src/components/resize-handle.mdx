@@ -9,192 +9,186 @@ import * as ResizeHandleStories from "./resize-handle.stories";
 > from `AppShellLayout` (`leftResize`); use `ResizeHandle` directly only
 > between two areas the shell does not own.
 
-Der zugängliche Ziehgriff zwischen zwei Bereichen. Ersetzt inline gestylte
-`div`-Griffe mit eigener Tastaturlogik pro Einsatzort.
+The accessible drag handle between two areas. Replaces inline-styled `div`
+handles with their own keyboard logic at each call site.
 
 <Canvas of={ResizeHandleStories.Playground} />
 
 ## Props
 
-| Prop | Typ | Pflicht | Bedeutung |
+| Prop | Type | Required | Meaning |
 |---|---|---|---|
-| `side` | `'left' \| 'right'` | ✅ | Seite der Leiste, die verändert wird — dreht die Pfeilrichtung. |
-| `value` | `number` | ✅ | Aktuelle Breite in px (`aria-valuenow`). |
-| `min` / `max` | `number` | ✅ | Grenzen (`aria-valuemin` / `aria-valuemax`, Home / End). |
-| `step` | `number` | — | Schrittweite der Pfeiltasten, Default `10`. |
-| `label` | `string` | ✅ | Zugänglicher Name (`aria-label`). |
-| `controls` | `string` | — | `id` der Leiste, die dieser Griff verändert (`aria-controls`). Für volle APG-Konformität nötig; optional, damit ein Griff auch ohne bekannte `id` einsetzbar bleibt. |
-| `onValueChange` | `(value: number) => void` | ✅ | Bekommt **jede** geklammerte Breite — Tastatur wie Maus. |
-| `onResizeStart` / `onResizeEnd` | `() => void` | — | Benachrichtigung über Beginn/Ende des Ziehens. |
+| `side` | `'left' \| 'right'` | ✅ | Side of the panel being resized — flips the arrow direction. |
+| `value` | `number` | ✅ | Current width in px (`aria-valuenow`). |
+| `min` / `max` | `number` | ✅ | Limits (`aria-valuemin` / `aria-valuemax`, Home / End). |
+| `step` | `number` | — | Step size of the arrow keys, default `10`. |
+| `label` | `string` | ✅ | Accessible name (`aria-label`). |
+| `controls` | `string` | — | `id` of the panel this handle resizes (`aria-controls`). Needed for full APG conformance; optional so a handle can still be used without a known `id`. |
+| `onValueChange` | `(value: number) => void` | ✅ | Receives **every** clamped width — keyboard and mouse alike. |
+| `onResizeStart` / `onResizeEnd` | `() => void` | — | Notification that dragging starts/ends. |
 
 <Controls />
 
-## Zuständigkeit: der Griff besitzt die Interaktion, der Konsument den Wert
+## Ownership: the handle owns the interaction, the consumer owns the value
 
-**Entschieden, nicht aufteilbar.** Der Griff hängt beim `pointerdown` selbst die
-`pointermove`/`pointerup`-Listener ans `window`, rechnet aus der zurückgelegten
-Distanz die neue Breite, klammert sie auf `[min, max]` und meldet sie über
-`onValueChange`. Der Konsument speichert **eine** Zahl.
+**Decided, not to be split.** On `pointerdown` the handle itself attaches the
+`pointermove`/`pointerup` listeners to `window`, computes the new width from
+the distance moved, clamps it to `[min, max]` and reports it through
+`onValueChange`. The consumer stores **one** number.
 
-- Der flüchtige „wird gerade gezogen"-Zustand bleibt intern — das ist
-  Interaktionszustand wie `:hover`, keine Daten. Deshalb gibt es keine
-  `active`-Prop: der Griff weiß es selbst und färbt sich mit `bg-primary`.
-- `onResizeStart` / `onResizeEnd` sind **Benachrichtigungen** (z. B. um eine
-  teure Neuberechnung während des Ziehens auszusetzen), kein Mechanismus. Eine
-  zusätzliche `pointermove`-Schleife beim Konsumenten ist genau der halb
-  geteilte Zustand, den diese Komponente abschafft.
-- Beim Unmount mitten im Ziehen werden die Listener entfernt.
+- The transient "being dragged" state stays internal — it is interaction
+  state like `:hover`, not data. That is why there is no `active` prop: the
+  handle knows it itself and colors itself `bg-primary`.
+- `onResizeStart` / `onResizeEnd` are **notifications** (for example, to
+  suspend an expensive recalculation while dragging), not a mechanism. An
+  extra `pointermove` loop in the consumer is exactly the half-shared state
+  this component does away with.
+- On unmount in the middle of a drag, the listeners are removed.
 
-## Rolle & ARIA
+## Role & ARIA
 
-Der Griff ist ein **fokussierbarer `separator`** — das WAI-ARIA-APG-Muster
-„Window Splitter", das Muster für genau dieses Widget. Konkret:
+The handle is a **focusable `separator`** — the WAI-ARIA APG pattern "Window
+Splitter", the pattern for exactly this widget. Concretely:
 
-- `role="separator"` mit `tabIndex={0}` (im Tab-Fokus, weil er bedienbar ist),
-  dazu `aria-valuemin` / `aria-valuemax` / `aria-valuenow` und `aria-label`.
-- `aria-orientation="vertical"` beschreibt die Ausrichtung **der Trennlinie
-  selbst**. Für `separator` ist `horizontal` der Default, „vertical" muss also
-  ausdrücklich dastehen — ein senkrechter Balken zwischen zwei nebeneinander
-  liegenden Bereichen.
-- Die Tasten sind **richtungsbezogen**: sie verschieben die Trennlinie, und
-  `aria-valuenow` meldet die Breite des *Bereichs*. Deshalb vergrößert dieselbe
-  Taste eine linke Leiste und verkleinert eine rechte.
-- **`aria-controls`** verweist über die Prop `controls` auf den Bereich, dessen
-  Größe gemeldet wird — im Muster der „primary pane". Der Verweis muss auf ein
-  **existierendes** Element zeigen: ein hängender `aria-controls` ist schlimmer
-  als keiner, deshalb rendert der Griff ohne `controls` gar kein
-  `aria-controls` (und ein per Spread eingeschmuggeltes wird verworfen — die
-  Prop ist der eine Weg hinein).
+- `role="separator"` with `tabIndex={0}` (in the tab order, because it is
+  operable), plus `aria-valuemin` / `aria-valuemax` / `aria-valuenow` and
+  `aria-label`.
+- `aria-orientation="vertical"` describes the orientation **of the dividing
+  line itself**. For `separator`, `horizontal` is the default, so "vertical"
+  has to be stated explicitly — a vertical bar between two areas side by
+  side.
+- The keys are **directional**: they move the dividing line, and
+  `aria-valuenow` reports the width of the *area*. That is why the same key
+  widens a left panel and narrows a right one.
+- **`aria-controls`** points, via the `controls` prop, at the area whose size
+  is reported — the "primary pane" in the pattern. The reference must point at
+  an **existing** element: a dangling `aria-controls` is worse than none, so
+  without `controls` the handle renders no `aria-controls` at all (and one
+  smuggled in via spread is dropped — the prop is the one way in).
 
-**Damit ist das Muster vollständig umgesetzt.** Gemessen an der
-WAI-ARIA-APG-Seite „Window Splitter": alle geforderten Eigenschaften —
-`role="separator"` fokussierbar (`tabindex`), `aria-valuenow` /
-`aria-valuemin` / `aria-valuemax`, zugänglicher Name, `aria-controls` auf die
-primäre Leiste, ausdrückliches `aria-orientation` — und die geforderten
-Richtungstasten (`←`/`→` für eine senkrechte Trennlinie). Von den im Muster
-**optionalen** Tasten sind `Home`/`End` umgesetzt; nicht umgesetzt sind:
+**With that, the pattern is fully implemented.** Measured against the WAI-ARIA
+APG page "Window Splitter": all required properties — focusable
+`role="separator"` (`tabindex`), `aria-valuenow` / `aria-valuemin` /
+`aria-valuemax`, an accessible name, `aria-controls` on the primary pane, an
+explicit `aria-orientation` — and the required arrow keys (`←`/`→` for a
+vertical dividing line). Of the keys the pattern lists as **optional**,
+`Home`/`End` are implemented; not implemented are:
 
-- **`Enter`** (Bereich einklappen / wiederherstellen). Das Ein- und Ausklappen
-  gehört dem `SidePanel` — dort ist es ein sichtbarer Button, kein verstecktes
-  Tastenkürzel auf dem Griff.
-- **`F6`** (durch die Bereiche wandern) — das ist App-Chrome-Navigation, keine
-  Eigenschaft eines einzelnen Griffs.
+- **`Enter`** (collapse / restore the area). Collapsing and expanding belongs
+  to the `SidePanel` — there it is a visible button, not a hidden shortcut on
+  the handle.
+- **`F6`** (cycle through the areas) — that is app-chrome navigation, not a
+  property of a single handle.
 
-Beides sind Auslassungen *optionaler* Teile, keine Abweichungen von der
-Konformität.
+Both are omissions of *optional* parts, not deviations from conformance.
 
-## Entschieden: `aria-controls` zeigt auf die Leisten-Wurzel
+## Decided: `aria-controls` points at the panel root
 
-Zwei Fragen standen offen (Karte KI-597): *welches* Element der Griff
-referenziert und *wer* die `id` prägt. Beide sind entschieden:
+Two questions were open (card KI-597): *which* element the handle references
+and *who* mints the `id`. Both are decided:
 
-**1. Das Ziel ist die Wurzel der Leiste** — in der Shell das `<aside>` des
-`SidePanel`, also das benannte `complementary`-Landmark — und **nicht** der
-innere Inhaltsbereich, auf den die Ein-/Ausklapp-Buttons des `SidePanel` mit
-ihrem eigenen `aria-controls` zeigen. Die beiden Verweise meinen Verschiedenes
-und bleiben getrennt: der Button steuert die **Sichtbarkeit** des Inhalts
-(Paar mit `aria-expanded`, Ziel ist das Element, das `hidden` bekommt), der
-Griff steuert die **Größe** der Leiste — und die Breite trägt die Wurzel
-(`style.width`), nicht der Inhaltsbereich. Außerdem landet ein Screenreader,
-der dem Verweis folgt, so auf einem **benannten** Landmark statt auf einem
-anonymen `div`.
+**1. The target is the root of the panel** — in the shell, the `SidePanel`'s
+`<aside>`, i.e. the named `complementary` landmark — and **not** the inner
+content area that the `SidePanel`'s collapse/expand buttons point at with
+their own `aria-controls`. The two references mean different things and stay
+separate: the button controls the **visibility** of the content (paired with
+`aria-expanded`; the target is the element that gets `hidden`), the handle
+controls the **size** of the panel — and the root carries the width
+(`style.width`), not the content area. On top of that, a screen reader that
+follows the reference lands on a **named** landmark instead of an anonymous
+`div`.
 
-**2. Die `id` prägt das `AppShell`** (per `useId`), nicht das
-`SidePanel`. Das Template ist die eine Stelle, die Leiste und Griff
-komponiert — also die eine Stelle, die beide Enden des Verweises kennt.
-`SidePanel` braucht dafür keine API-Änderung: die `id` läuft über das ohnehin
-durchgereichte Wurzel-Attribut, und die interne `id` des Inhaltsbereichs
-bleibt Sache des `SidePanel`. Ein eigenständiger Griff bekommt die `id`
-direkt über `controls`.
+**2. `AppShell` mints the `id`** (with `useId`), not the `SidePanel`. The
+template is the one place that composes panel and handle — so the one place
+that knows both ends of the reference. `SidePanel` needs no API change for
+this: the `id` travels through the root attribute that is passed through
+anyway, and the content area's internal `id` stays the `SidePanel`'s
+business. A standalone handle gets the `id` directly through `controls`.
 
-## Tastatur
+## Keyboard
 
-| Taste | Wirkung |
+| Key | Effect |
 |---|---|
-| `→` / `↑` | linke Leiste **breiter**, rechte Leiste **schmaler** |
-| `←` / `↓` | linke Leiste **schmaler**, rechte Leiste **breiter** |
+| `→` / `↑` | left panel **wider**, right panel **narrower** |
+| `←` / `↓` | left panel **narrower**, right panel **wider** |
 | `Home` | `min` |
 | `End` | `max` |
 
-Das Muster weist einem senkrechten Splitter `←`/`→` zu — die Achse, auf der sich
-dieser Balken tatsächlich bewegt. `↑`/`↓` sind zusätzliche **Aliase** von
-`→`/`←` und spiegeln sich genauso pro Seite: ein Widget, ein Verhalten, egal zu
-welcher Achse der Nutzer greift. Auf einem senkrechten Splitter haben die
-Vertikaltasten im Muster keine andere Bedeutung, der Alias ist also eine
-Erweiterung und kein Widerspruch.
+The pattern assigns `←`/`→` to a vertical splitter — the axis this bar
+actually moves along. `↑`/`↓` are additional **aliases** of `→`/`←` and mirror
+per side in the same way: one widget, one behavior, whichever axis the user
+reaches for. On a vertical splitter the vertical keys have no other meaning in
+the pattern, so the alias is an extension, not a contradiction.
 
-Die Pfeile folgen der **Richtung** und spiegeln sich deshalb mit `side`: die
-Kante einer linken Leiste liegt rechts, die einer rechten Leiste links.
-`Home`/`End` sind dagegen **Werte** (das angekündigte Minimum bzw. Maximum),
-keine Richtungen — sie spiegeln sich nicht. Beide Richtungen sind pro Seite mit
-einem Test festgenagelt; das Vertauschen ist der naheliegende Fehler.
+The arrows follow the **direction** and therefore mirror with `side`: the
+edge of a left panel is on its right, the edge of a right panel on its left.
+`Home`/`End`, on the other hand, are **values** (the announced minimum and
+maximum), not directions — they don't mirror. Both directions are pinned per
+side with a test; swapping them is the obvious mistake.
 
-`aria-valuenow` liegt immer innerhalb von `[min, max]` — beide Eingabewege
-klammern, und auch ein veralteter Wert aus dem Konsumenten wird geklammert
-angekündigt.
+`aria-valuenow` is always within `[min, max]` — both input paths clamp, and a
+stale value from the consumer is announced clamped as well.
 
-## Aussehen
+## Appearance
 
-**Seit 0.38.0 belegt der Griff keine Layout-Breite.** Der Wirt ist `w-0`, die
-Trefferfläche ein `::after`-Overlay: `absolute inset-y-0 -left-1 w-2`, also 8px
-**über** der Randlinie, je 4px in beide Nachbarn hinein, per `relative z-10`
-über beide gelegt. Randlos und im Ruhezustand unsichtbar bleibt er wie zuvor;
-`hover` tönt das Overlay mit `bg-outline-variant`, während des Ziehens füllt
-`bg-primary`, und auch der Fokusring sitzt auf dem Overlay — der Wirt hat keine
-Box, auf der ein Ring läge. Die Randlinie zwischen Bereich und Inhalt zeichnet
-weiterhin das `SidePanel` (`side`), nicht der Griff — deshalb entstehen keine
-zwei benachbarten 1px-Linien und es braucht keine negativen Margins.
+**Since 0.38.0 the handle takes up no layout width.** The host is `w-0`, the
+hit area an `::after` overlay: `absolute inset-y-0 -left-1 w-2`, i.e. 8px
+**over** the border line, 4px into each neighbor, laid over both with
+`relative z-10`. It stays borderless and invisible at rest as before; `hover`
+tints the overlay with `bg-outline-variant`, `bg-primary` fills it while
+dragging, and the focus ring sits on the overlay too — the host has no box a
+ring could sit on. The border line between the area and the content is still
+drawn by the `SidePanel` (`side`), not by the handle — so there are no two
+neighboring 1px lines and no negative margins are needed.
 
-Das ist die übliche Splitter-Form: **null Breite in der Reihe, breite
-Trefferfläche darüber.** Der Grund ist ein Bericht aus JustRAGs
-Wissensbasis-Ansicht (09/2026): als 6px breites, transparentes Flex-Element
-schob der Griff die Nachbarn auseinander, und durch die Lücke schien der
-`bg-surface`-Hintergrund der Shell — zwischen zwei
-`bg-surface-container-lowest`-Flächen ein sichtbarer getönter Streifen. Eine
-einzelne Spurfarbe kann nicht beide Nachbarn auf jeder Höhe treffen; null
-Breite braucht gar keine.
+That is the usual splitter shape: **zero width in the row, a wide hit area on
+top.** The reason is a report from JustRAG's knowledge base view (09/2026): as
+a 6px wide transparent flex item the handle pushed its neighbors apart, and
+the shell's `bg-surface` background showed through the gap — a visible tinted
+stripe between two `bg-surface-container-lowest` surfaces. A single track
+color can't match both neighbors at every height; zero width needs none at
+all.
 
-Die Trefferfläche ist damit 8px statt 6px breit: bewusst eine Zeiger- und
-Tastatur-Affordanz für breite Viewports. Auf schmalen Bildschirmen werden keine
-Breiten gezogen, dort wechselt die `BottomTabBar` die Ansicht — deshalb ist hier
-kein 44px-Touch-Ziel vorgesehen.
+The hit area is therefore 8px wide instead of 6px: deliberately a pointer and
+keyboard affordance for wide viewports. On narrow screens no widths are
+dragged — there the `BottomTabBar` switches the view — so no 44px touch target
+is provided here.
 
-Geometrie und Hit-Testing sind in Chromium festgenagelt, nicht in jsdom:
-`AppShellLayout` → `HandleHasNoLayoutWidth` misst, dass die Box 0px breit ist,
-dass die rechte Kante der linken Spalte **die** linke Kante der Hauptspalte ist,
-dass `elementFromPoint` auf dieser Linie ±3px den Griff liefert (±5px nicht mehr)
-und dass ein an einem so gefundenen Punkt begonnener Zug weiterhin verändert.
+Geometry and hit testing are pinned in Chromium, not in jsdom:
+`AppShellLayout` → `HandleHasNoLayoutWidth` measures that the box is 0px wide,
+that the left column's right edge **is** the main column's left edge, that
+`elementFromPoint` on that line returns the handle at ±3px (and no longer at
+±5px), and that a drag started at a point found that way still resizes.
 
-Screenreader kündigen `aria-valuenow` als nackte Zahl an. Wer „320 Pixel" hören
-möchte, gibt zusätzlich ein übersetztes `aria-valuetext` mit — die Prop wird
-durchgereicht.
+Screen readers announce `aria-valuenow` as a bare number. If you want users
+to hear "320 Pixel", also pass a translated `aria-valuetext` — the prop is
+passed through.
 
 <Canvas of={ResizeHandleStories.BetweenTwoPanes} />
 
-## Entschieden: `separator` statt `slider`
+## Decided: `separator` instead of `slider`
 
-Hier stand eine offene Doppelfrage — Rolle und Spiegelung der Vertikaltasten.
-Beide sind entschieden (Design-System-Owner, 08/2026); der Abschnitt bleibt als
-Protokoll stehen, damit die Frage nicht neu aufgemacht wird.
+There was an open double question here — the role, and the mirroring of the
+vertical keys. Both are decided (design system owner, 08/2026); the section
+stays as a record so the question isn't reopened.
 
-**1. Die Rolle ist `separator`, nicht `slider`.** `slider` war aus der App
-übernommen, die dieses Muster vorgemacht hat; das APG-Muster für genau dieses
-Widget ist „Window Splitter" mit `role="separator"` und `tabindex`. Das Repo
-bevorzugt Standards vor Eigenbau, und der Wechsel behebt zugleich den
-eigentlichen Defekt: `aria-orientation` bedeutet unter `slider` die Achse, auf
-der sich der **Wert** bewegt (hier waagerecht) — „vertical" war dort also
-falsch. Unter `separator` beschreibt dasselbe Attribut die Ausrichtung der
-**Trennlinie**, und die ist senkrecht. `aria-orientation="vertical"` bleibt
-deshalb stehen und ist jetzt korrekt statt widersprüchlich (Details unter
-„Rolle & ARIA").
+**1. The role is `separator`, not `slider`.** `slider` was taken over from the
+app that pioneered this pattern; the APG pattern for exactly this widget is
+"Window Splitter" with `role="separator"` and `tabindex`. The repo prefers
+standards over home-grown solutions, and the switch also fixes the actual
+defect: under `slider`, `aria-orientation` means the axis along which the
+**value** moves (horizontal here) — so "vertical" was wrong there. Under
+`separator` the same attribute describes the orientation of the **dividing
+line**, and that is vertical. `aria-orientation="vertical"` therefore stays
+and is now correct instead of contradictory (details under "Role & ARIA").
 
-**2. Die Spiegelung der Vertikaltasten bleibt genau so, wie sie ist.** Weil `↑`
-ein Alias von `→` ist und `→` eine **rechte** Leiste schmaler macht, verkleinert
-`↑` dort `aria-valuenow`. Unter `slider` widersprach das der verbreiteten
-Erwartung, dass `↑` den Wert vergrößert — unter `separator` sind die Tasten
-richtungsbezogen (sie verschieben die Trennlinie), und damit ist die Spiegelung
-das Muster und keine Abweichung davon. Die Rollenentscheidung beantwortet also
-beide Fragen auf einmal: am Tastaturverhalten ändert sich **nichts**.
+**2. The mirroring of the vertical keys stays exactly as it is.** Because `↑`
+is an alias of `→` and `→` makes a **right** panel narrower, `↑` decreases
+`aria-valuenow` there. Under `slider` that contradicted the common expectation
+that `↑` increases the value — under `separator` the keys are directional
+(they move the dividing line), so the mirroring is the pattern, not a
+deviation from it. The role decision answers both questions at once: **nothing**
+changes in the keyboard behavior.
 
-Rein zugänglichkeitsseitige Änderung: es ändert sich kein Markup außer den
-ARIA-Attributen, keine Klasse und kein Token — **optisch null Wirkung**.
+A purely accessibility-side change: no markup changes except the ARIA
+attributes, no class and no token — **zero visual effect**.

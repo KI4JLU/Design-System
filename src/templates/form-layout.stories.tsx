@@ -7,8 +7,8 @@ import { Stack } from "../components/stack";
 import * as formStories from "../components/form.stories";
 import * as selectStories from "../components/select.stories";
 
-// Portable Stories: Feld-Beispiele aus den bestehenden Component-Stories
-// werden als Formularinhalt wiederverwendet, nicht neu gemockt.
+// Portable stories: field examples from the existing component stories are
+// reused as form content, not mocked anew.
 const { Field, WithError } = composeStories(formStories, {});
 const { InForm: SelectInForm } = composeStories(selectStories, {});
 

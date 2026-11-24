@@ -34,7 +34,7 @@ export const Playground: Story = {
   ),
 };
 
-/** Untergeordnete Zeile (children) für Toolbars/Filter unter dem Titel. */
+/** A subordinate row (children) for toolbars/filters below the title. */
 export const WithToolbarRow: Story = {
   args: { title: "Team" },
   render: (args) => (
@@ -45,10 +45,10 @@ export const WithToolbarRow: Story = {
 };
 
 /**
- * `headingLevel` setzt die Stufe des Titels im Dokument-Outline. Standard ist
- * `1`; hier `2`, wie es eine Seite braucht, die ihr `<h1>` schon selbst trägt.
- * Die Typo-Tokens hängen **nicht** an der Stufe — die Überschrift sieht auf
- * jeder Stufe gleich aus, sie steht nur an anderer Stelle im Outline.
+ * `headingLevel` sets the title's level in the document outline. The default
+ * is `1`; here `2`, as a page needs that already carries its own `<h1>`. The
+ * typography tokens do **not** depend on the level — the heading looks the
+ * same at every level, it just sits at a different place in the outline.
  */
 export const AtHeadingLevelTwo: Story = {
   args: {
@@ -58,9 +58,9 @@ export const AtHeadingLevelTwo: Story = {
   },
   play: async ({ canvasElement }) => {
     const heading = canvasElement.querySelector("h2");
-    // Orakel: die Elementstufe selbst, plus die aufgelöste Schriftgröße aus
-    // tokens.css (`--text-headline-md: 24px`) — die Stufe darf die Typografie
-    // nicht verändern, und ein `<h1>` darf nicht mehr entstehen.
+    // Oracle: the element level itself, plus the resolved font size from
+    // tokens.css (`--text-headline-md: 24px`) — the level must not change the
+    // typography, and no `<h1>` may be produced any more.
     await expect(heading).not.toBeNull();
     await expect(canvasElement.querySelector("h1")).toBeNull();
     await expect(getComputedStyle(heading!).fontSize).toBe("24px");

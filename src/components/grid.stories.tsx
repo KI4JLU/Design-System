@@ -16,7 +16,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** `cols` ist die Desktop-Spaltenzahl; der Umbruch auf 1 Spalte (mobil) ist eingebaut. */
+/** `cols` is the desktop column count; the wrap to 1 column (mobile) is built in. */
 export const Playground: Story = {
   args: { cols: 3, gap: "gutter" },
   render: (args) => (

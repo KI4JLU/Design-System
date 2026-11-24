@@ -5,54 +5,53 @@ import * as BottomTabBarStories from "./bottom-tab-bar.stories";
 
 # BottomTabBar
 
-Der mobile Bereichswechsel: eine am unteren Rand fixierte `<nav>`-Landmark mit
-N Reitern aus Icon + Label; der aktive trägt `aria-current="page"`.
+The mobile area switch: a `<nav>` landmark fixed to the bottom edge with N
+tabs of icon + label; the active one carries `aria-current="page"`.
 
 <Canvas of={BottomTabBarStories.Playground} />
 
 ## Props
 
-| Prop | Typ | Pflicht | Bedeutung |
+| Prop | Type | Required | Meaning |
 |---|---|---|---|
-| `items` | `{ id, icon, label }[]` | ✅ | Reiter in Anzeigereihenfolge. `icon` ist ein `ReactNode` (z. B. ein lucide-Icon) und wird von der Komponente auf 20px gesetzt. |
-| `activeId` | `string` | ✅ | Id des aktuellen Reiters. Eine Id ohne passenden Eintrag markiert **keinen** Reiter. |
-| `onChange` | `(id: string) => void` | ✅ | Klick/Tastendruck auf einen Reiter. |
-| `label` | `string` | ✅ | Zugänglicher Name der `<nav>`-Landmark. |
+| `items` | `{ id, icon, label }[]` | ✅ | Tabs in display order. `icon` is a `ReactNode` (e.g. a lucide icon) and is set to 20px by the component. |
+| `activeId` | `string` | ✅ | Id of the current tab. An id without a matching entry marks **no** tab. |
+| `onChange` | `(id: string) => void` | ✅ | Click/key press on a tab. |
+| `label` | `string` | ✅ | Accessible name of the `<nav>` landmark. |
 
 <Controls />
 
-## Kein SegmentedControl
+## Not a SegmentedControl
 
-Geprüft, bevor diese Komponente entstand: `SegmentedControl` ist ein
-`role="group"` aus `aria-pressed`-Umschaltern für einen **Wert innerhalb** einer
-Seite (Zeitraum Tag/Woche/Monat), inline im Fluss, ohne Icons. Diese Leiste ist
-**App-Chrome**: eine Navigations-Landmark, die umschaltet, welche Ansicht der
-Viewport zeigt — und genau das bedeutet `aria-current="page"`. Andere Rolle,
-andere Landmark, andere Platzierung. Eine gemeinsame Komponente hätte zwei
-ARIA-Verträge.
+Checked before this component was built: `SegmentedControl` is a
+`role="group"` of `aria-pressed` toggles for a **value within** a page (time
+range day/week/month), inline in the flow, without icons. This bar is **app
+chrome**: a navigation landmark that switches which view the viewport
+shows — and that is exactly what `aria-current="page"` means. A different
+role, a different landmark, a different placement. A shared component would
+have two ARIA contracts.
 
-## Entscheidungen
+## Decisions
 
-- **Generisch.** Keine festen Ids, Reihenfolgen oder Labels — der Konsument
-  liefert `items`. Ob und wie der aktive Reiter aus anderem Zustand abgeleitet
-  wird, bleibt beim Konsumenten; die Leiste rendert, was ihr gesagt wird.
-- **`aria-current="page"` statt `aria-selected`.** Kein `tablist`: es gibt keine
-  Tab-Panels im ARIA-Sinn, sondern gewechselte Ansichten. Reiter sind `<button>`
-  und werden deshalb ohne eigene Tastaturlogik mit Tab, Enter und Leertaste
-  bedient.
-- **Höhe 60px**, dieselbe Chrome-Einheit wie `SIDE_PANEL_RAIL_WIDTH`, plus
-  `env(safe-area-inset-bottom)` für die iOS-Home-Leiste. Touch-Ziel pro Reiter
-  mindestens 44px.
-- **`fixed` ist der Default.** Ein Konsument, der die Leiste im Fluss braucht,
-  überschreibt die Position per `className` (Layout, nicht Skin — `cn()` löst
-  den Konflikt auf).
-- **Das Icon ist dekorativ** (`aria-hidden`): der zugängliche Name eines Reiters
-  ist genau sein `label`.
+- **Generic.** No fixed ids, orders or labels — the consumer provides
+  `items`. Whether and how the active tab is derived from other state stays
+  with the consumer; the bar renders what it is told.
+- **`aria-current="page"` instead of `aria-selected`.** No `tablist`: there
+  are no tab panels in the ARIA sense, only switched views. Tabs are
+  `<button>`s and are therefore operated with Tab, Enter and Space without any
+  keyboard logic of their own.
+- **Height 60px**, the same chrome unit as `SIDE_PANEL_RAIL_WIDTH`, plus
+  `env(safe-area-inset-bottom)` for the iOS home bar. Touch target per tab at
+  least 44px.
+- **`fixed` is the default.** A consumer that needs the bar in the flow
+  overrides the position via `className` (layout, not skin — `cn()` resolves
+  the conflict).
+- **The icon is decorative** (`aria-hidden`): a tab's accessible name is
+  exactly its `label`.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Icons ohne Größenangabe übergeben — die Leiste setzt sie einheitlich.
-- ✅ `label` übersetzen; die Landmark braucht in jeder Sprache einen Namen.
-- ❌ Keine App-Logik hineinreichen (welche Ansicht zu welcher Id gehört).
-- ❌ Nicht als Ersatz für `SegmentedControl` in Formularen oder Werkzeugleisten
-  verwenden.
+- ✅ Pass icons without a size — the bar sets them uniformly.
+- ✅ Translate `label`; the landmark needs a name in every language.
+- ❌ Don't pass app logic in (which view belongs to which id).
+- ❌ Don't use it as a replacement for `SegmentedControl` in forms or toolbars.

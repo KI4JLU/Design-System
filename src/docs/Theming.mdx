@@ -4,39 +4,38 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # Theming
 
-Drei Darstellungs-Achsen, jede als Attribut auf `<html>`, jede von genau einem
-Provider geschrieben. Die Tokens in `tokens.css` lesen die Attribute; eine
-Komponente braucht also **keine Theme-Logik** — mit Tokens stylen, und alle
-Kombinationen funktionieren. Einen Stil-Schalter (abgerundet / Pille) gibt es
-nicht mehr: jede Komponente hat genau eine Form, die `--ui-radius-*`-Tokens
-sind feste Werte.
+Three appearance axes, each an attribute on `<html>`, each written by exactly
+one provider. The tokens in `tokens.css` read the attributes, so a component
+needs **no theme logic** — style it with tokens and every combination works.
+There is no longer a style switch (rounded / pill): every component has
+exactly one shape, and the `--ui-radius-*` tokens are fixed values.
 
-| Achse | Attribut auf `<html>` | Werte (Wahl) | Provider · Hook | `localStorage`-Key (Default) |
+| Axis | Attribute on `<html>` | Values (choice) | Provider · hook | `localStorage` key (default) |
 |---|---|---|---|---|
-| Farbschema | `data-theme` | `light` · `dark` · `system` | `ThemeProvider` · `useTheme` | `theme` |
-| Kontrast | `data-contrast` | `normal` · `medium` · `more` · `system` | `AppearanceProvider` · `useContrast` | `ui-shape-contrast` |
-| Akzentfarbe | `data-accent` | `standard` · `teal` · `violet` · `green` · `rose` · `amber` | `AppearanceProvider` · `useAccent` | `ui-shape-accent` |
+| Color scheme | `data-theme` | `light` · `dark` · `system` | `ThemeProvider` · `useTheme` | `theme` |
+| Contrast | `data-contrast` | `normal` · `medium` · `more` · `system` | `AppearanceProvider` · `useContrast` | `ui-shape-contrast` |
+| Accent color | `data-accent` | `standard` · `teal` · `violet` · `green` · `rose` · `amber` | `AppearanceProvider` · `useAccent` | `ui-shape-accent` |
 
-„System" wird in JS aufgelöst, auf `<html>` steht immer der aufgelöste Wert:
-`data-theme` ist `light|dark`, `data-contrast` ist `normal|medium|more`. Beide
-Provider folgen dem OS live, solange „System" gewählt ist.
+"System" is resolved in JS; `<html>` always carries the resolved value:
+`data-theme` is `light|dark`, `data-contrast` is `normal|medium|more`. Both
+providers follow the OS live while "system" is selected.
 
-Der Nutzer stellt alle drei im Einstellungsfenster um: **`AppearanceSettings`**
-sind die fertigen Zeilen dafür (siehe „Components/Overlays/SettingsDialog"). Neue
-Screens in **beiden** Farbschemata prüfen; Kontrast und Akzent lassen sich in
-Storybook über die Toolbar für jede Story live umschalten.
+The user changes all three in the settings window: **`AppearanceSettings`**
+are the ready-made rows for that (see "Components/Overlays/SettingsDialog").
+Check new screens in **both** color schemes; in Storybook, contrast and accent
+can be switched live for every story from the toolbar.
 
-## Farbschema (hell / dunkel / system)
+## Color scheme (light / dark / system)
 
-- Das aktive Theme liegt auf `<html data-theme="light|dark">`.
-- Der `ThemeProvider` löst die Nutzerwahl (hell / dunkel / system) auf,
-  persistiert sie in `localStorage` („theme“) und folgt bei „system“ live dem
-  OS. Umschalten per `AppearanceSettings` oder `useTheme().setTheme(...)`.
+- The active theme sits on `<html data-theme="light|dark">`.
+- The `ThemeProvider` resolves the user's choice (light / dark / system),
+  persists it in `localStorage` ("theme") and, for "system", follows the OS
+  live. Switch it with `AppearanceSettings` or `useTheme().setTheme(...)`.
 
-## Kontrast und Akzentfarbe — der `AppearanceProvider`
+## Contrast and accent color — the `AppearanceProvider`
 
-Ein Provider für die beiden übrigen Achsen, einmal nahe der Wurzel neben dem
-`ThemeProvider` gemountet.
+One provider for the other two axes, mounted once near the root next to the
+`ThemeProvider`.
 
 ```tsx
 <ThemeProvider>
@@ -46,116 +45,114 @@ Ein Provider für die beiden übrigen Achsen, einmal nahe der Wurzel neben dem
 </ThemeProvider>
 ```
 
-- **Kontrast** (`useContrast`): `normal` („Standard") ist das Design wie
-  gezeichnet: Arbeitsfläche (`--color-canvas`) und Seitenleisten
-  (`--color-sidebar`) in einem Weiß, Fokus über Hervorhebungsflächen, zarte
-  Linien. `medium` („Mittel") setzt die Arbeitsfläche einen Hauch ab, die
-  Seitenleisten behalten ihre Farbe: hell `--p-gray-25` statt Weiß, dunkel
-  `--p-gray-975` statt `--p-gray-950`. Nur die Navigationsspalte eines Einstellungsfensters hat immer eine
-  zweite Farbe (`surface`). `more` („Hoch") tut das auch,
-  verstärkt Linien und gedämpften Text (`outline-variant` → `outline`,
-  `on-surface-variant` → `on-surface`) und erzwingt auf **jedem**
-  fokussierbaren Element einen sichtbaren Fokusrahmen (3px `focus-ring`,
-  `!important`, weil Komponenten ihre eigene Outline abschalten). `system`
-  folgt `prefers-contrast: more` bzw. einem Forced-Colors-Theme des OS
-  (→ `more`, sonst `normal`) — der barrierearme Default dort, wo das Gerät
-  danach fragt.
-- **Akzentfarbe** (`useAccent`, `ACCENT_COLORS`): `standard` ist das JLU-Blau;
-  jede andere Familie ersetzt die ganze `primary`-Familie in hell **und**
-  dunkel, alles in `primary` Gezeichnete folgt ihr. `AccentSwatch` zeigt die
-  Farbe in einem Picker (`--accent-swatch-<accent>`).
-- **Form:** die festen Radien `--ui-radius-row/card/box/control/tile` tragen
-  die eine Form auch in eigenes CSS der App. Ein Container darf
-  `--ui-radius-control` lokal umsetzen (so zeichnet `AppShellLayout` seine
-  Bar-Suche als Pille).
-- `defaultContrast` / `defaultAccent` gelten, solange nichts gespeichert ist;
-  Kontrast und Akzent liegen unter `<storageKey>-contrast` /
-  `<storageKey>-accent` (`storageKey`, Default `ui-shape` — der Name aus der
-  Zeit des Stil-Schalters, behalten, damit gespeicherte Werte bleiben).
-- Ohne `AppearanceProvider` liefern die Hooks ihre Defaults (`system` /
-  `standard`) und die Setter tun nichts.
+- **Contrast** (`useContrast`): `normal` ("Standard") is the design as drawn:
+  the work surface (`--color-canvas`) and the sidebars (`--color-sidebar`) in
+  one white, focus shown through highlight surfaces, fine lines. `medium`
+  ("Mittel") sets the work surface off slightly while the sidebars keep their
+  color: light `--p-gray-25` instead of white, dark `--p-gray-975` instead of
+  `--p-gray-950`. Only the navigation column of a settings window always has
+  a second color (`surface`). `more` ("Hoch") does the same, strengthens lines
+  and muted text (`outline-variant` → `outline`, `on-surface-variant` →
+  `on-surface`) and forces a visible focus outline on **every** focusable
+  element (3px `focus-ring`, `!important`, because components turn their own
+  outline off). `system` follows `prefers-contrast: more` or a forced-colors
+  theme of the OS (→ `more`, otherwise `normal`) — the accessible default
+  wherever the device asks for it.
+- **Accent color** (`useAccent`, `ACCENT_COLORS`): `standard` is JLU blue;
+  every other family replaces the whole `primary` family in light **and**
+  dark, and everything drawn in `primary` follows it. `AccentSwatch` shows the
+  color in a picker (`--accent-swatch-<accent>`).
+- **Shape:** the fixed radii `--ui-radius-row/card/box/control/tile` carry the
+  one shape into the app's own CSS too. A container may set
+  `--ui-radius-control` locally (that is how `AppShellLayout` draws its bar
+  search as a pill).
+- `defaultContrast` / `defaultAccent` apply while nothing is stored; contrast
+  and accent are stored under `<storageKey>-contrast` / `<storageKey>-accent`
+  (`storageKey`, default `ui-shape` — the name from the time of the style
+  switch, kept so that stored values survive).
+- Without an `AppearanceProvider` the hooks return their defaults (`system` /
+  `standard`) and the setters do nothing.
 
-Das No-Flash-Skript unten deckt nur `data-theme` ab. Für Kontrast und Akzent
-gibt es keines: bis der `AppearanceProvider` gemountet ist, gelten die
-`:root`-Defaults (Standard-Kontrast, JLU-Blau), eine gespeicherte andere Wahl
-erscheint also erst danach.
+The no-flash script below covers only `data-theme`. There is none for
+contrast and accent: until the `AppearanceProvider` has mounted, the `:root`
+defaults apply (standard contrast, JLU blue), so a different stored choice
+appears only after that.
 
-## ThemeProvider: unkontrolliert vs. kontrolliert
+## ThemeProvider: uncontrolled vs. controlled
 
-Der `ThemeProvider` läuft in zwei Modi:
+The `ThemeProvider` runs in two modes:
 
-**Unkontrolliert (Default, unverändert).** Ohne `theme`-Prop besitzt der
-Provider den Zustand selbst: Er liest die Wahl aus `localStorage` (Key per
-`storageKey`, Default `"theme"`), persistiert jede Änderung dorthin und
-schreibt `data-theme` auf `<html>`. Bestehende Consumer (CampusAgents)
-brauchen nichts zu ändern.
+**Uncontrolled (default, unchanged).** Without a `theme` prop the provider
+owns the state: it reads the choice from `localStorage` (key via
+`storageKey`, default `"theme"`), persists every change there and writes
+`data-theme` on `<html>`. Existing consumers (CampusAgents) need no changes.
 
 ```tsx
-<ThemeProvider>{/* wie bisher */}</ThemeProvider>
-<ThemeProvider storageKey="campus-theme">{/* eigener Storage-Key */}</ThemeProvider>
+<ThemeProvider>{/* as before */}</ThemeProvider>
+<ThemeProvider storageKey="campus-theme">{/* own storage key */}</ThemeProvider>
 ```
 
-**Kontrolliert.** Mit `theme` + `onThemeChange` besitzt die App den Zustand:
-Der Provider liest und schreibt **kein** `localStorage`, hält keine eigene
-Wahl, und `setTheme` (z. B. aus `AppearanceSettings`) ruft nur `onThemeChange` —
-die App speist den neuen Wert wieder ein. Aufgelöst („system“ → hell/dunkel)
-und auf `<html data-theme>` geschrieben wird weiterhin vom Provider: Er bleibt
-der einzige Schreiber dieses Attributs — die App darf `data-theme` nicht
-zusätzlich selbst setzen.
+**Controlled.** With `theme` + `onThemeChange` the app owns the state: the
+provider reads and writes **no** `localStorage`, holds no choice of its own,
+and `setTheme` (for example from `AppearanceSettings`) only calls
+`onThemeChange` — the app feeds the new value back in. The provider still
+resolves it ("system" → light/dark) and writes it to `<html data-theme>`: it
+stays the only writer of that attribute — the app must not set `data-theme`
+itself as well.
 
 ```tsx
-const [theme, setTheme] = useAppTheme(); // App-eigener Zustand (Context, Store, …)
+const [theme, setTheme] = useAppTheme(); // the app's own state (context, store, …)
 
 <ThemeProvider theme={theme} onThemeChange={setTheme}>
   <App />
 </ThemeProvider>
 ```
 
-| Prop | Typ | Default | Wirkung |
+| Prop | Type | Default | Effect |
 |---|---|---|---|
-| `theme` | `"light" \| "dark" \| "system"` | — | Gesetzt = kontrollierter Modus: Provider folgt diesem Wert, ignoriert `localStorage`. |
-| `onThemeChange` | `(theme: Theme) => void` | — | Wird bei jedem `setTheme` gerufen; im kontrollierten Modus der einzige Effekt. |
-| `storageKey` | `string` | `"theme"` | Nur unkontrolliert: `localStorage`-Key. Muss zum No-Flash-Skript passen. |
+| `theme` | `"light" \| "dark" \| "system"` | — | Set = controlled mode: the provider follows this value and ignores `localStorage`. |
+| `onThemeChange` | `(theme: Theme) => void` | — | Called on every `setTheme`; in controlled mode its only effect. |
+| `storageKey` | `string` | `"theme"` | Uncontrolled only: the `localStorage` key. Must match the no-flash script. |
 
-Nicht unterstützt: während der Lebenszeit des Providers zwischen kontrolliert
-und unkontrolliert wechseln.
+Not supported: switching between controlled and uncontrolled during the
+provider's lifetime.
 
-## Migration für Apps mit eigenem Theme-Context (z. B. JustRAG)
+## Migration for apps with their own theme context (e.g. JustRAG)
 
-Eine App, deren eigener Context bereits `data-theme` auf `<html>` schreibt und
-denselben `localStorage`-Key nutzt, darf nicht einfach beide Provider mounten —
-zwei Schreiber auf demselben Attribut und Key. Zwei Wege:
+An app whose own context already writes `data-theme` on `<html>` and uses the
+same `localStorage` key must not simply mount both providers — that would be
+two writers on the same attribute and key. Two ways:
 
-**(a) App behält die Hoheit — kontrollierter Modus.** Der App-Context bleibt
-Owner von Theme (und ggf. Sprache); der DS-Provider bekommt `theme` +
-`onThemeChange` und übernimmt nur Auflösung + DOM-Schreiben. Der App-Context
-entfernt sein eigenes `data-theme`-Schreiben; Persistenz bleibt bei der App
-(eigener Key, eigenes Format — z. B. nur `light|dark`).
+**(a) The app keeps control — controlled mode.** The app context stays the
+owner of the theme (and the language, if any); the DS provider gets `theme` +
+`onThemeChange` and only resolves the value and writes the DOM. The app
+context removes its own `data-theme` writes; persistence stays with the app
+(its own key, its own format — for example only `light|dark`).
 
-**(b) App gibt die Hoheit ab — unkontrollierter DS-Provider.** Der DS-Provider
-besitzt das Theme (inkl. „system“ und Persistenz, Key per `storageKey`
-wählbar); die App trennt i18n/Sprache in einen eigenen Context und löscht ihren
-Theme-Anteil.
+**(b) The app hands over control — uncontrolled DS provider.** The DS
+provider owns the theme (including "system" and persistence, key selectable
+via `storageKey`); the app moves i18n/language into a context of its own and
+deletes its theme part.
 
-**Empfehlung (Vorschlag, Owner-Sign-off ausstehend): Weg (b).** Begründung:
-Der DS-Provider ist die vollständigere Implementierung („system“ mit
-Live-OS-Folge, No-Flash-Skript-Kontrakt, ein dokumentierter Storage-Kontrakt),
-und Weg (a) lässt dauerhaft zwei Theme-Zustandsmaschinen im Projekt, die
-synchron gehalten werden müssen. Theme und Sprache in einem Context zu bündeln
-war ohnehin eine Verlegenheitslösung — die Trennung ist ein einmaliger, kleiner
-Refactor, danach gibt es genau einen Owner pro Belang. Weg (a) bleibt der
-richtige, wenn eine App Theme wirklich serverseitig oder pro Nutzerprofil
-verwaltet (dann ist die App legitimer Owner).
+**Recommendation (proposal, owner sign-off pending): way (b).** Reasoning: the
+DS provider is the more complete implementation ("system" that follows the OS
+live, the no-flash script contract, one documented storage contract), and way
+(a) leaves two theme state machines in the project for good that have to be
+kept in sync. Bundling theme and language in one context was a stopgap
+anyway — separating them is a small one-off refactor, after which every
+concern has exactly one owner. Way (a) remains the right one when an app
+really manages the theme on the server or per user profile (then the app is
+the legitimate owner).
 
-## No-Flash-Skript
+## No-flash script
 
-Damit die Seite nicht hell aufblitzt, bevor React lädt, gehört dieses Skript in
-den `<head>` der `index.html` (identisch zur Logik des ThemeProviders — beide
-synchron halten). **Ohne dieses Skript blitzt bei dunklem Theme das helle
-Theme auf** (Flash), bis der Provider mountet — JustRAGs `web/index.html` hat
-es heute z. B. nicht. Bei abweichendem `storageKey` (oder kontrolliertem Modus
-mit eigener Persistenz) das Skript entsprechend anpassen — es muss denselben
-Key und dieselben Werte lesen wie der tatsächliche Theme-Owner:
+So the page doesn't flash light before React loads, this script belongs in
+the `<head>` of `index.html` (identical to the ThemeProvider's logic — keep
+both in sync). **Without this script the light theme flashes up in the dark
+theme** until the provider mounts — JustRAG's `web/index.html`, for example,
+doesn't have it today. With a different `storageKey` (or controlled mode with
+its own persistence), adapt the script accordingly — it must read the same
+key and the same values as the actual theme owner:
 
 ```html
 <script>
@@ -174,9 +171,9 @@ Key und dieselben Werte lesen wie der tatsächliche Theme-Owner:
 </script>
 ```
 
-## Anforderungen an jedes Theme
+## Requirements for every theme
 
-Jedes Theme definiert Werte für: Default, **hover, active, focus, disabled**,
-Ränder, erhöhte Flächen und Schatten. Hintergrund + Text allein reicht nicht —
-fehlende Zustände sind die häufigste Quelle visueller Bugs. Beide Themes
-brauchen vor dem Merge einen **visuellen QA-Durchgang**, nicht nur Code-Review.
+Every theme defines values for: default, **hover, active, focus, disabled**,
+borders, raised surfaces and shadows. Background + text alone is not
+enough — missing states are the most common source of visual bugs. Both themes
+need a **visual QA pass** before merging, not just a code review.

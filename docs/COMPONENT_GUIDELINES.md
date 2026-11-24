@@ -430,7 +430,7 @@ see the „DisabledTrigger" story.
 ```tsx
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@ki4jlu/design-system";
 
-<Table containerClassName="max-h-72">        {/* Höhe = vertikales Scrollen */}
+<Table containerClassName="max-h-72">        {/* height = vertical scrolling */}
   <TableCaption>Zugriffsschlüssel</TableCaption>
   <TableHeader>
     <TableRow>
@@ -462,7 +462,7 @@ one row with `colSpan` across all columns, header kept. `Table` is the table,
 ```tsx
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@ki4jlu/design-system";
 
-<Tabs defaultValue="einzeln">                 {/* oder value + onValueChange */}
+<Tabs defaultValue="einzeln">                 {/* or value + onValueChange */}
   <TabsList aria-label="Freigabe">
     <TabsTrigger value="einzeln">Einzeln</TabsTrigger>
     <TabsTrigger value="link">Einladungslink</TabsTrigger>
@@ -491,30 +491,30 @@ import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, Toas
 
 <ToastProvider>
   <App />
-  {toasts.map((t) => (                      {/* die Liste gehört der App */}
+  {toasts.map((t) => (                      {/* the list belongs to the app */}
     <Toast key={t.id} variant={t.variant} onOpenChange={(o) => !o && remove(t.id)}>
       <ToastTitle>{t.message}</ToastTitle>
       <ToastClose />
     </Toast>
   ))}
-  <ToastViewport />                          {/* genau einer, App-Wurzel */}
+  <ToastViewport />                          {/* exactly one, at the app root */}
 </ToastProvider>
 ```
-Ersetzt handgebaute Meldungsstapel (JustRAGs `ToastContainer.tsx` + `Toast.css`).
-**Drei Teile müssen stehen** — Provider, *ein* Viewport, ein `Toast` je Meldung;
-ohne gemounteten Viewport rendert ein `Toast` still gar nichts. `variant`
-(`neutral` · `success` · `error` · `warning` · `info`) steuert Akzentkante, Icon,
-Standarddauer **und** Dringlichkeit der Screenreader-Ansage (`error` assertiv,
-sonst höflich; `type` übersteuert). Der Toast **stiehlt keinen Fokus**; der Timer
-pausiert bei Hover und bei Fokus (F8 springt in den Viewport) — das ist die
-Antwort auf WCAG 2.2.1, zusammen mit `ToastClose` und `duration={Infinity}`.
-`duration={0}` schaltet Auto-Dismiss **nicht** ab (Radix behandelt `0` als „nicht
-gesetzt"). Ein Toast mit `ToastAction` bekommt immer `duration={Infinity}` — eine
-Aktion, die sich nach vier Sekunden wegräumt, ist unbenutzbar; `altText` an der
-Aktion ist Pflicht und ersetzt die Beschriftung in der Ansage. Warteschlange,
-Obergrenze und Entdopplung bleiben in der App; das Paket liefert keinen
-`toast()`-Singleton. Nichts Essenzielles nur im Toast — er verschwindet und ist
-danach nicht mehr auffindbar.
+Replaces hand-built message stacks (JustRAG's `ToastContainer.tsx` + `Toast.css`).
+**Three parts must be in place** — the provider, *one* viewport, one `Toast` per
+message; without a mounted viewport a `Toast` silently renders nothing. `variant`
+(`neutral` · `success` · `error` · `warning` · `info`) drives surface and text
+color, icon, default duration **and** the urgency of the screen reader
+announcement (`error` assertive, otherwise polite; `type` overrides). The toast
+**doesn't steal focus**; the timer pauses on hover and on focus (F8 jumps into the
+viewport) — that is the answer to WCAG 2.2.1, together with `ToastClose` and
+`duration={Infinity}`. `duration={0}` does **not** turn auto-dismiss off (Radix
+treats `0` as "not set"). A toast with a `ToastAction` always gets
+`duration={Infinity}` — an action that clears itself away after four seconds is
+unusable; `altText` on the action is required and replaces the label in the
+announcement. Queue, limit and de-duplication stay in the app; the package ships
+no `toast()` singleton. Nothing essential only in a toast — it disappears and
+can't be found afterwards.
 
 ## Layout & Templates
 

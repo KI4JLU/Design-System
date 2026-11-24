@@ -6,98 +6,97 @@ import * as SettingsDialogStories from "./settings-dialog.stories";
 
 # Button
 
-Die Schaltfläche des Systems — `<button>` mit den Varianten aus
-`buttonVariants`, per `asChild` (Radix Slot) auch als Link. Alle Farben kommen
-aus semantischen Tokens, beide Themes schalten von selbst.
+The system's button — a `<button>` with the variants from `buttonVariants`,
+and via `asChild` (Radix Slot) also a link. All colors come from semantic
+tokens; both themes switch by themselves.
 
 <Canvas of={ButtonStories.Playground} />
 
 <Controls />
 
-## Varianten
+## Variants
 
 <Canvas of={ButtonStories.Variants} />
 
-| Variante | Wofür |
+| Variant | For |
 |---|---|
-| `default` | Primäraktion (Speichern, Erstellen) — eine pro Bereich |
-| `secondary` | Zweitaktion auf gefülltem Grund |
-| `outline` | neutrale Zweitaktion (Abbrechen, Filter); mit `aria-pressed` ein Toggle, mit `data-state="open"` ein offener Trigger |
-| `ghost` | leise neutrale Aktion (Icon-Buttons, Menü-Trigger, Schließen); `aria-pressed` und `data-state="open"` wie bei `outline` |
-| `primary-outline` | semantischer Toggle „Aktivieren" |
-| `destructive` | Bestätigungsschritt einer Löschung („Endgültig löschen") |
-| `destructive-outline` | zweitrangige Gefahr neben anderen Aktionen („Deaktivieren", „Zugriff widerrufen") |
-| `ghost-destructive` | Löschen/Entfernen in Dialog-Fußzeilen, Werkzeugleisten und Zeilen |
-| `link` | Aktion, die wie ein Link im Fließtext steht |
+| `default` | Primary action (save, create) — one per area |
+| `secondary` | Secondary action on a filled background |
+| `outline` | Neutral secondary action (cancel, filter); with `aria-pressed` a toggle, with `data-state="open"` an open trigger |
+| `ghost` | Quiet neutral action (icon buttons, menu triggers, close); `aria-pressed` and `data-state="open"` as with `outline` |
+| `primary-outline` | Semantic "activate" toggle |
+| `destructive` | The confirmation step of a deletion ("Endgültig löschen") |
+| `destructive-outline` | Secondary danger next to other actions ("Deaktivieren", "Zugriff widerrufen") |
+| `ghost-destructive` | Delete/remove in dialog footers, toolbars and rows |
+| `link` | An action that sits like a link in running text |
 
-## Toggle und offener Trigger
+## Toggle and open trigger
 
-`outline` und `ghost` stylen sich selbst, sobald die Aufrufstelle
-`aria-pressed` setzt (Filter-Toggles) oder ein Radix-Trigger
-`data-state="open"` trägt (Dropdown offen). Das ARIA-Attribut ist die API —
-kein zusätzliches Prop.
+`outline` and `ghost` style themselves as soon as the call site sets
+`aria-pressed` (filter toggles) or a Radix trigger carries
+`data-state="open"` (dropdown open). The ARIA attribute is the API — no extra
+prop.
 
 <Canvas of={ButtonStories.ActiveTrigger} />
 
-## Größen
+## Sizes
 
-`default`, `sm`, `lg` und `icon` (rund, nur mit `aria-label`):
+`default`, `sm`, `lg` and `icon` (round, only with `aria-label`):
 
 <Canvas of={ButtonStories.Sizes} />
 
-`field` ist so hoch wie ein gerahmtes Feld (`Input`, `Select`) in derselben
-Zeile und übernimmt dessen Schriftgröße, damit die Zeile als eine
-Bediengruppe wirkt. Bei Feldern mit Beschriftung mit `items-end` kombinieren.
+`field` is as tall as a framed field (`Input`, `Select`) in the same row and
+takes on its font size, so the row reads as one control group. For fields
+with a label, combine it with `items-end`.
 
 <Canvas of={ButtonStories.FieldRow} />
 
-## Löschen ist immer rot
+## Delete is always red
 
-**Jede Aktion, die etwas löscht oder entfernt, nutzt eine destruktive
-Variante** — `ghost-destructive`, `destructive-outline` oder `destructive`.
-Nie `ghost` oder `outline` mit einem Papierkorb: ein neutraler Button neben
-Abbrechen und Speichern sieht nicht gefährlich aus, auch nicht auf Hover.
-Alle drei destruktiven Varianten sind schon in Ruhe rot (Schrift, Rahmen
-oder Fläche); `ghost-destructive` legt auf Hover zusätzlich den
-Fehler-Container darunter, `destructive-outline` füllt sich rot.
+**Every action that deletes or removes something uses a destructive
+variant** — `ghost-destructive`, `destructive-outline` or `destructive`. Never
+`ghost` or `outline` with a trash can: a neutral button next to Cancel and
+Save doesn't look dangerous, not even on hover. All three destructive
+variants are red at rest already (text, border or surface);
+`ghost-destructive` additionally puts the error container underneath on
+hover, and `destructive-outline` fills red.
 
 <Canvas of={ButtonStories.DeleteActions} />
 
-| Wo | Variante |
+| Where | Variant |
 |---|---|
-| Dialog-Fußzeile, Werkzeugleiste, Auswahlleiste, Tabellen- oder Listenzeile (auch als Icon-Button) | `ghost-destructive` |
-| zweitrangige Gefahr, die neben anderen Aktionen gleichrangig steht | `destructive-outline` |
-| der Bestätigungsschritt („Wirklich löschen?") | `destructive` |
+| Dialog footer, toolbar, selection bar, table or list row (also as an icon button) | `ghost-destructive` |
+| Secondary danger that stands on equal footing next to other actions | `destructive-outline` |
+| The confirmation step ("Wirklich löschen?") | `destructive` |
 
-In Menüs gilt dasselbe über `DropdownMenuItem variant="destructive"` bzw.
-`destructive: true` im `ActionMenu`.
+The same applies in menus through `DropdownMenuItem variant="destructive"` or
+`destructive: true` in the `ActionMenu`.
 
 ```tsx
-// Zeile oder Werkzeugleiste
+// Row or toolbar
 <Button variant="ghost-destructive" size="icon" aria-label="Quelle entfernen">
   <Trash2 aria-hidden className="size-4" />
 </Button>
 
-// Bestätigungsschritt
+// Confirmation step
 <DialogFooter>
   <DialogClose asChild><Button variant="outline">Abbrechen</Button></DialogClose>
   <Button variant="destructive" onClick={remove}>Endgültig löschen</Button>
 </DialogFooter>
 ```
 
-Auch das Entfernen-`×` an `PromptInputAttachment` und `TokenInputChip`
-ist in Ruhe rot. Auf Hover legt das `×` am Anhang den Fehler-Container unter
-sich (`ghost-destructive`); das `×` am Chip füllt sich rot (`error` mit
-`on-error`), weil der Fehler-Chip selbst schon den Fehler-Container als
-Fläche hat.
+The remove `×` on `PromptInputAttachment` and `TokenInputChip` is red at rest
+too. On hover the `×` on an attachment puts the error container underneath
+(`ghost-destructive`); the `×` on a chip fills red (`error` with `on-error`),
+because the error chip itself already has the error container as its
+surface.
 
-### Muster: Löschen in der Fußzeile eines Dialogs
+### Pattern: delete in a dialog footer
 
-Ein Editor, dessen Objekt sich löschen lässt (z. B. „Thema löschen" in den
-Thema-Einstellungen): links in der Fußzeile `ghost-destructive` „Löschen"
-neben dem Status, rechts Abbrechen (`outline`) und Speichern (`default`).
-„Löschen" öffnet einen Bestätigungsdialog, dessen eigener Button
-`destructive` ist.
+An editor whose object can be deleted (e.g. "Thema löschen" in the topic
+settings): on the left of the footer a `ghost-destructive` "Löschen" next to
+the status, on the right Cancel (`outline`) and Save (`default`). "Löschen"
+opens a confirmation dialog whose own button is `destructive`.
 
 <Canvas of={SettingsDialogStories.DeleteInFooter} />
 
@@ -124,5 +123,5 @@ neben dem Status, rechts Abbrechen (`outline`) und Speichern (`default`).
 />
 ```
 
-Die Fußzeile ordnet ihre zwei Kinder links und rechts an; „Löschen" und der
-Status teilen sich deshalb ein linkes Element.
+The footer arranges its two children left and right; "Löschen" and the status
+therefore share one left element.

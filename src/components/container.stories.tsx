@@ -20,9 +20,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Zentrierte Seitenspalte: Seitenränder `gutter` (mobil) / `margin-page` (ab md).
- * `size` benennt die Rolle der Seite — `page` (Seitenmaximum, Standard),
- * `content` (Inhaltsspalte), `reading` (Lesespalte).
+ * Centered page column: page margins `gutter` (mobile) / `margin-page` (from md).
+ * `size` names the role of the page — `page` (page maximum, default),
+ * `content` (content column), `reading` (reading column).
  */
 export const Playground: Story = {
   args: { size: "page" },
@@ -34,9 +34,9 @@ export const Playground: Story = {
 };
 
 /**
- * Derselbe Absatz in allen drei Breiten — bewusst identischer Text, weil sich
- * eine Breite nur an Inhalt beurteilen lässt: dieselben Sätze laufen bei `page`
- * über 180 Zeichen pro Zeile und bei `reading` über 74.
+ * The same paragraph in all three widths — deliberately identical text,
+ * because a width can only be judged by its content: the same sentences run
+ * over 180 characters per line at `page` and over 74 at `reading`.
  */
 const prose = (
   <>
@@ -57,7 +57,7 @@ const prose = (
   </>
 );
 
-/** Kennzahlenkarte — der Inhalt, für den `page` die richtige Breite ist. */
+/** Metric card — the content for which `page` is the right width. */
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card className="p-4">
@@ -71,7 +71,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Sammlungskarte — der Inhalt, für den `content` die richtige Breite ist. */
+/** Collection card — the content for which `content` is the right width. */
 function CollectionCard({ title, meta }: { title: string; meta: string }) {
   return (
     <Card className="p-4">
@@ -94,12 +94,12 @@ function SizeLabel({ children }: { children: ReactNode }) {
 }
 
 /**
- * Die drei Breiten übereinander, jede mit echtem Inhalt: Kennzahlenraster bei
- * `page`, Sammlungsraster bei `content`, laufender Text bei `reading` — und in
- * allen drei derselbe Absatz, damit die Zeilenlänge vergleichbar ist. Die
- * gestrichelte Kante zeigt das **Textmaß**, also die Spaltenbreite minus der
- * Seitenränder (`px-gutter` / ab md `px-margin-page`) — die gehören zur Breite,
- * weil `box-sizing: border-box` gilt.
+ * The three widths stacked, each with real content: a metric grid at `page`,
+ * a collection grid at `content`, running text at `reading` — and the same
+ * paragraph in all three, so the line length can be compared. The dashed edge
+ * shows the **measure**, i.e. the column width minus the page margins
+ * (`px-gutter` / `px-margin-page` from md) — they are part of the width,
+ * because `box-sizing: border-box` applies.
  */
 function AllSizesBody() {
   return (
@@ -149,10 +149,10 @@ function AllSizesBody() {
 }
 
 /**
- * Orakel für alle Breiten-Stories: die **berechnete** `max-width` aus der
- * CSSOM, nicht die Klassenzeichenkette. Eine Klassenprüfung wäre auch dann
- * grün, wenn das Utility zu nichts kompiliert — genau der Fehler, der bei
- * einem Token-Namen ohne Utility-Namespace auftreten würde.
+ * Oracle for all width stories: the **computed** `max-width` from the CSSOM,
+ * not the class string. A class check would stay green even if the utility
+ * compiled to nothing — exactly the bug a token name without a utility
+ * namespace would cause.
  */
 async function expectWidths(canvasElement: HTMLElement) {
   const read = (size: string) => {
@@ -160,15 +160,15 @@ async function expectWidths(canvasElement: HTMLElement) {
     if (!el) throw new Error(`Container ${size} nicht gefunden`);
     return getComputedStyle(el).maxWidth;
   };
-  // 1440px: das veröffentlichte Seitenmaximum, unverändert seit v0.9 — zwei
-  // Apps hängen daran (CampusAgents schreibt `max-w-container-max` selbst).
+  // 1440px: the published page maximum, unchanged since v0.9 — two apps
+  // depend on it (CampusAgents writes `max-w-container-max` itself).
   await expect(read("page")).toBe("1440px");
-  // 1000px: gemessen beim Konsumenten, nicht hier gewählt —
+  // 1000px: measured at the consumer, not chosen here —
   // `.home-view__grid--main` in JustRAG (web/src/components/HomeView.css:247).
   await expect(read("content")).toBe("1000px");
-  // 672px: 42rem bei 16px-Wurzelgröße. Derselbe Wert wie Tailwinds
-  // `--container-2xl` (`max-w-2xl`), den diese Breite vorher direkt benutzte,
-  // und den `AuthLayout width="prose"` unabhängig davon festnagelt.
+  // 672px: 42rem at a 16px root size. The same value as Tailwind's
+  // `--container-2xl` (`max-w-2xl`), which this width used directly before,
+  // and which `AuthLayout width="prose"` pins independently.
   await expect(read("reading")).toBe("672px");
 }
 
@@ -179,32 +179,32 @@ export const AllSizes: Story = {
   },
 };
 
-/** Dieselben drei Breiten im dunklen Theme — die Breite darf sich nicht ändern. */
+/** The same three widths in the dark theme — the width must not change. */
 export const AllSizesDark: Story = {
   ...AllSizes,
   globals: { theme: "dark" },
   play: async ({ canvasElement }) => {
-    // Belegt zuerst, dass die Story wirklich im dunklen Theme läuft
-    // (`ThemeProvider` ist der einzige Schreiber von `<html data-theme>`).
+    // First proves that the story really runs in the dark theme
+    // (`ThemeProvider` is the only writer of `<html data-theme>`).
     await expect(document.documentElement.dataset.theme).toBe("dark");
     await expectWidths(canvasElement);
   },
 };
 
 /**
- * **Der Ausweg, absichtlich festgenagelt — keine Empfehlung.** Die
- * Breiten-Utility sitzt auf genau dem Element, in das `className` fließt, also
- * gewinnt eine Klasse am Aufrufort (`cn()` → tailwind-merge löst den
- * `max-w`-Konflikt auf). Diese Story existiert, weil dieser Mechanismus die
- * Begründung der Token-Syntax ist: mit `max-w-container-content` statt
- * `max-w-(--max-width-container-content)` erkennt tailwind-merge 3.6.0 den
- * Konflikt **nicht** mehr, behält beide Klassen und die CSS-Reihenfolge
- * entscheidet. Wird sie rot, ist die Syntax in `container-variants.ts`
- * gekippt — nicht der Aufrufort.
+ * **The escape hatch, pinned on purpose — not a recommendation.** The width
+ * utility sits on exactly the element `className` flows into, so a class at
+ * the call site wins (`cn()` → tailwind-merge resolves the `max-w` conflict).
+ * This story exists because that mechanism is the reason for the token
+ * syntax: with `max-w-container-content` instead of
+ * `max-w-(--max-width-container-content)`, tailwind-merge 3.6.0 **no longer**
+ * detects the conflict, keeps both classes, and the CSS order decides. If it
+ * turns red, the syntax in `container-variants.ts` has flipped — not the call
+ * site.
  *
- * Für Seitenbreiten ist der richtige Weg trotzdem `size`: `max-w-[1000px]` am
- * Aufrufort kann `layout-only-classname` nicht sehen (`Container` steht nicht
- * in `DS_CONTROLS`, siehe `eslint-plugin/index.js`), fällt also nirgends auf.
+ * For page widths the right way is still `size`: `layout-only-classname`
+ * can't see a `max-w-[1000px]` at the call site (`Container` is not in
+ * `DS_CONTROLS`, see `eslint-plugin/index.js`), so it goes unnoticed.
  */
 export const CallSiteWidthStillWins: Story = {
   render: () => (
@@ -218,8 +218,8 @@ export const CallSiteWidthStillWins: Story = {
   ),
   play: async ({ canvasElement }) => {
     const el = canvasElement.querySelector("[data-testid='overridden']");
-    // Orakel: Tailwinds veröffentlichte Skala — `max-w-3xl` ist
-    // `--container-3xl` = 48rem = 768px, aufgelöst von Chromium.
+    // Oracle: Tailwind's published scale — `max-w-3xl` is
+    // `--container-3xl` = 48rem = 768px, resolved by Chromium.
     await expect(getComputedStyle(el!).maxWidth).toBe("768px");
   },
 };

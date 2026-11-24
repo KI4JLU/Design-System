@@ -22,10 +22,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Der Normalfall: ein Reiter je Bereich, ein Panel je Reiter. Der aktive
- * Reiter wird nur umgefärbt und unterstrichen — nie vergrößert, damit die
- * Leiste beim Wechsel nicht umbricht. Aktivierung ist automatisch: Pfeiltasten
- * wechseln den Fokus **und** die Auswahl, Pos1/Ende springen an den Rand.
+ * The normal case: one tab per area, one panel per tab. The active tab is
+ * only recolored and underlined — never enlarged, so the bar doesn't rewrap
+ * on switching. Activation is automatic: arrow keys move focus **and**
+ * selection, Home/End jump to the ends.
  */
 export const Basic: Story = {
   render: () => (
@@ -61,9 +61,9 @@ export const Basic: Story = {
 };
 
 /**
- * Reiter mit Icon: das Icon ist dekorativ (`aria-hidden`), der zugängliche
- * Name des Reiters bleibt sein Text. Vorbild ist die Einstellungs-Leiste einer
- * Wissensbasis in JustRAG.
+ * Tabs with icons: the icon is decorative (`aria-hidden`), the tab's
+ * accessible name stays its text. Modeled on the settings bar of a knowledge
+ * base in JustRAG.
  */
 export const WithIcons: Story = {
   render: () => (
@@ -113,11 +113,10 @@ export const WithIcons: Story = {
 };
 
 /**
- * Ein deaktivierter Reiter ist ein nativ `disabled` Button: Radix nimmt ihn
- * ganz aus der Pfeiltasten-Navigation heraus, er ist also weder anklickbar
- * noch per Tastatur erreichbar. Der Grund der Sperre gehört deshalb sichtbar
- * neben die Leiste — ein Tooltip auf einem deaktivierten Reiter ist nicht
- * erreichbar.
+ * A disabled tab is a natively `disabled` button: Radix takes it out of
+ * arrow-key navigation entirely, so it can be neither clicked nor reached by
+ * keyboard. The reason for the lock therefore belongs visibly next to the
+ * bar — a tooltip on a disabled tab is unreachable.
  */
 export const DisabledTab: Story = {
   render: () => (
@@ -182,19 +181,19 @@ const ControlledExample = () => {
 };
 
 /**
- * Kontrolliert: `value` + `onValueChange`. Der Zustand liegt beim Aufrufort,
- * die Leiste bewegt sich nur, wenn er ihn ändert — so lässt sich der aktive
- * Reiter aus der Route, dem Suchparameter oder wie hier aus einem Button
- * setzen. Unkontrolliert genügt `defaultValue`.
+ * Controlled: `value` + `onValueChange`. The state lives at the call site, and
+ * the bar only moves when the call site changes it — so the active tab can be
+ * set from the route, a search parameter or, as here, a button. For
+ * uncontrolled use, `defaultValue` is enough.
  */
 export const Controlled: Story = {
   render: () => <ControlledExample />,
 };
 
 /**
- * Bei teuren Panels (ein Netzwerkaufruf je Reiter) verhindert
- * `activationMode="manual"`, dass das bloße Durchpfeilen jeden Bereich lädt:
- * Pfeiltasten bewegen dann nur den Fokus, Enter oder Leertaste wählen aus.
+ * For expensive panels (one network call per tab), `activationMode="manual"`
+ * prevents merely arrowing through from loading every area: arrow keys then
+ * only move focus, and Enter or Space selects.
  */
 export const ManualActivation: Story = {
   render: () => (
@@ -220,10 +219,10 @@ export const ManualActivation: Story = {
 };
 
 /**
- * Senkrechte Leiste über `orientation="vertical"`. Radix spiegelt die
- * Ausrichtung als `data-orientation` auf jedes Teil, dreht die Leiste, setzt
- * `aria-orientation="vertical"` und tauscht die Navigationstasten gegen
- * Pfeil-hoch/-runter. Sinnvoll, wenn die Reiterbeschriftungen lang sind.
+ * A vertical bar via `orientation="vertical"`. Radix mirrors the orientation
+ * as `data-orientation` onto every part, turns the bar, sets
+ * `aria-orientation="vertical"` and swaps the navigation keys for arrow
+ * up/down. Useful when the tab labels are long.
  */
 export const Vertical: Story = {
   render: () => (
@@ -259,18 +258,18 @@ export const Vertical: Story = {
 };
 
 /**
- * Viele Reiter: die Leiste bringt **keinen** Scroll-Container mit. Reiter
- * werden nie gestaucht (`shrink-0`, Regel 5 der COMPONENT_GUIDELINES) — passt
- * die Reihe nicht, läuft sie über, und der Aufrufort entscheidet mit
- * `className="overflow-x-auto overflow-y-hidden"` (Layout, nicht Skin), dass
- * sie stattdessen scrollt. Die Pfeiltasten holen den fokussierten Reiter
- * dabei von selbst ins Bild. Ab etwa acht Reitern ist eine senkrechte Leiste
- * oder ein `Select` die bessere Wahl.
+ * Many tabs: the bar brings **no** scroll container. Tabs are never squeezed
+ * (`shrink-0`, rule 5 of the COMPONENT_GUIDELINES) — if the row doesn't fit,
+ * it overflows, and the call site decides with
+ * `className="overflow-x-auto overflow-y-hidden"` (layout, not skin) that it
+ * scrolls instead. The arrow keys bring the focused tab into view by
+ * themselves. From about eight tabs, a vertical bar or a `Select` is the
+ * better choice.
  */
 export const ManyTabs: Story = {
   render: () => {
-    // Der `value` landet in der von Radix erzeugten id
-    // (`…-trigger-<value>`), also ein Slug ohne Leerzeichen — nicht das Label.
+    // The `value` ends up in the id Radix generates
+    // (`…-trigger-<value>`), so a slug without spaces — not the label.
     const bereiche = [
       { value: "modelle", label: "KI-Modelle" },
       { value: "anmeldung", label: "Anmeldung" },
@@ -369,10 +368,10 @@ export const SegmentedNarrow: Story = {
 };
 
 /**
- * Getrennte Reiter wie die Blätter einer Arbeitsmappe: die inaktiven als graue
- * Kästen auf der Trennlinie, der aktive im hellen Auswahlblau
- * (`primary-fixed`). Für viele gleichartige Reiter über einem
- * Inhalt (z. B. die Tabellenblätter einer Excel-Vorschau).
+ * Separate tabs like the sheets of a workbook: the inactive ones as gray boxes
+ * on the divider, the active one in the light selection blue
+ * (`primary-fixed`). For many tabs of the same kind above one piece of
+ * content (e.g. the sheets of an Excel preview).
  */
 export const Enclosed: Story = {
   render: () => (

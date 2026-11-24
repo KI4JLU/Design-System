@@ -9,154 +9,151 @@ import * as SidePanelStories from "./side-panel.stories";
 > `AppShellLayout` (Templates), which composes `SidePanel` and `ResizeHandle`;
 > use it directly only to build a new shell template.
 
-Der Rahmen einer einklappbaren Arbeitsbereichs-Leiste: Breite, Einklapp-Zustand,
-Randseite. Ersetzt die handgebaute Doppelung aus „linke Leiste" und „rechte
-Leiste" — die Position ist eine Prop, kein eigener Bestandteil der Komponente.
+The frame of a collapsible workspace panel: width, collapsed state, edge side.
+Replaces the hand-built duplication of "left panel" and "right panel" — the
+position is a prop, not a separate part of the component.
 
 <Canvas of={SidePanelStories.Playground} />
 
 ## Props
 
-| Prop | Typ | Pflicht | Bedeutung |
+| Prop | Type | Required | Meaning |
 |---|---|---|---|
-| `side` | `'left' \| 'right'` | ✅ | Randseite: bestimmt die Rand**kante** (`border-r` links, `border-l` rechts) und die Chevron-Richtung — siehe „Chevrons" unten. |
-| `isOpen` | `boolean` | ✅ | Ausgeklappt oder auf die Schiene zugeklappt. **Konsumenten-Zustand.** |
-| `width` | `number` | ✅ | Breite in px im ausgeklappten Zustand. **Konsumenten-Zustand.** |
-| `onExpand` / `onCollapse` | `() => void` | ✅ | Klick auf den Ausklapp- bzw. Einklapp-Knopf. |
-| `expandLabel` / `collapseLabel` | `string` | ✅ | Zugängliche Namen der beiden Knöpfe. |
-| `header` | `ReactNode` | — | Titel-/Marken-Knoten in der Kopfzeile, **nur ausgeklappt** — siehe „Kopfzeile" unten. |
-| `collapsedPreview` | `ReactNode` | — | Icon-Streifen in der zugeklappten Schiene, unter dem Ausklapp-Knopf. |
-| `footer` | `ReactNode` | — | Unter dem Rumpf angehefteter Knoten (z. B. `SidebarUserMenu`), **seit 0.30.0**; überlebt das Einklappen und rutscht an das untere Ende der Schiene. |
-| `children` | `ReactNode` | ✅ | Inhalt der Leiste. |
-| `aria-label` | `string` | (empfohlen) | `<aside>` ist ein `complementary`-Landmark; bei mehr als einer Leiste auf der Seite braucht jede einen eigenen Namen. |
+| `side` | `'left' \| 'right'` | ✅ | Edge side: decides the border **edge** (`border-r` on the left, `border-l` on the right) and the chevron direction — see "Chevrons" below. |
+| `isOpen` | `boolean` | ✅ | Expanded, or collapsed to the rail. **Consumer state.** |
+| `width` | `number` | ✅ | Width in px when expanded. **Consumer state.** |
+| `onExpand` / `onCollapse` | `() => void` | ✅ | Click on the expand or collapse button. |
+| `expandLabel` / `collapseLabel` | `string` | ✅ | Accessible names of the two buttons. |
+| `header` | `ReactNode` | — | Title/brand node in the header row, **only when expanded** — see "Header row" below. |
+| `collapsedPreview` | `ReactNode` | — | Icon strip in the collapsed rail, below the expand button. |
+| `footer` | `ReactNode` | — | Node pinned below the body (e.g. `SidebarUserMenu`), **since 0.30.0**; survives collapsing and moves to the bottom end of the rail. |
+| `children` | `ReactNode` | ✅ | Content of the panel. |
+| `aria-label` | `string` | (recommended) | `<aside>` is a `complementary` landmark; with more than one panel on the page, each needs its own name. |
 
 <Controls />
 
-## Kopfzeile
+## Header row
 
-Die Zeile mit dem Einklapp-Knopf trägt zusätzlich den optionalen
-`header`-Knoten, und der Knopf steht **auf der zum Inhalt zeigenden Kante** —
-in beide Richtungen:
+The row with the collapse button also carries the optional `header` node, and
+the button sits **on the edge facing the content** — in both directions:
 
-| `side` | Reihenfolge der Kopfzeile |
+| `side` | Order of the header row |
 |---|---|
-| `left` | `[header … Knopf]` — Knopf am nachlaufenden Rand |
-| `right` | `[Knopf … header]` — Knopf am führenden Rand |
+| `left` | `[header … button]` — button at the trailing edge |
+| `right` | `[button … header]` — button at the leading edge |
 
-Zwei Leisten einer Ansicht spiegeln sich damit zur Mitte hin: beide
-Bedienelemente stehen am Hauptbereich, nicht an den Fensterrändern. Getragen
-wird das von der **DOM-Reihenfolge** (nicht von einer `order-*`-Utility), damit
-Tab-Reihenfolge und Vorlesereihenfolge dem Bild entsprechen.
+Two panels of one view thus mirror toward the middle: both controls sit at the
+main area, not at the window edges. This is carried by the **DOM order** (not
+by an `order-*` utility), so that tab order and reading order match the
+picture.
 
-Die Zeile ist `h-14` hoch — dieselbe Chrome-Einheit wie die Leiste von
-`AppShellLayout`, so dass linke Kopfzeile,
-Hauptspalten-Leiste und rechte Kopfzeile auf einer Linie liegen. Die Höhe hängt
-an der Zeile, nicht am Knopf, also verschiebt ein höherer `header`-Knoten
-nichts.
+The row is `h-14` tall — the same chrome unit as the `AppShellLayout` bar, so
+that the left header row, the main column's bar and the right header row line
+up. The height belongs to the row, not to the button, so a taller `header`
+node doesn't shift anything.
 
-### Geometrie: der Umschalter steht auf dem ersten Bedienelement des Rumpfs
+### Geometry: the toggle sits on the body's first control
 
-Seit 0.39.0 ist die Zeile mit **`px-4` (16px)** eingerückt und der Umschalter
-ist **32px** breit (`p-1.5` statt der 8px des `icon`-Variants, plus das
-20px-Icon). Sein Mittelpunkt liegt damit 16 + 16 = **32px** von der Kante der
-Leiste — genau dort, wo ein 32px-Bedienelement am nachlaufenden Rand der ersten
-Zeile eines `p-4`-gepolsterten Rumpfs sitzt (16px Polsterung + 16px halbe
-Breite). Kopfzeile und Rumpf stehen so auf einer senkrechten Linie, statt sich
-um 10px zu verfehlen: bis 0.38.0 war die Zeile `px-gutter` (24px) und der Knopf
-36px breit, sein Mittelpunkt lag also bei 42px.
+Since 0.39.0 the row is inset with **`px-4` (16px)** and the toggle is
+**32px** wide (`p-1.5` instead of the `icon` variant's 8px, plus the 20px
+icon). Its center is therefore 16 + 16 = **32px** from the panel edge —
+exactly where a 32px control sits at the trailing edge of the first row of a
+`p-4`-padded body (16px padding + 16px half width). Header row and body thus
+stand on one vertical line instead of missing each other by 10px: up to
+0.38.0 the row was `px-gutter` (24px) and the button 36px wide, so its center
+was at 42px.
 
-Beide Knöpfe sind dasselbe Bedienelement in zwei Positionen und deshalb gleich
-groß — der Ausklapp-Knopf in der 60px-Schiene trägt dieselben 32px, sonst
-spränge er beim Einklappen. Die Einrückung ist bewusst **nicht** mehr die der
-Leiste von `AppShellLayout` (die bleibt bei `px-gutter`, 24px, für ihren
-eigenen Inhalt). In Chromium gemessen von
-`SidePanel` → `ToggleAlignsWithBodyControl`, dessen Erwartung aus dem Rechteck
-des Rumpf-Bedienelements selbst kommt und nicht aus einer getippten Zahl.
+Both buttons are the same control in two positions and therefore the same
+size — the expand button in the 60px rail has the same 32px, otherwise it
+would jump on collapsing. The inset is deliberately **no longer** that of the
+`AppShellLayout` bar (which stays at `px-gutter`, 24px, for its own content).
+Measured in Chromium by `SidePanel` → `ToggleAlignsWithBodyControl`, whose
+expectation comes from the rectangle of the body control itself, not from a
+typed number.
 
 <Canvas of={SidePanelStories.ToggleAlignsWithBodyControl} />
 
-`header` sitzt in einem `min-w-0`-Wrapper: ein Titel mit `truncate` kürzt mit
-Ellipse, statt den Knopf aus der Zeile zu drängen. Ob gekürzt, umgebrochen oder
-gar nicht geschrumpft wird, entscheidet der Knoten des Konsumenten.
+`header` sits in a `min-w-0` wrapper: a title with `truncate` is shortened
+with an ellipsis instead of pushing the button out of the row. Whether it is
+truncated, wrapped or not shrunk at all is decided by the consumer's node.
 
 <Canvas of={SidePanelStories.LongHeaderTitle} />
 
-Seit 0.30.0 gibt es einen `footer`-Slot: er wird unter dem scrollenden Rumpf
-angeheftet und **wandert eingeklappt in die Schiene**, weil er typischerweise der
-einzige Weg zum Abmelden ist. (Bis 0.29.0 hieß es hier, eine komponierende Shell
-solle ihren Fuß selbst in `children` anheften — das stimmt nicht mehr.)
+Since 0.30.0 there is a `footer` slot: it is pinned below the scrolling body
+and **moves into the rail when collapsed**, because it is typically the only
+way to sign out. (Up to 0.29.0 this page said a composing shell should pin its
+footer itself in `children` — that is no longer true.)
 
 ## Chevrons
 
-Jeder der beiden Knöpfe hat sein **eigenes** Icon, denn ein Chevron muss in die
-Richtung zeigen, in die er die Leiste bewegt: Einklappen schiebt die Leiste an
-ihre eigene Kante, Ausklappen zieht sie zum Inhalt zurück.
+Each of the two buttons has its **own** icon, because a chevron has to point
+in the direction it moves the panel: collapsing pushes the panel to its own
+edge, expanding pulls it back toward the content.
 
-| `side` | einklappen | ausklappen |
+| `side` | collapse | expand |
 |---|---|---|
-| `left` | `PanelLeftClose` (zeigt nach links) | `PanelLeftOpen` (zeigt nach rechts) |
-| `right` | `PanelRightClose` (zeigt nach rechts) | `PanelRightOpen` (zeigt nach links) |
+| `left` | `PanelLeftClose` (points left) | `PanelLeftOpen` (points right) |
+| `right` | `PanelRightClose` (points right) | `PanelRightOpen` (points left) |
 
-Maßgeblich ist lucides Pfad-Daten, nicht der Name: `panel-left-close` hat den
-Chevron `m16 15-3-3 3-3` (Spitze links), `panel-left-open` `m14 9 3 3-3 3`
-(Spitze rechts). Beide Zustände sind getestet — ein Test, der nur den
-ausgeklappten Zustand rendert, sieht den Ausklapp-Knopf nie.
+What counts is lucide's path data, not the name: `panel-left-close` has the
+chevron `m16 15-3-3 3-3` (tip on the left), `panel-left-open` `m14 9 3 3-3 3`
+(tip on the right). Both states are tested — a test that only renders the
+expanded state never sees the expand button.
 
-## Entscheidungen
+## Decisions
 
-- **Nur kontrolliert.** `isOpen` und `width` liegen beim Konsumenten — eine App
-  hält beides typischerweise in einem Context, persistiert es und muss es mit
-  einem `ResizeHandle` und dem Template teilen. Eigener Zustand im Rahmen wäre
-  eine zweite Wahrheit.
-- **Der Einklapp-Knopf gehört zum Rahmen, nicht zu `children`.** Er ist im
-  zugeklappten Zustand das einzige Bedienelement — als Inhalt übergeben wäre er
-  genau dann verschwunden, wenn er gebraucht wird.
-- **Schienenbreite: Konstante, keine Prop.** `SIDE_PANEL_RAIL_WIDTH` = 60px ist
-  eine Design-Konstante — die Schiene trägt genau einen Icon-Knopf und einen
-  schmalen Vorschaustreifen, ein frei gewählter Wert könnte sie nur zu klein für
-  das Touch-Ziel oder so breit machen, dass sie wie eine kaputte Leiste aussieht.
-  Die **ausgeklappte** Breite ist dagegen Zustand (der Nutzer zieht sie) und
-  deshalb eine Prop. Die Konstante wird exportiert, damit ein Template denselben
-  Wert benutzt statt ihn zu wiederholen.
-- **`header` wird zugeklappt ausgehängt — `children` nicht.** Genau
-  entgegengesetzt, und mit Absicht: ein Leisten-Rumpf hält Scrollposition und
-  halb getippte Eingaben, eine Kopfzeile ist Chrome ohne Zustand, und von der
-  Chrome bleibt in der Schiene nur der Ausklapp-Knopf — neben
-  `collapsedPreview` und dem angehefteten `footer`. Zustandsbehaftetes gehört
-  deshalb in `children`, nicht in
-  `header`.
-- **Inhalt bleibt montiert.** Zugeklappt trägt der Rumpf das `hidden`-Attribut
-  (und `display:none`): Scrollposition und halb getippte Eingaben überleben das
-  Einklappen, und der Inhalt ist gleichzeitig aus dem
-  Accessibility-Baum entfernt.
-- **Kein Breiten-Übergang.** Dieselbe Breite wird auch per Maus gezogen; eine
-  animierte Breite würde dem Zeiger nachlaufen.
-- **Die Schiene spiegelt die ausgeklappte Spalte senkrecht** (0.35.0). Sie baut
-  keinen eigenen Rhythmus, sondern dieselben drei Kästen: die `h-14`-Chrome-Zeile
-  für den Ausklapp-Knopf, darunter der scrollende Vorschau-Bereich mit der
-  Polsterung, die ein Spaltenkörper mitbringt, darunter der ungepolsterte
-  `footer`. Damit behält jedes Bedienelement beim Einklappen seine Höhe auf der
-  Seite. Vorher lag der Knopf in demselben gepolsterten Kasten wie die Vorschau:
-  der Icon-Streifen saß 12px zu hoch, der Knopf 2px neben der Kopfzeilenmitte und
-  der Fuß 16px zu hoch (in Chromium gemessen — die Story
-  `AppShellLayout` → `CollapsedRailKeepsVerticalPositions` gegen die alte
-  Schiene laufen gelassen: 68 statt 80, 34 statt 32, 32 statt 16, jeweils
-  relativ zum Kasten der Spalte).
-- **`collapsedPreview` ist kein Knopf-Inhalt.** Der Ausklapp-Knopf ist ein
-  eigenes, kleines Bedienelement über der Vorschau — nicht die ganze Schiene.
-  Eine Schiene-als-Knopf würde interaktive Elemente in der Vorschau verschachteln
-  (ungültiges HTML) und deren Text in den zugänglichen Namen ziehen. Preis: ein
-  Klick irgendwo auf die Schiene klappt **nicht** aus.
+- **Controlled only.** `isOpen` and `width` live with the consumer — an app
+  typically keeps both in a context, persists them and has to share them with
+  a `ResizeHandle` and the template. State of its own in the frame would be a
+  second source of truth.
+- **The collapse button belongs to the frame, not to `children`.** In the
+  collapsed state it is the only control — passed as content, it would be
+  gone exactly when it is needed.
+- **Rail width: a constant, not a prop.** `SIDE_PANEL_RAIL_WIDTH` = 60px is a
+  design constant — the rail carries exactly one icon button and a narrow
+  preview strip; a freely chosen value could only make it too small for the
+  touch target, or so wide that it looks like a broken panel. The **expanded**
+  width, on the other hand, is state (the user drags it) and therefore a prop.
+  The constant is exported so a template uses the same value instead of
+  repeating it.
+- **`header` is unmounted when collapsed — `children` is not.** Exactly the
+  opposite, and on purpose: a panel body holds the scroll position and
+  half-typed input; a header row is chrome without state, and of the chrome
+  only the expand button stays in the rail — next to `collapsedPreview` and
+  the pinned `footer`. Anything stateful therefore belongs in `children`, not
+  in `header`.
+- **Content stays mounted.** When collapsed, the body carries the `hidden`
+  attribute (and `display:none`): scroll position and half-typed input survive
+  collapsing, and at the same time the content is removed from the
+  accessibility tree.
+- **No width transition.** The same width is also dragged with the mouse; an
+  animated width would trail behind the pointer.
+- **The rail mirrors the expanded column vertically** (0.35.0). It doesn't
+  build its own rhythm but the same three boxes: the `h-14` chrome row for the
+  expand button, below it the scrolling preview area with the padding a column
+  body brings, below that the unpadded `footer`. That way every control keeps
+  its height on the page when collapsing. Before, the button sat in the same
+  padded box as the preview: the icon strip sat 12px too high, the button 2px
+  off the header row's center, and the footer 16px too high (measured in
+  Chromium — the story `AppShellLayout` → `CollapsedRailKeepsVerticalPositions`
+  run against the old rail: 68 instead of 80, 34 instead of 32, 32 instead of
+  16, each relative to the column's box).
+- **`collapsedPreview` is not button content.** The expand button is a
+  separate small control above the preview — not the whole rail. A
+  rail-as-button would nest interactive elements in the preview (invalid HTML)
+  and pull their text into the accessible name. The price: a click anywhere on
+  the rail does **not** expand it.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Randseite über `side` setzen — die Leiste zeichnet genau eine Linie, das
-  `ResizeHandle` keine.
-- ✅ Alle Beschriftungen als Props übergeben (zweisprachige Konsumenten).
-- ✅ Titel im `header`-Slot mit `truncate` übergeben, nicht als erste Zeile in
-  `children` — sonst scrollt er mit weg und steht nicht auf der Chrome-Linie.
-- ❌ Kein eigener Einklapp-Knopf in `children`.
-- ❌ Kein zustandsbehaftetes UI in `header` (es wird beim Einklappen ausgehängt).
-- ❌ Keine Viewport-Logik hier erwarten: ob auf schmalen Bildschirmen überhaupt
-  eine Leiste erscheint (üblich: eine Ansicht plus `BottomTabBar`), entscheidet
-  das komponierende Template (`AppShell`).
+- ✅ Set the edge side via `side` — the panel draws exactly one line, the
+  `ResizeHandle` none.
+- ✅ Pass all labels as props (bilingual consumers).
+- ✅ Pass the title in the `header` slot with `truncate`, not as the first row
+  in `children` — otherwise it scrolls away and doesn't sit on the chrome
+  line.
+- ❌ No collapse button of your own in `children`.
+- ❌ No stateful UI in `header` (it is unmounted on collapsing).
+- ❌ Don't expect viewport logic here: whether a panel appears at all on narrow
+  screens (usual: one view plus `BottomTabBar`) is decided by the composing
+  template (`AppShell`).

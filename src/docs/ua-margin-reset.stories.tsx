@@ -25,38 +25,36 @@ import {
 } from "../templates/sectioned-grid-layout";
 
 /**
- * Die **Gegenprobe zum Rand-Reset einer konsumierenden App**. Kein Beispiel
- * zum Nachbauen, sondern ein Vertrag: kein Innenleben einer DS-Komponente
- * darf sich verschieben, wenn eine App die Element-Ränder auf die
- * User-Agent-Werte zurücksetzt.
+ * The **counter-check against a consuming app's margin reset**. Not an
+ * example to copy but a contract: nothing inside a DS component may shift
+ * when an app resets element margins to the user-agent values.
  *
- * Warum es diese Story gibt: JustRAG hält in `index.css` ein Gegengewicht zu
- * Tailwinds Preflight (`@layer base { h1…h6, p { margin: revert } }`), damit
- * die eigene Prosa ihre Ränder behält. Weil `PageHeader`s `<h1>` **keine**
- * Rand-Utility trug, gewann dieses `revert` die Kaskade und der
- * User-Agent-Rand landete mitten in der DS-Komponente — gemessen 16,08 px.
- * Die App hat das von außen mit `[&>header_h1]:m-0` geflickt, also mit einem
- * Selektor, der ins Template hineingreift. Genau das soll dieses Paket
- * unnötig machen.
+ * Why this story exists: JustRAG keeps a counterweight to Tailwind's
+ * Preflight in `index.css` (`@layer base { h1…h6, p { margin: revert } }`),
+ * so its own prose keeps its margins. Because `PageHeader`'s `<h1>` carried
+ * **no** margin utility, that `revert` won the cascade and the user-agent
+ * margin landed in the middle of the DS component — measured at 16.08 px.
+ * The app patched it from outside with `[&>header_h1]:m-0`, i.e. with a
+ * selector that reaches into the template. This package is meant to make
+ * exactly that unnecessary.
  *
- * Der Reset wird hier **so eingerichtet, wie eine App ihn hat** — in
- * `@layer base`, nicht als Inline-Style: nur dann steht er in derselben
- * Kaskadenschicht, und nur dann sagt ein grüner Lauf etwas aus. Eine
- * Rand-Utility (`m-0`) liegt in Tailwinds `utilities`-Schicht: sie ändert
- * nichts, solange Preflight intakt ist, und sie gewinnt gegen das `revert`,
- * **solange dieses in einer Schicht steht**. Bedingung ist die Schicht selbst,
- * nicht der Name `base`: eine Deklaration außerhalb jeder Schicht überstimmt
- * jede geschichtete gleicher Wichtigkeit, ein Reset ohne `@layer` schlägt
- * `m-0` also. Langform in `docs/COMPONENT_GUIDELINES.md` → „Margins: a DS
- * component never leans on the consumer's reset".
+ * The reset is set up here **the way an app has it** — in `@layer base`, not
+ * as an inline style: only then is it in the same cascade layer, and only
+ * then does a green run mean something. A margin utility (`m-0`) lives in
+ * Tailwind's `utilities` layer: it changes nothing while Preflight is intact,
+ * and it wins against the `revert` **as long as that sits in a layer**. The
+ * condition is the layer itself, not the name `base`: a declaration outside
+ * any layer overrides every layered one of the same importance, so a reset
+ * without `@layer` beats `m-0`. Long form in `docs/COMPONENT_GUIDELINES.md` →
+ * "Margins: a DS component never leans on the consumer's reset".
  */
 const meta = {
   title: "Foundations/UA-Margin-Reset",
   tags: ["!autodocs"],
   parameters: {
     layout: "fullscreen",
-    // Der Reset ist absichtlich hässlich für die Kontrollelemente; diese
-    // Story ist ein Vertrag, keine Vorlage.
+    // The reset is deliberately ugly for the control elements; this story is
+    // a contract, not a template.
     docs: { disable: true },
   },
 } satisfies Meta;
@@ -65,10 +63,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Wörtlich die Form des Gegengewichts aus JustRAGs `index.css`: dieselbe
- * Schicht (`base`), derselbe Wert (`revert`, also zurück auf den
- * User-Agent-Wert), erweitert um die übrigen Elemente mit
- * User-Agent-Rand, die dieses Paket rendert (`pre`, `ol`).
+ * Literally the shape of the counterweight in JustRAG's `index.css`: the same
+ * layer (`base`), the same value (`revert`, i.e. back to the user-agent
+ * value), extended by the other elements with a user-agent margin that this
+ * package renders (`pre`, `ol`).
  */
 const UA_MARGIN_REVERT_CSS = `@layer base {
   h1, h2, h3, h4, h5, h6, p, pre, ol, ul, blockquote, figure, dl, menu, hr {
@@ -77,9 +75,9 @@ const UA_MARGIN_REVERT_CSS = `@layer base {
 }`;
 
 /**
- * Hängt den Reset ins Dokument und räumt ihn beim Unmount wieder ab — sonst
- * würde er in der Storybook-UI in den nächsten Stories weiterwirken (das
- * Preview-Iframe wird zwischen Stories wiederverwendet).
+ * Adds the reset to the document and removes it again on unmount — otherwise
+ * it would keep affecting the next stories in the Storybook UI (the preview
+ * iframe is reused between stories).
  */
 function WithUaMarginRevert({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
@@ -102,7 +100,7 @@ const SECTIONS: SectionedGridSection[] = [
   },
 ];
 
-/** Alle vier Ränder eines Elements als ein vergleichbarer String. */
+/** All four margins of an element as one comparable string. */
 function margins(element: Element): string {
   const style = getComputedStyle(element);
   return [style.marginTop, style.marginRight, style.marginBottom, style.marginLeft].join(" ");
@@ -115,10 +113,10 @@ function query(root: ParentNode, selector: string): Element {
 }
 
 /**
- * Jede Komponente, die ein Element mit User-Agent-Rand rendert, unter dem
- * Reset — plus zwei **Kontrollelemente ohne** Rand-Utility, die sich
- * verschieben *müssen*. Ohne die wäre die Story wertlos: „nichts hat sich
- * bewegt" ist auch dann wahr, wenn der Reset nie angekommen ist.
+ * Every component that renders an element with a user-agent margin, under the
+ * reset — plus two **control elements without** a margin utility, which
+ * *must* shift. Without them the story would be worthless: "nothing moved" is
+ * also true when the reset never arrived.
  */
 export const NothingMoves: Story = {
   render: () => (
@@ -196,20 +194,20 @@ export const NothingMoves: Story = {
     const probe = query(canvasElement, '[data-testid="probe"]');
 
     // ------------------------------------------------------------------
-    // 1. Der Reset ist wirklich aktiv. Orakel: die User-Agent-Formel des
-    //    HTML-Rendering-Standards, `h1 { margin-block: 0.67em }` und
-    //    `p { margin-block: 1em }`, gegen die Token-Schriftgrößen aus
+    // 1. The reset is really active. Oracle: the user-agent formula of the
+    //    HTML rendering standard, `h1 { margin-block: 0.67em }` and
+    //    `p { margin-block: 1em }`, against the token font sizes from
     //    tokens.css (`--text-headline-md: 24px`, `--text-body-base: 16px`).
-    //    24 × 0,67 = 16,08 px — dieselbe Zahl, die der Consumer in Produktion
-    //    gemessen hat. Nichts davon stammt aus dem Code, der hier geprüft wird.
+    //    24 × 0.67 = 16.08 px — the same number the consumer measured in
+    //    production. None of it comes from the code being checked here.
     // ------------------------------------------------------------------
     const control = query(probe, '[data-testid="control"]');
     await expect(margins(query(control, "h1"))).toBe("16.08px 0px 16.08px 0px");
     await expect(margins(query(control, "p"))).toBe("16px 0px 16px 0px");
 
     // ------------------------------------------------------------------
-    // 2. Kein Innenleben einer DS-Komponente bewegt sich. Ein Fehlschlag hier
-    //    ist genau der Produktionsfehler aus KI-714.
+    // 2. Nothing inside a DS component moves. A failure here is exactly the
+    //    production bug from KI-714.
     // ------------------------------------------------------------------
     const pageHeader = query(probe, '[data-testid="page-header"]');
     await expect(margins(query(pageHeader, "h1"))).toBe("0px 0px 0px 0px");
@@ -217,7 +215,7 @@ export const NothingMoves: Story = {
 
     const form = query(probe, '[data-testid="form"]');
     const formParagraphs = form.querySelectorAll("p");
-    // FormDescription + FormMessage — beide `<p>`, beide unter dem Reset.
+    // FormDescription + FormMessage — both `<p>`, both under the reset.
     await expect(formParagraphs).toHaveLength(2);
     for (const paragraph of formParagraphs) {
       await expect(margins(paragraph)).toBe("0px 0px 0px 0px");
@@ -227,22 +225,22 @@ export const NothingMoves: Story = {
       "0px 0px 0px 0px",
     );
 
-    // Die Abschnittsüberschrift des SectionedGridLayout (per Default h2).
+    // The SectionedGridLayout section heading (h2 by default).
     await expect(
       margins(query(probe, '[data-testid="sectioned-grid"] h2')),
     ).toBe("0px 0px 0px 0px");
 
-    // AppShellLayouts `pageLabel` — ein <p>, absichtlich keine Überschrift.
+    // AppShellLayout's `pageLabel` — a <p>, deliberately not a heading.
     await expect(margins(query(probe, '[data-testid="app-shell"] p'))).toBe("0px 0px 0px 0px");
 
-    // Toast-Viewport: Radix rendert ein <ol>. Es ist `fixed bottom-0`, ein
-    // User-Agent-Rand würde die Leiste um 16px vom Rand abheben.
+    // Toast viewport: Radix renders an <ol>. It is `fixed bottom-0`; a
+    // user-agent margin would lift the bar 16px off the edge.
     await expect(margins(query(document, '[data-testid="toast-viewport"]'))).toBe(
       "0px 0px 0px 0px",
     );
 
-    // Dialog: Radix rendert Title als <h2> und Description als <p>, und beide
-    // liegen in einem Portal außerhalb des Canvas.
+    // Dialog: Radix renders Title as an <h2> and Description as a <p>, and
+    // both sit in a portal outside the canvas.
     const dialog = query(document, '[data-testid="dialog"]');
     await expect(margins(query(dialog, "h2"))).toBe("0px 0px 0px 0px");
     await expect(margins(query(dialog, "p"))).toBe("0px 0px 0px 0px");
@@ -250,10 +248,10 @@ export const NothingMoves: Story = {
 };
 
 /**
- * Dieselbe Gegenprobe für die AI-Komponenten (KI-916, KI-921): der Tooltip
- * einer `MessageAction` (sein Text ist ein `<p>`), die Bildunterschrift von
- * `ChainOfThoughtImage` und die Standard-Beschriftungen von
- * `ReasoningTrigger` (fertig und während des Streams, `Shimmer`).
+ * The same counter-check for the AI components (KI-916, KI-921): the tooltip
+ * of a `MessageAction` (its text is a `<p>`), the caption of
+ * `ChainOfThoughtImage` and the default labels of `ReasoningTrigger` (done
+ * and while streaming, `Shimmer`).
  */
 export const AiComponentsDoNotMove: Story = {
   render: () => (
@@ -293,11 +291,11 @@ export const AiComponentsDoNotMove: Story = {
   ),
   play: async ({ canvasElement, userEvent }) => {
     const probe = query(canvasElement, '[data-testid="ai-probe"]');
-    // Der Reset ist aktiv: der Kontrollabsatz bekommt den User-Agent-Rand.
+    // The reset is active: the control paragraph gets the user-agent margin.
     await expect(margins(query(probe, '[data-testid="ai-control"]'))).toBe("16px 0px 16px 0px");
 
-    // MessageAction-Tooltip: sein <p> hat keinen Rand, und er ist so hoch wie
-    // der Standard-Tooltip mit demselben einzeiligen Text.
+    // MessageAction tooltip: its <p> has no margin, and it is as tall as the
+    // standard tooltip with the same one-line text.
     await userEvent.hover(within(probe as HTMLElement).getByRole("button", { name: "Kopieren" }));
     const actionTooltip = await waitFor(() => {
       const el = [...document.querySelectorAll('[data-slot="tooltip-content"]')].find(
@@ -314,7 +312,7 @@ export const AiComponentsDoNotMove: Story = {
 
     await expect(margins(query(probe, '[data-testid="cot-image"] p'))).toBe("0px 0px 0px 0px");
 
-    // ReasoningTrigger: kein <p> im <button> (Inhaltsmodell), also kein Rand.
+    // ReasoningTrigger: no <p> inside the <button> (content model), so no margin.
     for (const id of ["reasoning-done", "reasoning-streaming"]) {
       const trigger = query(probe, `[data-testid="${id}"] button`);
       await expect(trigger.querySelector("p, h1, h2, h3, h4, h5, h6, div")).toBeNull();

@@ -32,7 +32,7 @@ export const Playground: Story = {
   ),
 };
 
-/** Die Gap-Stufen sind die Spacing-Tokens: stack-sm (8), md (16), lg (32), gutter (24). */
+/** The gap steps are the spacing tokens: stack-sm (8), md (16), lg (32), gutter (24). */
 export const GapScale: Story = {
   render: () => (
     <Stack gap="gutter" className="max-w-sm">
@@ -46,7 +46,7 @@ export const GapScale: Story = {
   ),
 };
 
-/** Zeile mit auseinandergeschobenen Enden — das Kopfzeilen-Muster. */
+/** A row with its ends pushed apart — the header row pattern. */
 export const RowBetween: Story = {
   render: () => (
     <Stack direction="row" justify="between" align="center" className="max-w-sm">

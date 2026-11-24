@@ -16,7 +16,7 @@ export const Playground: Story = {
   args: { "aria-label": "Aktivieren" },
 };
 
-/** Typischer Einsatz: Checkbox + klickbares Label. */
+/** Typical use: a checkbox + a clickable label. */
 export const WithLabel: Story = {
   render: () => (
     <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ const IndeterminateExample = () => {
   );
 };
 
-/** `checked="indeterminate"` für Teilauswahl (Alle-auswählen-Muster). */
+/** `checked="indeterminate"` for a partial selection (select-all pattern). */
 export const Indeterminate: Story = {
   render: () => <IndeterminateExample />,
 };
@@ -73,10 +73,10 @@ export const Disabled: Story = {
 };
 
 /**
- * `locked`: ein fester Wert, den etwas anderes vorgibt (eine Rolle, eine
- * Richtlinie). Neutral grau statt verblasst wie `disabled`, nicht bedienbar,
- * als deaktiviert angesagt — der zugängliche Name sagt, warum er fest ist.
- * Daneben zum Vergleich `disabled`.
+ * `locked`: a fixed value set by something else (a role, a policy). Neutral
+ * gray instead of faded like `disabled`, not operable, announced as
+ * disabled — the accessible name says why it is fixed. Next to it, `disabled`
+ * for comparison.
  */
 export const Locked: Story = {
   render: () => (

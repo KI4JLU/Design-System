@@ -6,10 +6,10 @@ import * as AppShellLayoutStories from "./app-shell-layout.stories";
 
 # SectionedGridLayout
 
-Die Übersichtsseite: ein **Stapel kollabierbarer Sektionen, jede mit einem
-Karten-Grid**. Optional eine Titelzeile (`PageHeader`) darüber, dann pro Gruppe
-eine Kopfzeile (Titel, Icon, Anzahl, Aktion) und ein Körper — entweder ein
-`Grid` aus Zellen, eine Leerzustands-Zeile oder ein freiformiger Knoten.
+The overview page: a **stack of collapsible sections, each with a card
+grid**. Optionally a title row (`PageHeader`) above, then per group a header
+row (title, icon, count, action) and a body — either a `Grid` of cells, an
+empty-state line or a free-form node.
 
 This template is **page content**. It goes into `AppShellLayout` as
 `children`, and the shell owns the brand, the page label and the user menu.
@@ -18,117 +18,118 @@ Why content templates and the shell are two kinds: `docs/DESIGN_SYSTEM.md`
 
 <Canvas of={SectionedGridLayoutStories.Standard} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `label` | `string` | ✅ | Zugänglicher Name des `region`-Landmarks um den gesamten Inhalt. Pflicht: ein `<section>` **ohne** Namen ist laut HTML-AAM `generic`, also gar kein Landmark. |
-| `sections` | `SectionedGridSection[]` | ✅ | Die Sektionen in Anzeigereihenfolge (siehe Tabellen unten). |
-| `headingLevel` | `1`–`6` | — | **Eine** Zahl für beide Überschriften-Rollen: der Seitentitel sitzt auf dieser Stufe, jede Sektions-Überschrift eine Stufe darunter. Standard `1` ⇒ `h1` + `h2`, genau wie vorher. Gilt auch **ohne** `title` — die Prop sagt, *wo* der Seitentitel steht, nicht nur, ob dieses Template ihn zeichnet. Über Stufe 6 wird geklemmt. |
-| `title` | `ReactNode` | — | Seitentitel. Gesetzt ⇒ `PageHeader` auf `headingLevel` über den Sektionen, wie in `DashboardLayout`. Weglassen, wenn der Titel nur in `AppShellLayout`s `pageLabel`-Zeile steht. **Oder umgekehrt** (seit 0.29.0): `title` hier behalten und `pageLabel` am Shell weglassen — das ist die barrierefreiere Wahl, denn nur diese Überschrift steht im Outline, das Label ist ein `<p>`. |
-| `description` | `ReactNode` | — | Gedämpfte Zeile unter dem Titel (braucht `title`). |
-| `actions` | `ReactNode` | — | Rechtsbündige Aktionen neben dem Titel (braucht `title`). |
-| `cols` | `1 \| 2 \| 3 \| 4` | — | Default `3`. Spaltenzahl **aller** Sektions-Grids auf dem Desktop; der Kollaps kommt von `Grid`. Ein Regler für die ganze Seite — Sektionen mit unterschiedlicher Spaltenzahl lesen sich wie verschiedene Seiten. |
-| `...rest` | `HTMLAttributes<HTMLElement>` | — | Landet auf dem Wurzel-`<section>`. |
+| `label` | `string` | ✅ | Accessible name of the `region` landmark around the whole content. Required: per HTML-AAM a `<section>` **without** a name is `generic`, so not a landmark at all. |
+| `sections` | `SectionedGridSection[]` | ✅ | The sections in display order (see the tables below). |
+| `headingLevel` | `1`–`6` | — | **One** number for both heading roles: the page title sits at this level, every section heading one level below. Default `1` ⇒ `h1` + `h2`, exactly as before. Applies **without** `title` too — the prop says *where* the page title is, not only whether this template draws it. Clamped above level 6. |
+| `title` | `ReactNode` | — | Page title. Set ⇒ a `PageHeader` at `headingLevel` above the sections, as in `DashboardLayout`. Leave it out when the title only sits in `AppShellLayout`'s `pageLabel` row. **Or the other way round** (since 0.29.0): keep `title` here and leave `pageLabel` off the shell — that is the more accessible choice, because only this heading is in the outline; the label is a `<p>`. |
+| `description` | `ReactNode` | — | Muted line below the title (needs `title`). |
+| `actions` | `ReactNode` | — | Right-aligned actions next to the title (needs `title`). |
+| `cols` | `1 \| 2 \| 3 \| 4` | — | Default `3`. Column count of **all** section grids on desktop; the collapse comes from `Grid`. One control for the whole page — sections with different column counts read like different pages. |
+| `...rest` | `HTMLAttributes<HTMLElement>` | — | Lands on the root `<section>`. |
 
-### `SectionedGridSection` — Kopfzeile
+### `SectionedGridSection` — header row
 
-| Feld | Typ | Pflicht | Inhalt |
+| Field | Type | Required | Content |
 |---|---|---|---|
-| `id` | `string` | ✅ | Stabile Id aus der App. React-Key **und** Suffix der Element-Ids der Disclosure; das Template stellt einen `useId()`-Präfix davor, damit zwei Instanzen auf einer Seite nicht kollidieren. |
-| `title` | `ReactNode` | ✅ | Sektions-Überschrift. Gerendert **eine Stufe unter** `headingLevel` — beim Standard also `<h2>`. |
-| `icon` | `ReactNode` | — | Führendes Icon in der Kopfzeile (lucide, `aria-hidden`). |
-| `count` | `number` | — | Anzahl als neutrales `Badge` neben dem Titel — **innerhalb** des Triggers, also Teil seines zugänglichen Namens („Favoriten 3"). |
-| `headerAction` | `ReactNode` | — | Bedienelement am Ende der Kopfzeile, bewusst **außerhalb** des Triggers: Klick darauf klappt die Sektion nicht um (verschachtelte Buttons wären außerdem ungültiges HTML). |
-| `isOpen` | `boolean` | ✅ | Auf/zu — **Konsumenten-Zustand**. |
-| `onOpenChange` | `(isOpen: boolean) => void` | ✅ | Trigger gedrückt; trägt den **gewünschten** Zustand, nie den alten. |
+| `id` | `string` | ✅ | Stable id from the app. React key **and** suffix of the disclosure's element ids; the template prepends a `useId()` prefix so two instances on one page don't collide. |
+| `title` | `ReactNode` | ✅ | Section heading. Rendered **one level below** `headingLevel` — so `<h2>` by default. |
+| `icon` | `ReactNode` | — | Leading icon in the header row (lucide, `aria-hidden`). |
+| `count` | `number` | — | Count as a neutral `Badge` next to the title — **inside** the trigger, so part of its accessible name ("Favoriten 3"). |
+| `headerAction` | `ReactNode` | — | Control at the end of the header row, deliberately **outside** the trigger: clicking it doesn't toggle the section (nested buttons would also be invalid HTML). |
+| `isOpen` | `boolean` | ✅ | Open/closed — **consumer state**. |
+| `onOpenChange` | `(isOpen: boolean) => void` | ✅ | Trigger pressed; carries the **requested** state, never the old one. |
 
-### `SectionedGridSection` — Körper: genau eine von drei Formen
+### `SectionedGridSection` — body: exactly one of three forms
 
-Die Form ist eine TypeScript-Union (mit `never`-Sperren): die **falsche
-Kombination** ist damit ein Typfehler. Im Code bleibt es eine Vorrangkette
-(`emptyState` → `body` → `Grid`) — ein JS-Konsument ohne Typprüfung, der zwei
-Formen übergibt, bekommt diese Reihenfolge also stillschweigend. Grund für die
-Union: das Template darf **nicht ableiten**, ob eine Sektion leer ist.
-`React.Children.count` über ein gemapptes Array, ein Fragment oder ein `false`
-sind nicht vorhersagbar unterscheidbar — und die App verzweigt sowieso schon
-selbst (die Vorlage schreibt an jeder Sektion
-`list.length === 0 ? <leer/> : <grid/>`). Also wählt die App die Form, das
-Template rendert sie, und es gibt keinen dritten Zustand, der falsch sein kann.
+The form is a TypeScript union (with `never` locks): the **wrong
+combination** is therefore a type error. In the code it stays a precedence
+chain (`emptyState` → `body` → `Grid`) — so a JS consumer without type
+checking who passes two forms silently gets that order. The reason for the
+union: the template must **not infer** whether a section is empty.
+`React.Children.count` over a mapped array, a fragment or a `false` can't be
+told apart predictably — and the app already branches itself anyway (the
+reference implementation writes `list.length === 0 ? <empty/> : <grid/>` on
+every section). So the app picks the form, the template renders it, and there
+is no third state that can be wrong.
 
-| Form | Felder | Ergebnis |
+| Form | Fields | Result |
 |---|---|---|
-| Karten-Grid | `items: ReactNode`, optional `createCell: ReactNode` | `items` als Zellen eines `Grid cols={cols}`; `createCell` ist die **erste** Zelle desselben Grids (nicht eine eigene Zeile darüber). |
-| Leerzustand | `emptyState: ReactNode` | Statt eines Grids eine gedämpfte Zeile (`text-body-base text-on-surface-variant`) — einen String übergeben, Typo und Farbe gehören dem Template. |
-| Freiform | `body: ReactNode` | Roh gerendert, **ohne** `Grid` — für eine Sektion, deren Inhalt kein Karten-Grid ist, sondern ein ganzes Panel (Katalog/Entdecken, Tabelle, gefilterte Liste). |
+| Card grid | `items: ReactNode`, optional `createCell: ReactNode` | `items` as cells of a `Grid cols={cols}`; `createCell` is the **first** cell of the same grid (not a separate row above it). |
+| Empty state | `emptyState: ReactNode` | Instead of a grid, a muted line (`text-body-base text-on-surface-variant`) — pass a string; typography and color belong to the template. |
+| Free form | `body: ReactNode` | Rendered raw, **without** `Grid` — for a section whose content isn't a card grid but a whole panel (catalog/discover, table, filtered list). |
 
 <Controls />
 
-## Kollaps: kontrolliert, und **kein** Accordion
+## Collapsing: controlled, and **not** an accordion
 
-Das Design System hat kein `Accordion`-Primitive, und dieses Template schmuggelt
-keins ein. Jede Sektion ist eine **Disclosure** (ARIA/APG) aus Button + Panel:
+The design system has no `Accordion` primitive, and this template doesn't
+smuggle one in. Every section is a **disclosure** (ARIA/APG) made of a button
++ panel:
 
-- `aria-expanded` am Button, `aria-controls` auf das Panel-Element.
-- Der Button steht **innerhalb** der `<h2>` (APGs Accordion-Markup), damit die
-  Sektion per Überschriften-Navigation erreichbar bleibt und trotzdem die ganze
-  Zeile Klickfläche ist.
-- Das Panel-`<div>` ist **immer** im DOM (mit `hidden`, wenn zu). Ein
-  `aria-controls` auf eine Id, die nur im offenen Zustand existiert, wäre eine
-  baumelnde Referenz: eine Prüfung „Attribut vorhanden" besteht sie, angekündigt
-  wird trotzdem nichts.
-- Die **Kinder** des Panels werden beim Zuklappen ausgehängt. Das ist
-  absichtlich und lastentragend: in der Vorlage (`KbAccordion`) hängt der Fetch
-  des Katalog-Panels am Mount, das Aufklappen ist also das Neulesen. Es ist
-  bewusst das Gegenteil von `SidePanel`, das Kinder montiert lässt, damit eine
-  halb getippte Eingabe einen Kollaps überlebt — ein Karten-Grid hat nichts zu
-  verlieren, ein Formular schon.
-- Das Panel bekommt **kein** `role="region"`: eine Disclosure braucht keins, und
-  APG warnt ab ~6 Panels ausdrücklich vor Landmark-Wucherung. Dieses Template
-  liefert genau **ein** Landmark, sein eigenes `<section aria-label>`.
+- `aria-expanded` on the button, `aria-controls` pointing at the panel
+  element.
+- The button sits **inside** the `<h2>` (the APG's accordion markup), so the
+  section stays reachable via heading navigation while the whole row is still
+  the click target.
+- The panel `<div>` is **always** in the DOM (with `hidden` when closed). An
+  `aria-controls` pointing at an id that exists only in the open state would
+  be a dangling reference: it passes an "attribute present" check, but
+  nothing is announced.
+- The panel's **children** are unmounted on collapsing. That is intentional
+  and load-bearing: in the reference implementation (`KbAccordion`) the
+  catalog panel's fetch hangs on mount, so expanding is the re-read. It is
+  deliberately the opposite of `SidePanel`, which keeps its children mounted
+  so a half-typed input survives a collapse — a card grid has nothing to lose,
+  a form does.
+- The panel gets **no** `role="region"`: a disclosure doesn't need one, and
+  the APG explicitly warns against landmark sprawl from ~6 panels up. This
+  template provides exactly **one** landmark, its own `<section aria-label>`.
 
-Der Zustand liegt bei der App — wie bei `SidePanel` und `AppShellLayout`. Es
-gibt **kein** `defaultOpen`: ein Template, das sich etwas merkt, wäre eine
-zweite Wahrheit neben dem App-Zustand. Wer die Sektionen persistieren will
-(die Vorlage tut das per `localStorage`), tut das in der App und gibt das
-Ergebnis herein.
+The state lives with the app — as with `SidePanel` and `AppShellLayout`. There
+is **no** `defaultOpen`: a template that remembers things would be a second
+source of truth next to the app state. If you want to persist the sections
+(the reference implementation does so via `localStorage`), do it in the app
+and pass the result in.
 
 <Canvas of={SectionedGridLayoutStories.AllCollapsed} />
 
-## Responsives Verhalten
+## Responsive behavior
 
-Alles CSS, **kein** `matchMedia`:
+All CSS, **no** `matchMedia`:
 
-- **Karten-Grid**: `Grid cols={cols}` bringt den Kollaps mit (`3` ⇒ 1 Spalte,
-  ab `md` 2, ab `xl` 3). Die App schreibt keine Breakpoint-Leiter.
-- **Titelzeile**: `PageHeader` stapelt Titel und Aktionen unter `md`.
-- **Sektions-Kopfzeile**: `flex-wrap`, die `headerAction` rutscht bei Bedarf in
-  die nächste Zeile.
+- **Card grid**: `Grid cols={cols}` brings the collapse (`3` ⇒ 1 column, 2
+  from `md`, 3 from `xl`). The app writes no breakpoint ladder.
+- **Title row**: `PageHeader` stacks title and actions below `md`.
+- **Section header row**: `flex-wrap`; the `headerAction` moves to the next
+  line when needed.
 
-Anders als `AppShell` rendert dieses Template an keiner Stelle einen
-strukturell anderen Baum pro Viewport — es braucht deshalb keine
-Viewport-Kenntnis, und es gibt hier keinen zweiten Breakpoint.
+Unlike `AppShell`, this template never renders a structurally different tree
+per viewport — so it needs no viewport knowledge, and there is no second
+breakpoint here.
 
-## Zugänglichkeit
+## Accessibility
 
-- Ein Landmark: `region`, benannt über `label`.
+- One landmark: `region`, named via `label`.
 - **No second `<main>`.** The shell's `<main>` already holds this template,
   so its own region is a `<section aria-label>` (the rule:
   `docs/DESIGN_SYSTEM.md` §4 → "Page templates").
-- Überschriften-Ordnung: eine Zahl, zwei Stufen. `headingLevel` (Standard `1`)
-  ist die Stufe des Seitentitels, die Sektionen liegen eine Stufe darunter —
-  standardmäßig also genau eine `h1` (aus `PageHeader`) und pro Sektion eine
-  `h2`. Ohne `title` beginnt die Seite bei `h2`, weil der Titel dann woanders
-  steht (z. B. in `AppShellLayout`s `pageLabel`). Sitzt die Seite in einem
-  Rahmen, der die `h1` schon trägt, verschiebt `headingLevel={2}` **beide**
-  Stufen gemeinsam (`h2` + `h3`) — vorher waren es zwei fest verdrahtete
-  Stufen, die sich nicht zusammen bewegen konnten. Über Stufe 6 hinaus wird
-  geklemmt: HTML hat keine `h7`.
-- Fokus: der Trigger trägt den `focus-ring`-Recipe des Systems
-  (`focus-visible:ring-2 ring-focus-ring` + Offset).
-- Der Chevron ist `aria-hidden` und dreht sich per `transition-transform` mit
-  `motion-reduce:transition-none`; die Zustandsansage macht `aria-expanded`,
-  nicht das Icon.
+- Heading order: one number, two levels. `headingLevel` (default `1`) is the
+  page title's level, and the sections sit one level below — so by default
+  exactly one `h1` (from `PageHeader`) and one `h2` per section. Without
+  `title` the page starts at `h2`, because the title then lives elsewhere
+  (e.g. in `AppShellLayout`'s `pageLabel`). If the page sits in a frame that
+  already carries the `h1`, `headingLevel={2}` shifts **both** levels together
+  (`h2` + `h3`) — before, these were two hard-wired levels that couldn't move
+  together. Clamped above level 6: HTML has no `h7`.
+- Focus: the trigger carries the system's `focus-ring` recipe
+  (`focus-visible:ring-2 ring-focus-ring` + offset).
+- The chevron is `aria-hidden` and rotates via `transition-transform` with
+  `motion-reduce:transition-none`; `aria-expanded` announces the state, not
+  the icon.
 
 ### In the shell
 
@@ -140,37 +141,36 @@ there is one shell fixture, so there is one shell to keep in sync.
 
 <Canvas of={AppShellLayoutStories.Overview} />
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Das Template als `children` des `AppShellLayout` einhängen — Templates
-  komponieren ineinander.
-- ✅ Auf/zu-Zustand in der App halten (URL-Parameter, Context, `localStorage`)
-  und hereingeben.
-- ✅ Gruppierung, Sortierung und die Aufteilung „eigene vs. geteilte" Elemente
-  in der App entscheiden; die Sektionen kommen fertig herein.
-- ✅ Die Create-Zelle als `createCell` übergeben — sie ist eine Zelle des Grids,
-  keine eigene Zeile.
-- ❌ Kein `defaultOpen`, kein „merkt sich das Template": genau ein Zustand,
-  und er liegt in der App.
-- ❌ Kein `Accordion`-Nachbau in der App und keine eigene Disclosure — fehlt
-  etwas, wird dieses Template hier erweitert.
-- ❌ Kein zweites Grid im Sektionskörper: Zellen gehören in `items`, damit alle
-  Sektionen dieselbe Spaltenlogik teilen. `body` ist für Inhalte, die *kein*
-  Karten-Grid sind.
-- ❌ Kein Seitengerüst hier hinein (Logo-Header, Impressum, FAB): das sind
-  Shell- bzw. App-Belange.
+- ✅ Hang the template in as `children` of `AppShellLayout` — templates
+  compose into each other.
+- ✅ Keep the open/closed state in the app (URL parameter, context,
+  `localStorage`) and pass it in.
+- ✅ Decide grouping, sorting and the "own vs. shared" split of items in the
+  app; the sections come in ready-made.
+- ✅ Pass the create cell as `createCell` — it is a cell of the grid, not a
+  row of its own.
+- ❌ No `defaultOpen`, no "the template remembers": exactly one state, and it
+  lives in the app.
+- ❌ No accordion rebuilt in the app and no disclosure of your own — if
+  something is missing, this template is extended here.
+- ❌ No second grid in the section body: cells belong in `items`, so all
+  sections share the same column logic. `body` is for content that is *not* a
+  card grid.
+- ❌ No page scaffolding in here (logo header, legal notice, FAB): those are
+  shell or app concerns.
 
-## Offene Punkte
+## Open points
 
-- Der **Name** (`SectionedGridLayout` statt `IndexLayout`/`HomeLayout`) und die
-  Entscheidung, dass Zuklappen den Körper **aushängt**, brauchen noch die
-  Zustimmung des Design-System-Owners — beides ist im Code als `TODO`
-  markiert.
-- Die Zellen sind bewusst keine Liste (`<ul>`/`<li>`): `Card` rendert ein
-  `<div>`, und `Grid` müsste per `asChild` zur Liste gemacht werden. Wenn ein
-  Konsument Listensemantik braucht, ist das eine Erweiterung hier, kein
-  Nachbau in der App.
-- Für die `h2` der Sektionen gibt es **kein** eigenes Typo-Token: benutzt wird
-  `font-headline-md text-headline-md-mobile` (20px, ohne `md:`-Sprung), damit
-  die Sektions-Überschrift unter der `h1` (24px) bleibt. Ein `title-*`-Token
-  wäre ein Token-Vorschlag nach DESIGN_SYSTEM.md §6.
+- The **name** (`SectionedGridLayout` instead of `IndexLayout`/`HomeLayout`)
+  and the decision that collapsing **unmounts** the body still need the
+  design system owner's approval — both are marked as `TODO` in the code.
+- The cells are deliberately not a list (`<ul>`/`<li>`): `Card` renders a
+  `<div>`, and `Grid` would have to be turned into a list via `asChild`. If a
+  consumer needs list semantics, that is an extension here, not a rebuild in
+  the app.
+- There is **no** dedicated typography token for the sections' `h2`: it uses
+  `font-headline-md text-headline-md-mobile` (20px, without the `md:` jump),
+  so the section heading stays below the `h1` (24px). A `title-*` token would
+  be a token proposal per DESIGN_SYSTEM.md §6.
