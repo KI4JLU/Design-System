@@ -446,7 +446,8 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
        is no rail and no toggle there), so a stored "minimised" must not empty
        it. Without the guard a user who had minimised the column on a desktop
        got a narrow screen whose navigation tab showed nothing at all. */
-    const railNav = isDesktop && !leftOpen;
+    // (Decided per render by the frame — `inRail` — not from `leftOpen`: the
+    // frame also folds an open column beside a side panel.)
 
     /* The narrow bar: brand, plus whatever chrome controls the app placed. No
        burger button — there is no drawer to open since 0.30.0; the areas are
@@ -491,7 +492,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
              exactly as it had inside `Sidebar`; the column around it is the
              `complementary` landmark `SidePanel` renders, named by the same
              string so a screen-reader user meets one name for one column. */
-          content: railNav ? null : (
+          content: ({ inRail }) => (inRail && isDesktop) ? null : (
             // A `SidebarPanel` brings its own insets (same frame as the right
             // column's), so the nav adds none around it and lets it fill.
             <nav
@@ -501,7 +502,7 @@ const AppShellLayout = React.forwardRef<HTMLDivElement, AppShellLayoutProps>(
               {nav}
             </nav>
           ),
-          collapsedPreview: !railNav ? undefined : (
+          collapsedPreview: ({ inRail }) => !(inRail && isDesktop) ? undefined : (
             // No horizontal padding: the rail is 60px and already centres its
             // children, so the rows get the full width to sit an icon in.
             <nav aria-label={navLabel} className="flex w-full flex-col items-center gap-2">
