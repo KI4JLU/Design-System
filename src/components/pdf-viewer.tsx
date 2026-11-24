@@ -2,7 +2,9 @@ import * as React from "react";
 import { ChevronDown, ChevronUp, Loader2, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import { cn } from "../lib/utils";
 import { getPdfDocument, loadPdfjs } from "../lib/pdf-render";
+import { matchPdfText } from "../lib/pdf-text-match";
 import { Button } from "./button";
+import { Input } from "./input";
 
 /**
  * A PDF viewer on the design system's surfaces.
@@ -16,6 +18,13 @@ import { Button } from "./button";
  * Pages are laid out at their real proportions immediately (placeholders),
  * and each bitmap is rendered only when it scrolls near the viewport. The
  * default zoom fits the page width to the container; `−`/`+` step from there.
+ *
+ * `highlights` marks passages on the pages (a cited passage, a search hit):
+ * each is looked up in the page's text content, tolerant of spacing,
+ * hyphenation and Markdown (`lib/pdf-text-match`), and drawn as a yellow
+ * text-marker mark over the bitmap. The first mark on `initialPage` is
+ * scrolled into view. `pages` shows only some pages (the cited one); the
+ * page indicator keeps the document's own numbers.
  */
 export interface PdfViewerLabels {
   zoomIn: string;
@@ -24,6 +33,12 @@ export interface PdfViewerLabels {
   nextPage: string;
   /** e.g. (2, 10) → "2 / 10" */
   pageOf: (page: number, total: number) => string;
+  /** The single page on show (`pages` with one entry), e.g. (2, 10) → "Seite 2 von 10". */
+  pageSingle: (page: number, total: number) => string;
+  /** Accessible name of the page field (type a number, Enter jumps there). */
+  goToPage: string;
+  /** After the page field, e.g. 10 → "/ 10". */
+  ofTotal: (total: number) => string;
   loadError: string;
   fullscreen: string;
   exitFullscreen: string;
@@ -35,10 +50,19 @@ const DEFAULT_LABELS: PdfViewerLabels = {
   previousPage: "Vorherige Seite",
   nextPage: "Nächste Seite",
   pageOf: (page, total) => `${page} / ${total}`,
+  pageSingle: (page, total) => `Seite ${page} von ${total}`,
+  goToPage: "Seite",
+  ofTotal: (total) => `/ ${total}`,
   loadError: "Das PDF konnte nicht geladen werden.",
   fullscreen: "Vollbild",
   exitFullscreen: "Vollbild beenden",
 };
+
+/** A passage to mark: its text, and optionally the one page (1-based) to look on. */
+export interface PdfHighlight {
+  text: string;
+  page?: number;
+}
 
 export interface PdfViewerProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "onLoad" | "onError"> {
@@ -46,6 +70,10 @@ export interface PdfViewerProps
   src: string;
   /** 1-based page to scroll to once the document is laid out. */
   initialPage?: number;
+  /** Passages to mark on the pages; without `page`, every page is searched. */
+  highlights?: PdfHighlight[];
+  /** Only these pages (1-based), in document order; default every page. */
+  pages?: number[];
   labels?: Partial<PdfViewerLabels>;
   /** Extra toolbar controls, right-aligned (e.g. a download button). */
   toolbarEnd?: React.ReactNode;
@@ -69,11 +97,12 @@ const PAGE_GAP = 16;
 const SIDE_PAD = 24;
 
 const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
-  ({ src, initialPage = 1, labels: labelsProp, toolbarEnd, toolbarStart, onLoad, onError, plain = false, className, ...props }, ref) => {
+  ({ src, initialPage = 1, highlights, pages, labels: labelsProp, toolbarEnd, toolbarStart, onLoad, onError, plain = false, className, ...props }, ref) => {
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
     const scrollRef = React.useRef<HTMLDivElement | null>(null);
     const rootRef = React.useRef<HTMLDivElement | null>(null);
-    const pageRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+    /** Page elements by their 1-based page number. */
+    const pageRefs = React.useRef(new Map<number, HTMLDivElement>());
     React.useImperativeHandle(ref, () => rootRef.current as HTMLDivElement);
 
     // Fullscreen via the Fullscreen API on the viewer itself, so the toolbar
@@ -156,19 +185,31 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
       return () => ro.disconnect();
     }, []);
 
-    const widest = sizes.reduce((m, s) => Math.max(m, s.width), 0);
+    // The pages on show: `pages` (valid, deduplicated, in order) or all of them.
+    const pagesKey = (pages ?? []).join(",");
+    const shown = React.useMemo(() => {
+      const all = sizes.map((_, i) => i + 1);
+      if (!pagesKey) return all;
+      const wanted = new Set(pagesKey.split(",").map(Number));
+      const picked = all.filter((p) => wanted.has(p));
+      return picked.length > 0 ? picked : all;
+    }, [sizes, pagesKey]);
+    const startPage = shown.includes(initialPage) ? initialPage : (shown[0] ?? 1);
+
+    const widest = shown.reduce((m, p) => Math.max(m, sizes[p - 1]?.width ?? 0), 0);
     const sidePad = plain ? 0 : SIDE_PAD;
     const fitScale = widest > 0 && containerWidth > 0 ? (containerWidth - sidePad * 2) / widest : 1;
     const scale = zoom ?? fitScale;
 
     // Scroll to the requested page once the layout exists.
     React.useEffect(() => {
-      if (scrolledToInitial.current || sizes.length === 0 || containerWidth === 0) return;
-      const target = pageRefs.current[Math.min(Math.max(initialPage, 1), sizes.length) - 1];
+      if (scrolledToInitial.current || shown.length === 0 || containerWidth === 0) return;
+      const target = pageRefs.current.get(startPage);
       if (!target) return;
       scrolledToInitial.current = true;
-      if (initialPage > 1) target.scrollIntoView({ block: "start" });
-    }, [sizes, containerWidth, initialPage]);
+      setCurrent(startPage);
+      if (startPage !== shown[0]) target.scrollIntoView({ block: "start" });
+    }, [shown, containerWidth, startPage]);
 
     // Which page is the reader on: the one covering most of the viewport.
     React.useEffect(() => {
@@ -193,15 +234,26 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
         },
         { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
       );
-      pageRefs.current.forEach((el) => el && io.observe(el));
+      pageRefs.current.forEach((el) => io.observe(el));
       return () => io.disconnect();
       // `current` is the fallback only; re-subscribing on it would thrash.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sizes]);
+    }, [shown]);
 
-    const goTo = (page: number) => {
-      const idx = Math.min(Math.max(page, 1), sizes.length) - 1;
-      pageRefs.current[idx]?.scrollIntoView({ block: "start", behavior: "smooth" });
+    // Previous / next step through the pages on show.
+    const at = shown.indexOf(current);
+    const goTo = (page: number | undefined) => {
+      if (page != null) pageRefs.current.get(page)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    };
+
+    // The page field: shows the current page; while focused it holds what is
+    // typed. Enter jumps to that page if it is on show; Escape and leaving
+    // the field drop the input.
+    const [pageDraft, setPageDraft] = React.useState<string | null>(null);
+    const commitPage = () => {
+      const page = Number(pageDraft);
+      if (Number.isInteger(page) && shown.includes(page)) goTo(page);
+      setPageDraft(null);
     };
     const stepZoom = (dir: 1 | -1) => {
       const base = scale;
@@ -224,15 +276,58 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
           className="flex h-12 shrink-0 items-center gap-1 border-b border-outline-variant bg-surface pl-2 pr-[var(--dialog-close-inset,0.5rem)]"
         >
           {toolbarStart && <>{toolbarStart}<span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-outline-variant" /></>}
-          <Button variant="ghost" size="icon" aria-label={labels.previousPage} disabled={current <= 1} onClick={() => goTo(current - 1)}>
-            <ChevronUp aria-hidden="true" className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label={labels.nextPage} disabled={current >= sizes.length} onClick={() => goTo(current + 1)}>
-            <ChevronDown aria-hidden="true" className="size-4" />
-          </Button>
-          <span className="min-w-16 px-2 text-center text-sm tabular-nums text-on-surface-variant" aria-live="polite">
-            {sizes.length > 0 ? labels.pageOf(current, sizes.length) : "–"}
-          </span>
+          {/* One page on show: no stepping, the page as a plain label — an
+              excerpt of a longer document, not a document of one page. */}
+          {shown.length === 1 ? (
+            <span className="px-2 text-sm tabular-nums text-on-surface-variant">
+              {labels.pageSingle(shown[0], sizes.length)}
+            </span>
+          ) : (
+            <>
+              <Button variant="ghost" size="icon" aria-label={labels.previousPage} disabled={at <= 0} onClick={() => goTo(shown[at - 1])}>
+                <ChevronUp aria-hidden="true" className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon" aria-label={labels.nextPage} disabled={at < 0 || at >= shown.length - 1} onClick={() => goTo(shown[at + 1])}>
+                <ChevronDown aria-hidden="true" className="size-4" />
+              </Button>
+              {sizes.length > 0 ? (
+                <span className="flex items-center gap-1 px-1 text-sm tabular-nums text-on-surface-variant">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    // A dialog around the viewer can tell an Escape meant for this field.
+                    data-slot="pdf-viewer-page-field"
+                    aria-label={labels.goToPage}
+                    value={pageDraft ?? String(current)}
+                    // Room for the widest page number plus the field's padding and border.
+                    style={{ width: `calc(${Math.max(2, String(sizes.length).length)}ch + 1.5rem + 2px)` }}
+                    onFocus={(e) => {
+                      setPageDraft(String(current));
+                      e.currentTarget.select();
+                    }}
+                    onChange={(e) => setPageDraft(e.currentTarget.value.replace(/\D/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        commitPage();
+                        e.currentTarget.blur();
+                      } else if (e.key === "Escape") {
+                        setPageDraft(null);
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    onBlur={() => setPageDraft(null)}
+                    // eslint-disable-next-line design-system/layout-only-classname -- a page counter in the 48px toolbar: Input has no compact size, and the field must read as the toolbar's small numerals
+                    className="h-8 px-2 py-0 text-center text-sm tabular-nums"
+                  />
+                  <span aria-hidden="true">{labels.ofTotal(sizes.length)}</span>
+                  {/* The page reached by scrolling, announced: the field itself is not live. */}
+                  <span className="sr-only" aria-live="polite">{labels.pageOf(current, sizes.length)}</span>
+                </span>
+              ) : (
+                <span className="min-w-16 px-2 text-center text-sm text-on-surface-variant">–</span>
+              )}
+            </>
+          )}
           <span aria-hidden="true" className="mx-1 h-6 w-px bg-outline-variant" />
           <Button variant="ghost" size="icon" aria-label={labels.zoomOut} disabled={scale <= ZOOM_STEPS[0]} onClick={() => stepZoom(-1)}>
             <Minus aria-hidden="true" className="size-4" />
@@ -276,19 +371,32 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
               className={cn("flex flex-col items-center", plain && "divide-y divide-outline-variant")}
               style={plain ? undefined : { padding: `${PAGE_GAP}px ${SIDE_PAD}px`, gap: PAGE_GAP }}
             >
-              {sizes.map((size, i) => (
-                <div
-                  key={i}
-                  data-page={i + 1}
-                  ref={(el) => {
-                    pageRefs.current[i] = el;
-                  }}
-                  className={cn("bg-surface-container-lowest", !plain && "shadow-card")}
-                  style={{ width: Math.floor(size.width * scale), height: Math.floor(size.height * scale) }}
-                >
-                  {doc && <PdfViewerPage doc={doc} index={i + 1} scale={scale} root={scrollRef} />}
-                </div>
-              ))}
+              {shown.map((page) => {
+                const size = sizes[page - 1];
+                return (
+                  <div
+                    key={page}
+                    data-page={page}
+                    ref={(el) => {
+                      if (el) pageRefs.current.set(page, el);
+                      else pageRefs.current.delete(page);
+                    }}
+                    className={cn("relative bg-surface-container-lowest", !plain && "shadow-card")}
+                    style={{ width: Math.floor(size.width * scale), height: Math.floor(size.height * scale) }}
+                  >
+                    {doc && (
+                      <PdfViewerPage
+                        doc={doc}
+                        index={page}
+                        scale={scale}
+                        root={scrollRef}
+                        highlights={highlightsOn(highlights, page)}
+                        revealMark={page === startPage}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -298,20 +406,42 @@ const PdfViewer = React.forwardRef<HTMLDivElement, PdfViewerProps>(
 );
 PdfViewer.displayName = "PdfViewer";
 
-/** One page: renders its bitmap when within a viewport of the scroll area. */
+/** The highlight texts that apply to one page. */
+function highlightsOn(highlights: PdfHighlight[] | undefined, page: number): string[] {
+  return (highlights ?? []).filter((h) => h.text.trim() && (h.page == null || h.page === page)).map((h) => h.text);
+}
+
+/** A mark's box, in percent of the page, so zooming needs no new lookup. */
+interface MarkBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** One page: renders its bitmap (and its marks) when within a viewport of the scroll area. */
 function PdfViewerPage({
   doc,
   index,
   scale,
   root,
+  highlights,
+  revealMark,
 }: {
   doc: PdfDocument;
   index: number;
   scale: number;
   root: React.RefObject<HTMLDivElement | null>;
+  highlights: string[];
+  /** Scroll the first mark into view once it is drawn (the page opened on). */
+  revealMark: boolean;
 }) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const firstMarkRef = React.useRef<HTMLSpanElement | null>(null);
   const [visible, setVisible] = React.useState(false);
+  const [marks, setMarks] = React.useState<{ key: string; boxes: MarkBox[] } | null>(null);
+  // The texts as one stable key: callers pass a fresh array on every render.
+  const highlightKey = highlights.join("\u0000");
 
   React.useEffect(() => {
     const el = canvasRef.current;
@@ -356,7 +486,72 @@ function PdfViewerPage({
     };
   }, [visible, doc, index, scale]);
 
-  return <canvas ref={canvasRef} aria-hidden="true" className="block h-full w-full" />;
+  // Marks: the page's text items, matched against the highlights, as boxes
+  // over the bitmap. Measured once at scale 1, kept in percent of the page.
+  React.useEffect(() => {
+    if (!visible || !highlightKey) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const pdfjs = await loadPdfjs();
+        const page = await doc.getPage(index);
+        const content = await page.getTextContent();
+        if (cancelled) return;
+        const viewport = page.getViewport({ scale: 1 });
+        const items = content.items.filter((it): it is Extract<typeof it, { str: string }> => "str" in it);
+        const boxes: MarkBox[] = [];
+        for (const range of matchPdfText(items, highlightKey.split("\u0000"))) {
+          const item = items[range.item];
+          const len = item.str.length;
+          if (!len) continue;
+          const tx = pdfjs.Util.transform(viewport.transform, item.transform);
+          // Upright text only: the box below runs along screen x. Rotated or
+          // vertical text (a rotated page, a margin note) gets no mark rather
+          // than a wrong one.
+          if (Math.abs(tx[1]) > 0.01 * Math.abs(tx[0]) || Math.abs(tx[2]) > 0.01 * Math.abs(tx[3]) || tx[0] <= 0) continue;
+          const fontHeight = Math.hypot(tx[2], tx[3]);
+          const width = item.width * viewport.scale;
+          const left = tx[4] + (width * range.start) / len;
+          boxes.push({
+            left: (left / viewport.width) * 100,
+            top: ((tx[5] - fontHeight) / viewport.height) * 100,
+            width: ((width * (range.end - range.start)) / len / viewport.width) * 100,
+            height: ((fontHeight * 1.15) / viewport.height) * 100,
+          });
+        }
+        setMarks({ key: highlightKey, boxes });
+      } catch {
+        /* no text layer (a scan) or a cancelled load: no marks */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, doc, index, highlightKey]);
+
+  const boxes = marks?.key === highlightKey ? marks.boxes : [];
+  const revealed = React.useRef(false);
+  React.useEffect(() => {
+    if (!revealMark || revealed.current || boxes.length === 0) return;
+    revealed.current = true;
+    firstMarkRef.current?.scrollIntoView({ block: "center" });
+  }, [revealMark, boxes.length]);
+
+  return (
+    <>
+      <canvas ref={canvasRef} aria-hidden="true" className="block h-full w-full" />
+      {boxes.map((b, i) => (
+        <span
+          key={i}
+          ref={i === 0 ? firstMarkRef : undefined}
+          data-slot="pdf-viewer-mark"
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-[2px] bg-highlight mix-blend-multiply"
+          style={{ left: `${b.left}%`, top: `${b.top}%`, width: `${b.width}%`, height: `${b.height}%` }}
+        />
+      ))}
+    </>
+  );
 }
 
 export { PdfViewer };
