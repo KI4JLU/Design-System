@@ -688,7 +688,7 @@ export { PdfThumbnail, type PdfThumbnailProps } from "./components/pdf-thumbnail
 export { preloadPdfjs, renderPdfFirstPage, setPdfWorkerSrc, type RenderPdfFirstPageOptions } from "./lib/pdf-render";
 export { usePdfPreviewImage } from "./lib/use-pdf-preview";
 export { FilePreview, type FilePreviewProps } from "./components/file-preview";
-export { PdfViewer, type PdfViewerProps, type PdfViewerLabels } from "./components/pdf-viewer";
+export { PdfViewer, type PdfViewerProps, type PdfViewerLabels, type PdfHighlight } from "./components/pdf-viewer";
 export { ImageViewer, type ImageViewerProps, type ImageViewerLabels } from "./components/image-viewer";
 export {
   PreviewBackLink,

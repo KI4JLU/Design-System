@@ -440,6 +440,14 @@
   --color-warning-container: var(--p-amber-100);
   --color-on-warning-container: var(--p-amber-900);
 
+  /* Highlight: a text marker's yellow over content that stays light in both
+     themes — a PDF page bitmap. One step stronger than the chat's citation
+     yellow (warning-container, amber-100): on a printed page amber-100 reads
+     too faint. Deliberately NOT redefined for dark, like the code surface: the
+     page under it is white either way. Used with mix-blend-multiply so the
+     text under it stays as dark as before. */
+  --color-highlight: var(--p-amber-200);
+
   /* Caution: something that ended or no longer applies (a revoked link, an
      expired item) — a status, not a risk. Orange, so it reads apart from the
      warning's amber/yellow. orange-700 has 5.2:1 on surface (WCAG AA). */
