@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
-/** Jeder Ton auf seinem Container-Paar. */
+/** Every tone on its container pair. */
 export const Tones: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-3">
@@ -32,7 +32,7 @@ export const Tones: Story = {
   ),
 };
 
-/** Vier Größen: 28, 36, 40 (rund wie eine Kartenecke, Medium eines Items) und 48 px. */
+/** Four sizes: 28, 36, 40 (round like a card corner, the media of an Item) and 48 px. */
 export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-3">

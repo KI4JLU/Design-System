@@ -29,7 +29,7 @@ export const Playground: Story = {
   },
 };
 
-/** Die komplette Sidebar-Navigation, 1:1 wie in den Apps. */
+/** The complete sidebar navigation, 1:1 as in the apps. */
 export const SidebarExample: Story = {
   render: () => (
     <nav className="flex w-64 flex-col gap-2 rounded-xl bg-surface-container-low border border-outline-variant p-4">
@@ -60,7 +60,7 @@ export const SidebarExample: Story = {
   ),
 };
 
-/** Mit asChild rendert NavItem einen Router-Link statt eines Buttons. */
+/** With asChild, NavItem renders a router link instead of a button. */
 export const AsLink: Story = {
   render: () => (
     <NavItem asChild active className="w-64">

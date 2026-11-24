@@ -40,7 +40,7 @@ const InteractiveExample = () => {
   );
 };
 
-/** Typischer Einsatz: der Diagramm-Zeitraum-Umschalter (Tag/Woche/Monat). */
+/** Typical use: the chart time-range switch (day/week/month). */
 export const Playground: Story = {
   render: () => <InteractiveExample />,
 };
@@ -85,9 +85,9 @@ export const IconWithLabel: Story = {
 };
 
 /**
- * `variant="nav"`: keine Spur, die Segmente wie `NavItem`-Zeilen — die
- * gewählte primär getönt mit Primärtext, die anderen werden beim Hover primär.
- * Für eine Moduswahl, die wie Navigation zwischen Bereichen wirkt.
+ * `variant="nav"`: no track, the segments like `NavItem` rows — the selected
+ * one tinted primary with primary text, the others turn primary on hover. For
+ * a mode choice that works like navigation between areas.
  */
 export const Nav: Story = {
   args: {

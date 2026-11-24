@@ -63,16 +63,16 @@ const SingleHandle = ({ side }: { side: "left" | "right" }) => {
 };
 
 /**
- * Ziehen mit der Maus **und** Tastatur: ←/→ (und ↑/↓ als Alias) um `step`,
- * Home/End auf `min`/`max`. Die Richtung hängt an `side` — die linke Leiste
- * wächst mit → bzw. ↑, die rechte mit ← bzw. ↓. Den Zieh-Vorgang besitzt die
- * Komponente, den Wert der Konsument.
+ * Drag with the mouse **and** the keyboard: ←/→ (and ↑/↓ as aliases) by
+ * `step`, Home/End to `min`/`max`. The direction depends on `side` — the left
+ * panel grows with → or ↑, the right one with ← or ↓. The component owns the
+ * drag, the consumer owns the value.
  */
 export const Playground: Story = {
   render: () => <SingleHandle side="left" />,
 };
 
-/** Rechte Leiste: gespiegelte Richtung, gleicher Wertebereich. */
+/** Right panel: mirrored direction, same value range. */
 export const RightPane: Story = {
   render: () => <SingleHandle side="right" />,
 };
@@ -145,11 +145,11 @@ const TwoPanes = () => {
 };
 
 /**
- * Zusammenspiel beider Primitive: zwei `SidePanel` mit je einem
- * `ResizeHandle`. Jede Leiste zeichnet genau **eine** Randlinie (über `side`),
- * das Handle zeichnet keine — deshalb gibt es hier keine doppelten 1px-Linien
- * und keine negativen Margins. Das Zusammensetzen zu einer Seite ist Aufgabe
- * von `AppShellLayout`, nicht dieser Story.
+ * Both primitives together: two `SidePanel`s, each with a `ResizeHandle`.
+ * Every panel draws exactly **one** border line (via `side`), the handle draws
+ * none — so there are no double 1px lines here and no negative margins.
+ * Composing them into a page is the job of `AppShellLayout`, not of this
+ * story.
  */
 export const BetweenTwoPanes: Story = {
   render: () => <TwoPanes />,

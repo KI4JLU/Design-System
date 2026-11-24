@@ -79,7 +79,7 @@ export const Form: Story = {
   },
 };
 
-/** Radix liefert Fokus-Falle, Esc-zum-Schließen, Scroll-Lock und ARIA gratis. */
+/** Radix provides the focus trap, Esc to close, scroll lock and ARIA for free. */
 export const Confirm: Story = {
   render: () => (
     <Dialog>
@@ -107,9 +107,9 @@ export const Confirm: Story = {
 };
 
 /**
- * Eine Statusmarke auf der Linie des Schließen-Knopfs (`DialogEyebrow`) und
- * zwei gleich breite Aktionen (`DialogFooter layout="fill"`), z. B. eine
- * Einladung annehmen oder ablehnen.
+ * A status label on the line of the close button (`DialogEyebrow`) and two
+ * equally wide actions (`DialogFooter layout="fill"`), e.g. accepting or
+ * declining an invitation.
  */
 export const EyebrowAndFillFooter: Story = {
   render: () => (
@@ -151,7 +151,7 @@ export const EyebrowAndFillFooter: Story = {
   ),
 };
 
-/** Eine einzelne Aktion in `layout="fill"` nimmt die rechte Hälfte. */
+/** A single action in `layout="fill"` takes the right half. */
 export const FillFooterSingleAction: Story = {
   render: () => (
     <Dialog>

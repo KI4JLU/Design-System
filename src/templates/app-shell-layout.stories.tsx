@@ -529,10 +529,10 @@ export const WithCollapsibleColumns: Story = {
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
-    // Orakel für die ausgeklappte Breite: der in `src/tokens.css` deklarierte
-    // Token, aus dem CSSOM zurückgelesen — kein literales „256px", das auch
-    // dann grün wäre, wenn das Utility zu nichts kompilierte. Für die Schiene:
-    // die exportierte Designkonstante.
+    // Oracle for the expanded width: the token declared in `src/tokens.css`,
+    // read back from the CSSOM — not a literal "256px", which would also be
+    // green if the utility compiled to nothing. For the rail: the exported
+    // design constant.
     const tokenWidth = (name: string) => {
       const root = getComputedStyle(document.documentElement);
       const raw = root.getPropertyValue(name).trim();
@@ -546,7 +546,7 @@ export const WithCollapsibleColumns: Story = {
     await expect(column().getBoundingClientRect().width).toBe(
       tokenWidth("--width-sidebar"),
     );
-    // Ausgeklappt trägt die Kopfzeile der Spalte die Marke („JLU RAG").
+    // Expanded, the column's header row carries the brand ("JLU RAG").
     await expect(canvas.getByText("RAG")).toBeVisible();
 
     await userEvent.click(await canvas.findByRole("button", { name: "Navigation einklappen" }));
@@ -559,13 +559,13 @@ export const WithCollapsibleColumns: Story = {
        second time. Two copies would duplicate every `id` and every
        `aria-current` in a `NavItem`. */
     await expect(canvas.getAllByRole("navigation", { name: "Hauptnavigation" })).toHaveLength(1);
-    // Die Marke („JLU RAG") ist mit der Kopfzeile aus der Spalte verschwunden
-    // — und die breite Zeile trägt keine eigene.
+    // The brand ("JLU RAG") has left the column along with the header row
+    // — and the wide row carries none of its own.
     await expect(canvas.queryByText("RAG")).toBeNull();
 
-    /* Und die Zeilen passen wirklich in 60px — das ist die Messung, die nur der
-       Browser-Runner machen kann (jsdom hat kein Layout). Orakel: die
-       exportierte Designkonstante, nicht eine literale 60. */
+    /* And the rows really fit into 60px — the measurement only the browser
+       runner can make (jsdom has no layout). Oracle: the exported design
+       constant, not a literal 60. */
     const row = await canvas.findByRole("button", { name: "Geteiltes Wissen" });
     await expect(row.getBoundingClientRect().width).toBeLessThanOrEqual(
       SIDE_PANEL_RAIL_WIDTH,
@@ -606,8 +606,9 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
     const column = () => canvasElement.querySelector("aside") as HTMLElement;
-    // Alles relativ zur Spaltenoberkante: absolute Viewport-Koordinaten wären
-    // von der Fenstergröße des Runners abhängig, die Differenz nicht.
+    // Everything relative to the column's top edge: absolute viewport
+    // coordinates would depend on the runner's window size, the difference
+    // doesn't.
     const offsetTop = (el: Element) =>
       el.getBoundingClientRect().top - column().getBoundingClientRect().top;
     const centreY = (el: Element) => {
@@ -615,8 +616,8 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
       return box.top + box.height / 2 - column().getBoundingClientRect().top;
     };
 
-    // Der gepinnte Fuß wird von unten gemessen — er hängt an der Unterkante der
-    // Spalte, nicht an deren Oberkante.
+    // The pinned footer is measured from the bottom — it hangs on the
+    // column's bottom edge, not its top edge.
     const offsetBottom = (el: Element) =>
       column().getBoundingClientRect().bottom - el.getBoundingClientRect().bottom;
 
@@ -634,8 +635,8 @@ export const CollapsedRailKeepsVerticalPositions: Story = {
 
     const toggleRail = await canvas.findByRole("button", { name: "Navigation ausklappen" });
     await expect(centreY(toggleRail)).toBe(openToggleCentre);
-    // Dieselbe Zeile, jetzt in ihrer Icon-Form: `NavItem` behält seinen Namen
-    // über `aria-label`, deshalb findet sie derselbe Selektor.
+    // The same row, now in its icon form: `NavItem` keeps its name via
+    // `aria-label`, so the same selector finds it.
     await expect(
       offsetTop(await canvas.findByRole("button", { name: "Mein Wissen" })),
     ).toBe(openNavTop);
@@ -679,7 +680,7 @@ export const WithResizableColumns: Story = {
   play: async ({ canvas, userEvent }) => {
     const step = 10;
 
-    // Linke Spalte: `→` verbreitert sie.
+    // Left column: `→` widens it.
     const leftColumn = await canvas.findByRole("complementary", { name: "Verlauf" });
     const leftHandle = await canvas.findByRole("separator", {
       name: "Breite des Verlaufs ändern",
@@ -689,7 +690,7 @@ export const WithResizableColumns: Story = {
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
     const leftAfter = leftColumn.getBoundingClientRect().width;
     await expect(leftAfter).toBe(leftBefore + 3 * step);
-    // Gemessene Box und gemeldeter Wert sind EINE Zahl, nicht zwei.
+    // The measured box and the reported value are ONE number, not two.
     await expect(leftHandle.getAttribute("aria-valuenow")).toBe(String(leftAfter));
 
     // The sources card floats: it has no separator.
@@ -740,21 +741,21 @@ export const HandleHasNoLayoutWidth: Story = {
     });
     const main = await canvas.findByRole("main");
 
-    // Definierter Startwert, egal was vorher gezogen wurde: `Home` ist das
-    // angekündigte Minimum.
+    // A defined start value, whatever was dragged before: `Home` is the
+    // announced minimum.
     handle.focus();
     await userEvent.keyboard("{Home}");
 
-    // (1) Keine Layout-Breite.
+    // (1) No layout width.
     await expect(handle.getBoundingClientRect().width).toBe(0);
 
-    // (2) Deshalb berühren sich die Nachbarn. Die erwartete Zahl ist die Kante
-    //     der Spalte, nicht eine aus dem Code abgelesene Breite.
+    // (2) That is why the neighbors touch. The expected number is the
+    //     column's edge, not a width read off the code.
     const columnBox = column.getBoundingClientRect();
     await expect(main.getBoundingClientRect().left).toBe(columnBox.right);
 
-    // (3) Die Greiffläche liegt über dieser Linie — von beiden Seiten
-    //     erreichbar, aber nicht breiter als 8px.
+    // (3) The grab area lies over this line — reachable from both sides,
+    //     but no wider than 8px.
     const borderX = columnBox.right;
     const midY = columnBox.top + columnBox.height / 2;
     await expect(document.elementFromPoint(borderX - 3, midY)).toBe(handle);
@@ -762,13 +763,13 @@ export const HandleHasNoLayoutWidth: Story = {
     await expect(document.elementFromPoint(borderX - 5, midY)).not.toBe(handle);
     await expect(document.elementFromPoint(borderX + 5, midY)).not.toBe(handle);
 
-    // Im Ruhezustand ist das Overlay durchsichtig.
+    // At rest the overlay is transparent.
     const restFill = getComputedStyle(handle, "::after").backgroundColor;
     await expect(restFill).toBe("rgba(0, 0, 0, 0)");
 
-    // (4) Und ein Zug, der an einem per Hit-Test *gefundenen* Punkt beginnt,
-    //     zieht weiterhin — der Griff, den der Nutzer trifft, ist der Griff,
-    //     der die Schleife fährt.
+    // (4) And a drag that starts at a point *found* by hit testing still
+    //     drags — the handle the user hits is the handle that runs the
+    //     loop.
     const grab = document.elementFromPoint(borderX + 3, midY) as HTMLElement;
     const widthBefore = column.getBoundingClientRect().width;
     const valueBefore = Number(handle.getAttribute("aria-valuenow"));
@@ -780,8 +781,8 @@ export const HandleHasNoLayoutWidth: Story = {
         clientY: midY,
       }),
     );
-    // Gefüllt, sobald der Zug läuft (`after:transition-colors` blendet über,
-    // deshalb gepollt statt einmal gelesen).
+    // Filled as soon as the drag runs (`after:transition-colors` fades over,
+    // so it is polled instead of read once).
     await waitFor(async () => {
       await expect(getComputedStyle(handle, "::after").backgroundColor).not.toBe(
         restFill,
@@ -796,15 +797,15 @@ export const HandleHasNoLayoutWidth: Story = {
     );
     window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
 
-    // 40px nach rechts, linke Spalte → 40px breiter. Handarithmetik auf der
-    // *gemessenen* Startbreite. Gepollt, weil der Zustandswechsel hier aus
-    // einem **nativen** `window`-Listener kommt (der Griff fährt die Schleife
-    // selbst) — React stapelt das und rendert erst danach.
+    // 40px to the right, left column → 40px wider. Hand arithmetic on the
+    // *measured* start width. Polled, because the state change here comes
+    // from a **native** `window` listener (the handle runs the loop itself)
+    // — React batches it and renders only afterwards.
     await waitFor(async () => {
       await expect(Number(handle.getAttribute("aria-valuenow"))).toBe(valueBefore + 40);
     });
     await expect(column.getBoundingClientRect().width).toBe(widthBefore + 40);
-    // Und die Kanten liegen nach dem Zug wieder aufeinander.
+    // And after the drag the edges lie on each other again.
     await expect(main.getBoundingClientRect().left).toBe(
       column.getBoundingClientRect().right,
     );

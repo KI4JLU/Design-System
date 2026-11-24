@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
-/** Typischer Gesprächsverlauf: Spalten-Layout kommt von der Liste, nicht von der Blase. */
+/** A typical conversation: the column layout comes from the list, not from the bubble. */
 export const Conversation: Story = {
   render: () => (
     <div className="flex max-w-md flex-col gap-2">

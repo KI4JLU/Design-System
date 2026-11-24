@@ -24,7 +24,7 @@ export const Sizes: Story = {
   ),
 };
 
-/** Präsenz-Punkt (`online`) — Status gehört mit ins Label. */
+/** Presence dot (`online`) — the status belongs in the label too. */
 export const Online: Story = {
   args: { initials: "JL" },
   render: () => (
@@ -36,7 +36,7 @@ export const Online: Story = {
   ),
 };
 
-/** Typischer Einsatz: Avatar + Name/Meta in einer Zeile (Sidebar, Gesprächsliste). */
+/** Typical use: avatar + name/meta in one row (sidebar, conversation list). */
 export const WithText: Story = {
   args: { initials: "JL" },
   render: () => (

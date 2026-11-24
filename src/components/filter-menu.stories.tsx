@@ -36,12 +36,12 @@ const InteractiveExample = () => {
   );
 };
 
-/** Default-Zustand: Label ohne Zusatz, solange der Wert dem `defaultValue` entspricht. */
+/** Default state: the label without an addition, as long as the value equals `defaultValue`. */
 export const Playground: Story = {
   render: () => <InteractiveExample />,
 };
 
-/** Vom Default abweichender Wert: das Label zeigt die aktive Auswahl in Klammern. */
+/** A value that differs from the default: the label shows the active choice in parentheses. */
 export const ActiveSelection: Story = {
   args: { value: "conversations" },
 };

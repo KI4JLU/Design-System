@@ -64,7 +64,7 @@ const InteractiveExample = () => {
   );
 };
 
-/** Typischer Einsatz: Suche links, Filter/Sortieren rechts — z. B. als `DashboardLayout`s `toolbar`. */
+/** Typical use: search on the left, filter/sort on the right — e.g. as `DashboardLayout`'s `toolbar`. */
 export const Playground: Story = {
   render: () => <InteractiveExample />,
 };

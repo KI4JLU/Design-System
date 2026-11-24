@@ -70,7 +70,7 @@ export const Interactive: Story = {
   ),
 };
 
-/** Schritt-/Callout-Karte mit linkem Akzentrand (`accent`). */
+/** Step/callout card with a left accent border (`accent`). */
 export const Accent: Story = {
   render: () => (
     <Card accent className="max-w-sm">
@@ -84,7 +84,7 @@ export const Accent: Story = {
   ),
 };
 
-/** Card hat kein Default-Padding — ohne Sub-Parts Padding selbst setzen. */
+/** Card has no default padding — without sub-parts, set the padding yourself. */
 export const PaddedContainer: Story = {
   render: () => (
     <Card className="max-w-sm p-6">

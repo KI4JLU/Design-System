@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
-/** Die JLU-Plattformen — ein Wortmarken-Muster, Produktname als Badge. */
+/** The JLU platforms — one wordmark pattern, the product name as a badge. */
 export const Platforms: Story = {
   render: () => (
     <div className="flex flex-col items-start gap-stack-md">
@@ -26,7 +26,7 @@ export const Platforms: Story = {
   ),
 };
 
-/** `sm` für Sidebar/Top-Bar, `lg` für Marketing-Seiten, `xl`/`xxl` über der Karte einer Auth-Seite. */
+/** `sm` for sidebar/top bar, `lg` for marketing pages, `xl`/`xxl` above the card of an auth page. */
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col items-start gap-stack-md">

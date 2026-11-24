@@ -25,8 +25,8 @@ export const Disabled: Story = {
 };
 
 /**
- * Suchfeld-Muster: dekoratives Icon im Feld (`leadingIcon`). Der zugängliche
- * Name kommt weiterhin vom Label bzw. `aria-label`.
+ * Search field pattern: a decorative icon in the field (`leadingIcon`). The
+ * accessible name still comes from the label or `aria-label`.
  */
 export const LeadingIcon: Story = {
   args: {
@@ -37,14 +37,14 @@ export const LeadingIcon: Story = {
   },
 };
 
-/** `aria-invalid` steuert die Fehler-Optik (rot + roter Fokusring). */
+/** `aria-invalid` drives the error look (red + a red focus ring). */
 export const Invalid: Story = {
   args: { "aria-invalid": true, defaultValue: "not-an-email", type: "email" },
 };
 
 /**
- * Randloses In-Flow-Feld für die Bearbeitung direkt in der Zeile — der Rahmen
- * kommt von der umgebenden Zeile, nicht vom Feld (z. B. Regel-Editor).
+ * Borderless in-flow field for editing directly in the row — the frame comes
+ * from the surrounding row, not from the field (e.g. the rule editor).
  */
 export const Inline: Story = {
   render: () => (

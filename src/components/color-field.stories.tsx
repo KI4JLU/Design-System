@@ -16,8 +16,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Eine Farbe als Zeile mit `SettingsRow`: das Raster der Systemfarben, die
- * Browser-Farbwahl nur über „Eigene Farbe…".
+ * A color as a row with `SettingsRow`: the grid of system colors, and the
+ * browser color picker only via "Eigene Farbe…".
  */
 export const Row: Story = {
   args: { label: "Farbe", value: "#0056B3", onChange: () => undefined },
@@ -38,12 +38,12 @@ export const Row: Story = {
   },
 };
 
-/** Eine Farbe außerhalb der Palette: „Eigene Farbe…" ist markiert. */
+/** A color outside the palette: "Eigene Farbe…" is marked. */
 export const Custom: Story = {
   args: { label: "Farbe", value: "#7A3E9D", onChange: () => undefined },
 };
 
-/** Die Markierung jeder Systemfarbe (und einer an der Grenze): weiß, solange es 3:1 erreicht, sonst schwarz. */
+/** The check mark of every system color (and one at the threshold): white as long as it reaches 3:1, otherwise black. */
 export const CheckOnPresets: Story = {
   args: { label: "Farbe", value: "#0056B3", onChange: () => undefined },
   render: () => (

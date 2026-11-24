@@ -14,8 +14,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Verankertes Panel für Nicht-Menü-Inhalte (Filter, Picker, Mini-Formulare).
- * Für Aktionslisten stattdessen DropdownMenu verwenden.
+ * Anchored panel for non-menu content (filters, pickers, mini forms). For
+ * action lists, use DropdownMenu instead.
  */
 export const FilterPanel: Story = {
   render: () => (

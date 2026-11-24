@@ -26,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** shadcn/ui `item`: Medium, Inhalt und Aktionen in einer Zeile. */
+/** shadcn/ui `item`: media, content and actions in one row. */
 export const Playground: Story = {
   render: (args) => (
     <Item {...args} className="max-w-md">
@@ -42,7 +42,7 @@ export const Playground: Story = {
   ),
 };
 
-/** Mit einer getönten `IconTile` als Medium — ein Hinweis in einem Dialog. */
+/** With a tinted `IconTile` as the media — a notice in a dialog. */
 export const WithIconTile: Story = {
   render: () => (
     <Item variant="muted" className="max-w-md">
@@ -59,7 +59,7 @@ export const WithIconTile: Story = {
   ),
 };
 
-/** Eine Liste als `ItemGroup`, Einträge als Links (`asChild`). */
+/** A list as an `ItemGroup`, entries as links (`asChild`). */
 export const Group: Story = {
   render: () => (
     <ItemGroup className="max-w-md">

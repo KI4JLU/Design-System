@@ -32,7 +32,7 @@ const WithLabelExample = () => {
   );
 };
 
-/** Typischer Einsatz: Label + Beschreibung links, Switch rechts. */
+/** Typical use: label + description on the left, the switch on the right. */
 export const WithLabel: Story = {
   render: () => <WithLabelExample />,
 };

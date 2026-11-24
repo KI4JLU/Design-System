@@ -7,8 +7,8 @@ import { Button } from "../components/button";
 import { Input } from "../components/input";
 import * as selectStories from "../components/select.stories";
 
-// Portable Stories: der Modell-Filter der Toolbar ist die Basic-Story des
-// Select — wiederverwendet statt neu gemockt.
+// Portable stories: the toolbar's model filter is the Select's Basic story —
+// reused instead of mocked anew.
 const { Basic: ModelSelect } = composeStories(selectStories, {});
 
 const meta = {

@@ -45,9 +45,9 @@ const panelBody = (
 );
 
 /**
- * Titel-Knoten für den `header`-Slot. `truncate` steht am Knoten des
- * Konsumenten, nicht im Rahmen: der Slot ist `min-w-0`, entscheiden muss die
- * Anwendung, ob ihr Titel kürzt, umbricht oder gar nicht schrumpft.
+ * Title node for the `header` slot. `truncate` sits on the consumer's node,
+ * not in the frame: the slot is `min-w-0`, and the application has to decide
+ * whether its title truncates, wraps or doesn't shrink at all.
  */
 const paneTitle = (text: string) => (
   <h2 className="truncate font-body-base text-body-base text-on-surface">{text}</h2>
@@ -106,30 +106,30 @@ const Interactive = ({
 };
 
 /**
- * Kontrolliert: `isOpen` und `width` liegen beim Konsumenten. Der
- * Einklapp-Knopf gehört zum Rahmen — er ist im zugeklappten Zustand das
- * einzige Bedienelement. Links steht er am **nachlaufenden** Rand, also dem
- * zum Inhalt zeigenden; `header` füllt den Rest der Zeile.
+ * Controlled: `isOpen` and `width` live with the consumer. The collapse button
+ * belongs to the frame — in the collapsed state it is the only control. On the
+ * left it sits at the **trailing** edge, i.e. the one facing the content;
+ * `header` fills the rest of the row.
  */
 export const Playground: Story = {
   render: () => <Interactive side="left" />,
 };
 
 /**
- * Rechte Leiste: Rand und Chevron spiegeln sich über `side` — und der
- * Umschalter wandert mit. Er steht **vor** dem `header`, wieder am zum Inhalt
- * zeigenden Rand, so dass die beiden Kopfzeilen einer Ansicht mit zwei Leisten zur Mitte hin
- * spiegelsymmetrisch sind.
+ * Right panel: border and chevron mirror via `side` — and the toggle moves
+ * along. It sits **before** the `header`, again at the edge facing the
+ * content, so the two header rows of a view with two panels mirror each other
+ * toward the middle.
  */
 export const RightSide: Story = {
   render: () => <Interactive side="right" />,
 };
 
 /**
- * Langer Titel: Der `header`-Slot ist `min-w-0`, ein `truncate`-Knoten kürzt
- * deshalb mit Ellipse, statt den Umschalter aus der Zeile zu drängen. Die
- * Zeile ist in beiden Richtungen `h-16` hoch — dieselbe Chrome-Einheit wie die
- * Leiste von `AppShellLayout`, damit die Kopfzeilen auf einer Linie liegen.
+ * Long title: the `header` slot is `min-w-0`, so a `truncate` node shortens
+ * with an ellipsis instead of pushing the toggle out of the row. The row is
+ * `h-16` tall in both directions — the same chrome unit as the
+ * `AppShellLayout` bar, so the header rows line up.
  */
 export const LongHeaderTitle: Story = {
   render: () => (
@@ -141,11 +141,11 @@ export const LongHeaderTitle: Story = {
 };
 
 /**
- * Zugeklappt: 60px-Schiene mit Ausklapp-Knopf und optionaler
- * `collapsedPreview`. Der Inhalt bleibt montiert, ist aber ausgeblendet —
- * Scrollposition und halb getippte Eingaben überleben das Einklappen. Der
- * `header` dagegen wird **gar nicht** gerendert: in der Schiene ist Platz für
- * genau ein Bedienelement (hier mit gesetztem `header`, der trotzdem fehlt).
+ * Collapsed: a 60px rail with the expand button and an optional
+ * `collapsedPreview`. The content stays mounted but hidden — scroll position
+ * and half-typed input survive collapsing. The `header`, on the other hand, is
+ * **not rendered at all**: the rail has room for exactly one control (here
+ * with `header` set, and it is still missing).
  */
 export const Collapsed: Story = {
   args: {
@@ -164,7 +164,7 @@ export const Collapsed: Story = {
   ),
 };
 
-/** Ohne `collapsedPreview` bleibt nur der Ausklapp-Knopf in der Schiene. */
+/** Without `collapsedPreview`, only the expand button stays in the rail. */
 export const CollapsedWithoutPreview: Story = {
   args: { isOpen: false, children: panelBody },
   render: (args) => (
@@ -215,8 +215,8 @@ export const ToggleAlignsWithBodyControl: Story = {
     const bodyControl = await canvas.findByTestId("body-control");
     await expect(Math.abs(toggle.getBoundingClientRect().right - bodyControl.getBoundingClientRect().right)).toBeLessThan(1);
     await expect(toggle.getBoundingClientRect().width).toBeCloseTo(36, 0);
-    // Der Elternknoten des Umschalters IST die Kopfzeile — `SidePanel` rendert
-    // ihn direkt in die `h-14`-Zeile.
+    // The toggle's parent node IS the header row — `SidePanel` renders it
+    // directly into the `h-14` row.
     const headerRow = toggle.parentElement as HTMLElement;
     await expect(getComputedStyle(headerRow).paddingLeft).toBe("8px");
   },

@@ -5,24 +5,23 @@ import * as ToastStories from "./toast.stories";
 
 # Toast
 
-Kurze Statusmeldung in einer festen Bildschirmecke: `ToastProvider`,
+A short status message in a fixed corner of the screen: `ToastProvider`,
 `ToastViewport`, `Toast` + `ToastTitle` / `ToastDescription` /
-`ToastAction` / `ToastClose`. Ersetzt handgebaute Meldungsstapel — in
-JustRAG `components/ToastContainer.tsx` + `Toast.css`, deren Timer ein nackter
-`setTimeout` ist, den niemand anhalten kann.
+`ToastAction` / `ToastClose`. Replaces hand-built message stacks — in JustRAG
+`components/ToastContainer.tsx` + `Toast.css`, whose timer is a bare
+`setTimeout` that nobody can pause.
 
-Auf Radix (`@radix-ui/react-toast`) gebaut. Damit kommen mit: die
-Live-Region-Ankündigung (siehe „Barrierefreiheit"), ein Timer je Toast, der
-bei Hover, Fokus und Fensterwechsel **pausiert** und mit der Restzeit
-weiterläuft, die Tastenkombination **F8** in den Viewport, Wischen zum
-Schließen und Escape.
+Built on Radix (`@radix-ui/react-toast`). That brings along: the live-region
+announcement (see "Accessibility"), one timer per toast that **pauses** on
+hover, focus and window switch and resumes with the remaining time, the
+**F8** shortcut into the viewport, swipe to dismiss, and Escape.
 
-<Canvas of={ToastStories.Varianten} />
+<Canvas of={ToastStories.Variants} />
 
-## Drei Teile, sonst passiert nichts
+## Three parts, or nothing happens
 
 ```tsx
-// einmal um die App
+// once around the app
 <ToastProvider>
   <App />
   {toasts.map((t) => (
@@ -35,191 +34,185 @@ Schließen und Escape.
 </ToastProvider>
 ```
 
-Ein `Toast` **ohne gemounteten `ToastViewport` rendert gar nichts** und meldet
-auch nichts — in der installierten Radix-Quelle gibt `ToastImpl` `null` zurück,
-solange kein Viewport registriert ist. Das ist der wahrscheinlichste
-Verdrahtungsfehler; `toast.test.tsx` pinnt ihn fest.
+A `Toast` **without a mounted `ToastViewport` renders nothing at all** and
+announces nothing either — in the installed Radix source, `ToastImpl` returns
+`null` as long as no viewport is registered. That is the most likely wiring
+mistake; `toast.test.tsx` pins it down.
 
-Der Viewport wird **einmal** gerendert. Ein zweiter gibt jedem Toast ein
-zweites Zuhause und der Stapel zerfällt.
+The viewport is rendered **once**. A second one gives every toast a second
+home and the stack falls apart.
 
 ## Props
 
-| Prop | Teil | Typ | Bedeutung |
+| Prop | Part | Type | Meaning |
 |---|---|---|---|
-| `label` | `ToastProvider` | `string` | Wird der Ansage **jedes** Toasts vorangestellt („Benachrichtigung: Datei gespeichert"). Default `"Benachrichtigung"` — Singular, es ist nicht der Name des Viewports. |
-| `swipeDirection` | `ToastProvider` | `'right' \| 'left' \| 'up' \| 'down'` | Wischrichtung zum Schließen, Default `right`. |
-| `label` | `ToastViewport` | `string` | Zugänglicher Name der Region; `{hotkey}` wird durch die Taste ersetzt. Default `"Benachrichtigungen ({hotkey})"`. |
-| `hotkey` | `ToastViewport` | `string[]` | Taste, die den Fokus in den Viewport setzt. Default `["F8"]`. |
-| `variant` | `Toast` | `'neutral' \| 'success' \| 'error' \| 'warning' \| 'info'` | Status. Bestimmt Fläche und Textfarbe (wie `Alert`), Icon, Standarddauer **und** die Dringlichkeit der Ansage. Default `neutral`. |
-| `icon` | `Toast` | `ReactNode \| false` | Ersetzt oder unterdrückt das Status-Icon. |
-| `duration` | `Toast` | `number` | Anzeigedauer in ms. Ohne Angabe die Variantenzeit (siehe unten). `Infinity` = kein Auto-Dismiss. **`0` nicht** — siehe „Fallstricke". |
-| `type` | `Toast` | `'foreground' \| 'background'` | Übersteuert die Dringlichkeit der Ansage (`assertive` / `polite`). |
-| `open` / `onOpenChange` | `Toast` | `boolean` / `(open) => void` | Der übliche Radix-Vertrag. `onOpenChange(false)` ist der Haken, an dem die App den Toast aus ihrer Liste nimmt. |
-| `altText` | `ToastAction` | `string` | **Pflicht.** Was ein Screenreader **statt** der Beschriftung hört — beschreibt den alternativen Weg zur Aktion. Leerer Text: Radix rendert die Aktion gar nicht. |
-| `aria-label` | `ToastClose` | `string` | Name der Schließen-Schaltfläche, Default `"Schließen"`. |
+| `label` | `ToastProvider` | `string` | Prefixed to the announcement of **every** toast ("Benachrichtigung: Datei gespeichert"). Default `"Benachrichtigung"` — singular, it is not the viewport's name. |
+| `swipeDirection` | `ToastProvider` | `'right' \| 'left' \| 'up' \| 'down'` | Swipe direction to dismiss, default `right`. |
+| `label` | `ToastViewport` | `string` | Accessible name of the region; `{hotkey}` is replaced by the key. Default `"Benachrichtigungen ({hotkey})"`. |
+| `hotkey` | `ToastViewport` | `string[]` | Key that moves focus into the viewport. Default `["F8"]`. |
+| `variant` | `Toast` | `'neutral' \| 'success' \| 'error' \| 'warning' \| 'info'` | Status. Decides surface and text color (like `Alert`), icon, default duration **and** the urgency of the announcement. Default `neutral`. |
+| `icon` | `Toast` | `ReactNode \| false` | Replaces or suppresses the status icon. |
+| `duration` | `Toast` | `number` | Display time in ms. Without it, the variant's time (see below). `Infinity` = no auto-dismiss. **Not `0`** — see "Pitfalls". |
+| `type` | `Toast` | `'foreground' \| 'background'` | Overrides the urgency of the announcement (`assertive` / `polite`). |
+| `open` / `onOpenChange` | `Toast` | `boolean` / `(open) => void` | The usual Radix contract. `onOpenChange(false)` is the hook where the app takes the toast out of its list. |
+| `altText` | `ToastAction` | `string` | **Required.** What a screen reader hears **instead of** the label — describes the alternative way to the action. Empty text: Radix doesn't render the action at all. |
+| `aria-label` | `ToastClose` | `string` | Name of the close button, default `"Schließen"`. |
 
-Alle Teile reichen restliche Props und `ref` an das jeweilige Radix-Primitive
-durch.
+All parts pass remaining props and `ref` through to their Radix primitive.
 
 <Controls />
 
-## Wer besitzt die Warteschlange?
+## Who owns the queue?
 
-**Die App, nicht das Design System.** Welche Toasts es gibt, wie viele
-gleichzeitig stehen und in welcher Reihenfolge, ist Anwendungszustand — genau
-wie bei jeder anderen Komponente hier. JustRAG hält dafür einen Reducer mit
-`MAX_TOASTS = 5`; diese Grenze bleibt dort. Das Design System liefert die
-Darstellung und — über Radix — den Timer je Toast.
+**The app, not the design system.** Which toasts exist, how many stand at the
+same time and in which order is application state — just as with every other
+component here. JustRAG keeps a reducer with `MAX_TOASTS = 5` for it; that
+limit stays there. The design system provides the presentation and — through
+Radix — the timer per toast.
 
-Der Weg von JustRAGs `ToastContext` hierher ist deshalb kurz: die Liste bleibt,
-das `setTimeout` in `ToastItem` fällt **weg** (Radix übernimmt es, inklusive
-Pause), `removeToast(id)` hängt an `onOpenChange`.
+So the way from JustRAG's `ToastContext` to here is short: the list stays,
+the `setTimeout` in `ToastItem` **goes away** (Radix takes it over, including
+the pause), and `removeToast(id)` hangs on `onOpenChange`.
 
-<Canvas of={ToastStories.Stapel} />
+<Canvas of={ToastStories.Stack} />
 
-## Zeiten
+## Durations
 
-| Variante | Default | Grund |
+| Variant | Default | Reason |
 |---|---|---|
-| `success`, `info` | 4000 ms | Bestätigt nur, was gerade passiert ist. |
-| `warning`, `neutral` | 5000 ms | Radix-Default. |
-| `error` | 6000 ms | Trägt etwas, das noch zu tun ist — bleibt länger lesbar. |
+| `success`, `info` | 4000 ms | Only confirms what just happened. |
+| `warning`, `neutral` | 5000 ms | Radix default. |
+| `error` | 6000 ms | Carries something still to be done — stays readable longer. |
 
-Die Werte sind die der Bestandsimplementierung in JustRAG
-(`DEFAULT_DURATIONS`), exportiert als `TOAST_DURATIONS`.
+The values are those of the existing implementation in JustRAG
+(`DEFAULT_DURATIONS`), exported as `TOAST_DURATIONS`.
 
 <Canvas of={ToastStories.AutoDismiss} />
 
-## Entscheidungen
+## Decisions
 
-- **Radix Toast, nicht `sonner`.** shadcn empfiehlt inzwischen `sonner`, das
-  aber eine komplette Toast-Maschine mit eigenem Zustand, eigenem Markup und
-  eigenem CSS mitbringt. Dieses Paket besteht aus dünnen Radix-Hüllen
-  (`dependencies` sind ausschließlich `@radix-ui/react-*` plus cva/clsx/
-  tailwind-merge/lucide), stylt über Tokens und hält Anwendungszustand
-  grundsätzlich draußen. `sonner` wäre in allen drei Punkten ein Bruch — und
-  die Warteschlange, die es mitliefert, existiert in JustRAG bereits.
-- **Fehler wird `assertive` angesagt, alles andere `polite`.** Ein
-  Fehler-Toast sagt, dass das, was die Nutzerin gerade angestoßen hat, **nicht**
-  passiert ist; eine höfliche Warteschlange darf diese Ansage beliebig lange
-  zurückhalten — bis dahin ist der Toast weg. Alles andere bestätigt nur und
-  rechtfertigt keine Unterbrechung. Über `type` pro Toast übersteuerbar.
-- **Kein handgeschriebenes `role="alert"`** — und keins nötig: `role="alert"`
-  ist definiert als `aria-live="assertive"` + `aria-atomic="true"`, und genau
-  diese Konfiguration entsteht auf dem Fehlerpfad (siehe „Barrierefreiheit").
-- **Keine Ein-/Ausblend-Animation**, wie bei allen schwebenden Flächen dieses
-  Systems (Tooltip, Popover, Select, DropdownMenu). Damit ist
-  `prefers-reduced-motion` nicht „berücksichtigt", sondern gegenstandslos: es
-  gibt keine Bewegung, die reduziert werden müsste. Die Bestandsimplementierung
-  in JustRAG animiert mit Framer Motion — und ihr `getMotionProps(reduced)`
-  wird dort **vor** `initial`/`animate`/`exit` gespreizt, die späteren Props
-  gewinnen, die Reduktion läuft also ins Leere. Ein weiterer Grund, die
-  Animation nicht mitzunehmen.
-- **Das Status-Icon gehört zur Variante**, nicht zum Aufrufort. Es ist das,
-  was den Status nicht allein über Farbe transportiert (WCAG 1.4.1); es ist
-  `aria-hidden`, weil die Meldung selbst schon sagt, was passiert ist.
-  `icon={false}` schaltet es ab, `variant="neutral"` hat von Haus aus keins.
-- **Der neueste Toast liegt oben** (`flex-col-reverse` auf dem unten
-  verankerten Viewport). Das ist die Richtung, die auch JustRAG hat, und sie
-  deckt sich mit Radix' Tab-Reihenfolge: dessen
-  `getSortedTabbableCandidates` dreht die Sammlung um, Tab besucht also
-  ebenfalls den neuesten zuerst. Sicht- und Fokusreihenfolge stimmen überein.
-- **`z-100`, über `Dialog` und `BottomTabBar` (`z-50`).** Ein Toast, der aus
-  einem Modal heraus ausgelöst wird, darf nicht dahinter verschwinden. Die
-  beiden Ebenen stören sich nicht: der Viewport ist eine
-  `DismissableLayer.Branch`, ein Klick auf einen Toast schließt den Dialog
-  nicht.
-- **Die Aktion steht unter dem Text, nicht daneben.** Der Toast ist höchstens
-  `sm` breit; ein Button daneben würde Text oder Button stauchen — Regel 5 der
-  COMPONENT_GUIDELINES.
-- **Spaltenabstand über Ränder statt `gap-x`.** Ein CSS-Grid-Gap gilt auch
-  zwischen leeren Spuren: mit `gap-x` wäre jeder Toast ohne Icon um 12 px
-  eingerückt. Der Abstand sitzt deshalb am Icon (`mr-3`) und an der
-  Schließen-Schaltfläche (`ml-3`).
+- **Radix Toast, not `sonner`.** shadcn now recommends `sonner`, but it brings
+  a complete toast machine with its own state, its own markup and its own CSS.
+  This package consists of thin Radix wrappers (`dependencies` are only
+  `@radix-ui/react-*` plus cva/clsx/tailwind-merge/lucide), styles through
+  tokens and keeps application state out on principle. `sonner` would break
+  all three — and the queue it ships already exists in JustRAG.
+- **Errors are announced `assertive`, everything else `polite`.** An error
+  toast says that what the user just triggered did **not** happen; a polite
+  queue may hold that announcement back for any length of time — by then the
+  toast is gone. Everything else only confirms and doesn't justify an
+  interruption. Can be overridden per toast with `type`.
+- **No hand-written `role="alert"`** — and none needed: `role="alert"` is
+  defined as `aria-live="assertive"` + `aria-atomic="true"`, and exactly that
+  configuration comes out of the error path (see "Accessibility").
+- **No enter/exit animation**, as with all floating surfaces in this system
+  (Tooltip, Popover, Select, DropdownMenu). That makes
+  `prefers-reduced-motion` not "respected" but moot: there is no motion to
+  reduce. The existing implementation in JustRAG animates with Framer Motion —
+  and its `getMotionProps(reduced)` is spread there **before**
+  `initial`/`animate`/`exit`, the later props win, so the reduction has no
+  effect. One more reason not to bring the animation along.
+- **The status icon belongs to the variant**, not to the call site. It is what
+  keeps the status from being conveyed by color alone (WCAG 1.4.1); it is
+  `aria-hidden` because the message itself already says what happened.
+  `icon={false}` turns it off; `variant="neutral"` has none by default.
+- **The newest toast is on top** (`flex-col-reverse` on the bottom-anchored
+  viewport). That is the direction JustRAG has too, and it matches Radix's tab
+  order: its `getSortedTabbableCandidates` reverses the collection, so Tab
+  also visits the newest first. Visual and focus order match.
+- **`z-100`, above `Dialog` and `BottomTabBar` (`z-50`).** A toast triggered
+  from inside a modal must not disappear behind it. The two layers don't
+  interfere: the viewport is a `DismissableLayer.Branch`, so a click on a
+  toast doesn't close the dialog.
+- **The action sits below the text, not next to it.** The toast is at most
+  `sm` wide; a button next to the text would squeeze text or button — rule 5 of
+  the COMPONENT_GUIDELINES.
+- **Column spacing via margins instead of `gap-x`.** A CSS grid gap also
+  applies between empty tracks: with `gap-x` every toast without an icon would
+  be indented by 12 px. The spacing therefore sits on the icon (`mr-3`) and on
+  the close button (`ml-3`).
 
-<Canvas of={ToastStories.MitAktion} />
+<Canvas of={ToastStories.WithAction} />
 
-## Fallstricke
+## Pitfalls
 
-- **`duration={0}` schaltet Auto-Dismiss nicht ab.** Radix löst die Dauer mit
-  `durationProp || context.duration` auf, `0` ist falsy und fällt auf den
-  Provider-Wert zurück. Der Ausschalter heißt `Infinity`.
-- **`ToastProvider duration` wirkt auf diese Komponente nicht.** `Toast` löst
-  immer auf eine Zahl auf (Prop, sonst Variantenzeit), also kommt der
-  Provider-Wert nie zum Zug. Zeiten pro Toast setzen oder `TOAST_DURATIONS`
-  ändern.
-- **Escape schließt Toasts auch dann, wenn der Fokus ganz woanders steht.**
-  Das ist Radix-Verhalten (`DismissableLayer`), kein Versehen dieser Hülle.
-- **Über einer `BottomTabBar`** (60 px) verdeckt der Viewport auf schmalen
-  Schirmen die Leiste. Layout-Klasse am Aufrufort:
-  `className="bottom-15 sm:bottom-0"`.
+- **`duration={0}` doesn't turn auto-dismiss off.** Radix resolves the
+  duration with `durationProp || context.duration`; `0` is falsy and falls
+  back to the provider value. The off switch is `Infinity`.
+- **`ToastProvider duration` has no effect on this component.** `Toast`
+  always resolves to a number (the prop, otherwise the variant's time), so the
+  provider value never gets a turn. Set durations per toast or change
+  `TOAST_DURATIONS`.
+- **Escape closes toasts even when focus is somewhere else entirely.** That is
+  Radix behavior (`DismissableLayer`), not an oversight of this wrapper.
+- **Above a `BottomTabBar`** (60 px) the viewport covers the bar on narrow
+  screens. Layout class at the call site: `className="bottom-15 sm:bottom-0"`.
 
-<Canvas of={ToastStories.LangerInhalt} />
+<Canvas of={ToastStories.LongContent} />
 
-## Bewusst nicht enthalten
+## Deliberately not included
 
-- **Kein `useToast`/`toast()`-Singleton.** Das wäre globaler
-  Anwendungszustand in einer Bibliothek, die sonst keinen hat — und in
-  JustRAG doppelt vorhanden.
-- **Keine Obergrenze für die Anzahl** und kein Zusammenfassen gleicher
-  Meldungen. Beides sind Entscheidungen über die Warteschlange, also Sache der
-  App.
-- **Kein Fortschrittsbalken für die Restzeit.** Er müsste den Pausezustand
-  spiegeln, was ihn zu einer Animation macht, die dieses System nirgends hat.
+- **No `useToast`/`toast()` singleton.** That would be global application
+  state in a library that otherwise has none — and it exists twice in JustRAG
+  already.
+- **No limit on the number** and no merging of identical messages. Both are
+  decisions about the queue, so they are the app's business.
+- **No progress bar for the remaining time.** It would have to mirror the
+  paused state, which would make it an animation this system has nowhere.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Genau einen `ToastViewport`, so weit oben wie möglich in der App.
-- ✅ Einzeiler als `ToastTitle`; `ToastDescription` nur für ein echtes Detail.
-- ✅ `variant="error"` für Fehlschläge — die Dringlichkeit der Ansage hängt
-  daran.
-- ✅ Toast mit Aktion → `duration={Infinity}` und `ToastClose` daneben.
-- ✅ `onOpenChange(false)` benutzen, um den Toast aus der eigenen Liste zu
-  nehmen — sonst bleibt er als unsichtbarer Eintrag stehen.
-- ❌ Keine essenzielle Information nur im Toast. Er verschwindet und ist danach
-  nirgends mehr auffindbar; was dauerhaft gelten muss, gehört auf die Seite
-  (Fehlerbox am Formular, Statusspalte in der Tabelle).
-- ❌ Keine Rückfragen, keine Formulare, keine Links in Serie — ein Toast trägt
-  höchstens **eine** Aktion. Alles andere ist ein `Dialog`.
-- ❌ Kein Toast für etwas, das die Nutzerin ohnehin sieht (Zeile ist
-  verschwunden, Feld ist grün).
-- ❌ Keine Stapel aus Fehlern derselben Ursache — eine Meldung, nicht zwanzig.
-- ❌ Keine Farben, Schriftgrößen oder Paddings am Aufrufort (Regel 4 der
-  COMPONENT_GUIDELINES); Breite, Position und Grid-Platzierung sind Layout und
-  bleiben erlaubt.
+- ✅ Exactly one `ToastViewport`, as high up in the app as possible.
+- ✅ One-liners as `ToastTitle`; `ToastDescription` only for a real detail.
+- ✅ `variant="error"` for failures — the urgency of the announcement depends
+  on it.
+- ✅ Toast with an action → `duration={Infinity}` and a `ToastClose` next to
+  it.
+- ✅ Use `onOpenChange(false)` to take the toast out of your own list —
+  otherwise it stays behind as an invisible entry.
+- ❌ No essential information only in a toast. It disappears and can't be
+  found anywhere afterwards; what has to stay valid belongs on the page (an
+  error box on the form, a status column in the table).
+- ❌ No questions, no forms, no series of links — a toast carries at most
+  **one** action. Everything else is a `Dialog`.
+- ❌ No toast for something the user sees anyway (the row has gone, the field
+  is green).
+- ❌ No stacks of errors with the same cause — one message, not twenty.
+- ❌ No colors, font sizes or paddings at the call site (rule 4 of the
+  COMPONENT_GUIDELINES); width, position and grid placement are layout and
+  stay allowed.
 
-## Barrierefreiheit
+## Accessibility
 
-- **Angesagt wird nicht der sichtbare Toast.** Radix rendert dafür ein
-  separates, visuell verborgenes Element mit `role="status"`, dessen
-  `aria-live` an `type` hängt: `foreground` → `assertive`, `background` →
-  `polite`. Der sichtbare Toast ist ein schlichtes `<li>` in der `<ol>` des
-  Viewports und **selbst keine Live-Region** — die Meldung wird also genau
-  einmal angesagt (in `toast.test.tsx` gezählt).
-- **`role="status"` + `aria-live="assertive"` ist die Fehler-Konfiguration.**
-  Der explizite `aria-live`-Wert übersteuert das implizite `polite` der Rolle,
-  das implizite `aria-atomic="true"` der Rolle bleibt — zusammen genau das,
-  was `role="alert"` definitionsgemäß bedeutet.
-- **Kein Fokusdiebstahl.** Der Toast erscheint, ohne den Fokus zu bewegen; wer
-  gerade tippt, tippt weiter. Getestet gegen `document.activeElement`.
-- **Erreichbar bleibt er trotzdem:** der Toast selbst ist fokussierbar
-  (`tabIndex={0}`, mit sichtbarem Fokusring), **F8** springt in den Viewport,
-  und Radix ordnet die Tab-Reihenfolge so, dass der neueste Toast zuerst
-  drankommt. Die Schließen-Schaltfläche wird im Test durch tatsächliche
-  Tab-Sprünge erreicht, nicht durch einen Blick auf `tabIndex`.
-- **WCAG 2.2.1 „Timing Adjustable":** die Zeitbegrenzung ist verlängerbar. Der
-  Timer pausiert, solange der Zeiger auf dem Toast liegt **oder** der Fokus im
-  Viewport steht (F8 genügt), und läuft mit der Restzeit weiter — er startet
-  nicht neu. Zusätzlich: `ToastClose` als expliziter Ausweg und
-  `duration={Infinity}` für alles, worauf reagiert werden muss. Auf einen
-  eigenen „Pause"-Schalter wird deshalb verzichtet.
-- **WCAG 2.3.3 / `prefers-reduced-motion`:** keine Ein- oder Ausblend-Animation
-  vorhanden (siehe „Entscheidungen"), also nichts zu reduzieren.
-- **WCAG 1.4.1:** der Status steckt nicht nur in der Akzentfarbe, sondern auch
-  im Icon und im Text.
-- Geprüft in `toast.test.tsx`: Live-Region-Konfiguration je Variante und beim
-  Übersteuern, genau eine Ansage, Ansagetext inklusive `label` und `altText`,
-  kein Fokusdiebstahl, Tastaturerreichbarkeit der Schließen-Schaltfläche,
-  Standard- und übersteuerte Zeiten, `Infinity`, Pause bei Hover **und** bei
-  Fokus, und die stille Nicht-Darstellung ohne Viewport.
+- **It is not the visible toast that is announced.** Radix renders a
+  separate, visually hidden element with `role="status"` for that, whose
+  `aria-live` depends on `type`: `foreground` → `assertive`, `background` →
+  `polite`. The visible toast is a plain `<li>` in the viewport's `<ol>` and
+  **not a live region itself** — so the message is announced exactly once
+  (counted in `toast.test.tsx`).
+- **`role="status"` + `aria-live="assertive"` is the error configuration.**
+  The explicit `aria-live` value overrides the role's implicit `polite`, and
+  the role's implicit `aria-atomic="true"` stays — together exactly what
+  `role="alert"` means by definition.
+- **No focus theft.** The toast appears without moving focus; whoever is
+  typing keeps typing. Tested against `document.activeElement`.
+- **It still stays reachable:** the toast itself is focusable
+  (`tabIndex={0}`, with a visible focus ring), **F8** jumps into the viewport,
+  and Radix orders the tab sequence so that the newest toast comes first. In
+  the test the close button is reached by actual Tab presses, not by looking
+  at `tabIndex`.
+- **WCAG 2.2.1 "Timing Adjustable":** the time limit can be extended. The
+  timer pauses while the pointer is on the toast **or** focus is in the
+  viewport (F8 is enough), and resumes with the remaining time — it doesn't
+  restart. In addition: `ToastClose` as an explicit way out and
+  `duration={Infinity}` for anything that needs a response. A separate
+  "pause" switch is therefore left out.
+- **WCAG 2.3.3 / `prefers-reduced-motion`:** there is no enter or exit
+  animation (see "Decisions"), so nothing to reduce.
+- **WCAG 1.4.1:** the status lives not only in the accent color but also in
+  the icon and the text.
+- Tested in `toast.test.tsx`: live-region configuration per variant and when
+  overridden, exactly one announcement, announcement text including `label`
+  and `altText`, no focus theft, keyboard reachability of the close button,
+  default and overridden durations, `Infinity`, pause on hover **and** on
+  focus, and the silent non-rendering without a viewport.
