@@ -5,147 +5,146 @@ import * as ContainerStories from "./container.stories";
 
 # Container
 
-Die zentrierte Seitenspalte: Seitenränder aus den Spacing-Tokens (`px-gutter`
-mobil, ab `md` `px-margin-page`) und **eine benannte Seitenbreite**. Jede Seite
-hängt in einem `Container` — direkt, oder über ein Template
-(`FormLayout`, `TableLayout`, `DashboardLayout`, `SectionedGridLayout`,
-`AppShellLayout`), das selbst einen rendert.
+The centered page column: page margins from the spacing tokens (`px-gutter`
+on mobile, `px-margin-page` from `md` up) and **one named page width**. Every
+page sits in a `Container` — directly, or through a template (`FormLayout`,
+`TableLayout`, `DashboardLayout`, `SectionedGridLayout`, `AppShellLayout`)
+that renders one itself.
 
-## Welche Breite nehme ich?
+## Which width do I use?
 
-`size` benennt die **Rolle der Seite**, nicht eine Größenstufe. Das ist die
-ganze Entscheidung, und sie hat genau drei Antworten:
+`size` names the **role of the page**, not a size step. That is the whole
+decision, and it has exactly three answers:
 
-| `size` | Token | Breite | Textmaß* | Zeichen/Zeile* | Wofür |
+| `size` | Token | Width | Measure* | Chars/line* | For |
 |---|---|---|---|---|---|
-| `page` (Standard) | `--max-width-container-max` | 1440px | 1360px | ~181 | Der Inhalt nutzt die ganze Fläche: Dashboards, breite Tabellen, Editor-Ansichten, App-Chrome. |
-| `content` | `--max-width-container-content` | 1000px | 920px | ~121 | **Der Normalfall einer Seite**: Karten, Raster, Abschnitte, Übersichten, Detailseiten. |
-| `reading` | `--max-width-container-reading` | 672px | 592px | ~74 | Eine Spalte laufender Text oder Formularfelder. `FormLayout` benutzt genau diese. |
+| `page` (default) | `--max-width-container-max` | 1440px | 1360px | ~181 | The content uses the whole area: dashboards, wide tables, editor views, app chrome. |
+| `content` | `--max-width-container-content` | 1000px | 920px | ~121 | **The normal case for a page**: cards, grids, sections, overviews, detail pages. |
+| `reading` | `--max-width-container-reading` | 672px | 592px | ~74 | One column of running text or form fields. `FormLayout` uses exactly this. |
 
-\* Textmaß = Breite minus Seitenränder (`box-sizing: border-box`, ab `md` also
-2 × 40px). Zeichen/Zeile in Chromium gemessen, Inter 16px, deutscher
-Rechtstext; die Zahl schwankt mit dem Text um wenige Prozent.
+\* Measure = width minus page margins (`box-sizing: border-box`, so 2 × 40px
+from `md` up). Characters per line measured in Chromium, Inter 16px, German
+legal text; the number varies by a few percent with the text.
 
 <Canvas of={ContainerStories.AllSizes} />
 
-**Die Faustregel: `content`, wenn die Seite Inhalt zeigt; `page`, wenn der
-Inhalt die Fläche braucht; `reading`, wenn es Text oder ein Formular ist.**
-`page` ist der Standardwert, weil er das war, bevor es eine Wahl gab — nicht,
-weil er die häufigste Antwort ist. Eine neue Seite fängt in der Regel bei
-`content` an.
+**The rule of thumb: `content` when the page shows content; `page` when the
+content needs the area; `reading` when it is text or a form.** `page` is the
+default because it was the value before there was a choice — not because it
+is the most common answer. A new page usually starts at `content`.
 
-### Laufender Text gehört nicht in `content`
+### Running text doesn't belong in `content`
 
-`content` ist eine **Seiten**breite, kein Lesemaß: bei 920px Textmaß laufen
-~121 Zeichen in eine Zeile, WCAG 1.4.8 (AAA) begrenzt sie auf 80. Für Seiten
-aus Karten, Rastern und Tabellen ist das gleichgültig — die tragen keine
-langen Absätze. Sobald eine Seite aber **einen Absatz nach dem anderen** zeigt
-(Nutzungsbedingungen, Datenschutzerklärung, Barrierefreiheitserklärung, eine
-Hilfeseite), ist `reading` die richtige Breite: ~74 Zeichen, also unter der
-Grenze. Eine Seite, die beides mischt, nimmt `content` und begrenzt ihren
-Textblock innen — nicht den ganzen Container.
+`content` is a **page** width, not a reading measure: at a 920px measure,
+~121 characters run into one line, and WCAG 1.4.8 (AAA) limits that to 80.
+For pages made of cards, grids and tables that doesn't matter — they carry no
+long paragraphs. But as soon as a page shows **one paragraph after another**
+(terms of use, privacy policy, accessibility statement, a help page),
+`reading` is the right width: ~74 characters, so below the limit. A page that
+mixes both uses `content` and limits its text block inside — not the whole
+container.
 
-## Warum `content` 1000px ist
+## Why `content` is 1000px
 
-Gemessen, nicht gewählt. Die Inhaltsspalten, die die beiden Konsumenten heute
-wirklich benutzen:
+Measured, not chosen. The content columns the two consumers actually use
+today:
 
-| Ort | Breite |
+| Where | Width |
 |---|---|
-| JustRAG `.home-view__section` / `.home-view__grid--main` (KB-Übersicht) | **1000px** |
+| JustRAG `.home-view__section` / `.home-view__grid--main` (KB overview) | **1000px** |
 | JustRAG `GlobalKbSettings` (inline) | 900px |
 | JustRAG `Profile` (inline) | 800px |
-| JustRAG `.admin-container` (Admin-Reiter) | `min(1600px, 95vw)` |
+| JustRAG `.admin-container` (admin tabs) | `min(1600px, 95vw)` |
 | CampusAgents `EditorShell`, `AgentConfigPage`, `WidgetConfigPage` | `max-w-container-max` (1440px) |
 | CampusAgents `WidgetEmbedPage` (`FormLayout`), `StandaloneWidgetPage` | 672px |
 
-Zwischen 672px und 1440px liegen also 800, 900 und zweimal 1000 — und 1000 ist
-die Breite, an der die Seite ausgerichtet werden soll, die als nächste umzieht
-(KI-750, die Rechtstexte von JustRAG, sollen zur KB-Übersicht passen). Die
-Tailwind-Stufe `max-w-5xl` (1024px) wäre die bequemere Zahl gewesen, hätte diese
-Ausrichtung aber um 12px pro Seite verfehlt — und damit genau das
-`max-w-[1000px]` am Aufrufort zurückgeholt, das diese Breite abschaffen soll.
-`px` und nicht `rem`, weil `page` und `content` Geräteraum begrenzen (Karten,
-Raster, Tabellen); `reading` ist ein Textmaß und steht deshalb in `rem`, wächst
-also mit der Schriftgröße des Nutzers mit.
+So between 672px and 1440px there are 800, 900 and twice 1000 — and 1000 is
+the width the next page to move over should align with (KI-750: JustRAG's
+legal pages should match the KB overview). The Tailwind step `max-w-5xl`
+(1024px) would have been the more convenient number, but would have missed
+that alignment by 12px per side — and thus brought back exactly the
+`max-w-[1000px]` at the call site that this width is meant to get rid of.
+`px` and not `rem`, because `page` and `content` limit device space (cards,
+grids, tables); `reading` is a text measure and is therefore in `rem`, so it
+grows with the user's font size.
 
-## Warum `size` und nicht `className="max-w-[…]"`
+## Why `size` and not `className="max-w-[…]"`
 
-Weil die Klasse am Aufrufort niemandem auffällt. `layout-only-classname` prüft
-nur die Liste `DS_CONTROLS` in `eslint-plugin/index.js` (Button, Input,
+Because nobody notices the class at the call site. `layout-only-classname`
+only checks the `DS_CONTROLS` list in `eslint-plugin/index.js` (Button, Input,
 Textarea, Badge, MenuItem, NavItem, Switch, SegmentedControl, CodeBlock) —
-**Kompositions-Komponenten wie `Container` stehen nicht darin**,
-also kann die Regel ein `max-w-[1000px]` hier strukturell nicht sehen (KI-711).
-Eine Breite am Aufrufort ist damit unsichtbar für Lint, für Storybook und für
-jeden, der die Breitenskala des Systems lesen will — und die Skala wird
-Empfehlung statt Regel.
+**composition components like `Container` are not in it**, so the rule
+structurally can't see a `max-w-[1000px]` here (KI-711). A width at the call
+site is thus invisible to lint, to Storybook and to anyone who wants to read
+the system's width scale — and the scale becomes a recommendation instead of
+a rule.
 
-Technisch *funktioniert* die Klasse: die Breiten-Utility sitzt auf genau dem
-Element, in das `className` fließt, `cn()`/tailwind-merge löst den Konflikt auf,
-die Klasse gewinnt. Diese Story nagelt den Mechanismus fest, damit er nicht
-unbemerkt kippt — sie ist keine Empfehlung:
+Technically the class *works*: the width utility sits on exactly the element
+`className` flows into, `cn()`/tailwind-merge resolves the conflict, and the
+class wins. This story pins the mechanism down so it doesn't flip unnoticed —
+it is not a recommendation:
 
 <Canvas of={ContainerStories.CallSiteWidthStillWins} />
 
-Fehlt eine Breite, kommt sie **hierher** (ein Token in `tokens.css`, ein
-Eintrag in `container-variants.ts`, eine Zeile in dieser Tabelle) — nicht in
-eine Klasse am Aufrufort.
+If a width is missing, it comes **here** (a token in `tokens.css`, an entry
+in `container-variants.ts`, a row in this table) — not into a class at the
+call site.
 
-## Warum die Tokens als `max-w-(--token)` referenziert werden
+## Why the tokens are referenced as `max-w-(--token)`
 
-Alle drei Breiten stehen als `max-w-(--max-width-container-*)` in
-`container-variants.ts`, obwohl Tailwind 4 aus denselben Tokens auch die
-Utilities `max-w-container-max` / `-content` / `-reading` erzeugt (gemessen mit
-tailwindcss 4.3.2 gegen dieses Paket — die frühere Notiz im Variantenfile, es
-gäbe keinen `--max-width-*`-Namespace, war falsch). Der Grund ist
-**tailwind-merge**, das `cn()` bei jedem `Container` ausführt: gemessen mit
-tailwind-merge 3.6.0 fällt
+All three widths are written as `max-w-(--max-width-container-*)` in
+`container-variants.ts`, even though Tailwind 4 also generates the utilities
+`max-w-container-max` / `-content` / `-reading` from the same tokens
+(measured with tailwindcss 4.3.2 against this package — the earlier note in
+the variants file saying there was no `--max-width-*` namespace was wrong).
+The reason is **tailwind-merge**, which `cn()` runs on every `Container`:
+measured with tailwind-merge 3.6.0,
 
 ```
 max-w-(--max-width-container-content) max-w-3xl   →   max-w-3xl
 max-w-container-content max-w-3xl                 →   max-w-container-content max-w-3xl
 ```
 
-Ein eigener Theme-Schlüssel steht nicht in der `max-w`-Konfliktgruppe von
-tailwind-merge, also bleiben beide Klassen stehen und die CSS-Reihenfolge
-entscheidet — die Breite am Aufrufort gewinnt dann nicht mehr verlässlich. Die
-`max-w-(--token)`-Form ist deshalb hier das Muster; eine nackte Tailwind-Stufe
-(was `reading` vorher war) ist die zweite funktionierende Form, versteckt den
-Wert aber vor `tokens.css` und lässt sich nicht an einer Stelle nachjustieren.
+A custom theme key is not in tailwind-merge's `max-w` conflict group, so both
+classes stay and the CSS order decides — the width at the call site then no
+longer wins reliably. The `max-w-(--token)` form is therefore the pattern
+here; a bare Tailwind step (what `reading` used to be) is the second working
+form, but hides the value from `tokens.css` and can't be adjusted in one
+place.
 
-## Umbenennung (0.25.0)
+## Renaming (0.25.0)
 
-Die Größen hießen vorher `default` und `narrow` — positionsbeschreibend, und
-damit ohne Antwort auf die Frage „welche nehme ich?". Neu:
+The sizes used to be called `default` and `narrow` — describing position, and
+so with no answer to the question "which one do I use?". New:
 
-| vorher | jetzt | Breite |
+| before | now | width |
 |---|---|---|
-| `default` (Standard) | `page` (Standard) | 1440px, unverändert |
-| `narrow` | `reading` | 672px, unverändert |
-| — | `content` | 1000px, neu |
+| `default` (default) | `page` (default) | 1440px, unchanged |
+| `narrow` | `reading` | 672px, unchanged |
+| — | `content` | 1000px, new |
 
-**Keine Breite hat sich verschoben** — nur die Namen. Wer `size` nie gesetzt
-hat, ist nicht betroffen; `size="narrow"` wird zu `size="reading"` und
-`size="default"` zu `size="page"` (beide brechen als Typfehler, nicht still).
+**No width has moved** — only the names. If you never set `size`, you are not
+affected; `size="narrow"` becomes `size="reading"` and `size="default"`
+becomes `size="page"` (both break as type errors, not silently).
 
 ## Props
 
 <Controls />
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Neue Seite: mit `size="content"` anfangen und nur nach `page` wechseln,
-  wenn der Inhalt die Fläche wirklich braucht (breite Tabelle, Dashboard).
-- ✅ Rechtstexte, Hilfeseiten, Formulare: `size="reading"` — oder direkt
-  `FormLayout`, das genau diese Breite mitbringt.
-- ✅ `asChild` benutzen, wenn die Spalte ein `<main>`/`<section>` sein soll,
-  statt ein zusätzliches `div` zu verschachteln.
-- ✅ Vertikale Abstände am Aufrufort (`py-gutter md:py-margin-page`) — die
-  gehören zur Seite, nicht zur Breite.
-- ❌ Kein `className="max-w-[…]"` und kein `max-w-*` am Aufrufort, um eine
-  Seitenbreite zu setzen. Lint sieht es nicht (siehe oben) — fehlt die Breite,
-  kommt sie ins System.
-- ❌ Kein zweiter `Container` in einem Template, das schon einen rendert: die
-  Seitenränder addieren sich dann.
-- ❌ Keine langen Textstrecken in `page` oder `content` — das Textmaß reißt die
-  80-Zeichen-Grenze aus WCAG 1.4.8 deutlich.
+- ✅ New page: start with `size="content"` and only switch to `page` when the
+  content really needs the area (wide table, dashboard).
+- ✅ Legal texts, help pages, forms: `size="reading"` — or `FormLayout`
+  directly, which brings exactly this width.
+- ✅ Use `asChild` when the column should be a `<main>`/`<section>`, instead
+  of nesting an extra `div`.
+- ✅ Vertical spacing at the call site (`py-gutter md:py-margin-page`) — it
+  belongs to the page, not to the width.
+- ❌ No `className="max-w-[…]"` and no `max-w-*` at the call site to set a
+  page width. Lint doesn't see it (see above) — if the width is missing, it
+  goes into the system.
+- ❌ No second `Container` in a template that already renders one: the page
+  margins then add up.
+- ❌ No long stretches of text in `page` or `content` — the measure clearly
+  breaks the 80-character limit of WCAG 1.4.8.

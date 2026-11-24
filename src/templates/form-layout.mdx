@@ -5,38 +5,37 @@ import * as FormLayoutStories from "./form-layout.stories";
 
 # FormLayout
 
-Einstellungs-/Erfassungsseiten: schmale Einzelspalte — `PageHeader`, die
-Formular-Abschnitte als `children`, abgetrennte Aktionszeile unten. Das
-Template rendert **kein** `<form>`-Element: die App legt ihr eigenes
-`<form onSubmit=…>` darum, damit Submit-Buttons in `actions` natürlich
-funktionieren.
+Settings/data-entry pages: a narrow single column — `PageHeader`, the form
+sections as `children`, and a separated action row at the bottom. The
+template renders **no** `<form>` element: the app puts its own
+`<form onSubmit=…>` around it, so submit buttons in `actions` work naturally.
 
 <Canvas of={FormLayoutStories.Settings} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `title` | `ReactNode` | ✅ | Seitentitel — echte Überschrift, Stufe über `headingLevel`. |
-| `headingLevel` | `1`–`6` | — | Stufe des Titels im Dokument-Outline. Standard `1` (also `<h1>`) — unverändert für jede bestehende Aufrufstelle. `2` oder tiefer für eine Seite, deren `<h1>` schon der Rahmen trägt (Admin-Shell, CMS). Die Typografie hängt **nicht** an der Stufe. |
-| `description` | `ReactNode` | — | Gedämpfte Zeile unter dem Titel. |
-| `children` | `ReactNode` | ✅ | Formular-Abschnitte — je Abschnitt eine `Card` mit `FormItem`s. |
-| `actions` | `ReactNode` | — | Fußzeilen-Aktionen (Speichern/Abbrechen als `Button`s). |
+| `title` | `ReactNode` | ✅ | Page title — a real heading, level set by `headingLevel`. |
+| `headingLevel` | `1`–`6` | — | Level of the title in the document outline. Default `1` (so `<h1>`) — unchanged for every existing call site. `2` or lower for a page whose `<h1>` is already carried by the frame (admin shell, CMS). The typography does **not** depend on the level. |
+| `description` | `ReactNode` | — | Muted line below the title. |
+| `children` | `ReactNode` | ✅ | Form sections — one `Card` with `FormItem`s per section. |
+| `actions` | `ReactNode` | — | Footer actions (save/cancel as `Button`s). |
 
 <Controls />
 
-## Responsives Verhalten
+## Responsive behavior
 
-- Schmale Spalte (`Container size="reading"`), Seitenränder über Token.
-- Die Aktionszeile ist ab `sm` rechtsbündig nebeneinander; auf Mobil stapelt
-  sie umgekehrt (`flex-col-reverse`), sodass die Primäraktion oben steht.
+- A narrow column (`Container size="reading"`), page margins via tokens.
+- From `sm` up the action row is right-aligned side by side; on mobile it
+  stacks in reverse (`flex-col-reverse`), so the primary action is on top.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Felder ausschließlich mit den Form-Primitives bauen — Label-, Fehler- und
-  `aria`-Verdrahtung sind dort gelöst.
-- ✅ Zusammengehörende Felder je `Card` gruppieren; Abstände mit `Stack`.
+- ✅ Build fields only with the form primitives — label, error and `aria`
+  wiring is solved there.
+- ✅ Group related fields per `Card`; spacing with `Stack`.
 - ❌ No second `<h1>` on the page: the rule and the `headingLevel` it calls for are in `docs/COMPONENT_GUIDELINES.md` → "Page headings: who owns them".
-- ❌ Kein `<form>` im Template erwarten — das eigene `<form>` umschließt das
-  Template, nicht umgekehrt.
-- ❌ Keine Validierungs-Logik ins Template ziehen; es besitzt nur das Skelett.
+- ❌ Don't expect a `<form>` in the template — your own `<form>` wraps the
+  template, not the other way round.
+- ❌ Don't pull validation logic into the template; it owns only the skeleton.

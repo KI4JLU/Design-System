@@ -5,42 +5,42 @@ import * as TableLayoutStories from "./table-layout.stories";
 
 # TableLayout
 
-Tabellen-/Admin-Seiten: `PageHeader` mit Aktionen, eine `Card` mit optionaler
-Toolbar (Suche/Filter), der Tabelle als `children` in einer horizontal
-scrollbaren Zone und optionalem Footer (Pagination). Sortier-, Filter- und
-Paginierungs-Logik bleibt in der App.
+Table/admin pages: a `PageHeader` with actions, a `Card` with an optional
+toolbar (search/filter), the table as `children` in a horizontally scrollable
+zone, and an optional footer (pagination). Sorting, filtering and pagination
+logic stays in the app.
 
 <Canvas of={TableLayoutStories.Admin} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `title` | `ReactNode` | ✅ | Seitentitel — echte Überschrift, Stufe über `headingLevel`. |
-| `headingLevel` | `1`–`6` | — | Stufe des Titels im Dokument-Outline. Standard `1` (also `<h1>`) — unverändert für jede bestehende Aufrufstelle. `2` oder tiefer für eine Seite, deren `<h1>` schon der Rahmen trägt (Admin-Shell, CMS). Die Typografie hängt **nicht** an der Stufe. |
-| `description` | `ReactNode` | — | Gedämpfte Zeile unter dem Titel. |
-| `actions` | `ReactNode` | — | Rechte Header-Aktionen (z. B. „Neu anlegen"). |
-| `toolbar` | `ReactNode` | — | Such-/Filterzeile in der Karte, über der Tabelle. |
-| `children` | `ReactNode` | ✅ | Die Tabelle (`<table>` mit Token-Klassen oder eine künftige Table-Komponente). |
-| `footer` | `ReactNode` | — | Zeile unter der Tabelle: Trefferzahl links, Pagination rechts. |
+| `title` | `ReactNode` | ✅ | Page title — a real heading, level set by `headingLevel`. |
+| `headingLevel` | `1`–`6` | — | Level of the title in the document outline. Default `1` (so `<h1>`) — unchanged for every existing call site. `2` or lower for a page whose `<h1>` is already carried by the frame (admin shell, CMS). The typography does **not** depend on the level. |
+| `description` | `ReactNode` | — | Muted line below the title. |
+| `actions` | `ReactNode` | — | Header actions on the right (e.g. "Neu anlegen"). |
+| `toolbar` | `ReactNode` | — | Search/filter row in the card, above the table. |
+| `children` | `ReactNode` | ✅ | The table (`Table`, or a `<table>` with token classes). |
+| `footer` | `ReactNode` | — | Row below the table: result count on the left, pagination on the right. |
 
 <Controls />
 
-## Responsives Verhalten
+## Responsive behavior
 
-- Voller `Container` mit Token-Seitenrändern; Header stapelt auf Mobil.
-- Breite Tabellen scrollen **innerhalb der Karte** horizontal
-  (`overflow-x-auto`) — die Seite selbst bricht nie horizontal aus.
-- Toolbar und Footer sind `flex-wrap`: Filter brechen auf schmalen Screens um.
+- A full `Container` with token page margins; the header stacks on mobile.
+- Wide tables scroll horizontally **inside the card** (`overflow-x-auto`) —
+  the page itself never breaks out horizontally.
+- Toolbar and footer are `flex-wrap`: filters wrap on narrow screens.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Status-Spalten mit `Badge tone=…` füllen; Zeilenaktionen als
+- ✅ Fill status columns with `Badge tone=…`; row actions as a
   `DropdownMenu`.
-- ✅ Tabellenfarben nur über Token (`border-outline-variant`,
+- ✅ Table colors only via tokens (`border-outline-variant`,
   `text-on-surface-variant`).
 - ❌ No second `<h1>` on the page: the rule and the `headingLevel` it calls for are in `docs/COMPONENT_GUIDELINES.md` → "Page headings: who owns them".
-- ❌ Tabellenspalten nicht per Schrift-Verkleinerung „passend machen" — breite
-  Tabellen scrollen horizontal.
-- ❌ Keine Filter-/Sortierlogik ins Template; die Toolbar ist ein Slot, keine
-  Feature-Komponente.
+- ❌ Don't "make table columns fit" by shrinking the font — wide tables scroll
+  horizontally.
+- ❌ No filter/sort logic in the template; the toolbar is a slot, not a
+  feature component.

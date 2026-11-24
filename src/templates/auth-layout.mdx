@@ -5,104 +5,102 @@ import * as AuthLayoutStories from "./auth-layout.stories";
 
 # AuthLayout
 
-Login-/Auth-Seiten: eine zentrierte Karte auf der Seitenfläche — Logo darüber,
-Titel/Beschreibung im Kartenkopf, der Anmelde-Inhalt als `children`, gedämpfte
-Links darunter. Die Auth-Logik (OIDC-Redirect, Submit, Validierung) bleibt in
-der App.
+Login/auth pages: a centered card on the page surface — the logo above it,
+title/description in the card header, the sign-in content as `children`, and
+muted links below. The auth logic (OIDC redirect, submit, validation) stays
+in the app.
 
-**Der Standardfall ist Single Sign-on** (OIDC/Keycloak): `children` ist ein
-einziger primärer Button, der zum Identity Provider weiterleitet — keine
-lokalen Felder.
+**The standard case is single sign-on** (OIDC/Keycloak): `children` is a
+single primary button that redirects to the identity provider — no local
+fields.
 
 <Canvas of={AuthLayoutStories.SSO} />
 
-Für lokale Konten (Fallback ohne SSO) trägt `children` stattdessen die Felder
-aus den Form-Primitives — hier mit dem Titel als `<h1>` der Seite
-(`headingLevel={1}`), „Passwort vergessen?" unter den Feldern und, unter der
-Karte, dem Sprachumschalter und den Rechtslinks:
+For local accounts (the fallback without SSO), `children` carries the fields
+from the form primitives instead — here with the title as the page's `<h1>`
+(`headingLevel={1}`), "Passwort vergessen?" below the fields and, below the
+card, the language switch and the legal links:
 
 <Canvas of={AuthLayoutStories.Login} />
 
-## Slots & Props
+## Slots & props
 
-| Slot / Prop | Typ | Pflicht | Inhalt |
+| Slot / prop | Type | Required | Content |
 |---|---|---|---|
-| `logo` | `ReactNode` | — | Markenblock, zentriert über der Karte. |
-| `title` | `ReactNode` | ✅ | Kartenüberschrift (z. B. „Anmelden"). Ohne `headingLevel` **keine** Überschrift, sondern gestylter Text in `CardTitle`. |
-| `headingLevel` | `1`–`6` | — | Gesetzt ⇒ `title` wird eine echte Überschrift dieser Stufe (über `CardTitle asChild`, Typografie unverändert). Weggelassen ⇒ heutiges Verhalten, unverändert. |
-| `description` | `ReactNode` | — | Gedämpfte Zeile unter dem Titel. |
-| `children` | `ReactNode` | ✅ | Der Anmelde-Inhalt: SSO-Button (Standard) oder Felder aus `FormItem`/`Input`/`Button`. |
-| `footer` | `ReactNode` | — | Zentrierte, gedämpfte Zone unter der Karte („Passwort vergessen?"). |
-| `width` | `"default" \| "prose"` | — | Breite der zentrierten Spalte. `default` (Standard) = 448px, `prose` = 672px. Siehe „Breite" unten. |
+| `logo` | `ReactNode` | — | Brand block, centered above the card. |
+| `title` | `ReactNode` | ✅ | Card heading (e.g. "Anmelden"). Without `headingLevel` it is **not** a heading, but styled text in `CardTitle`. |
+| `headingLevel` | `1`–`6` | — | Set ⇒ `title` becomes a real heading of that level (via `CardTitle asChild`, typography unchanged). Left out ⇒ today's behavior, unchanged. |
+| `description` | `ReactNode` | — | Muted line below the title. |
+| `children` | `ReactNode` | ✅ | The sign-in content: SSO button (standard) or fields from `FormItem`/`Input`/`Button`. |
+| `footer` | `ReactNode` | — | Centered, muted zone below the card ("Passwort vergessen?"). |
+| `width` | `"default" \| "prose"` | — | Width of the centered column. `default` (the default) = 448px, `prose` = 672px. See "Width" below. |
 
 <Controls />
 
-## Breite
+## Width
 
-Die Spalte ist standardmäßig `max-w-md` (28rem / **448px**) — die Breite eines
-Anmeldeformulars: wenige kurze Felder, die eine breitere Spalte nur
-auseinanderziehen würde.
+By default the column is `max-w-md` (28rem / **448px**) — the width of a
+sign-in form: a few short fields that a wider column would only pull apart.
 
-Für **lange Seitentexte in der Karte** — Nutzungsbedingungen,
-Barrierefreiheitserklärung, Datenschutzerklärung — ist das zu schmal. Dafür
-gibt es `width="prose"`: `max-w-2xl` (42rem / **672px**).
+For **long page texts in the card** — terms of use, accessibility statement,
+privacy policy — that is too narrow. For those there is `width="prose"`:
+`max-w-2xl` (42rem / **672px**).
 
 <Canvas of={AuthLayoutStories.LegalPage} />
 
-**Warum eine Prop und keine `className`.** Die Breiten-Einschränkung sitzt auf
-der *inneren* Spalte, das `className` des Aufrufers fließt aber in das
-*Wurzelelement* — vom Aufrufort aus war die Breite also gar nicht erreichbar.
-Ein Rechtstext, der dieses Template übernahm, ist dadurch unbemerkt von 720px
-auf 448px geschrumpft. `width` ist der Weg dorthin; ein
-`className`-Durchgriff auf die innere Spalte wäre der falsche, weil er die
-Klassenfläche wieder öffnet, die `layout-only-classname` schließen soll.
+**Why a prop and not a `className`.** The width limit sits on the *inner*
+column, but the caller's `className` flows into the *root element* — so the
+width wasn't reachable from the call site at all. A legal page that adopted
+this template silently shrank from 720px to 448px because of it. `width` is
+the way there; a `className` passthrough to the inner column would be the
+wrong one, because it reopens the class surface that `layout-only-classname`
+is meant to close.
 
-**Warum `max-w-2xl` und nicht `max-w-3xl`.** Zwei Gründe, beide unabhängig
-voneinander:
+**Why `max-w-2xl` and not `max-w-3xl`.** Two reasons, each independent of the
+other:
 
-1. `max-w-2xl` ist die Stufe, die dieses System **bereits** für eine
-   Lesespalte benannt hat — `Container size="reading"` *ist* dieselben 672px. Eine
-   breite `AuthLayout`-Spalte entspricht damit einer `FormLayout`-Spalte,
-   statt eine zweite, konkurrierende Lesebreite einzuführen.
-2. WCAG 1.4.8 (AAA) begrenzt eine Zeile auf 80 Zeichen. Abzüglich des `p-6`
-   der Karte (48px auf dieser Achse) ergibt `2xl` ein Textmaß von 624px,
-   `3xl` dagegen 720px — `3xl` ist also die Stufe, die die Grenze reißt.
+1. `max-w-2xl` is the step this system **already** named for a reading
+   column — `Container size="reading"` *is* the same 672px. A wide
+   `AuthLayout` column thus matches a `FormLayout` column instead of
+   introducing a second, competing reading width.
+2. WCAG 1.4.8 (AAA) limits a line to 80 characters. After subtracting the
+   card's `p-6` (48px on this axis), `2xl` gives a measure of 624px, while
+   `3xl` gives 720px — so `3xl` is the step that breaks the limit.
 
-Beide Breiten sind Tailwind-Stufen, keine willkürlichen Werte: das System
-bleibt auf seinen eigenen Schritten. Eine dritte Stufe gibt es absichtlich
-nicht — sie bräuchte einen Zweck, der sich heute nicht benennen lässt.
+Both widths are Tailwind steps, not arbitrary values: the system stays on its
+own steps. There is deliberately no third step — it would need a purpose that
+can't be named today.
 
-## Responsives Verhalten
+## Responsive behavior
 
-- Füllt die Viewport-Höhe (`min-h-dvh`) und zentriert die Karte vertikal
-  und horizontal.
-- Die Spalte ist so breit, wie `width` sagt (`max-w-md` bzw. `max-w-2xl`);
-  auf schmalen Screens halten die Token-Ränder (`gutter`) den Abstand zum
-  Rand, und `w-full` lässt beide Breiten unterhalb ihres Maximums mitlaufen.
+- Fills the viewport height (`min-h-dvh`) and centers the card vertically
+  and horizontally.
+- The column is as wide as `width` says (`max-w-md` or `max-w-2xl`); on
+  narrow screens the token margins (`gutter`) keep the distance to the edge,
+  and `w-full` lets both widths follow along below their maximum.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ SSO als Standard: ein primärer `Button` in voller Breite („Mit
-  JLU-Account anmelden"); der OIDC-/Keycloak-Redirect gehört in die App,
-  nicht ins Template.
-- ✅ Fallback-Felder mit den Form-Primitives bauen (`FormItem` verdrahtet
-  Label, Fehler und `aria-*` automatisch); Fehlerzustände über
-  `FormItem error=` (siehe Story „WithFieldError").
-- ✅ Auth-Fehler vom Identity Provider (abgelehnt, Session abgelaufen) als
-  Inhalt über dem Button rendern — z. B. Text in `text-error`.
-- ✅ Lange Seitentexte mit `width="prose"` rendern, nicht mit einer
-  `max-w-*`-Klasse am Aufrufort — die greift auf das Wurzelelement und ändert
-  die Spaltenbreite nicht.
-- ✅ `headingLevel={1}` setzen, wenn die Anmeldeseite ihre Überschrift vom
-  Template bekommen soll — und dann reinen Text als `title` übergeben. Ohne die
-  Prop trägt die Seite **keine** Überschrift, und die `h1` bleibt Sache der
-  Aufrufstelle. Warum der Standard so bleibt: ein Konsument gibt sein eigenes
-  `<h1>`-Element in den Slot, genau weil er dort nie eine Überschrift bekam —
-  eine automatisch erzeugte würde eines im anderen verschachteln. Regel und
-  Standardwerte je Template: COMPONENT_GUIDELINES.md → „Page headings: who
-  owns them".
-- ❌ Kein eigenes `<h1>`-Element **in** den `title`-Slot geben, wenn
-  `headingLevel` gesetzt ist — das verschachtelt zwei Überschriften.
-- ❌ Kein zweispaltiges Hero-Layout hier hineinzwängen — das wäre ein neues
-  Template, kein `className`-Umbau.
-- ❌ Keine Navigation/Sidebar: Auth-Seiten stehen außerhalb der AppShell.
+- ✅ SSO as the standard: one full-width primary `Button` ("Mit JLU-Account
+  anmelden"); the OIDC/Keycloak redirect belongs in the app, not in the
+  template.
+- ✅ Build fallback fields with the form primitives (`FormItem` wires label,
+  error and `aria-*` automatically); error states via `FormItem error=` (see
+  story "WithFieldError").
+- ✅ Render auth errors from the identity provider (rejected, session
+  expired) as content above the button — e.g. text in `text-error`.
+- ✅ Render long page texts with `width="prose"`, not with a `max-w-*` class
+  at the call site — that applies to the root element and doesn't change the
+  column width.
+- ✅ Set `headingLevel={1}` when the sign-in page should get its heading from
+  the template — and then pass plain text as `title`. Without the prop the
+  page has **no** heading, and the `h1` stays the call site's business. Why
+  the default stays like this: a consumer puts its own `<h1>` element into the
+  slot precisely because it never got a heading there — an automatically
+  generated one would nest one inside the other. Rule and defaults per
+  template: COMPONENT_GUIDELINES.md → "Page headings: who owns them".
+- ❌ Don't put your own `<h1>` element **into** the `title` slot when
+  `headingLevel` is set — that nests two headings.
+- ❌ Don't force a two-column hero layout in here — that would be a new
+  template, not a `className` rework.
+- ❌ No navigation/sidebar: auth pages stand outside the AppShell.

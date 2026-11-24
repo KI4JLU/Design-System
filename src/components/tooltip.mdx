@@ -5,98 +5,96 @@ import * as TooltipStories from "./tooltip.stories";
 
 # Tooltip
 
-Kurzer Hinweis zu einem Bedienelement, das seinen zugänglichen Namen schon hat.
-Ersetzt `title=`-Attribute (unsichtbar für Tastatur- und Touch-Nutzer, nicht
-stylebar) und handgebaute Hover-Hinweise. Radix liefert das
-APG-Tooltip-Muster: `role="tooltip"`, `aria-describedby`-Verknüpfung zum
-Trigger, Öffnen bei Hover **und** Fokus, Escape schließt.
+A short hint for a control that already has its accessible name. Replaces
+`title=` attributes (invisible to keyboard and touch users, not stylable) and
+hand-built hover hints. Radix provides the APG tooltip pattern:
+`role="tooltip"`, an `aria-describedby` link to the trigger, opening on hover
+**and** focus, and Escape closes it.
 
 <Canvas of={TooltipStories.IconButton} />
 
 ## Props
 
-| Prop | Teil | Typ | Bedeutung |
+| Prop | Part | Type | Meaning |
 |---|---|---|---|
-| `delayDuration` | `Tooltip` | `number` | Verzögerung in ms bis zum Öffnen bei Hover (Default `0` — shadcn-Konvention; Fokus öffnet immer sofort). |
-| `open` / `defaultOpen` / `onOpenChange` | `Tooltip` | — | Kontrolliert/unkontrolliert wie bei allen Radix-Primitiven. |
-| `asChild` | `TooltipTrigger` | `boolean` | Rendert das eigene Element (Button, Icon-Button) als Trigger — der Normalfall. |
-| `side` | `TooltipContent` | `'top' \| 'right' \| 'bottom' \| 'left'` | Platzierung, Default `top`; weicht automatisch aus, wenn der Platz fehlt. |
-| `sideOffset` | `TooltipContent` | `number` | Abstand zum Trigger, Default `6`. |
-| `align` | `TooltipContent` | `'start' \| 'center' \| 'end'` | Ausrichtung entlang der Seite. |
+| `delayDuration` | `Tooltip` | `number` | Delay in ms before opening on hover (default `0` — shadcn convention; focus always opens immediately). |
+| `open` / `defaultOpen` / `onOpenChange` | `Tooltip` | — | Controlled/uncontrolled as with all Radix primitives. |
+| `asChild` | `TooltipTrigger` | `boolean` | Renders your own element (button, icon button) as the trigger — the normal case. |
+| `side` | `TooltipContent` | `'top' \| 'right' \| 'bottom' \| 'left'` | Placement, default `top`; moves aside automatically when there is no room. |
+| `sideOffset` | `TooltipContent` | `number` | Distance to the trigger, default `6`. |
+| `align` | `TooltipContent` | `'start' \| 'center' \| 'end'` | Alignment along the side. |
 
 <Controls />
 
 ## Provider
 
-Kein App-Setup nötig: jeder `Tooltip` bringt seinen eigenen
-`TooltipProvider` mit (shadcn-Form). `TooltipProvider` ist trotzdem
-exportiert — ein App-weiter Provider ändert aber **nicht** die Defaults der
-Komponente, weil der eingebaute innere Provider gewinnt. Abweichungen
-(z. B. eine Verzögerung) werden pro Instanz über `delayDuration` am
-`Tooltip` gesetzt.
+No app setup needed: every `Tooltip` brings its own `TooltipProvider`
+(shadcn shape). `TooltipProvider` is still exported — but an app-wide provider
+does **not** change the component's defaults, because the built-in inner
+provider wins. Deviations (for example a delay) are set per instance with
+`delayDuration` on the `Tooltip`.
 
-## Entscheidungen
+## Decisions
 
-- **`bg-primary` + `text-on-primary`, nicht Panel-Flächen.** Das ist die
-  shadcn-Vorlage, über die Token-Tabelle in COMPONENT_GUIDELINES.md
-  umgemappt. Der Kontrast zur Seite unterscheidet den flüchtigen Hinweis vom
-  verankerten Panel (`Popover`: `surface-container-lowest`).
-- **Keine Animation, kein Pfeil.** Wie alle schwebenden Flächen des Systems
-  (Popover, Select, DropdownMenu) — damit ist auch `prefers-reduced-motion`
-  trivial erfüllt.
-- **Deaktivierte Trigger brauchen einen fokussierbaren Wrapper.** Ein
-  `disabled`-Button feuert keine Pointer-Events; der Trigger umschließt dann
-  einen `<span tabIndex={0}>` um den Button (siehe Story „DisabledTrigger"),
-  sonst ist der Grund der Deaktivierung unerreichbar.
+- **`bg-primary` + `text-on-primary`, not panel surfaces.** That is the
+  shadcn template, remapped through the token table in
+  COMPONENT_GUIDELINES.md. The contrast with the page distinguishes the
+  fleeting hint from the anchored panel (`Popover`:
+  `surface-container-lowest`).
+- **No animation, no arrow.** Like all floating surfaces in the system
+  (Popover, Select, DropdownMenu) — which also trivially satisfies
+  `prefers-reduced-motion`.
+- **Disabled triggers need a focusable wrapper.** A `disabled` button fires no
+  pointer events; the trigger then wraps a `<span tabIndex={0}>` around the
+  button (see story "DisabledTrigger"), otherwise the reason it is disabled is
+  unreachable.
 
-## Catch-all für `title=`: `TitleTooltips`
+## Catch-all for `title=`: `TitleTooltips`
 
-`<TitleTooltips />` einmal an der App-Wurzel gemountet zeigt für **jedes**
-Element mit nativem `title`-Attribut diesen Tooltip statt des Browser-Tooltips
-— auch für später hinzugekommene Titel, Fremd-Markup und Portale. Solange
-Zeiger oder Tastaturfokus auf dem Element liegen, wird der `title` geleert
-(Text in `data-title`) und danach zurückgeschrieben; ändert React ihn
-zwischendurch, gilt der neue Wert; leert oder entfernt React ihn, bleibt es dabei. Für
-Screenreader bleibt alles gleich: war der Titel der Name, wird er solange
-zum `aria-label`, sonst die Beschreibung (`aria-describedby`), sofern er nicht
-nur den Namen wiederholt. Der Zeiger darf auf den Tooltip wandern (150 ms
-Karenz); im Vollbild landet er im Vollbild-Element.
+`<TitleTooltips />`, mounted once at the app root, shows this tooltip instead
+of the browser tooltip for **every** element with a native `title`
+attribute — also for titles added later, third-party markup and portals.
+While the pointer or keyboard focus is on the element, the `title` is emptied
+(the text goes to `data-title`) and written back afterwards; if React changes
+it in the meantime, the new value applies; if React empties or removes it,
+that stays. For screen readers nothing changes: if the title was the name, it
+becomes the `aria-label` for that time, otherwise the description
+(`aria-describedby`), unless it only repeats the name. The pointer may move
+onto the tooltip (150 ms grace period); in fullscreen it lands in the
+fullscreen element.
 
-- Nur Klartext (Zeilenumbrüche bleiben). Reichhaltige Inhalte brauchen
-  weiterhin einen expliziten `Tooltip`.
-- Macht nichts fokussierbar: ein `title` auf einem `span` bleibt für
-  Tastatur und Touch unerreichbar. Deaktivierte Buttons feuern keine
-  Pointer-Events (siehe oben).
-- Elemente in einem expliziten `TooltipTrigger` werden übersprungen;
-  `data-native-title` an einem Vorfahren schaltet den Catch-all für den
-  Teilbaum ab.
-- Ton: primär wie `Tooltip`; unter `[data-tooltip-tone="inverse"]`
-  (`Message` setzt es) die inverse Fläche wie bei `MessageAction`.
+- Plain text only (line breaks are kept). Rich content still needs an
+  explicit `Tooltip`.
+- Makes nothing focusable: a `title` on a `span` stays unreachable for
+  keyboard and touch. Disabled buttons fire no pointer events (see above).
+- Elements inside an explicit `TooltipTrigger` are skipped;
+  `data-native-title` on an ancestor turns the catch-all off for the subtree.
+- Tone: primary like `Tooltip`; under `[data-tooltip-tone="inverse"]`
+  (`Message` sets it) the inverse surface, as for `MessageAction`.
 
 Stories: `Components/Overlays/TitleTooltips`.
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ Icon-Buttons: `aria-label` bleibt der Name, der Tooltip beschreibt nur.
-- ✅ Kurz halten — ein Satzfragment. Längeres gehört in ein `Popover` oder
-  auf die Seite.
-- ❌ Keine essenziellen Inhalte oder Aktionen nur im Tooltip — auf
-  Touch-Geräten ist er nicht erreichbar.
-- ❌ Kein Tooltip als Ersatz für ein fehlendes Label (`aria-label` /
-  `Label` zuerst).
-- ❌ Keine interaktiven Elemente im Tooltip (Links, Buttons) — dafür ist
-  `Popover` da; ein Tooltip erhält nie Fokus.
-- ❌ Kein `title=`-Attribut zusätzlich — sonst liest der Screenreader den
-  Hinweis doppelt.
+- ✅ Icon buttons: `aria-label` stays the name, the tooltip only describes.
+- ✅ Keep it short — a sentence fragment. Anything longer belongs in a
+  `Popover` or on the page.
+- ❌ No essential content or actions only in the tooltip — it isn't reachable
+  on touch devices.
+- ❌ No tooltip as a substitute for a missing label (`aria-label` / `Label`
+  first).
+- ❌ No interactive elements in the tooltip (links, buttons) — that is what
+  `Popover` is for; a tooltip never receives focus.
+- ❌ No additional `title=` attribute — otherwise the screen reader reads the
+  hint twice.
 
-## Barrierefreiheit
+## Accessibility
 
-- Inhalt trägt `role="tooltip"`; der Trigger wird per `aria-describedby`
-  mit ihm verknüpft (nur solange er offen ist) — der Hinweis wird nach dem
-  Namen des Controls vorgelesen.
-- Öffnet bei Hover **und** Tastaturfokus, schließt bei Escape, Blur und
-  Verlassen mit dem Zeiger.
-- Der Tooltip selbst ist nie fokussierbar und liegt nicht in der
-  Tab-Reihenfolge.
-- Getestet in `tooltip.test.tsx` gegen das APG-Muster (describedby-Auflösung,
-  Fokus-Öffnen, Escape, keine Fokussierbarkeit).
+- The content carries `role="tooltip"`; the trigger is linked to it via
+  `aria-describedby` (only while it is open) — the hint is read after the
+  control's name.
+- Opens on hover **and** keyboard focus, closes on Escape, blur and pointer
+  leave.
+- The tooltip itself is never focusable and is not in the tab order.
+- Tested in `tooltip.test.tsx` against the APG pattern (describedby
+  resolution, opening on focus, Escape, not focusable).

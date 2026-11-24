@@ -5,206 +5,197 @@ import * as TableStories from "./table.stories";
 
 # Table
 
-Das Teile-Set für echte HTML-Tabellen: `Table`, `TableHeader`, `TableBody`,
-`TableFooter`, `TableRow`, `TableHead`, `TableCell`, `TableCaption`. Ersetzt
-die handgestylten `<table style={{…}}>`-Blöcke in den Admin-Ansichten und die
-Markdown-Tabellen-Overrides in den Chat-Oberflächen.
+The part set for real HTML tables: `Table`, `TableHeader`, `TableBody`,
+`TableFooter`, `TableRow`, `TableHead`, `TableCell`, `TableCaption`. Replaces
+the hand-styled `<table style={{…}}>` blocks in the admin views and the
+Markdown table overrides in the chat surfaces.
 
-Bewusst **ohne Radix** — Radix Primitives hat kein Table-Primitive, und die
-shadcn-Vorlage importiert selbst nur React und `cn` (am erzeugten
-`shadcn add table`-File geprüft). Native Tabellenauszeichnung trägt den
-Barrierefreiheits-Vertrag bereits; eine JS-Schicht darüber könnte ihn nur
-kaputt machen.
+Deliberately **without Radix** — Radix Primitives has no table primitive, and
+the shadcn template itself imports only React and `cn` (checked against the
+file `shadcn add table` generates). Native table markup already carries the
+accessibility contract; a JS layer on top could only break it.
 
 <Canvas of={TableStories.DataTable} />
 
 ## Props
 
-| Prop | Teil | Typ | Bedeutung |
+| Prop | Part | Type | Meaning |
 |---|---|---|---|
-| `containerClassName` | `Table` | `string` | Klassen für den Scroll-Container **um** die Tabelle (Layout, z. B. `max-h-72` für vertikales Scrollen). Der einzige Zugriff auf diesen Container. |
-| `className` | `Table` | `string` | Klassen für das `<table>` selbst (z. B. `table-fixed`). |
-| `scope` | `TableHead` | `'col' \| 'row' \| …` | Default `'col'`. Bestimmt, ob die Zelle als `columnheader` oder `rowheader` vorgelesen wird — nicht die Optik. |
-| `colSpan` / `rowSpan` | `TableCell`, `TableHead` | `number` | Native Attribute; für Leerzustands- und Summenzeilen. |
-| `data-state="selected"` | `TableRow` | `string` | Markiert eine ausgewählte Zeile (`bg-secondary-container`). shadcn-Konvention für Data-Table-Rezepte. |
-| `wrap` | `TableHead`, `TableCell` | `'anywhere' \| 'words'` | Default `'anywhere'` (`wrap-anywhere`: bricht auch mitten im Wort, für Hashes/URLs). `'words'` (`wrap-break-word`) bricht nur zwischen Wörtern — für Kopfzeilen und kurze Beschriftungen, wo „Sehe-n" schlechter ist als eine etwas breitere Spalte. |
-| `group` | `TableHead` | `boolean` | Spaltengruppen-Überschrift über `colSpan` Spalten: zentriert, halbfett, Label in Primärfarbe unterstrichen; `scope` wird `'colgroup'` (ein explizites `scope` gewinnt). |
-| `divider` | `TableHead`, `TableCell` | `boolean` | Senkrechte Linie an der vorderen Kante der Zelle — die Grenze zwischen zwei Spaltengruppen, in Kopf **und** Rumpf zu setzen. |
-| `density` | `Table` | `'default' \| 'compact'` | Default `'default'`. `'compact'` setzt die ganze Tabelle dichter: `text-xs`, 32px Kopfzeilen, `p-1.5` in den Zellen, kleinere Gruppenüberschrift und Beschriftung. Kopf- und Rumpfzellen lesen den Wert über Context, der Aufrufort braucht keine Schriftgrößen- oder Padding-Klassen. |
-| `muted` | `TableHead`, `TableCell` | `boolean` | Eine Spalte, die angezeigt, aber hier nicht einstellbar ist (z. B. eine Rolle, die immer alle Rechte hat): getöntes Band (`surface-container`), ruhigere Schrift (`on-surface-variant`). An **jede** Zelle der Spalte setzen, Kopf eingeschlossen. |
-| `section` | `TableHead` | `boolean \| 'band'` | Zeilengruppen-Überschrift: die Beschriftungszeile über einer Gruppe von Zeilen. `scope` wird `'rowgroup'` (ein explizites `scope` gewinnt), kleines, halbfettes Label in Großbuchstaben; die Zeile bekommt keinen Hover-Ton und keine Linie. `true`: schlichtes Label mit Abstand nach oben. `'band'`: die ganze Zeile wird ein getöntes Band (`surface-container`). |
-| `count` | `TableHead` | `ReactNode` | Nur mit `section`: eine Anzahl hinter dem Label, ruhiger und nicht in Großbuchstaben. Gehört zum zugänglichen Namen, mit einem nur vorgelesenen Komma: „Quellen in der Sidebar, 4". |
-| `mutedEdge` | `TableHead`, `TableCell` | `'top' \| 'bottom'` | Rundet das Ende des Bands: `'top'` an der Kopfzelle, `'bottom'` an der letzten Rumpfzelle. Wirkt nur zusammen mit `muted`. |
-| `mutedJoin` | `TableHead`, `TableCell` | `'start' \| 'middle' \| 'end'` | Verbindet benachbarte gedämpfte Spalten zu **einem** Band: `'start'` an jeder Zelle der ersten, `'end'` der letzten, `'middle'` der Spalten dazwischen. Kein Spalt und keine Rundung an den Nahtstellen, gerundet nur außen. Wirkt nur zusammen mit `muted`. |
+| `containerClassName` | `Table` | `string` | Classes for the scroll container **around** the table (layout, e.g. `max-h-72` for vertical scrolling). The only access to that container. |
+| `className` | `Table` | `string` | Classes for the `<table>` itself (e.g. `table-fixed`). |
+| `scope` | `TableHead` | `'col' \| 'row' \| …` | Default `'col'`. Decides whether the cell is announced as a `columnheader` or a `rowheader` — not how it looks. |
+| `colSpan` / `rowSpan` | `TableCell`, `TableHead` | `number` | Native attributes; for empty-state and total rows. |
+| `data-state="selected"` | `TableRow` | `string` | Marks a selected row (`bg-secondary-container`). The shadcn convention for data-table recipes. |
+| `wrap` | `TableHead`, `TableCell` | `'anywhere' \| 'words'` | Default `'anywhere'` (`wrap-anywhere`: also breaks mid-word, for hashes/URLs). `'words'` (`wrap-break-word`) breaks only between words — for headers and short labels, where a split like "Sehe-n" is worse than a slightly wider column. |
+| `group` | `TableHead` | `boolean` | Column-group heading over `colSpan` columns: centered, semibold, label underlined in the primary color; `scope` becomes `'colgroup'` (an explicit `scope` wins). |
+| `divider` | `TableHead`, `TableCell` | `boolean` | Vertical line on the cell's leading edge — the boundary between two column groups, set in the header **and** the body. |
+| `density` | `Table` | `'default' \| 'compact'` | Default `'default'`. `'compact'` makes the whole table denser: `text-xs`, 32px header rows, `p-1.5` in the cells, a smaller group heading and caption. Header and body cells read the value from context; the call site needs no font-size or padding classes. |
+| `muted` | `TableHead`, `TableCell` | `boolean` | A column that is shown but cannot be changed here (e.g. a role that always has every permission): a tinted band (`surface-container`), quieter text (`on-surface-variant`). Set it on **every** cell of the column, header included. |
+| `section` | `TableHead` | `boolean \| 'band'` | Row-group heading: the label row above a group of rows. `scope` becomes `'rowgroup'` (an explicit `scope` wins), a small semibold uppercase label; the row gets no hover tint and no line. `true`: a plain label with space above. `'band'`: the whole row becomes a tinted band (`surface-container`). |
+| `count` | `TableHead` | `ReactNode` | Only with `section`: a count after the label, quieter and not in uppercase. Part of the accessible name, with a comma that is only read aloud: "Quellen in der Sidebar, 4". |
+| `mutedEdge` | `TableHead`, `TableCell` | `'top' \| 'bottom'` | Rounds the end of the band: `'top'` on the header cell, `'bottom'` on the last body cell. Only works together with `muted`. |
+| `mutedJoin` | `TableHead`, `TableCell` | `'start' \| 'middle' \| 'end'` | Joins neighboring muted columns into **one** band: `'start'` on every cell of the first, `'end'` of the last, `'middle'` of the columns in between. No gap and no rounding at the seams, rounded only on the outside. Only works together with `muted`. |
 
-Alle Teile geben restliche Props und `ref` an das jeweilige native Element
-durch (`<table>`, `<thead>`, `<tr>`, `<th>`, `<td>`, `<caption>`).
+All parts pass remaining props and `ref` through to their native element
+(`<table>`, `<thead>`, `<tr>`, `<th>`, `<td>`, `<caption>`).
 
 <Controls />
 
-## Überlauf: die Tabelle scrollt in ihrem eigenen Container
+## Overflow: the table scrolls in its own container
 
-`Table` bringt seinen Scroll-Container selbst mit
-(`relative w-full overflow-x-auto`) — am Aufrufort braucht es **kein**
-zusätzliches `overflow-x-auto`. Das ist zugleich die shadcn-Form und die
-Konvention dieses Repos: `TableLayout` und die Markdown-Overrides in den Apps
-machen es bereits genau so.
+`Table` brings its own scroll container (`relative w-full overflow-x-auto`) —
+the call site needs **no** extra `overflow-x-auto`. That is both the shadcn
+shape and this repo's convention: `TableLayout` and the Markdown overrides in
+the apps already do exactly this.
 
 <Canvas of={TableStories.WideScrolls} />
 
-Vertikales Scrollen ist eine Höhe am Container, nicht an der Tabelle:
+Vertical scrolling is a height on the container, not on the table:
 
 <Canvas of={TableStories.BoundedHeightScrolls} />
 
-## Spaltengruppen
+## Column groups
 
-Eine zweite Kopfzeile über den Spaltenköpfen fasst Spalten zusammen:
-`TableHead group colSpan={n}` je Gruppe, `divider` an der ersten Spalte jeder
-weiteren Gruppe (Gruppenkopf, Spaltenkopf und jede Rumpfzelle). Eine
-Zeilen-Überschriftsspalte links überspannt beide Kopfzeilen mit
-`rowSpan={2}`. Unter dem Kopf steht genau **eine** Linie: `TableHeader` nimmt
-allen Kopfzeilen außer der letzten ihre untere Linie, die Unterstreichung der
-Gruppen trennt die beiden Kopfzeilen. Die Unterstreichung sitzt am Label,
-nicht an der Zelle, ist also um das Zellen-Padding eingerückt — zwei
-benachbarte Gruppen stoßen nicht aneinander.
+A second header row above the column headers groups columns together:
+`TableHead group colSpan={n}` per group, `divider` on the first column of
+every further group (group head, column head and every body cell). A
+row-heading column on the left spans both header rows with `rowSpan={2}`.
+There is exactly **one** line under the header: `TableHeader` removes the
+bottom line from every header row except the last, and the groups'
+underlines separate the two header rows. The underline sits on the label, not
+on the cell, so it is indented by the cell padding — two neighboring groups
+don't run into each other.
 
 <Canvas of={TableStories.GroupedColumns} />
 
-## Dichte Tabellen
+## Dense tables
 
-`density="compact"` am `Table` für Matrizen, die in eine schmale Spalte passen
-müssen: kleinere Schrift, niedrigere Kopfzeilen, engere Zellen. Die Dichte
-gilt für alle Teile der Tabelle — Klassen für Schriftgröße oder Padding am
-Aufrufort sind nicht nötig (und auf DS-Bausteinen per Lint-Regel ohnehin
-unerwünscht). Eine Klasse am Aufrufort gewinnt trotzdem, wie überall.
+`density="compact"` on `Table` for matrices that have to fit into a narrow
+column: smaller text, lower header rows, tighter cells. The density applies to
+every part of the table — font-size or padding classes at the call site are
+not needed (and are unwanted on DS building blocks per lint rule anyway). A
+class at the call site still wins, as everywhere.
 
 <Canvas of={TableStories.GroupedColumnsCompact} />
 
-## Gedämpfte Spalten
+## Muted columns
 
-Eine Spalte, deren Werte fest sind (Eigentümer und Admin haben immer jedes
-Recht), wird mit `muted` an jeder ihrer Zellen zu einem getönten Band; die
-Kopfzelle bekommt `mutedEdge="top"`, die letzte Rumpfzelle
-`mutedEdge="bottom"` — dort sind die Ecken gerundet. Zwischen zwei gedämpften
-Zellen läuft das Band über die Zeilenlinie hinweg, die Spalte liest sich als
-ein Stück. Zwei benachbarte gedämpfte Spalten bleiben durch einen schmalen
-Spalt zwei Bänder — es sei denn, `mutedJoin` verbindet sie: dann entfallen
-Spalt und Rundung an der Naht, gerundet sind nur die äußeren Ecken des
-gemeinsamen Bands (Besitzer + Admin in der Matrix unten). Seiten und Ecken sind
-logisch (start/end), das Band spiegelt sich also in RTL mit.
+A column whose values are fixed (owner and admin always have every
+permission) becomes a tinted band with `muted` on each of its cells; the
+header cell gets `mutedEdge="top"`, the last body cell `mutedEdge="bottom"` —
+that is where the corners are rounded. Between two muted cells the band runs
+across the row line, so the column reads as one piece. Two neighboring muted
+columns stay two bands separated by a narrow gap — unless `mutedJoin` joins
+them: then the gap and the rounding at the seam disappear, and only the outer
+corners of the shared band are rounded (owner + admin in the matrix below).
+Sides and corners are logical (start/end), so the band mirrors in RTL.
 
-Das Band ist eine `::before`-Ebene hinter dem Zelleninhalt, nicht der
-Hintergrund der Zelle selbst: `border-radius` wirkt laut CSS Backgrounds 3
-nicht auf Tabellenzellen unter `border-collapse: collapse`, und das setzt
-Tailwinds Preflight für jede Tabelle.
+The band is a `::before` layer behind the cell content, not the cell's own
+background: according to CSS Backgrounds 3, `border-radius` has no effect on
+table cells under `border-collapse: collapse`, and Tailwind's Preflight sets
+that on every table.
 
 <Canvas of={TableStories.RotatedMatrix} />
 
-## Zeilengruppen
+## Row groups
 
-Eine Beschriftungszeile gliedert die Zeilen darunter in Gruppen (THEMA,
-QUELLEN IN DER SIDEBAR, ANTWORTEN): `TableHead section` als erste Zeile jeder
-Gruppe, jede Gruppe in einem eigenen `TableBody` — das ist die Zeilengruppe,
-auf die sich `scope="rowgroup"` bezieht. Die Überschrift wird als
-`rowheader` vorgelesen. Ihre Zeile färbt sich beim Überfahren nicht und zieht
-keine Linie: `TableRow` erkennt sie selbst (`:has()` auf
-`data-slot="table-section-head"`), der Aufrufort markiert die Zeile nicht.
+A label row divides the rows below it into groups (THEMA, QUELLEN IN DER
+SIDEBAR, ANTWORTEN): `TableHead section` as the first row of each group, each
+group in its own `TableBody` — that is the row group `scope="rowgroup"` refers
+to. The heading is announced as a `rowheader`. Its row doesn't change color
+on hover and draws no line: `TableRow` detects it itself (`:has()` on
+`data-slot="table-section-head"`); the call site doesn't mark the row.
 
-`section="band"` macht die ganze Zeile zu einem getönten Band
-(`surface-container`), `count` setzt eine Anzahl ruhiger hinter das Label. Das
-Band ist **ein** Inset-Schatten auf der Zeile, kein Zeilenhintergrund:
-Chromium malt einen Zeilenhintergrund Zelle für Zelle und lässt bei
-gebrochenen Spaltenbreiten 1px-Haarlinien zwischen den Zellen stehen.
+`section="band"` turns the whole row into a tinted band (`surface-container`),
+and `count` puts a quieter count after the label. The band is **one** inset
+shadow on the row, not a row background: Chromium paints a row background
+cell by cell and leaves 1px hairlines between the cells when column widths are
+fractional.
 
-Über alle Spalten spannt die Überschrift mit `colSpan` — eine Überschriftzelle,
-die eine gedämpfte Spalte überspannt, verdeckt aber deren Band. Damit das
-Spaltenband durch die Abschnittszeile läuft, steht die Überschrift nur in den
-Spalten vor der ersten gedämpften, die übrigen Zellen der Zeile sind leere
-`TableCell`s (`muted`/`mutedJoin` in den gedämpften Spalten). In einer
-Band-Zeile malt die Tabelle diese Kreuzung eine Stufe dunkler
-(`surface-container-high`): das Spaltenband bleibt sichtbar, das
-Abschnittsband liegt quer darüber. Die schlichte Form ohne Band zeigt
-`RotatedMatrixPlain`.
+The heading spans all columns with `colSpan` — but a heading cell that spans a
+muted column covers its band. So that the column band runs through the
+section row, the heading sits only in the columns before the first muted one,
+and the remaining cells of the row are empty `TableCell`s
+(`muted`/`mutedJoin` in the muted columns). In a band row the table paints
+that crossing one step darker (`surface-container-high`): the column band
+stays visible and the section band lies across it. `RotatedMatrixPlain` shows
+the plain form without a band.
 
 <Canvas of={TableStories.RotatedMatrixPlain} />
 
-Der Hover-Ausschluss ist nur als Klasse getestet: Testing Librarys `hover`
-löst Ereignisse aus, versetzt die Zeile aber nie in den CSS-Zustand `:hover`.
-Die Story misst stattdessen, dass dieselbe `:has()`-Variante im Browser greift
-(keine Linie unter der Zeile).
+The hover exclusion is tested only as a class: Testing Library's `hover`
+fires events but never puts the row into the CSS `:hover` state. The story
+instead measures that the same `:has()` variant applies in the browser (no
+line under the row).
 
-## Entscheidungen
+## Decisions
 
-- **Der Container hat kein `role` und kein `tabindex`.** Ein `<div>` ohne
-  Rolle ist für die Accessibility-Tree unsichtbar, die Struktur
-  `table → rowgroup → row → columnheader/cell` bleibt also unverändert. Ein
-  `role="region"` würde eine zusätzliche Landmarke erzeugen; die APG warnt vor
-  Landmarken-Wildwuchs (dieselbe Begründung wie beim Panel des
-  `SectionedGridLayout`), und eine **unbenannte** Region verwerfen die meisten
-  Screenreader ohnehin. Ein `tabindex={0}` wäre die WCAG-2.1.1-Antwort für
-  scrollbare Bereiche — es würde hier aber vor *jede* Tabelle einen namenlosen
-  Tabstopp setzen, während die Tabelleninhalte (Links, Buttons) bereits per
-  Tastatur erreichbar sind.
-- **Zellen umbrechen von Haus aus** — anders als die aktuelle shadcn-Vorlage,
-  die `whitespace-nowrap` auf jede Zelle legt. Grund ist der Bestand: keine
-  der acht gefundenen Tabellen in JustRAG und CampusAgents setzt `nowrap`
-  pauschal; das JustRAG-Dashboard setzt es gezielt pro Spalte, und beide
-  Markdown-Tabellen brechen bewusst um. `whitespace-nowrap` gehört daher an
-  die einzelne Zelle (Datum, Zahl), nicht in die Vorlage.
-- **`wrap-anywhere` auf Kopf- und Datenzellen.** Lange ungetrennte
-  Zeichenketten (Hashes, API-Schlüssel, URLs) brechen innerhalb der Zelle,
-  statt die Tabelle breiter zu machen als ihren Container. Entspricht dem
-  `overflow-wrap: anywhere`, das die CampusAgents-Markdown-Tabelle heute von
-  Hand setzt.
-- **Jede Trennlinie trägt eine Farbe (`border-outline-variant`).** Tailwinds
-  Preflight setzt `border: 0 solid` ohne Farbe, `border-b` allein rendert also
-  in `currentColor` — in diesem Repo gibt es (anders als bei shadcn) keinen
-  globalen `border-border`-Reset. Ein übernommenes nacktes `border-b` hätte
-  die Linien in Textfarbe gezeichnet.
-- **Kopfzeile ruhiger als der Inhalt** (`text-on-surface-variant`,
-  `font-medium`) — so machen es alle fünf Admin-Tabellen in JustRAG heute
-  schon (`var(--text-secondary)`).
-- **Ohne die `data-slot`-Attribute und die Checkbox-Helfer der Vorlage.**
-  Ausnahmen sind `data-slot="table-group-head"` am Gruppenkopf sowie
-  `table-section-head` / `table-section-count` an der Zeilengruppen-Überschrift,
-  damit ein Aufrufort sie ohne Klassen-Selektor findet (und `TableRow` die
-  Überschriftzeile per `:has()` erkennt); und
-  `[&>[role=checkbox]]:translate-y-[2px]` ist ein arbiträrer Wert für ein
-  Rezept (Zeilenauswahl), das noch kein Aufrufort verwendet.
+- **The container has no `role` and no `tabindex`.** A `<div>` without a role
+  is invisible to the accessibility tree, so the structure
+  `table → rowgroup → row → columnheader/cell` stays unchanged. A
+  `role="region"` would create an extra landmark; the APG warns against
+  landmark sprawl (the same reasoning as for the `SectionedGridLayout` panel),
+  and most screen readers discard an **unnamed** region anyway. A
+  `tabindex={0}` would be the WCAG 2.1.1 answer for scrollable areas — but
+  here it would put a nameless tab stop in front of *every* table, while the
+  table contents (links, buttons) are already reachable by keyboard.
+- **Cells wrap by default** — unlike the current shadcn template, which puts
+  `whitespace-nowrap` on every cell. The reason is the existing code: none of
+  the eight tables found in JustRAG and CampusAgents sets `nowrap` across the
+  board; the JustRAG dashboard sets it per column, and both Markdown tables
+  wrap on purpose. `whitespace-nowrap` therefore belongs on the individual
+  cell (date, number), not in the template.
+- **`wrap-anywhere` on header and data cells.** Long unbroken strings (hashes,
+  API keys, URLs) break inside the cell instead of making the table wider than
+  its container. Matches the `overflow-wrap: anywhere` the CampusAgents
+  Markdown table sets by hand today.
+- **Every divider carries a color (`border-outline-variant`).** Tailwind's
+  Preflight sets `border: 0 solid` without a color, so `border-b` alone renders
+  in `currentColor` — this repo (unlike shadcn) has no global `border-border`
+  reset. A bare `border-b` taken over as is would have drawn the lines in the
+  text color.
+- **The header row is quieter than the content** (`text-on-surface-variant`,
+  `font-medium`) — all five admin tables in JustRAG already do this today
+  (`var(--text-secondary)`).
+- **Without the template's `data-slot` attributes and checkbox helpers.** The
+  exceptions are `data-slot="table-group-head"` on the group head and
+  `table-section-head` / `table-section-count` on the row-group heading, so a
+  call site can find them without a class selector (and `TableRow` can detect
+  the heading row with `:has()`); and
+  `[&>[role=checkbox]]:translate-y-[2px]` is an arbitrary value for a recipe
+  (row selection) no call site uses yet.
 
-## Bewusst nicht enthalten
+## Deliberately not included
 
-- **Mitlaufende Kopfzeile (sticky header).** Kein heutiger Aufrufort hat eine;
-  der eine Kandidat (vertikal scrollende „Low-Score-Queries" im
-  JustRAG-Dashboard) hat sie ebenfalls nicht. Sie ist außerdem nicht
-  gratis: Tailwinds Preflight setzt `border-collapse: collapse` auf `<table>`,
-  und bei kollabierten Rahmen wandert die untere Kante der Kopfzeile nicht mit
-  dem `position: sticky`-Element mit — es bräuchte zusätzlich
-  `border-separate border-spacing-0` oder einen Schatten. Das ist eine eigene
-  Entscheidung (Owner) und eine eigene Karte, kein Nebenprodukt dieser.
-- **Sortieren, Filtern, Paginieren, Zeilenauswahl.** Das ist Logik und bleibt
-  bei der App; `TableLayout` hat dafür die Slots `toolbar` und `footer`.
-- **Zebrastreifen.** Der Zeilen-Hover (`bg-surface-container-high`) übernimmt
-  die Zeilenführung; ein zweiter Flächenwechsel würde mit ihm konkurrieren.
+- **Sticky header.** No call site has one today; the one candidate
+  (the vertically scrolling "Low-Score-Queries" in the JustRAG dashboard)
+  doesn't have one either. It isn't free, either: Tailwind's Preflight sets
+  `border-collapse: collapse` on `<table>`, and with collapsed borders the
+  header row's bottom edge doesn't move along with the `position: sticky`
+  element — it would also need `border-separate border-spacing-0` or a shadow.
+  That is a decision of its own (owner) and a card of its own, not a by-product
+  of this one.
+- **Sorting, filtering, pagination, row selection.** That is logic and stays
+  with the app; `TableLayout` has the `toolbar` and `footer` slots for it.
+- **Zebra stripes.** The row hover (`bg-surface-container-high`) guides the
+  eye along the row; a second change of surface would compete with it.
 
-## Abgrenzung: `Table` vs. `TableLayout`
+## Scope: `Table` vs. `TableLayout`
 
-- **`Table` ist die Tabelle**, `TableLayout` ist die **Seite**: PageHeader,
-  Card, Toolbar-Slot, Footer-Slot. Sie schließen einander nicht aus — der
-  Normalfall ist `Table` als `children` von `TableLayout`.
-- `TableLayout` bringt um seine `children` ein eigenes `overflow-x-auto` mit,
-  weil dort auch Nicht-Tabellen hängen können. Zusammen mit dem Container von
-  `Table` ergibt das zwei ineinander liegende Scroll-Container; wirksam ist
-  der innere. Kein Fehler, aber der Grund, warum am Aufrufort **nie** ein
-  drittes `overflow-x-auto` dazukommen sollte.
-- Eine Tabelle ohne Seitenrahmen (Markdown-Antwort im Chat, Tabelle in einem
-  Dialog) benutzt `Table` **ohne** `TableLayout`.
+- **`Table` is the table**, `TableLayout` is the **page**: PageHeader, card,
+  toolbar slot, footer slot. They don't exclude each other — the normal case
+  is `Table` as the `children` of `TableLayout`.
+- `TableLayout` puts its own `overflow-x-auto` around its `children`, because
+  non-tables can sit there too. Together with `Table`'s container that makes
+  two nested scroll containers; the inner one takes effect. Not a bug, but the
+  reason why a call site should **never** add a third `overflow-x-auto`.
+- A table without a page frame (a Markdown answer in the chat, a table in a
+  dialog) uses `Table` **without** `TableLayout`.
 
-## Markdown-Tabellen
+## Markdown tables
 
-`react-markdown` reicht seinen AST-Knoten als `node`-Prop an
-Komponenten-Overrides durch; das darf nicht auf ein DOM-Element gespreizt
-werden. Der Aufrufort filtert es weg:
+`react-markdown` passes its AST node to component overrides as a `node` prop;
+it must not be spread onto a DOM element. The call site filters it out:
 
 ```tsx
 <ReactMarkdown
@@ -221,37 +212,37 @@ werden. Der Aufrufort filtert es weg:
 
 <Canvas of={TableStories.ArbitraryContent} />
 
-## Do's & Don'ts
+## Do's & don'ts
 
-- ✅ `TableCaption` für jede Tabelle, die nicht direkt unter ihrer eigenen
-  Überschrift steht — sie ist der zugängliche Name der Tabelle.
-- ✅ Leerzustand als **eine Zeile mit `colSpan`** über alle Spalten, Kopfzeile
-  bleibt stehen (Story „Empty").
-- ✅ `whitespace-nowrap` gezielt an Zellen, die nie umbrechen sollen (Datum,
-  Betrag, Aktionen).
-- ✅ Höhe für vertikales Scrollen über `containerClassName`.
-- ❌ Kein zusätzliches `overflow-x-auto` am Aufrufort — der Container gehört
-  zur Komponente.
-- ❌ Keine Tabelle für Layout. Wer nur Spalten will, nimmt `Grid` oder
-  `Stack`; eine `<table>` wird als Datentabelle vorgelesen.
-- ❌ Kein leeres `<tbody>` als Leerzustand — eine Tabelle ohne Zeilen sagt
-  Screenreader-Nutzenden nichts.
-- ❌ Keine Farben oder Schriftgrößen am Aufrufort (Regel 4 der
-  COMPONENT_GUIDELINES); Ausrichtung (`text-right`) und Umbruchverhalten sind
-  Layout und bleiben erlaubt.
+- ✅ `TableCaption` for every table that doesn't sit directly under its own
+  heading — it is the table's accessible name.
+- ✅ The empty state as **one row with `colSpan`** across all columns; the
+  header row stays (story "Empty").
+- ✅ `whitespace-nowrap` specifically on cells that should never wrap (date,
+  amount, actions).
+- ✅ Height for vertical scrolling via `containerClassName`.
+- ❌ No extra `overflow-x-auto` at the call site — the container belongs to
+  the component.
+- ❌ No tables for layout. If you only want columns, use `Grid` or `Stack`; a
+  `<table>` is announced as a data table.
+- ❌ No empty `<tbody>` as the empty state — a table without rows tells screen
+  reader users nothing.
+- ❌ No colors or font sizes at the call site (rule 4 of the
+  COMPONENT_GUIDELINES); alignment (`text-right`) and wrapping behavior are
+  layout and stay allowed.
 
-## Barrierefreiheit
+## Accessibility
 
-- Native Semantik bleibt vollständig erhalten. Nach HTML-AAM bilden ab:
+- Native semantics are fully preserved. Per HTML-AAM they map to:
   `<table>` → `table`, `<thead>`/`<tbody>`/`<tfoot>` → `rowgroup`, `<tr>` →
   `row`, `<th scope="col">` → `columnheader`, `<td>` → `cell`.
-- `TableHead` setzt `scope="col"` als Default — das ist es, was aus der Zelle
-  einen Spaltenkopf macht. Für eine Zeilenüberschrift `scope="row"` setzen.
-- `TableCaption` liefert den zugänglichen Namen: eine Tabelle mit Caption ist
-  über `getByRole("table", { name })` auffindbar. Das `<caption>` muss im DOM
-  das erste Kind des `<table>` sein (HTML-Inhaltsmodell); dargestellt wird es
-  durch `caption-bottom` unten.
-- Der Scroll-Container fügt der Accessibility-Tree nichts hinzu (kein `role`,
-  kein `tabindex`) — siehe „Entscheidungen".
-- Geprüft in `table.test.tsx` gegen die HTML-AAM-Rollenabbildung und die
-  Accname-Berechnung, nicht gegen die Implementierung.
+- `TableHead` sets `scope="col"` by default — that is what makes the cell a
+  column header. For a row heading set `scope="row"`.
+- `TableCaption` provides the accessible name: a table with a caption can be
+  found with `getByRole("table", { name })`. The `<caption>` must be the
+  `<table>`'s first child in the DOM (HTML content model); `caption-bottom`
+  displays it at the bottom.
+- The scroll container adds nothing to the accessibility tree (no `role`, no
+  `tabindex`) — see "Decisions".
+- Tested in `table.test.tsx` against the HTML-AAM role mapping and the
+  accessible-name computation, not against the implementation.
