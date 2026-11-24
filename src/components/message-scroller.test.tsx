@@ -46,7 +46,7 @@ describe("MessageScroller", () => {
   });
 
   // Oracle: the button's horizontal anchor is the scroller's centre minus the
-  // chat column's axis shift, 0 when no ChatStage consumer sets it (jsdom lays
+  // chat column's axis shift, 0 outside a ChatStage (jsdom lays
   // nothing out, so the class is what can be checked).
   it("centres the jump button on the chat column's shifted axis", () => {
     const { container } = render(<Transcript />);

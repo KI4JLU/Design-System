@@ -10,14 +10,14 @@ import { cn } from "../lib/utils";
  * its parent (`h-full`): the embedding context sizes the widget. Scroll
  * position/auto-scroll and message state stay with the consumer.
  */
-export interface ChatLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface WidgetChatLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Widget header (Avatar, name, online status). */
   header?: React.ReactNode;
   /** Input row pinned below the messages (Textarea + send Button). */
   composer?: React.ReactNode;
 }
 
-const ChatLayout = React.forwardRef<HTMLDivElement, ChatLayoutProps>(
+const WidgetChatLayout = React.forwardRef<HTMLDivElement, WidgetChatLayoutProps>(
   ({ className, header, composer, children, ...props }, ref) => (
     <Card
       ref={ref}
@@ -38,6 +38,6 @@ const ChatLayout = React.forwardRef<HTMLDivElement, ChatLayoutProps>(
     </Card>
   ),
 );
-ChatLayout.displayName = "ChatLayout";
+WidgetChatLayout.displayName = "WidgetChatLayout";
 
-export { ChatLayout };
+export { WidgetChatLayout };

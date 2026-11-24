@@ -19,7 +19,7 @@ import {
   ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "../../components/chain-of-thought";
-import { ChatStage } from "../../components/chat-stage";
+import { ChatStage, ChatStageColumn } from "../../components/chat-stage";
 import { InputGroupAddon } from "../../components/input-group";
 import {
   Message,
@@ -63,9 +63,8 @@ import { Source, Sources, SourcesContent, SourcesTrigger } from "../../component
  * JLURAG's own pieces are left out or replaced by the nearest DS part: the
  * start page's title card and glow (`StartPageParts.tsx`), the verification
  * chip (`ConfidenceChip`) — here a `Badge` — and the citation chips in the
- * answer. JLURAG sizes the reading column in its own CSS (`.chat-column`:
- * 80% of the column, at most 60rem, 2rem inset); the fixture uses the same
- * numbers as classes. Not part of the package.
+ * answer. The reading column is the stage's own: transcript and start-page
+ * content sit in a `ChatStageColumn`, as in JLURAG. Not part of the package.
  * ------------------------------------------------------------------------- */
 
 /**
@@ -86,10 +85,6 @@ export const CHAT_FOOTER =
 const MARKDOWN =
   "leading-relaxed [&_h2]:mt-1 [&_h2]:mb-3 [&_h2]:font-headline-md [&_h2]:text-headline-md [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:my-1 [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6";
 
-/** JLURAG's reading column: 80% of the column, at most 60rem, a 2rem inset. */
-const COLUMN = "mx-auto w-full max-w-[min(80%,60rem)] px-8";
-/** The start page's column: the title card's width (`max-w-2xl`), a 1rem inset. */
-const START_COLUMN = "mx-auto w-full max-w-2xl px-4";
 
 /**
  * The composer as JLURAG mounts it (`ChatView.tsx`): the „+" menu at the
@@ -238,18 +233,15 @@ function DayLine({ children }: { children: string }) {
 export function TopicConversation() {
   return (
     <ChatStage
-      composer={
-        <div className={`${COLUMN} pt-2 pb-4`}>
-          <TopicComposer />
-        </div>
-      }
+      composer={<TopicComposer />}
       footer={CHAT_FOOTER}
       footerId="chat-disclaimer"
     >
       <MessageScrollerProvider>
         <MessageScroller>
           <MessageScrollerViewport>
-            <MessageScrollerContent className={`${COLUMN} flex flex-col`}>
+            <ChatStageColumn asChild>
+            <MessageScrollerContent className="flex flex-col gap-0">
               <MessageScrollerItem messageId="q1" className="py-4">
                 <DayLine>Fr., 20. Nov. um 17:37</DayLine>
                 <Message from="user" className="mt-4">
@@ -312,6 +304,7 @@ export function TopicConversation() {
                 </Message>
               </MessageScrollerItem>
             </MessageScrollerContent>
+            </ChatStageColumn>
           </MessageScrollerViewport>
           <MessageScrollerButton />
         </MessageScroller>
@@ -330,7 +323,7 @@ export function TopicStart() {
     <ChatStage
       empty
       composer={
-        <div className={`${START_COLUMN} pt-8 pb-4`}>
+        <>
           <TopicComposer />
           <PromptSuggestions
             className="mt-4"
@@ -345,12 +338,12 @@ export function TopicStart() {
             nextLabel="Nächste Seite"
             dismissLabel="Schließen"
           />
-        </div>
+        </>
       }
       footer={CHAT_FOOTER}
       footerId="chat-disclaimer"
     >
-      <div className={`${START_COLUMN} flex flex-col items-center gap-2 text-center`}>
+      <ChatStageColumn className="flex flex-col items-center gap-2 px-4 text-center">
         <h1 className="m-0 font-display-lg text-display-lg text-on-surface">{TOPIC_NAME}</h1>
         <p className="m-0 flex flex-wrap items-center justify-center gap-1.5 text-xs text-on-surface-variant">
           <Badge tone="success">Claude</Badge>
@@ -363,7 +356,7 @@ export function TopicStart() {
           Frage mich alles, was du über deine Quellen wissen möchtest. Ich kann dir helfen,
           Zusammenfassungen zu erstellen, Informationen zu finden und Ideen zu synthetisieren.
         </p>
-      </div>
+      </ChatStageColumn>
     </ChatStage>
   );
 }
@@ -380,15 +373,11 @@ export function TopicNew() {
   return (
     <ChatStage
       empty
-      composer={
-        <div className={`${START_COLUMN} pt-8 pb-4`}>
-          <TopicComposer documents={0} />
-        </div>
-      }
+      composer={<TopicComposer documents={0} />}
       footer={CHAT_FOOTER}
       footerId="chat-disclaimer"
     >
-      <div className={`${START_COLUMN} flex flex-col items-center gap-3 text-center`}>
+      <ChatStageColumn className="flex flex-col items-center gap-3 px-4 text-center">
         <h1 className="m-0 font-display-lg text-display-lg text-on-surface">
           {FIRST_SOURCE_TITLE}
         </h1>
@@ -396,7 +385,7 @@ export function TopicNew() {
           Lade ein Dokument hoch oder hol dir Inhalte aus dem Web — danach kannst du Fragen
           stellen.
         </p>
-      </div>
+      </ChatStageColumn>
     </ChatStage>
   );
 }

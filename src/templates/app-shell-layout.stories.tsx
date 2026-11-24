@@ -380,6 +380,77 @@ export const TopicView: Story = {
 };
 
 /**
+ * The chat column beside the open sources card, in a frame wide enough to
+ * keep the card open: the column stays centred while it fits beside the
+ * card, then moves towards the start, then narrows — and every box on the
+ * column (header row, transcript or start page, composer, disclaimer) moves
+ * with it, so they share one centre axis (`ChatStage`, `ChatStageColumn`).
+ *
+ * `play` oracles [the boxes]: with the card open, each box's centre is within
+ * 1px of the transcript's, and none reaches under the card; closed, the
+ * column is centred on the main area again, within 1px.
+ */
+async function expectOnOneAxis(main: HTMLElement, card: DOMRect | null) {
+  const stage = main.querySelector<HTMLElement>("[data-slot='chat-stage']")!;
+  const boxes = [
+    stage.querySelector("[data-slot='chat-stage-column']")!,
+    stage.querySelector("[data-slot='chat-stage-composer']")!,
+    stage.querySelector("[data-slot='chat-stage-footer']")!,
+  ].map((el) => el.getBoundingClientRect());
+  const centre = (r: DOMRect) => r.left + r.width / 2;
+  for (const box of boxes.slice(1)) await expect(Math.abs(centre(box) - centre(boxes[0]))).toBeLessThanOrEqual(1);
+  // The disclaimer keeps two lines whatever the width, so the composer never jumps.
+  const footer = stage.querySelector<HTMLElement>("[data-slot='chat-stage-footer']")!;
+  const { lineHeight, paddingBottom } = getComputedStyle(footer);
+  await expect(boxes[2].height).toBeCloseTo(2 * parseFloat(lineHeight) + parseFloat(paddingBottom), 0);
+  if (card) {
+    for (const box of boxes) await expect(box.right).toBeLessThanOrEqual(card.left + 1);
+  } else {
+    const area = main.getBoundingClientRect();
+    await expect(Math.abs(centre(boxes[0]) - centre(area))).toBeLessThanOrEqual(1);
+  }
+}
+
+const openSourcesCard = async (canvas: ReturnType<typeof within>, user: { click: (el: Element) => Promise<void> }) => {
+  const toggle = await canvas.findByRole("button", { name: /^Quellen (aus|ein)klappen$/ });
+  if (toggle.getAttribute("aria-expanded") !== "true") await user.click(toggle);
+  return (await canvas.findByRole("complementary", { name: "Quellen" })).getBoundingClientRect();
+};
+
+export const TopicChatBesideSources: Story = {
+  render: () => (
+    <div style={{ width: 1600 }}>
+      <AppShellFixture context="topic" topic={TOPIC_NAME}>
+        <TopicConversation />
+      </AppShellFixture>
+    </div>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const main = canvasElement.querySelector("main")!;
+    const card = await openSourcesCard(canvas, userEvent);
+    await expectOnOneAxis(main, card);
+    await userEvent.click(canvas.getByRole("button", { name: "Quellen einklappen" }));
+    await waitFor(() => expect(canvas.queryByRole("complementary", { name: "Quellen" })).toBeNull());
+    await expectOnOneAxis(main, null);
+  },
+};
+
+/** The start page beside the open sources card: the same axis, the start page's narrower box. */
+export const TopicStartBesideSources: Story = {
+  render: () => (
+    <div style={{ width: 1600 }}>
+      <AppShellFixture context="topic" topic={TOPIC_NAME}>
+        <TopicStart />
+      </AppShellFixture>
+    </div>
+  ),
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const main = canvasElement.querySelector("main")!;
+    await expectOnOneAxis(main, await openSourcesCard(canvas, userEvent));
+  },
+};
+
+/**
  * An empty `ChatStage` centres its content and composer together between its
  * top and the pinned disclaimer: the gap above the `<h1>` equals the gap
  * between the composer's block and the disclaimer, within 1px. Oracle: the

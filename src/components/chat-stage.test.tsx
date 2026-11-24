@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ChatStage } from "./chat-stage";
+import { ChatStage, ChatStageColumn } from "./chat-stage";
 
 // Oracle: the order of the three regions and the `empty` flag handed in —
 // centring itself is layout jsdom cannot measure, so the test pins the
@@ -69,5 +69,61 @@ describe("ChatStage", () => {
     expect(stage().className).toContain("[--chat-width-cap:80rem]");
     rerender(<ChatStage width="full"><p>x</p></ChatStage>);
     expect(stage().className).toContain("[--chat-width-cap:100cqw]");
+  });
+
+  // Oracle: the owner's brief (KI-1046) — every box of the column moves with
+  // one axis. jsdom resolves no cqw, so the test pins that the stage works the
+  // shift out from the shell's inset and that each box reads the same values.
+  it("works the centre axis out itself and puts composer and footer on it", () => {
+    const { container, rerender } = render(<ChatStage composer="c" footer="f"><p>x</p></ChatStage>);
+    const stage = () => container.querySelector("[data-slot=chat-stage]") as HTMLElement;
+    const slot = (name: string) => container.querySelector(`[data-slot=${name}]`) as HTMLElement;
+    expect(stage().className).toContain("[--chat-box:var(--chat-column-width)]");
+    expect(stage().className).toContain("[--chat-axis-shift:clamp(0px,var(--chat-clear)_-_(100cqw_-_var(--chat-box))_/_2,(100cqw_-_var(--chat-box))_/_2)]");
+    expect(stage().className).toContain("[--chat-axis-width:var(--chat-box)]");
+    expect(slot("chat-stage-composer").className).toContain("left-[calc(-1_*_var(--chat-axis-shift,0px))]");
+    expect(slot("chat-stage-composer").className).toContain("max-w-[var(--chat-box,100%)]");
+    expect(slot("chat-stage-composer").className).toContain("px-[var(--chat-column-inset)]");
+    expect(slot("chat-stage-footer").className).toContain("left-[calc(-1_*_var(--chat-axis-shift,0px))]");
+    // Two lines reserved whatever the width, so the composer never jumps.
+    expect(slot("chat-stage-footer").className).toContain("min-h-[calc(2lh_+_1rem)]");
+    // Empty: the start page's narrower box, and a wider gap above the composer.
+    rerender(<ChatStage empty composer="c" footer="f"><p>x</p></ChatStage>);
+    expect(stage().className).toContain("[--chat-box:min(42rem,var(--chat-column-width))]");
+    expect(stage().className).not.toContain("[--chat-box:var(--chat-column-width)]");
+    expect(slot("chat-stage-composer")).toHaveClass("px-4", "pt-8");
+  });
+
+  it("pins the footer to the bottom of an empty chat without a composer", () => {
+    const { container, rerender } = render(<ChatStage empty align="start" footer="f"><p>x</p></ChatStage>);
+    const footer = () => container.querySelector("[data-slot=chat-stage-footer]")!;
+    expect(footer().className).toContain("mt-auto");
+    rerender(<ChatStage empty align="start" composer="c" footer="f"><p>x</p></ChatStage>);
+    expect(footer().className).not.toContain("mt-auto");
+  });
+
+  it("anchors an empty chat at the top with align=start, footer still last", () => {
+    const { container } = render(<ChatStage empty align="start" composer="c" footer="f"><p>x</p></ChatStage>);
+    const content = container.querySelector("[data-slot=chat-stage-content]") as HTMLElement;
+    expect(content).not.toHaveClass("mt-auto");
+    expect(container.querySelector("[data-slot=chat-stage-composer]")).toHaveClass("mb-auto");
+    expect(container.querySelector("[data-slot=chat-stage]")).toHaveAttribute("data-align", "start");
+  });
+
+  it("ChatStageColumn puts its box — or its child, asChild — on the axis", () => {
+    const { container } = render(
+      <ChatStage>
+        <ChatStageColumn asChild className="gap-0">
+          <section aria-label="Verlauf">x</section>
+        </ChatStageColumn>
+      </ChatStage>,
+    );
+    const column = screen.getByRole("region", { name: "Verlauf" });
+    expect(column.tagName).toBe("SECTION");
+    expect(column).toHaveAttribute("data-slot", "chat-stage-column");
+    expect(column.className).toContain("left-[calc(-1_*_var(--chat-axis-shift,0px))]");
+    expect(column.className).toContain("px-[var(--chat-column-inset)]");
+    expect(column).toHaveClass("gap-0");
+    expect(container.querySelector("[data-slot=chat-stage-content]")).toContainElement(column);
   });
 });

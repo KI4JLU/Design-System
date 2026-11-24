@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AppShellLayout } from "./app-shell-layout";
 import { AuthLayout } from "./auth-layout";
-import { ChatLayout } from "./chat-layout";
+import { WidgetChatLayout } from "./widget-chat-layout";
 import { DashboardLayout } from "./dashboard-layout";
 import { FormLayout } from "./form-layout";
 import { GridLayout } from "./grid-layout";
@@ -213,11 +213,11 @@ describe("the page-heading rule — defaults every consumer already ships agains
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
   });
 
-  it("ChatLayout contributes no heading — its header is a free-form slot", () => {
+  it("WidgetChatLayout contributes no heading — its header is a free-form slot", () => {
     render(
-      <ChatLayout header={<span>Bot</span>} composer={<span>Eingabe</span>}>
+      <WidgetChatLayout header={<span>Bot</span>} composer={<span>Eingabe</span>}>
         Nachrichten
-      </ChatLayout>,
+      </WidgetChatLayout>,
     );
     expect(screen.queryAllByRole("heading")).toHaveLength(0);
   });
