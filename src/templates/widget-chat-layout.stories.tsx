@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { composeStories } from "@storybook/react-vite";
 import { SendHorizontal } from "lucide-react";
-import { ChatLayout } from "./chat-layout";
+import { WidgetChatLayout } from "./widget-chat-layout";
 import { Avatar } from "../components/avatar";
 import { Button } from "../components/button";
 import { Textarea } from "../components/textarea";
@@ -11,10 +11,10 @@ import * as chatBubbleStories from "../components/chat-bubble.stories";
 const { Conversation } = composeStories(chatBubbleStories, {});
 
 const meta = {
-  title: "Templates/ChatLayout",
-  component: ChatLayout,
+  title: "Templates/WidgetChatLayout",
+  component: WidgetChatLayout,
   tags: ["!autodocs"],
-} satisfies Meta<typeof ChatLayout>;
+} satisfies Meta<typeof WidgetChatLayout>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 export const Widget: Story = {
   render: () => (
     <div className="h-96 max-w-md">
-      <ChatLayout
+      <WidgetChatLayout
         header={
           <>
             <Avatar initials="AS" online aria-label="Assistent, online" />
@@ -49,7 +49,7 @@ export const Widget: Story = {
         }
       >
         <Conversation />
-      </ChatLayout>
+      </WidgetChatLayout>
     </div>
   ),
 };
@@ -58,7 +58,7 @@ export const Widget: Story = {
 export const Headless: Story = {
   render: () => (
     <div className="h-96 max-w-md">
-      <ChatLayout
+      <WidgetChatLayout
         composer={
           <div className="flex items-end gap-stack-sm">
             <Textarea
@@ -75,7 +75,7 @@ export const Headless: Story = {
         }
       >
         <Conversation />
-      </ChatLayout>
+      </WidgetChatLayout>
     </div>
   ),
 };

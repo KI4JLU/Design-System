@@ -543,7 +543,7 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
 ```
 
 - **Use the templates** (`AppShellLayout`, `AuthLayout`, `DashboardLayout`,
-  `FormLayout`, `ChatLayout`, `TableLayout`, `SectionedGridLayout`) for their
+  `FormLayout`, `WidgetChatLayout`, `TableLayout`, `SectionedGridLayout`) for their
   page category — never rebuild a page skeleton in the app. Missing slot/variant?
   Extend the template in the design system (owner review), don't fork the
   layout.
@@ -647,7 +647,7 @@ fresh WCAG 1.3.1 failure created by using the library as documented.
    contradict each other. Two independent hardcoded levels was the bug.
 4. **A template with no `title` prop contributes no heading, and its text slots
    are not the page heading.** `AppShellLayout.pageLabel` is a chrome location
-   label and stays a `<p>`; `ChatLayout.header` and the shell's side columns
+   label and stays a `<p>`; `WidgetChatLayout.header` and the shell's side columns
    (`rightPanel`) are free-form slots. The page heading belongs to the content template hung
    inside the shell, or to the call site. An `<h1>` in the shell's page-label
    bar would sit next to the one every content template already renders.
@@ -690,7 +690,7 @@ additive everywhere.
 | `SectionedGridLayout` | `<h1>` title (when `title` is set) + one `<h2>` per section | default `1`; sections are `+1` |
 | `AuthLayout` | **no heading** — `title` is styled text in `CardTitle` | **omitted** by default; set it to opt in |
 | `AppShellLayout` | no heading (`pageLabel` is a `<p>`; optional since 0.29.0, and omitted it renders no element at all) | none — no `title` prop |
-| `ChatLayout` | no heading | none — no `title` prop |
+| `WidgetChatLayout` | no heading | none — no `title` prop |
 
 `AuthLayout` is the one template whose default looks like it contradicts part 1
 of the rule, and the reason is a real call site rather than a preference: a

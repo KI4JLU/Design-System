@@ -558,7 +558,7 @@ export {
 } from "./templates/app-shell-layout";
 export { AuthLayout, type AuthLayoutProps } from "./templates/auth-layout";
 export { authLayoutVariants } from "./templates/auth-layout-variants";
-export { ChatLayout, type ChatLayoutProps } from "./templates/chat-layout";
+export { WidgetChatLayout, type WidgetChatLayoutProps } from "./templates/widget-chat-layout";
 export {
   DashboardLayout,
   type DashboardLayoutProps,
@@ -611,7 +611,13 @@ export {
   promptInputControlShape,
 } from "./components/prompt-input-variants";
 /** The column of a full-page chat: content, composer, pinned footer; centred while empty. */
-export { ChatStage, type ChatStageProps, type ChatStageWidth } from "./components/chat-stage";
+export {
+  ChatStage,
+  ChatStageColumn,
+  type ChatStageColumnProps,
+  type ChatStageProps,
+  type ChatStageWidth,
+} from "./components/chat-stage";
 /** Starter prompts beneath the composer of an empty chat. */
 export { PromptSuggestions, type PromptSuggestionsProps } from "./components/prompt-suggestions";
 export {
