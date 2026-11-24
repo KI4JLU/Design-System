@@ -279,6 +279,10 @@ export const Topic: Story = {
     </NativeShellHost>
   ),
   play: async ({ canvas, canvasElement, userEvent }) => {
+    // At 1280px the page beside the card would be under twice the card, so the
+    // frame closes it (`AppShell`, rule 3); opened by hand it lies over the page.
+    const sourcesToggle = await canvas.findByRole("button", { name: /^Quellen (aus|ein)klappen$/ });
+    if (sourcesToggle.getAttribute("aria-expanded") !== "true") await userEvent.click(sourcesToggle);
     const header = bar(canvasElement);
     const headerBox = header.getBoundingClientRect();
     const main = canvas.getByRole("main").getBoundingClientRect();

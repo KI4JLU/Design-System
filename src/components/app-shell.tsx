@@ -14,49 +14,16 @@ import { ResizeHandle } from "./resize-handle";
 import { SidePanel } from "./side-panel";
 import { SidebarCollapsedContext } from "./sidebar-context";
 import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
+import { CARD_START, DEFAULT_COLUMN_WIDTH, TITLEBAR_LEFT_MIN_WIDTH, cardStep, frameLayout, type CardEvent } from "./app-shell-frame";
 
-/**
- * Default expanded width of a shell column, in px.
- *
- * 256 = 16rem = the `--width-sidebar` token at the 16px default root size,
- * i.e. exactly what the fixed sidebar column measured before 0.30.0, so a
- * shell that names no width does not move. It is a number and not the token
- * because `SidePanel.width` is consumer state carried as a number (inline
- * style, next to a drag-resize value) — reading a CSS variable back out of the
- * CSSOM to hand it to React would be a second source for one measurement.
- *
- * TODO: whether a *default* width belongs here at all — rather than making
- * `width` required — is a convenience decision for the shell only; not confirmed with the design-system owner.
- */
-const DEFAULT_PANEL_WIDTH = 256;
+// The frame's widths and its shrinking rules live in `app-shell-frame.ts`.
+const DEFAULT_PANEL_WIDTH = DEFAULT_COLUMN_WIDTH;
 
-/**
- * Smallest width of the left column while its header row is the window's
- * title bar AND holds the app's `titlebarControls`: room for the window
- * controls (`--titlebar-inset-start`, 100px), a brand of about 80px, two 28px
- * icon buttons and the 36px toggle, with their gaps. Below it the brand would
- * be clipped.
- */
-const TITLEBAR_LEFT_MIN_WIDTH = 296;
-
-/**
- * What the main area keeps beside an `AppShellSidePanel`, in px: below it a
- * chat's composer no longer fits. The frame's shrinking rules follow from it,
- * in this order as the frame narrows:
- *
- *  1. The side panel gives way first: it is at most 70% of the frame and at
- *     most what leaves the main area this width, but never below its own
- *     minimum.
- *  2. Then the left column collapses to its rail, for as long as it would
- *     otherwise take the main area below this width. The consumer's
- *     `isOpen` is not touched; the column comes back with the room.
- *  3. The floating card stops asking the page to keep clear of it
- *     (`--app-shell-bubble-inset`) once that would leave the page less than
- *     this width: it then simply lies over the page's end.
- */
-const MAIN_MIN_WIDTH = 360;
-/** Largest share of the frame's width a side panel takes. */
-const SIDE_PANEL_MAX_FRACTION = 0.7;
+/** 1rem in px, as the page sets it (16 where there is no document). */
+function rootFontPx(): number {
+  if (typeof document === "undefined") return 16;
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+}
 /** A side panel's smallest width when it names none (no `resize`). */
 const SIDE_PANEL_MIN_WIDTH = 360;
 
@@ -95,9 +62,29 @@ export interface AppShellPanelResize {
  * column width is exactly the kind of thing an app persists per user — and a
  * remembered value here would be a second truth next to it.
  */
+/** What the frame shows a column as, for a slot given as a function. */
+export interface AppShellPanelState {
+  /**
+   * The column shows as its rail — collapsed by the user, or folded by the
+   * frame beside a side panel while the consumer's `isOpen` is still `true`.
+   */
+  inRail: boolean;
+}
+
+/** A column slot: a node, or a function of how the frame shows the column. */
+export type AppShellPanelSlot = React.ReactNode | ((state: AppShellPanelState) => React.ReactNode);
+
+function renderSlot(slot: AppShellPanelSlot, state: AppShellPanelState): React.ReactNode {
+  return typeof slot === "function" ? slot(state) : slot;
+}
+
 export interface AppShellPanel {
-  /** Column body: nav rows, a source list, whatever the column is for. */
-  content: React.ReactNode;
+  /**
+   * Column body: nav rows, a source list, whatever the column is for. As a
+   * function it learns whether the frame shows the column as its rail —
+   * which differs from `isOpen` while the frame folds it (0.94.0).
+   */
+  content: AppShellPanelSlot;
   /**
    * Node in the column's `h-14` header row, inline with the collapse toggle
    * (`SidePanel.header`): a logo on the left column, a pane title on the
@@ -184,8 +171,8 @@ export interface AppShellPanel {
    * button of its own and closes from the toggle.
    */
   closeLabel?: string;
-  /** Optional icon strip shown in the collapsed rail. */
-  collapsedPreview?: React.ReactNode;
+  /** Optional icon strip shown in the collapsed rail; a function as `content`. */
+  collapsedPreview?: AppShellPanelSlot;
 }
 
 /**
@@ -380,14 +367,19 @@ const AppShellSidePanelContext = React.createContext<
       toggle: HTMLElement | null;
       /** Most the panel may measure right now; `null` while unmeasured. */
       maxWidth: number | null;
+      /**
+       * Most its handle may ask for: what it could measure once the left
+       * column folds, so a drag can cross the point where the column yields.
+       */
+      dragMaxWidth: number | null;
       /** Where the main area starts in the row, in px: what a maximised panel keeps clear. */
       inset: number;
       /** The narrow frame: one area on screen, so the shown panel fills it. */
       narrow: boolean;
       /** A mounted panel says it is there, so the frame keeps a row for its toggle; returns the undo. */
       present: () => () => void;
-      /** The shown panel tells the frame its smallest and its current width, and whether it covers the main area. */
-      report: (size: { min: number; width: number; maximized: boolean } | null) => void;
+      /** The shown panel tells the frame its smallest, current and wanted (the consumer's) width, and whether it covers the main area. */
+      report: (size: { min: number; width: number; wanted: number; maximized: boolean } | null) => void;
     }
   | undefined
 >(undefined);
@@ -588,13 +580,17 @@ function AppShellSidePanel({
     toggleRef.current?.focus();
   });
 
-  // The frame's cap (see `MAIN_MIN_WIDTH`): the panel gives way before the
+  // The frame's cap (see the shrinking rules at the top): the panel gives way before the
   // main area does, down to its own minimum. The consumer's `width` is not
   // changed by it, so the panel is its old size again once there is room.
   const minWidth = resize ? resize.minWidth : Math.min(width, SIDE_PANEL_MIN_WIDTH);
   const cap = slots?.maxWidth ?? null;
   const maxWidth = cap === null ? null : Math.max(minWidth, cap);
   const shownWidth = maxWidth === null ? width : Math.min(width, maxWidth);
+  // The handle may ask past today's cap, up to what the panel gets once the
+  // left column folds: the request itself is what folds it (rule 2).
+  const dragCap = slots?.dragMaxWidth ?? cap;
+  const dragMax = dragCap === null ? null : Math.max(minWidth, dragCap, shownWidth);
   const report = slots?.report;
   const shown = Boolean(slots) && isOpen;
   // Maximised, the panel covers the main area; its width beside it is kept
@@ -609,8 +605,8 @@ function AppShellSidePanel({
   };
   React.useLayoutEffect(() => {
     if (!report || !shown) return;
-    report({ min: minWidth, width: shownWidth, maximized });
-  }, [report, shown, minWidth, shownWidth, maximized]);
+    report({ min: minWidth, width: shownWidth, wanted: width, maximized });
+  }, [report, shown, minWidth, shownWidth, width, maximized]);
 
   // A launcher's key opens it while the empty panel lists them — from inside
   // the panel, or with the focus nowhere; never out of a field being typed in.
@@ -699,7 +695,7 @@ function AppShellSidePanel({
           side="right"
           value={shownWidth}
           min={resize.minWidth}
-          max={maxWidth === null ? resize.maxWidth : Math.max(resize.minWidth, Math.min(resize.maxWidth, maxWidth))}
+          max={dragMax === null ? resize.maxWidth : Math.max(resize.minWidth, Math.min(resize.maxWidth, dragMax))}
           label={resize.label}
           controls={panelId}
           onValueChange={resize.onWidthChange}
@@ -895,12 +891,25 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     void _mobileTabBarLabel;
 
     /*
-      The frame's width, for its shrinking rules (see `MAIN_MIN_WIDTH`).
+      The frame's width, for its shrinking rules (see the top of the file).
       Unmeasured (no ResizeObserver, no layout) none of them applies: every
       column is what the consumer says.
     */
     const rowRef = React.useRef<HTMLDivElement>(null);
     const [rowWidth, setRowWidth] = React.useState<number | null>(null);
+    // 1rem in px, kept current: the card's gap is 1rem (rule 3), and the root
+    // size can change without the row's width changing. A 1rem probe is
+    // observed for it.
+    const remProbeRef = React.useRef<HTMLSpanElement>(null);
+    const [remPx, setRemPx] = React.useState(rootFontPx);
+    React.useLayoutEffect(() => {
+      const el = remProbeRef.current;
+      if (!el || typeof ResizeObserver === "undefined") return;
+      const measure = () => setRemPx(rootFontPx());
+      const observer = new ResizeObserver(measure);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }, [isDesktop]);
     React.useLayoutEffect(() => {
       const el = rowRef.current;
       if (!isDesktop || !el || typeof ResizeObserver === "undefined") {
@@ -915,7 +924,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       return () => observer.disconnect();
     }, [isDesktop]);
     // The shown side panel's smallest and current width, as it reports them.
-    const [sidePanel, setSidePanel] = React.useState<{ min: number; width: number; maximized: boolean } | null>(null);
+    const [sidePanel, setSidePanel] = React.useState<{ min: number; width: number; wanted: number; maximized: boolean } | null>(null);
     // How many `AppShellSidePanel`s are mounted: with one, the frame has a
     // first row for its toggle even where nothing else asks for a bar.
     const [sidePanelCount, setSidePanelCount] = React.useState(0);
@@ -924,15 +933,16 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       setSidePanelCount((count) => count + 1);
       return () => setSidePanelCount((count) => count - 1);
     }, []);
-    const reportSidePanel = React.useCallback((size: { min: number; width: number; maximized: boolean } | null) => {
+    const reportSidePanel = React.useCallback((size: { min: number; width: number; wanted: number; maximized: boolean } | null) => {
       setSidePanel((prev) =>
-        prev?.min === size?.min && prev?.width === size?.width && prev?.maximized === size?.maximized ? prev : size,
+        prev?.min === size?.min && prev?.width === size?.width && prev?.wanted === size?.wanted && prev?.maximized === size?.maximized ? prev : size,
       );
     }, []);
 
     /*
       Rule 2: beside a side panel, an expanded left column that would take
-      the main area below its minimum shows as its rail. Only the display:
+      the main area below its minimum — or leave it narrower than the panel
+      beside it — shows as its rail. Only the display:
       the consumer's `isOpen` — a remembered preference — stays, so the
       column is back once the panel goes or the frame widens. Expanding it by
       hand while the frame is that narrow is the user's call and holds until
@@ -941,19 +951,27 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       preference is not written, so the column still returns with the room.
     */
     const [leftHeldOpen, setLeftHeldOpen] = React.useState(false);
-    const leftExpandedWidth = Math.max(
-      leftProp?.width ?? DEFAULT_PANEL_WIDTH,
-      leftProp?.resize?.minWidth ?? 0,
-    );
-    const leftCrowds =
-      isDesktop && Boolean(leftProp) && sidePanel !== null && rowWidth !== null &&
-      rowWidth - leftExpandedWidth < MAIN_MIN_WIDTH + sidePanel.min;
-    if (!leftCrowds && leftHeldOpen) setLeftHeldOpen(false);
+    const titlebar = useTitlebar() !== null;
+    // Every width and mode of the row, from the rules (`app-shell-frame.ts`).
+    const frame = frameLayout({
+      isDesktop,
+      rowWidth,
+      remPx,
+      titlebar,
+      titlebarControls: Boolean(titlebarControls),
+      left: leftProp
+        ? { width: leftProp.width, open: leftProp.isOpen, heldOpen: leftHeldOpen, resize: leftProp.resize }
+        : null,
+      sidePanel,
+      card: right ? { width: right.width } : null,
+    });
+    const { leftCrowds, leftOverlay } = frame;
+    if (frame.releaseHeldOpen) setLeftHeldOpen(false);
     const left: AppShellPanel | undefined =
       leftProp && leftCrowds
         ? {
             ...leftProp,
-            isOpen: leftProp.isOpen && leftHeldOpen,
+            isOpen: frame.leftShownOpen,
             onOpenChange: (next) => {
               setLeftHeldOpen(next);
               if (next !== leftProp.isOpen && next) leftProp.onOpenChange(true);
@@ -1014,7 +1032,6 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       frame's last row instead of its first. On the web
       (`null`) nothing here applies.
     */
-    const titlebar = useTitlebar() !== null;
     const noticeAtBottom = titlebar && Boolean(notice);
     const cornerOwner = !titlebar ? null : isDesktop && left ? "left" : "bar";
     // A collapsed left column does not reach into the title bar: the bar
@@ -1069,23 +1086,87 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     // column really measures, so a drag below the floor reports the floor and
     // `aria-valuenow` never leaves `aria-valuemin`…`-max`.
     const leftFloor = left && controlsInLeft && controls ? TITLEBAR_LEFT_MIN_WIDTH : 0;
-    const leftWidth = Math.max(left?.width ?? DEFAULT_PANEL_WIDTH, leftFloor);
+    const leftWidth = frame.leftWidth;
 
     // What the left column takes of the row right now, and from it rule 1:
     // the most a side panel may measure.
-    const leftTaken = !left ? 0 : left.isOpen ? leftWidth : SIDE_PANEL_RAIL_WIDTH;
-    const sidePanelMax =
-      rowWidth === null
-        ? null
-        : Math.min(Math.floor(rowWidth * SIDE_PANEL_MAX_FRACTION), rowWidth - leftTaken - MAIN_MIN_WIDTH);
+    // A click outside the drawer closes it, as on a narrow screen.
+    const leftOverlayRef = React.useRef<HTMLDivElement>(null);
+    const closeLeftOverlay = React.useRef<(() => void) | null>(null);
+    React.useEffect(() => {
+      closeLeftOverlay.current = leftOverlay && left ? () => left.onOpenChange(false) : null;
+    });
+    const refocusRail = React.useRef(false);
+    React.useEffect(() => {
+      if (!leftOverlay) return;
+      // Outside = anywhere in the frame (page, panels, its notice). A menu
+      // the drawer opened is portalled out of the frame and does not count.
+      const shellRoot = () => rowRef.current?.parentElement ?? null;
+      const onPointerDown = (event: PointerEvent) => {
+        const target = event.target as Node;
+        if (shellRoot()?.contains(target) && !leftOverlayRef.current?.contains(target)) closeLeftOverlay.current?.();
+      };
+      // Escape closes it too, wherever the focus is — unless something
+      // else (a dialog, a menu) already took the key — and hands the focus
+      // to the rail's expand button, where the keyboard user left off.
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+        // Only this frame's Escape: focus in it, or nowhere in particular.
+        const owner = event.target instanceof Node ? event.target : null;
+        if (owner && owner !== document.body && !shellRoot()?.contains(owner)) return;
+        // A dialog opened from the drawer takes its own Escape first.
+        const target = event.target instanceof Element ? event.target : null;
+        // (Inside this frame: a dialog that hosts the whole shell is not one.)
+        const dialog = target?.closest("dialog, [role='dialog'], [role='alertdialog']");
+        if (dialog && shellRoot()?.contains(dialog)) return;
+        refocusRail.current = true;
+        closeLeftOverlay.current?.();
+      };
+      // Tabbing out of the drawer into the page or a panel closes it: a
+      // control behind the drawer must not take the focus unseen.
+      const onFocusIn = (event: FocusEvent) => {
+        const target = event.target as Node;
+        if (shellRoot()?.contains(target) && !leftOverlayRef.current?.contains(target)) closeLeftOverlay.current?.();
+      };
+      document.addEventListener("pointerdown", onPointerDown);
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("focusin", onFocusIn);
+      return () => {
+        document.removeEventListener("pointerdown", onPointerDown);
+        document.removeEventListener("keydown", onKeyDown);
+        document.removeEventListener("focusin", onFocusIn);
+      };
+    }, [leftOverlay]);
+    // Opened as a drawer, the focus goes in with it: the button that opened
+    // it is gone, and the next Tab must not land on the page behind.
+    React.useEffect(() => {
+      if (!leftOverlay) return;
+      const collapse = leftProp?.collapseLabel;
+      const button = Array.from(leftOverlayRef.current?.querySelectorAll("button") ?? []).find(
+        (b) => b.getAttribute("aria-label") === collapse,
+      );
+      (button ?? leftOverlayRef.current?.querySelector<HTMLElement>("a[href], button, [tabindex]:not([tabindex='-1'])"))?.focus();
+    }, [leftOverlay, leftProp?.collapseLabel]);
+    React.useEffect(() => {
+      if (leftOverlay || !refocusRail.current) return;
+      refocusRail.current = false;
+      const expand = leftProp?.expandLabel;
+      if (!expand) return;
+      // Anywhere in the frame's row: under a native title bar the rail's
+      // toggle is portalled into the bar, and lands there a frame later.
+      const frame = requestAnimationFrame(() => {
+        const button = Array.from(rowRef.current?.querySelectorAll("button") ?? []).find(
+          (b) => b.getAttribute("aria-label") === expand && b.getClientRects().length > 0,
+        ) ?? Array.from(rowRef.current?.querySelectorAll("button") ?? []).find((b) => b.getAttribute("aria-label") === expand);
+        button?.focus();
+      });
+      return () => cancelAnimationFrame(frame);
+    }, [leftOverlay, leftProp?.expandLabel]);
+    const { leftTaken, sidePanelMax, sidePanelDragMax, mainWidth } = frame;
     const panelSlots = React.useMemo(
-      () => ({ column: panelColumnSlot, toggle: panelToggleSlot, maxWidth: sidePanelMax, inset: leftTaken, narrow: !isDesktop, report: reportSidePanel, present: sidePanelPresent }),
-      [panelColumnSlot, panelToggleSlot, sidePanelMax, leftTaken, isDesktop, reportSidePanel, sidePanelPresent],
+      () => ({ column: panelColumnSlot, toggle: panelToggleSlot, maxWidth: sidePanelMax, dragMaxWidth: sidePanelDragMax, inset: leftTaken, narrow: !isDesktop, report: reportSidePanel, present: sidePanelPresent }),
+      [panelColumnSlot, panelToggleSlot, sidePanelMax, sidePanelDragMax, leftTaken, isDesktop, reportSidePanel, sidePanelPresent],
     );
-    // Rule 3: the page keeps clear of the open card only while that leaves it
-    // its minimum; otherwise the card lies over its end.
-    const mainWidth = rowWidth === null ? null : rowWidth - leftTaken - (sidePanel?.width ?? 0);
-
     /*
       From `lg` up the right column is not a column: it floats over the main
       area as a card below the bar, and its toggle is the last control of the
@@ -1133,26 +1214,56 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         : rightSource;
     const rightLocked = floatRight?.locked;
     const rightOpen = Boolean(floatRight?.isOpen) && !rightLocked;
-    const bubbleLeavesRoom =
-      isDesktop && (mainWidth === null ||
-      mainWidth - ((floatRight?.width ?? DEFAULT_PANEL_WIDTH) + 16) >= MAIN_MIN_WIDTH);
+    const bubbleLeavesRoom = frame.cardRoom;
     // Rule 4: at the width where the card stops standing beside the page and
     // would lie over it, an open card closes — it is in the way there until
-    // asked for. Opened by hand below that width it stays, and the frame
-    // widening again does not reopen it.
-    const bubbleHadRoom = React.useRef(true);
-    const closeBubble = React.useRef<(() => void) | null>(null);
+    // asked for — and opens again once the room is back. Only a card the
+    // frame closed comes back: opened or closed by hand in between, the
+    // user's choice holds; opened by hand below that width, it stays.
+    // The frame's memory of the card (`cardStep`), and the consumer's handler.
+    const cardState = React.useRef(CARD_START);
+    const setBubble = React.useRef<((open: boolean) => void) | null>(null);
     React.useEffect(() => {
-      closeBubble.current = rightOpen && floatRight ? () => floatRight.onOpenChange(false) : null;
+      setBubble.current = floatRight && !rightLocked ? (open) => floatRight.onOpenChange(open) : null;
     });
+    const stepCard = (event: CardEvent) => {
+      const next = cardStep(cardState.current, event);
+      cardState.current = next.state;
+      if (next.command) setBubble.current?.(next.command === "open");
+    };
+    // Watched on the consumer's own state, not on what is shown — the card
+    // may be hidden (`showRight`), locked or a sheet while the user opens it.
+    const bubbleWanted = Boolean(right?.isOpen);
+    const bubbleWasWanted = React.useRef(bubbleWanted);
     React.useEffect(() => {
-      if (!isDesktop) {
-        bubbleHadRoom.current = true;
-        return;
-      }
-      if (bubbleHadRoom.current && !bubbleLeavesRoom) closeBubble.current?.();
-      bubbleHadRoom.current = bubbleLeavesRoom;
-    }, [isDesktop, bubbleLeavesRoom]);
+      if (bubbleWanted && !bubbleWasWanted.current) stepCard({ type: "opened" });
+      bubbleWasWanted.current = bubbleWanted;
+    }, [bubbleWanted]);
+    // Below `md` with a right-area tab the card is a sheet the tabs open: the
+    // user opening it there is a choice too. Merely passing through the
+    // narrow frame is not (it opens nothing).
+    const sheetOpen = !isDesktop && narrowRight && rightOpen;
+    // Only a change within the narrow frame: crossing `md` onto a tab that
+    // was already selected is not the user opening anything.
+    const sheetWasOpen = React.useRef(sheetOpen);
+    const sheetWasNarrow = React.useRef(!isDesktop);
+    React.useEffect(() => {
+      if (sheetOpen && !sheetWasOpen.current && sheetWasNarrow.current) stepCard({ type: "opened" });
+      sheetWasOpen.current = sheetOpen;
+      sheetWasNarrow.current = !isDesktop;
+    }, [sheetOpen, isDesktop]);
+    const hasBubble = Boolean(right);
+    const bubbleLive = Boolean(floatRight) && !rightLocked && !sidePanel?.maximized;
+    const bubbleMeasured = mainWidth !== null;
+    React.useEffect(() => {
+      stepCard(
+        hasBubble
+          ? { type: "frame", desktop: isDesktop, live: bubbleLive, measured: bubbleMeasured, room: bubbleLeavesRoom, open: rightOpen }
+          : { type: "removed" },
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- reacts to the room changing, not to the card toggling
+    }, [isDesktop, bubbleLeavesRoom, hasBubble, bubbleLive, bubbleMeasured]);
+    const bubbleBeside = rightOpen && Boolean(floatRight) && bubbleLeavesRoom;
     const rightButton = floatRight ? (
       <Button
         variant="ghost"
@@ -1254,7 +1365,8 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       </Button>
       </IconTip>
     ) : null;
-    const rightBubble = floatRight && !rightLocked ? (
+    // Desktop only: below `md` the card is the sheet, built in its branch.
+    const rightBubble = isDesktop && floatRight && !rightLocked ? (
       <aside
         id={rightPaneId}
         aria-label={floatRight.label}
@@ -1272,7 +1384,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             {bubbleClose}
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto">{floatRight.content}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{renderSlot(floatRight.content, { inRail: false })}</div>
         {/* Without a header row the button lies over the card's corner. */}
         {!floatRight.header && bubbleClose && (
           <span className="absolute top-2 right-2 rounded-[var(--ui-radius-control)] bg-surface-container-lowest">{bubbleClose}</span>
@@ -1441,9 +1553,20 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         id={panel.resize ? paneId : undefined}
         side={side}
         isOpen={panel.isOpen}
-        width={side === "left" ? leftWidth : (panel.width ?? DEFAULT_PANEL_WIDTH)}
+        // As a drawer never wider than the frame leaves beside the rail, so
+        // its own controls and a strip of page to dismiss it stay in view; the
+        // consumer's width is not changed.
+        width={
+          side === "left"
+            ? leftOverlay && rowWidth !== null ? Math.min(leftWidth, rowWidth - SIDE_PANEL_RAIL_WIDTH) : leftWidth
+            : (panel.width ?? DEFAULT_PANEL_WIDTH)
+        }
         onExpand={() => panel.onOpenChange(true)}
-        onCollapse={() => panel.onOpenChange(false)}
+        onCollapse={() => {
+          // Its own toggle closes the drawer: the focus goes back to the rail.
+          if (side === "left" && leftOverlay) refocusRail.current = true;
+          panel.onOpenChange(false);
+        }}
         expandLabel={panel.expandLabel}
         collapseLabel={panel.collapseLabel}
         header={
@@ -1456,13 +1579,13 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             panel.header
           )
         }
-        collapsedPreview={panel.collapsedPreview}
+        collapsedPreview={renderSlot(panel.collapsedPreview, { inRail: !panel.isOpen })}
         footer={panel.footer}
         titlebarInset={side === "left" && cornerOwner === "left"}
         railToggleContainer={side === "left" && besideRail ? railToggleSlot : undefined}
         aria-label={panel.label}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto">{panel.content}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{renderSlot(panel.content, { inRail: !panel.isOpen })}</div>
       </SidePanel>
     );
 
@@ -1477,12 +1600,12 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       does, so `aria-valuenow` and the inline width are one number and not two.
     */
     const handle = (panel: AppShellPanel, side: "left" | "right", paneId: string) =>
-      panel.resize && panel.isOpen ? (
+      panel.resize && panel.isOpen && (side === "right" || frame.leftHandleMax !== null) ? (
         <ResizeHandle
           side={side}
           value={side === "left" ? leftWidth : (panel.width ?? DEFAULT_PANEL_WIDTH)}
           min={side === "left" ? Math.max(panel.resize.minWidth, leftFloor) : panel.resize.minWidth}
-          max={side === "left" ? Math.max(panel.resize.maxWidth, leftFloor) : panel.resize.maxWidth}
+          max={side === "left" ? (frame.leftHandleMax ?? panel.resize.maxWidth) : panel.resize.maxWidth}
           label={panel.resize.label}
           controls={paneId}
           onValueChange={panel.resize.onWidthChange}
@@ -1537,7 +1660,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
               )}
               footer={floatRight.footer}
             >
-              {floatRight.content}
+              {renderSlot(floatRight.content, { inRail: false })}
             </BottomSheet>
           )}
           {/* Under a hidden title bar the notice is the frame's last row. */}
@@ -1566,7 +1689,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
                     <PanelLeftClose aria-hidden />
                   </Button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto">{left.content}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto">{renderSlot(left.content, { inRail: false })}</div>
                 {left.narrowAction ? (
                   // The drawer's bottom row: the footer as its short form at
                   // the start, the primary action at the end.
@@ -1616,14 +1739,34 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       >
         {!titlebar && noticeRegion}
         <div ref={rowRef} data-slot="app-shell-row" className="relative flex min-h-0 flex-1">
+          {/* 1rem, observed for the card's gap (rule 3); takes no room. */}
+          <span ref={remProbeRef} aria-hidden="true" className="pointer-events-none invisible absolute h-0 w-[1rem]" />
           {/* Column, then its separator: the handle sits on the edge that faces
               the content, which is the right edge of a left column and the left
               edge of a right one — carried by DOM order, so tab order matches
               the visual one. */}
           {left && (
             <>
-              {column(left, "left", leftPaneId)}
-              {handle(left, "left", leftPaneId)}
+              {/* One subtree in both modes, so the column is never remounted
+                  (its content keeps its state and scroll): as a drawer the
+                  outer box keeps the rail's place in the row and the inner one
+                  lies over the page; otherwise both are `display: contents`. */}
+              <div
+                data-slot={leftOverlay ? "app-shell-left-overlay" : undefined}
+                className={leftOverlay ? "relative shrink-0" : "contents"}
+                style={leftOverlay ? { width: SIDE_PANEL_RAIL_WIDTH } : undefined}
+              >
+                <div
+                  ref={leftOverlayRef}
+                  // Opaque as a drawer: in a native shell the sidebar is
+                  // transparent (the window's material), which over the page
+                  // would let the page show through the navigation.
+                  className={leftOverlay ? "absolute inset-y-0 left-0 z-30 flex bg-canvas shadow-lg" : "contents"}
+                >
+                  {column(left, "left", leftPaneId)}
+                </div>
+              </div>
+              {!leftOverlay && handle(left, "left", leftPaneId)}
             </>
           )}
           {/* `app-shell-content`: the bar plus `<main>` — the region a
@@ -1638,7 +1781,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
             // plus `right-2` and the same gap on its other side. Content that
             // must stay readable beside the bubble keeps clear of it by this
             // much; without a bubble, or closed, the variable is unset.
-            style={rightOpen && floatRight && bubbleLeavesRoom ? ({ "--app-shell-bubble-inset": `calc(${floatRight.width ?? DEFAULT_PANEL_WIDTH}px + 1rem)` } as React.CSSProperties) : undefined}
+            style={bubbleBeside ? ({ "--app-shell-bubble-inset": `calc(${floatRight?.width ?? DEFAULT_PANEL_WIDTH}px + 1rem)` } as React.CSSProperties) : undefined}
           >
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>

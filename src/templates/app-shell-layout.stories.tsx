@@ -306,7 +306,12 @@ export const TopicView: Story = {
       <TopicConversation />
     </AppShellFixture>
   ),
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // At the 1280px test canvas the page beside the card would be under twice
+    // the card, so the frame closes it (`AppShell`, rule 3); opened by hand it
+    // lies over the page.
+    const sourcesToggle = await canvas.findByRole("button", { name: /^Quellen (aus|ein)klappen$/ });
+    if (sourcesToggle.getAttribute("aria-expanded") !== "true") await userEvent.click(sourcesToggle);
     await expectBarHeight(canvasElement);
 
     const historyColumn = await canvas.findByRole("complementary", { name: "Verlauf" });
@@ -442,7 +447,12 @@ export const TopicWithoutSources: Story = {
       <TopicNew />
     </AppShellFixture>
   ),
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // At the 1280px test canvas the page beside the card would be under twice
+    // the card, so the frame closes it (`AppShell`, rule 3); opened by hand it
+    // lies over the page.
+    const sourcesToggle = await canvas.findByRole("button", { name: /^Quellen (aus|ein)klappen$/ });
+    if (sourcesToggle.getAttribute("aria-expanded") !== "true") await userEvent.click(sourcesToggle);
     const main = canvasElement.querySelector("main")!;
     const page = within(main);
     await expect(page.getByRole("heading", { level: 1, name: FIRST_SOURCE_TITLE })).toBeVisible();

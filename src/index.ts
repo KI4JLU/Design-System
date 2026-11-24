@@ -16,6 +16,8 @@ export {
   type AppShellSidePanelLauncher,
   type AppShellPanel,
   type AppShellPanelResize,
+  type AppShellPanelSlot,
+  type AppShellPanelState,
 } from "./components/app-shell";
 export {
   Alert,
@@ -609,7 +611,7 @@ export {
   promptInputControlShape,
 } from "./components/prompt-input-variants";
 /** The column of a full-page chat: content, composer, pinned footer; centred while empty. */
-export { ChatStage, type ChatStageProps } from "./components/chat-stage";
+export { ChatStage, type ChatStageProps, type ChatStageWidth } from "./components/chat-stage";
 /** Starter prompts beneath the composer of an empty chat. */
 export { PromptSuggestions, type PromptSuggestionsProps } from "./components/prompt-suggestions";
 export {

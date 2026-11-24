@@ -1,6 +1,6 @@
 import * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
 import { FolderOpen, Home, MessageSquare } from "lucide-react";
@@ -1653,6 +1653,449 @@ describe("AppShell — side panel", () => {
       expect(onOpenChange).not.toHaveBeenCalled();
     });
 
+    it("shows the left column as its rail while the main area beside it would be narrower than the column", async () => {
+      stubViewport(true);
+      // A fixed 220px panel: 880 − 400 − 220 leaves 260, wider than the panel
+      // but narrower than the 400px column.
+      frameIs(880);
+      render(shell(panel({ width: 220 }), { left: leftPanel({ width: 400 }) }));
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+    });
+
+    it("never folds the left column because the frame widened", () => {
+      stubViewport(true);
+      const wide = { minWidth: 200, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      // A 400px column, a panel asking for 600 (minimum 200): folded where the
+      // page beside the expanded column would be narrower than the panel, and
+      // from some width on expanded for good — never folded again further up.
+      const folded = [900, 1100, 1300, 1500, 1700, 1900].map((width) => {
+        vi.restoreAllMocks();
+        frameIs(width);
+        const { unmount } = render(shell(panel({ width: 600, resize: wide }), { left: leftPanel({ width: 400 }) }));
+        const isFolded = screen.queryByRole("button", { name: "Navigation ausklappen" }) !== null;
+        unmount();
+        return isFolded;
+      });
+      expect(folded).toEqual([...folded].sort((a, b) => Number(b) - Number(a)));
+      expect(folded.at(-1)).toBe(false);
+    });
+
+    it("lets the panel's handle ask past today's cap, up to what folding the column frees", () => {
+      stubViewport(true);
+      // Expanded, the cap is 1000 − 350 − 350 = 300, where the page (350) is
+      // still not narrower than the column, so the column would never fold.
+      // The handle reaches 1000 − 60 − 350 = 590 instead.
+      frameIs(1000);
+      const wide = { minWidth: 200, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      render(shell(panel({ width: 250, resize: wide }), { left: leftPanel({ width: 350 }) }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      expect(screen.getByRole("separator", { name: "Breite des Seitenbereichs ändern" })).toHaveAttribute("aria-valuemax", "590");
+    });
+
+    it("lays a column expanded by hand over the page while the frame has no room for it", async () => {
+      stubViewport(true);
+      frameIs(1000);
+      const wide = { minWidth: 200, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      const { container } = render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+      await userEvent.click(await screen.findByRole("button", { name: "Navigation ausklappen" }));
+      // Open, but over the page: the row keeps the rail, the panel its room.
+      expect(await screen.findByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      expect(container.querySelector("[data-slot='app-shell-left-overlay']")).toHaveStyle({ width: "60px" });
+      expect(screen.getByRole("separator", { name: "Breite des Seitenbereichs ändern" })).toHaveAttribute("aria-valuemax", "590");
+      // Escape closes it, as does a click outside.
+      await userEvent.keyboard("{Escape}");
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Navigation ausklappen" }));
+      await screen.findByRole("button", { name: "Navigation einklappen" });
+      await userEvent.click(screen.getByText("Inhalt"));
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+    });
+
+    describe("the column as a drawer", () => {
+      const wide = { minWidth: 200, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      const openDrawer = async () => {
+        await userEvent.click(await screen.findByRole("button", { name: "Navigation ausklappen" }));
+        await screen.findByRole("button", { name: "Navigation einklappen" });
+      };
+
+      it("keeps the column's content mounted when it becomes a drawer", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        const content = <input aria-label="Notiz" />;
+        const { container } = render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350, content }) }));
+        // Folded to the rail, the content is kept (hidden): give it a value there.
+        const field = container.querySelector<HTMLInputElement>("input[aria-label='Notiz']")!;
+        fireEvent.change(field, { target: { value: "abc" } });
+        await openDrawer();
+        expect(container.querySelector("input[aria-label='Notiz']")).toBe(field);
+        expect(field).toHaveValue("abc");
+      });
+
+      it("stays open for a press in a menu it portalled out of the frame", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        const portalled = document.createElement("button");
+        document.body.append(portalled);
+        try {
+          fireEvent.pointerDown(portalled);
+          expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+        } finally {
+          portalled.remove();
+        }
+      });
+
+      it("hands the focus to the rail's expand button after Escape", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        await userEvent.keyboard("{Escape}");
+        const expand = await screen.findByRole("button", { name: "Navigation ausklappen" });
+        await waitFor(() => expect(expand).toHaveFocus());
+      });
+
+      it("is opaque, and under a native title bar hands the focus to the bar's expand button after Escape", async () => {
+        document.documentElement.dataset.titlebar = "inset";
+        try {
+          stubViewport(true);
+          frameIs(1000);
+          const { container } = render(
+            shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }), titlebarControls: <button type="button">Zurück</button> }),
+          );
+          await openDrawer();
+          const drawer = container.querySelector("[data-slot='app-shell-left-overlay'] > div");
+          expect(drawer).toHaveClass("bg-canvas");
+          await userEvent.keyboard("{Escape}");
+          const expand = await screen.findByRole("button", { name: "Navigation ausklappen" });
+          await waitFor(() => expect(expand).toHaveFocus());
+        } finally {
+          delete document.documentElement.dataset.titlebar;
+        }
+      });
+
+      it("closes when the focus moves on into the page", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(<>{panel({ width: 400, resize: wide })}<button type="button">Auf der Seite</button></>, { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        act(() => screen.getByRole("button", { name: "Auf der Seite" }).focus());
+        expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      });
+
+      it("takes the focus in with it when it opens", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Navigation einklappen" })).toHaveFocus());
+      });
+
+      it("leaves Escape to a dialog opened from it", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        const content = (
+          <div role="dialog" aria-label="Frage">
+            <button type="button">Im Dialog</button>
+          </div>
+        );
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350, content }) }));
+        await openDrawer();
+        act(() => screen.getByRole("button", { name: "Im Dialog" }).focus());
+        await userEvent.keyboard("{Escape}");
+        expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      });
+
+      it("closes for a press on the frame's notice", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }), notice: <button type="button">Hinweis-Aktion</button> }));
+        await openDrawer();
+        fireEvent.pointerDown(screen.getByRole("button", { name: "Hinweis-Aktion" }));
+        expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      });
+
+      it("hands the focus back to the rail when its own toggle closes it", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        const collapse = screen.getByRole("button", { name: "Navigation einklappen" });
+        await waitFor(() => expect(collapse).toHaveFocus());
+        await userEvent.keyboard("{Enter}");
+        const expand = await screen.findByRole("button", { name: "Navigation ausklappen" });
+        await waitFor(() => expect(expand).toHaveFocus());
+      });
+
+      it("is never wider than the frame leaves beside the rail", async () => {
+        stubViewport(true);
+        frameIs(400);
+        render(shell(panel({ width: 360, resize: wide }), { left: leftPanel({ width: 380 }) }));
+        await openDrawer();
+        expect(screen.getByRole("complementary", { name: "Navigationsspalte" })).toHaveStyle({ width: "340px" });
+      });
+
+      it("ignores an Escape that belongs to somewhere else on the page", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        const elsewhere = document.createElement("button");
+        document.body.append(elsewhere);
+        try {
+          act(() => elsewhere.focus());
+          fireEvent.keyDown(elsewhere, { key: "Escape" });
+          expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+        } finally {
+          elsewhere.remove();
+        }
+      });
+
+      it("leaves an Escape that ends a text composition to the field", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) }));
+        await openDrawer();
+        fireEvent.keyDown(screen.getByRole("button", { name: "Navigation einklappen" }), { key: "Escape", isComposing: true });
+        expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      });
+
+      it("closes on Escape when the whole frame stands in a dialog", async () => {
+        stubViewport(true);
+        frameIs(1000);
+        render(
+          <div role="dialog" aria-label="Host">
+            {shell(panel({ width: 400, resize: wide }), { left: leftPanel({ width: 350 }) })}
+          </div>,
+        );
+        await openDrawer();
+        await userEvent.keyboard("{Escape}");
+        expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      });
+
+      it("does not bring back a card the frame closed", async () => {
+        stubViewport(true);
+        frameIs(1800);
+        const onOpenChange = vi.fn();
+        const resize = { minWidth: 360, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const shellWith = (isOpen: boolean) =>
+          shell(panel({ width: 710, resize }), { left: leftPanel({ width: 400 }), right: rightPanel({ isOpen, onOpenChange }) });
+        // Folded for the panel, the frame closes the open card…
+        const { rerender } = render(shellWith(true));
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+        rerender(shellWith(false));
+        // …and the drawer frees no room: beside the rail it would fit, but it stays closed.
+        await openDrawer();
+        expect(onOpenChange).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("weighs a panel narrower than its handle's minimum at its rendered width", () => {
+      stubViewport(true);
+      // The panel renders at 250 (its handle's minimum, 400, is not its width):
+      // 1060 − 300 − 250 leaves the page 510, wider than both.
+      frameIs(1060);
+      const narrowResize = { minWidth: 400, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      render(shell(panel({ width: 250, resize: narrowResize }), { left: leftPanel({ width: 300 }) }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+    });
+
+    it("does not fold the column for a maximised panel under a native title bar", async () => {
+      // There the folded column's toggle would sit in the covered page bar,
+      // and the rail's top row belongs to the window's controls.
+      document.documentElement.dataset.titlebar = "inset";
+      try {
+        stubViewport(true);
+        frameIs(1200);
+        const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+        const panelResize = { minWidth: 320, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        render(
+          shell(panel({ width: 600, resize: panelResize, ...labels, isMaximized: true }), {
+            left: leftPanel({ width: 296 }),
+            titlebarControls: <button type="button">Zurück</button>,
+          }),
+        );
+        expect(await screen.findByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      } finally {
+        delete document.documentElement.dataset.titlebar;
+      }
+    });
+
+    it("keeps the left handle beside a maximised panel under a native title bar", () => {
+      document.documentElement.dataset.titlebar = "inset";
+      try {
+        stubViewport(true);
+        frameIs(1000);
+        const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+        const leftResize = { minWidth: 150, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+        render(
+          shell(panel({ width: 400, ...labels, isMaximized: true }), {
+            left: leftPanel({ width: 296, resize: leftResize }),
+            titlebarControls: <button type="button">Zurück</button>,
+          }),
+        );
+        expect(screen.getByRole("separator", { name: "Breite der Navigation ändern" })).toHaveAttribute("aria-valuemax", "600");
+      } finally {
+        delete document.documentElement.dataset.titlebar;
+      }
+    });
+
+    it("still folds the column under a native title bar when a maximised panel would get less than its minimum", () => {
+      document.documentElement.dataset.titlebar = "inset";
+      try {
+        stubViewport(true);
+        frameIs(800);
+        const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+        render(
+          shell(panel({ width: 400, ...labels, isMaximized: true }), {
+            left: leftPanel({ width: 600 }),
+            titlebarControls: <button type="button">Zurück</button>,
+          }),
+        );
+        expect(screen.queryByRole("button", { name: "Navigation einklappen" })).toBeNull();
+      } finally {
+        delete document.documentElement.dataset.titlebar;
+      }
+    });
+
+    it("stops the left handle before a maximised panel under a native title bar drops below its minimum", () => {
+      document.documentElement.dataset.titlebar = "inset";
+      try {
+        stubViewport(true);
+        frameIs(800);
+        const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+        const leftResize = { minWidth: 150, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+        render(
+          shell(panel({ width: 400, ...labels, isMaximized: true }), {
+            left: leftPanel({ width: 300, resize: leftResize }),
+            titlebarControls: <button type="button">Zurück</button>,
+          }),
+        );
+        // 800 − 360 (the panel's minimum) = 440.
+        expect(screen.getByRole("separator", { name: "Breite der Navigation ändern" })).toHaveAttribute("aria-valuemax", "440");
+      } finally {
+        delete document.documentElement.dataset.titlebar;
+      }
+    });
+
+    it("never lets the left handle pass the consumer's maximum", () => {
+      stubViewport(true);
+      frameIs(2000);
+      const leftResize = { minWidth: 200, maxWidth: 400, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+      render(shell(panel({ width: 400 }), { left: leftPanel({ width: 500, resize: leftResize }) }));
+      expect(screen.getByRole("separator", { name: "Breite der Navigation ändern" })).toHaveAttribute("aria-valuemax", "400");
+    });
+
+    it("tells slot functions that the frame shows a folded column as its rail", () => {
+      stubViewport(true);
+      frameIs(1000);
+      const wide = { minWidth: 200, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+      render(
+        shell(panel({ width: 400, resize: wide }), {
+          left: leftPanel({
+            width: 350,
+            content: ({ inRail }) => (inRail ? null : <p>Im Körper</p>),
+            collapsedPreview: ({ inRail }) => (inRail ? <p>In der Leiste</p> : null),
+          }),
+        }),
+      );
+      // The consumer's isOpen is true; the frame folded it.
+      expect(screen.getByText("In der Leiste")).toBeInTheDocument();
+      expect(screen.queryByText("Im Körper")).toBeNull();
+    });
+
+    it("has no left handle while no width in its range fits beside the panel", () => {
+      stubViewport(true);
+      // Beside a 350px panel at most 300 fits; the handle's range starts at 400.
+      frameIs(1000);
+      const leftResize = { minWidth: 400, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+      render(shell(panel({ width: 350 }), { left: leftPanel({ width: 256, resize: leftResize }) }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      expect(screen.queryByRole("separator", { name: "Breite der Navigation ändern" })).toBeNull();
+    });
+
+    it("weighs the left column at its rendered width, not its handle's minimum", () => {
+      stubViewport(true);
+      // Rendered at 256 (its handle's minimum, 400, is not its width): 1060 − 256 − 280
+      // leaves the page 524, wider than both.
+      frameIs(1060);
+      const leftResize = { minWidth: 400, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+      render(shell(panel({ width: 280 }), { left: leftPanel({ width: 256, resize: leftResize }) }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+    });
+
+    it("stops the left column's handle where widening it would fold it", () => {
+      stubViewport(true);
+      // A 450px panel in a 1280px row: the column may grow to
+      // min(1280 − 900, (1280 − 450) / 2) = 380 and no further.
+      frameIs(1280);
+      const leftResize = { minWidth: 200, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+      render(shell(panel({ width: 450 }), { left: leftPanel({ width: 380, resize: leftResize }) }));
+      expect(screen.getByRole("separator", { name: "Breite der Navigation ändern" })).toHaveAttribute("aria-valuemax", "380");
+    });
+
+    it("stops the left column's handle before the fold while the panel is maximised too", () => {
+      stubViewport(true);
+      frameIs(1280);
+      const leftResize = { minWidth: 200, maxWidth: 600, onWidthChange: vi.fn(), label: "Breite der Navigation ändern" };
+      const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+      render(shell(panel({ width: 450, ...labels, isMaximized: true }), { left: leftPanel({ width: 380, resize: leftResize }) }));
+      expect(screen.getByRole("separator", { name: "Breite der Navigation ändern" })).toHaveAttribute("aria-valuemax", "380");
+    });
+
+    it("counts the card's gap at the page's root font size", () => {
+      stubViewport(true);
+      const inset = (container: HTMLElement) =>
+        container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset");
+      // Main area 1027 − 311 = 716: beside the 233px card and a 16px gap the
+      // page keeps 467 (at least twice the card), with a 20px gap only 463.
+      frameIs(1027);
+      const at16 = render(shell(null));
+      expect(inset(at16.container)).not.toBe("");
+      at16.unmount();
+      document.documentElement.style.fontSize = "20px";
+      try {
+        const at20 = render(shell(null));
+        expect(inset(at20.container)).toBe("");
+      } finally {
+        document.documentElement.style.fontSize = "";
+      }
+    });
+
+    it("keeps the folded column folded while the panel is maximised", async () => {
+      stubViewport(true);
+      frameIs(900);
+      const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+      const { rerender } = render(shell(panel({ width: 450, ...labels, isMaximized: false }), { left: leftPanel({ width: 480 }) }));
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      rerender(shell(panel({ width: 450, ...labels, isMaximized: true }), { left: leftPanel({ width: 480 }) }));
+      expect(screen.getByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+    });
+
+    it("keeps the column the user expanded over a maximised and restored panel", async () => {
+      stubViewport(true);
+      frameIs(1200);
+      const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+      const { rerender } = render(shell(panel({ width: 800, resize, ...labels, isMaximized: false }), { left: leftPanel() }));
+      await userEvent.click(await screen.findByRole("button", { name: "Navigation ausklappen" }));
+      expect(await screen.findByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+      rerender(shell(panel({ width: 800, resize, ...labels, isMaximized: true }), { left: leftPanel() }));
+      rerender(shell(panel({ width: 800, resize, ...labels, isMaximized: false }), { left: leftPanel() }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+    });
+
+    it("weighs the left column at the width the title bar holds it to", async () => {
+      document.documentElement.dataset.titlebar = "inset";
+      stubViewport(true);
+      // The 256px column shows at 296 under the window's controls: 1000 − 296 − 360
+      // leaves the main area 344, narrower than the 360px panel (at 256 it would be 384).
+      frameIs(1000);
+      render(shell(panel({ width: 360, resize }), { left: leftPanel({ width: 256 }), titlebarControls: <button type="button">Zurück</button> }));
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      delete document.documentElement.dataset.titlebar;
+    });
+
     it("leaves the left column expanded while there is room, and without a shown panel", () => {
       stubViewport(true);
       frameIs(1400);
@@ -1664,17 +2107,37 @@ describe("AppShell — side panel", () => {
       expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
     });
 
-    it("caps the panel so the main area keeps 360px, down to the panel's minimum, and keeps the consumer's width", () => {
+    it("caps the panel so the main area stays as wide as the expanded left column, down to the panel's minimum, and keeps the consumer's width", () => {
       stubViewport(true);
-      // 1200 − 311 − 360 = 529 is less than 70% of 1200.
-      frameIs(1200);
-      render(shell(panel({ width: 800, resize })));
+      // 1000 − 60 (rail) − 311 (the expanded column) = 629 is less than 70% of 1000.
+      frameIs(1000);
+      render(shell(panel({ width: 800, resize }), { left: leftPanel({ isOpen: false }) }));
       const column = screen.getByRole("complementary", { name: "Seitenbereich" });
-      expect(column).toHaveStyle({ width: "529px" });
+      expect(column).toHaveStyle({ width: "629px" });
       const handle = screen.getByRole("separator", { name: "Breite des Seitenbereichs ändern" });
-      expect(handle).toHaveAttribute("aria-valuenow", "529");
-      expect(handle).toHaveAttribute("aria-valuemax", "529");
+      expect(handle).toHaveAttribute("aria-valuenow", "629");
+      expect(handle).toHaveAttribute("aria-valuemax", "629");
       expect(resize.onWidthChange).not.toHaveBeenCalled();
+    });
+
+    it("shows the left column as its rail while the main area beside it would be narrower than the panel", async () => {
+      stubViewport(true);
+      // Expanded, 1200 − 311 leaves the panel 578 and the main area 311: narrower than the panel.
+      frameIs(1200);
+      const onOpenChange = vi.fn();
+      render(shell(panel({ width: 800, resize }), { left: leftPanel({ onOpenChange }) }));
+      expect(await screen.findByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+      expect(onOpenChange).not.toHaveBeenCalled();
+      // On the rail the panel takes its own width back: 800 fits under 1200 − 60 − 311.
+      expect(screen.getByRole("complementary", { name: "Seitenbereich" })).toHaveStyle({ width: "800px" });
+    });
+
+    it("keeps the left column expanded while the main area is at least as wide as the panel", () => {
+      stubViewport(true);
+      // 1400 − 311 − 540 = 549 for the main area, wider than the 540px panel.
+      frameIs(1400);
+      render(shell(panel({ width: 540, resize }), { left: leftPanel() }));
+      expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
     });
 
     it("caps the panel at 70% of a wide frame", () => {
@@ -1685,7 +2148,7 @@ describe("AppShell — side panel", () => {
       expect(screen.getByRole("complementary", { name: "Seitenbereich" })).toHaveStyle({ width: "1400px" });
     });
 
-    it("stops publishing the card's inset once the page would keep less than 360px beside it", () => {
+    it("stops publishing the card's inset once the page beside it would be narrower than the card", () => {
       stubViewport(true);
       const inset = (container: HTMLElement) =>
         container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset");
@@ -1695,8 +2158,8 @@ describe("AppShell — side panel", () => {
       expect(inset(wide.container)).not.toBe("");
       wide.unmount();
       vi.restoreAllMocks();
-      // Main area 900 − 311 = 589: 589 − 249 = 340, under 360.
-      frameIs(900);
+      // Main area 700 − 311 = 389: 389 − 249 = 140, narrower than the 233px card.
+      frameIs(700);
       const narrow = render(shell(null));
       expect(inset(narrow.container)).toBe("");
       // The card itself is still shown, over the page.
@@ -1733,21 +2196,47 @@ describe("AppShell — side panel", () => {
         const right = rightPanel();
         render(shell(null, { right }));
         expect(right.onOpenChange).not.toHaveBeenCalled();
-        frameBecomes(800);
+        frameBecomes(700);
         expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
-        frameBecomes(780);
+        frameBecomes(680);
         expect(right.onOpenChange).toHaveBeenCalledTimes(1);
       });
 
-      it("leaves a card alone that is opened by hand below that width, and does not reopen one on widening", () => {
+      it("leaves a card alone that is opened by hand below that width", () => {
         stubViewport(true);
-        frameStartsAt(800);
+        frameStartsAt(700);
         const onOpenChange = vi.fn();
         const { rerender } = render(shell(null, { right: rightPanel({ isOpen: false, onOpenChange }) }));
         rerender(shell(null, { right: rightPanel({ isOpen: true, onOpenChange }) }));
         expect(onOpenChange).not.toHaveBeenCalled();
         frameBecomes(1400);
         expect(onOpenChange).not.toHaveBeenCalled();
+      });
+
+      it("opens the card it closed again once the room is back", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const { rerender } = render(shell(null, { right: rightPanel({ onOpenChange }) }));
+        frameBecomes(700);
+        expect(onOpenChange).toHaveBeenLastCalledWith(false);
+        rerender(shell(null, { right: rightPanel({ isOpen: false, onOpenChange }) }));
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenLastCalledWith(true);
+        expect(onOpenChange).toHaveBeenCalledTimes(2);
+      });
+
+      it("does not reopen a card the user opened and closed again while the frame was narrow", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const { rerender } = render(shell(null, { right: rightPanel({ onOpenChange }) }));
+        frameBecomes(700);
+        rerender(shell(null, { right: rightPanel({ isOpen: false, onOpenChange }) }));
+        rerender(shell(null, { right: rightPanel({ isOpen: true, onOpenChange }) }));
+        rerender(shell(null, { right: rightPanel({ isOpen: false, onOpenChange }) }));
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
       });
 
       it("closes the card when a side panel takes the room", () => {
@@ -1758,6 +2247,219 @@ describe("AppShell — side panel", () => {
         expect(right.onOpenChange).not.toHaveBeenCalled();
         rerender(shell(panel({ isOpen: true }), { right }));
         expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("does not reopen the card when the left column folds to make room for the panel", () => {
+        stubViewport(true);
+        // Expanded column, 420px panel: the main area (449) is wider than the
+        // panel but too narrow for the card beside it, so only the card closes.
+        frameStartsAt(1180);
+        const onOpenChange = vi.fn();
+        const resize = { minWidth: 360, maxWidth: 900, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const right = (isOpen: boolean) => rightPanel({ isOpen, onOpenChange });
+        const { rerender } = render(shell(panel({ isOpen: false, width: 420, resize }), { left: leftPanel(), right: right(true) }));
+        // The panel opens; then the user widens it until the left column folds.
+        rerender(shell(panel({ isOpen: true, width: 420, resize }), { left: leftPanel(), right: right(true) }));
+        rerender(shell(panel({ isOpen: true, width: 420, resize }), { left: leftPanel(), right: right(false) }));
+        rerender(shell(panel({ isOpen: true, width: 800, resize }), { left: leftPanel(), right: right(false) }));
+        expect(screen.getByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("only lies over the page while the left column is folded for the side panel", () => {
+        stubViewport(true);
+        // A wide frame: beside the folded column there would be room for the card.
+        frameStartsAt(2400);
+        const onOpenChange = vi.fn();
+        const resize = { minWidth: 360, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const { container, rerender } = render(shell(panel({ width: 1500, resize }), { left: leftPanel(), right: rightPanel({ isOpen: false, onOpenChange }) }));
+        expect(screen.getByRole("button", { name: "Navigation ausklappen" })).toBeInTheDocument();
+        rerender(shell(panel({ width: 1500, resize }), { left: leftPanel(), right: rightPanel({ isOpen: true, onOpenChange }) }));
+        expect(container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset")).toBe("");
+        expect(onOpenChange).not.toHaveBeenCalled();
+      });
+
+      it("closes the card when the main area beside it would be narrower than the side panel", () => {
+        stubViewport(true);
+        // 1700 − 311 − 540 = 849 main area; beside the card the page keeps
+        // 849 − 249 = 600, wider than the card and the 540px panel.
+        frameStartsAt(1700);
+        const onOpenChange = vi.fn();
+        const resize = { minWidth: 360, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const { rerender } = render(shell(panel({ width: 540, resize }), { left: leftPanel(), right: rightPanel({ onOpenChange }) }));
+        expect(onOpenChange).not.toHaveBeenCalled();
+        // 1700 − 311 − 650 = 739: the left column stays (739 ≥ 650), the page beside the card is 490 < 650.
+        rerender(shell(panel({ width: 650, resize }), { left: leftPanel(), right: rightPanel({ onOpenChange }) }));
+        expect(screen.getByRole("button", { name: "Navigation einklappen" })).toBeInTheDocument();
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("closes the card once the page beside it would be narrower than twice the card", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const right = rightPanel();
+        render(shell(null, { right }));
+        // 1000 − 311 = 689; beside the 233px card the page keeps 689 − 249 = 440: wider than the card, under twice it.
+        frameBecomes(1000);
+        expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("still opens the card it closed after the window passed through the narrow frame", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const shellWith = (isOpen: boolean) => shell(null, { right: rightPanel({ isOpen, onOpenChange }), activeMobileTab: "page" });
+        const { rerender } = render(shellWith(true));
+        frameBecomes(700);
+        expect(onOpenChange).toHaveBeenLastCalledWith(false);
+        rerender(shellWith(false));
+        stubViewport(false);
+        rerender(shellWith(false));
+        stubViewport(true);
+        rerender(shellWith(false));
+        // Back on the desktop but still narrow: nothing yet.
+        expect(onOpenChange).toHaveBeenCalledTimes(1);
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenLastCalledWith(true);
+      });
+
+      it("leaves the card beside the page when the user folded the left column", () => {
+        stubViewport(true);
+        // Expanded, the 400px column would leave the main area (690) narrower
+        // than the 710px panel; but the user folded it: on the rail the page
+        // beside the card keeps 1800 − 60 − 710 − 249 = 781.
+        frameStartsAt(1800);
+        const onOpenChange = vi.fn();
+        const resize = { minWidth: 360, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const { container } = render(shell(panel({ width: 710, resize }), { left: leftPanel({ isOpen: false, width: 400 }), right: rightPanel({ onOpenChange }) }));
+        expect(onOpenChange).not.toHaveBeenCalled();
+        expect(container.querySelector<HTMLElement>("[data-slot='app-shell-content']")!.style.getPropertyValue("--app-shell-bubble-inset")).not.toBe("");
+      });
+
+      it("still opens the card it closed after it was hidden or locked while the room came back", () => {
+        stubViewport(true);
+        for (const away of [{ showRight: false }, { lockedRight: true }]) {
+          frameStartsAt(1400);
+          const onOpenChange = vi.fn();
+          const shellWith = (isOpen: boolean, hidden: boolean) =>
+            shell(null, {
+              right: rightPanel({ isOpen, onOpenChange, ...(hidden && away.lockedRight ? { locked: { description: "Gesperrt" } } : {}) }),
+              ...(hidden && away.showRight === false ? { showRight: false } : {}),
+            });
+          const { rerender, unmount } = render(shellWith(true, false));
+          frameBecomes(700);
+          rerender(shellWith(false, true));
+          frameBecomes(1400);
+          rerender(shellWith(false, false));
+          expect(onOpenChange).toHaveBeenLastCalledWith(true);
+          unmount();
+        }
+      });
+
+      it("does not open the card behind a maximised side panel", () => {
+        stubViewport(true);
+        frameStartsAt(1700);
+        const onOpenChange = vi.fn();
+        const labels = { maximizeLabel: "Seitenbereich maximieren", restoreLabel: "Seitenbereich verkleinern" };
+        const resize = { minWidth: 360, maxWidth: 1800, onWidthChange: vi.fn(), label: "Breite des Seitenbereichs ändern" };
+        const shellWith = (isOpen: boolean, isMaximized: boolean) =>
+          shell(panel({ width: 650, resize, ...labels, isMaximized }), { left: leftPanel(), right: rightPanel({ isOpen, onOpenChange }) });
+        // Beside the 650px panel the page would keep 490 next to the card: it closes.
+        const { rerender } = render(shellWith(true, false));
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+        rerender(shellWith(false, true));
+        rerender(shellWith(false, false));
+        expect(onOpenChange).toHaveBeenCalledTimes(1);
+      });
+
+      it("forgets the return of a card the user opened in the narrow frame without a right-area tab", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const tabs = TABS.filter((tab) => tab.pane !== "right");
+        const shellWith = (isOpen: boolean) => shell(null, { right: rightPanel({ isOpen, onOpenChange }), mobileTabs: tabs, activeMobileTab: "page" });
+        const { rerender } = render(shellWith(true));
+        frameBecomes(700);
+        rerender(shellWith(false));
+        stubViewport(false);
+        rerender(shellWith(false));
+        // The same card, through the consumer's state: opened and dismissed there.
+        rerender(shellWith(true));
+        rerender(shellWith(false));
+        stubViewport(true);
+        rerender(shellWith(false));
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("closes the card when the root font size grows past the fit, without the frame changing", () => {
+        stubViewport(true);
+        // 1027 − 311 = 716: at 16px the page beside the card keeps 467 (≥ 466), at 20px 463.
+        frameStartsAt(1027);
+        const right = rightPanel();
+        render(shell(null, { right }));
+        expect(right.onOpenChange).not.toHaveBeenCalled();
+        document.documentElement.style.fontSize = "20px";
+        try {
+          frameBecomes(1027);
+          expect(right.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+        } finally {
+          document.documentElement.style.fontSize = "";
+        }
+      });
+
+      it("forgets the return of a card the user opened and closed while it was hidden", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const shellWith = (isOpen: boolean, hidden: boolean) =>
+          shell(null, { right: rightPanel({ isOpen, onOpenChange }), ...(hidden ? { showRight: false } : {}) });
+        const { rerender } = render(shellWith(true, false));
+        frameBecomes(700);
+        rerender(shellWith(false, true));
+        // The consumer's own controls, while the card is hidden.
+        rerender(shellWith(true, true));
+        rerender(shellWith(false, true));
+        frameBecomes(1400);
+        rerender(shellWith(false, false));
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("forgets the return of a card the user opened as a sheet in the narrow frame", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const shellWith = (isOpen: boolean, tab: string) =>
+          shell(null, { right: rightPanel({ isOpen, onOpenChange }), activeMobileTab: tab });
+        const { rerender } = render(shellWith(true, "page"));
+        frameBecomes(700);
+        rerender(shellWith(false, "page"));
+        stubViewport(false);
+        rerender(shellWith(false, "page"));
+        // The sources tab opens the sheet, then back to the page.
+        rerender(shellWith(false, "sources"));
+        rerender(shellWith(false, "page"));
+        stubViewport(true);
+        rerender(shellWith(false, "page"));
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+      });
+
+      it("keeps the return when the narrow frame merely shows the tab already selected", () => {
+        stubViewport(true);
+        frameStartsAt(1400);
+        const onOpenChange = vi.fn();
+        const shellWith = (isOpen: boolean) =>
+          shell(null, { right: rightPanel({ isOpen, onOpenChange }), activeMobileTab: "sources" });
+        const { rerender } = render(shellWith(true));
+        frameBecomes(700);
+        rerender(shellWith(false));
+        stubViewport(false);
+        rerender(shellWith(false));
+        stubViewport(true);
+        rerender(shellWith(false));
+        frameBecomes(1400);
+        expect(onOpenChange).toHaveBeenLastCalledWith(true);
       });
 
       it("never closes it in the narrow frame, where the card is a sheet", () => {

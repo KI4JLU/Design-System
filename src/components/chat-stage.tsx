@@ -23,7 +23,28 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
   footer?: React.ReactNode;
   /** `id` of the footer element. */
   footerId?: string;
+  /**
+   * The user's chat width: how wide the column may grow on a large screen —
+   * `comfortable` up to 60rem, `wide` up to 80rem, `full` all of the stage.
+   * Below that the column fills the stage: the setting is a cap, never a
+   * margin. Published as `--chat-column-width`; the stage does not size its
+   * content itself.
+   */
+  width?: ChatStageWidth;
 }
+
+export type ChatStageWidth = "comfortable" | "wide" | "full";
+
+// `--chat-room` is what the shell's open card leaves beside it
+// (`--app-shell-bubble-inset`); the shell only publishes the inset while that
+// is at least twice the card, so no floor is needed here.
+const WIDTH_CLASS: Record<ChatStageWidth, string> = {
+  comfortable: "[--chat-width-cap:60rem]",
+  wide: "[--chat-width-cap:80rem]",
+  full: "[--chat-width-cap:100cqw]",
+};
+const COLUMN_CLASS =
+  "@container [--chat-clear:var(--app-shell-bubble-inset,0px)] [--chat-room:calc(100cqw_-_var(--chat-clear))] [--chat-column-width:min(var(--chat-width-cap),var(--chat-room))] max-md:[--chat-clear:0px] max-md:[--chat-column-width:100cqw]";
 
 /**
  * The column of a full-page chat: messages (or an empty state), composer and
@@ -44,14 +65,22 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
  * (transcript, composer) by the same length. `--chat-axis-width` is the width
  * of the box on that axis: the `header` row wraps within it, so a long row
  * does not reach past the column's start edge once it moved.
+ *
+ * **The column's width.** The stage is a size container and publishes
+ * `--chat-column-width` (from `width`), `--chat-room` and `--chat-clear` for
+ * its content: the consumer's transcript and composer take that width. The
+ * values are in `cqw` and resolve where they are used, against the nearest
+ * size container — so no other inline-size container may stand between the
+ * stage and the boxes that read them.
  */
 const ChatStage = React.forwardRef<HTMLDivElement, ChatStageProps>(
-  ({ empty = false, header, composer, footer, footerId, className, children, ...props }, ref) => (
+  ({ empty = false, header, composer, footer, footerId, width = "comfortable", className, children, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="chat-stage"
       data-empty={empty || undefined}
-      className={cn("flex min-h-0 min-w-0 flex-1 flex-col", empty && "overflow-y-auto", className)}
+      data-width={width}
+      className={cn("flex min-h-0 min-w-0 flex-1 flex-col", COLUMN_CLASS, WIDTH_CLASS[width], empty && "overflow-y-auto", className)}
       {...props}
     >
       <div

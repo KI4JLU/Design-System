@@ -520,6 +520,21 @@ describe("ResizeHandle", () => {
       expect(onValueChange.mock.calls.map(([v]) => v)).toEqual([MAX, 300]);
     });
 
+    it("follows a bound that moves during the drag, in the same gesture", () => {
+      const onValueChange = vi.fn();
+      const handle = (max: number) => (
+        <ResizeHandle side="left" value={300} min={200} max={max} label="Breite ändern" onValueChange={onValueChange} />
+      );
+      const { rerender } = render(handle(400));
+      fireEvent.pointerDown(screen.getByRole("separator"), { button: 0, clientX: 500 });
+      fireEvent.pointerMove(window, { clientX: 700 }); // 500 → clamped to 400
+      // The frame frees room mid-drag (a column folds): the bound grows.
+      rerender(handle(600));
+      fireEvent.pointerMove(window, { clientX: 750 }); // 550, inside the new bound
+      fireEvent.pointerUp(window);
+      expect(onValueChange.mock.calls.map(([v]) => v)).toEqual([400, 550]);
+    });
+
     it("takes focus, so the arrow keys work right after a drag", async () => {
       // Oracle 1: the splitter is a keyboard widget in the tab order, and its
       // keys only apply while it has focus — so a pointer drag that left focus

@@ -51,4 +51,23 @@ describe("ChatStage", () => {
     rerender(<ChatStage><p>x</p></ChatStage>);
     expect(container.querySelector("[data-slot=chat-stage-header]")).toBeNull();
   });
+
+  // Oracle: the owner's brief and the setting's own text — the chat width
+  // only caps the column on a large screen, it never keeps margins below
+  // that. jsdom resolves no cqw, so the test pins the declarations.
+  it("publishes the column width as the stage, capped by the chat width setting", () => {
+    const { container, rerender } = render(<ChatStage><p>x</p></ChatStage>);
+    const stage = () => container.querySelector("[data-slot=chat-stage]") as HTMLElement;
+    expect(stage()).toHaveAttribute("data-width", "comfortable");
+    expect(stage().className).toContain("@container");
+    expect(stage().className).toContain("[--chat-width-cap:60rem]");
+    expect(stage().className).toContain("[--chat-column-width:min(var(--chat-width-cap),var(--chat-room))]");
+    expect(stage().className).not.toContain("cqw_+");
+    // Beside the shell's card: exactly the room it leaves, no floor.
+    expect(stage().className).toContain("[--chat-room:calc(100cqw_-_var(--chat-clear))]");
+    rerender(<ChatStage width="wide"><p>x</p></ChatStage>);
+    expect(stage().className).toContain("[--chat-width-cap:80rem]");
+    rerender(<ChatStage width="full"><p>x</p></ChatStage>);
+    expect(stage().className).toContain("[--chat-width-cap:100cqw]");
+  });
 });

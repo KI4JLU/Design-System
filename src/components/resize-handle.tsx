@@ -125,6 +125,13 @@ const ResizeHandle = React.forwardRef<HTMLDivElement, ResizeHandleProps>(
     React.useEffect(() => () => endDragRef.current?.(), []);
 
     const clamp = (n: number) => Math.min(max, Math.max(min, n));
+    // The bounds as of the latest render, for a running drag: the frame can
+    // move them mid-gesture (a folding column frees room for a side panel),
+    // and the drag should follow without a second pointer-down.
+    const boundsRef = React.useRef({ min, max });
+    React.useLayoutEffect(() => {
+      boundsRef.current = { min, max };
+    });
     // +1: moving right grows a left pane. -1: moving right shrinks a right pane.
     const grow = side === "left" ? 1 : -1;
 
@@ -174,7 +181,8 @@ const ResizeHandle = React.forwardRef<HTMLDivElement, ResizeHandleProps>(
       let last = startValue;
 
       const onMove = (moveEvent: PointerEvent) => {
-        const next = clamp(startValue + grow * (moveEvent.clientX - startX));
+        const { min: low, max: high } = boundsRef.current;
+        const next = Math.min(high, Math.max(low, startValue + grow * (moveEvent.clientX - startX)));
         if (next === last) return;
         last = next;
         onValueChange(next);
