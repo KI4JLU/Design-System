@@ -4,7 +4,6 @@ import { AppShellLayout } from "./app-shell-layout";
 import { AuthLayout } from "./auth-layout";
 import { WidgetChatLayout } from "./widget-chat-layout";
 import { DashboardLayout } from "./dashboard-layout";
-import { FormLayout } from "./form-layout";
 import { GridLayout } from "./grid-layout";
 import { SectionedGridLayout, type SectionedGridSection } from "./sectioned-grid-layout";
 import { TableLayout } from "./table-layout";
@@ -114,12 +113,6 @@ describe("the page-heading rule — defaults every consumer already ships agains
   it("DashboardLayout keeps its <h1>", () => {
     render(<DashboardLayout title="Statistiken">Inhalt</DashboardLayout>);
     expect(screen.getByRole("heading", { level: 1 })).toHaveAccessibleName("Statistiken");
-    expect(screen.getAllByRole("heading")).toHaveLength(1);
-  });
-
-  it("FormLayout keeps its <h1>", () => {
-    render(<FormLayout title="Widget anlegen">Felder</FormLayout>);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveAccessibleName("Widget anlegen");
     expect(screen.getAllByRole("heading")).toHaveLength(1);
   });
 
@@ -233,7 +226,6 @@ describe("the page-heading rule — headingLevel is the call site's decision", (
 
   it.each([
     ["DashboardLayout", (level: 2) => <DashboardLayout title="T" headingLevel={level} />],
-    ["FormLayout", (level: 2) => <FormLayout title="T" headingLevel={level} />],
     ["TableLayout", (level: 2) => <TableLayout title="T" headingLevel={level} />],
   ])("%s forwards headingLevel to its PageHeader", (_name, renderTemplate) => {
     render(renderTemplate(2));

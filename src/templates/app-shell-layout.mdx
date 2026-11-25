@@ -72,8 +72,7 @@ without sources, whose sources card is a dropzone (`TopicWithoutSources`).
   switched. „Templates/Settings → User Settings" walks that route.
 - **Page content is a content template**, hung in as `children` — the shell
   brings the chrome and the one `<main>`, the template brings the page's
-  heading. A table or a form page (`TableLayout`, `FormLayout`) goes in like
-  the grid.
+  heading. A table page (`TableLayout`) goes in like the grid.
 
 - **An item's settings open in a settings window.** The gear of a topic opens
   „Thema-Einstellungen", a `SettingsDialog` whose sections hold the rights
@@ -107,7 +106,7 @@ without sources, whose sources card is a dropzone (`TopicWithoutSources`).
 | `onMobileTabChange` | `(id: string) => void` | ✅ | A drawer or the sheet was opened or closed; carries the area to show. |
 | `mobileTabBarLabel` | `string` | — | Deprecated and unused: the narrow arrangement has no tab bar. |
 | `sidebarNarrowAction` | `ReactNode` | — | The navigation's primary action below `md` („Neuer Chat"): the end of the drawer's bottom row, beside the footer in its short form. |
-| `children` | `ReactNode` | ✅ | Page content — a content template (`GridLayout`, `SectionedGridLayout`, `DashboardLayout`, `TableLayout`, `FormLayout`, …) or a `ChatStage`. |
+| `children` | `ReactNode` | ✅ | Page content — a content template (`GridLayout`, `SectionedGridLayout`, `DashboardLayout`, `TableLayout`, …) or a `ChatStage`. |
 
 <ArgTypes />
 
@@ -368,7 +367,7 @@ and Style switches and `WorkspaceLayout`.
   the bar.
 - ✅ Set the active state through `NavItem active` (sets `aria-current="page"`).
 - ✅ Hang page content in as a **content** template (`GridLayout`, `SectionedGridLayout`,
-  `DashboardLayout`, `FormLayout`, `TableLayout`, `WidgetChatLayout`) or a
+  `DashboardLayout`, `TableLayout`, `WidgetChatLayout`) or a
   `ChatStage`.
 - ❌ **Nothing that brings its own chrome goes inside**, and `AuthLayout`
   stays outside the shell: `docs/DESIGN_SYSTEM.md` §4 → „Page templates".

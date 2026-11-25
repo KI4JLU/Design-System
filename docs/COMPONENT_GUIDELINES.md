@@ -543,7 +543,7 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
 ```
 
 - **Use the templates** (`AppShellLayout`, `AuthLayout`, `DashboardLayout`,
-  `FormLayout`, `WidgetChatLayout`, `TableLayout`, `SectionedGridLayout`) for their
+  `WidgetChatLayout`, `TableLayout`, `SectionedGridLayout`) for their
   page category — never rebuild a page skeleton in the app. Missing slot/variant?
   Extend the template in the design system (owner review), don't fork the
   layout.
@@ -594,8 +594,8 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
 - **The page width is a `Container` `size`, never a class at the call site.**
   Three named roles: `page` (1440px, the page maximum — dashboards, wide
   tables, editor views), `content` (1000px — the ordinary page of cards,
-  grids and sections) and `reading` (672px — running text or form fields;
-  `FormLayout` uses it). A new page starts at `content`. `max-w-[1000px]` or
+  grids and sections) and `reading` (672px — running text or form fields).
+  A new page starts at `content`. `max-w-[1000px]` or
   any `max-w-*` on a `Container` is a review FAIL and **lint cannot catch
   it**: `layout-only-classname` only checks `DS_CONTROLS`, which contains no
   composition components (KI-711). If the width you need has no name, add a
@@ -606,8 +606,7 @@ import { AppShellLayout, DashboardLayout, Grid, Stack } from "@ki4jlu/design-sys
   `title` as a real heading, `headingLevel` picks its level (default `1`), and a
   template nested in a page that already has an `<h1>` passes `headingLevel={2}`.
 - Templates carry **no business logic**: routing lives in the injected
-  `NavItem`s, form state in the app (`FormLayout` renders no `<form>` — wrap
-  your own around it), chat state in the widget.
+  `NavItem`s, form state in the app, chat state in the widget.
 - Storybook group `Templates/` documents each template's slots, responsive
   behavior, and do's/don'ts.
 
@@ -685,7 +684,6 @@ additive everywhere.
 |---|---|---|
 | `PageHeader` | `<h1>` title (+ `<p>` description) | default `1` |
 | `DashboardLayout` | `<h1>` via `PageHeader` | forwarded, default `1` |
-| `FormLayout` | `<h1>` via `PageHeader` | forwarded, default `1` |
 | `TableLayout` | `<h1>` via `PageHeader` | forwarded, default `1` |
 | `SectionedGridLayout` | `<h1>` title (when `title` is set) + one `<h2>` per section | default `1`; sections are `+1` |
 | `AuthLayout` | **no heading** — `title` is styled text in `CardTitle` | **omitted** by default; set it to opt in |
