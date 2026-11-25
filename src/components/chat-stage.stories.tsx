@@ -1,6 +1,6 @@
 import type * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { ChatStage, ChatStageColumn } from "./chat-stage";
@@ -91,16 +91,78 @@ export const WithHeader: Story = {
  * the composer, the disclaimer and the scroller's jump button all follow.
  * Scroll up to see the button on the column's axis.
  */
+/**
+ * Every box on the stage's axis shares one centre: header row, transcript,
+ * composer, disclaimer and (once the user has scrolled up) the jump button.
+ * Each box must also stay inside the stage.
+ */
+async function expectOneAxis(root: HTMLElement) {
+  const stage = root.querySelector<HTMLElement>("[data-slot='chat-stage']")!;
+  const viewport = stage.querySelector<HTMLElement>("[data-slot='message-scroller-viewport']")!;
+  viewport.scrollTop = 0;
+  const button = stage.querySelector<HTMLElement>("[data-slot='message-scroller-button']")!;
+  await waitFor(() => expect(button).toHaveAttribute("data-active", "true"));
+  // The button eases in: measure once it stands.
+  await waitFor(() => expect(getComputedStyle(button).scale).toBe("1"));
+  const slots = ["chat-stage-header", "chat-stage-column", "chat-stage-composer", "chat-stage-footer", "message-scroller-button"];
+  const boxes = slots.map((slot) => stage.querySelector(`[data-slot='${slot}']`)!.getBoundingClientRect());
+  const outer = stage.getBoundingClientRect();
+  const centre = (r: DOMRect) => r.left + r.width / 2;
+  for (const [i, box] of boxes.entries()) {
+    await expect({ slot: slots[i], off: Math.round(Math.abs(centre(box) - centre(boxes[2]))) }).toEqual({ slot: slots[i], off: 0 });
+    await expect(box.width).toBeGreaterThan(0);
+    await expect(box.left).toBeGreaterThanOrEqual(outer.left - 1);
+    await expect(box.right).toBeLessThanOrEqual(outer.right + 1);
+  }
+  return { stage: outer, composer: boxes[2] };
+}
+
+const header = (
+  <>
+    <Button variant="ghost" size="sm">Zurück zur Startseite</Button>
+    <Badge tone="primary">Rolle: Assistent für Prüfungsordnungen und Studienverlaufspläne</Badge>
+  </>
+);
+
 export const BesideTheCard: Story = {
   name: "Beside the card",
-  decorators: [(Story) => <div style={{ "--app-shell-bubble-inset": "320px" } as React.CSSProperties} className="flex h-[560px] flex-col">{Story()}</div>],
-  args: {
-    header: (
-      <>
-        <Button variant="ghost" size="sm">Zurück zur Startseite</Button>
-        <Badge tone="primary">Rolle: Assistent für Prüfungsordnungen und Studienverlaufspläne</Badge>
-      </>
-    ),
-    children: transcript,
+  decorators: [(Story) => <div style={{ "--app-shell-bubble-inset": "320px", width: 1200 } as React.CSSProperties} className="flex h-[560px] flex-col">{Story()}</div>],
+  args: { header, children: transcript },
+  play: async ({ canvasElement }) => {
+    const { stage, composer } = await expectOneAxis(canvasElement);
+    // Moved towards the start: the column's right edge clears the 320px card.
+    await expect(composer.right).toBeLessThanOrEqual(stage.right - 320 + 1);
+  },
+};
+
+/**
+ * A stage narrower than the main area the shell measured the card against —
+ * one pane of several, a preview. The card's inset would leave it no room; the
+ * stage keeps half of itself as the column, moved to its start edge, and
+ * every box inside it.
+ */
+export const NarrowBesideTheCard: Story = {
+  name: "Narrow, beside the card",
+  decorators: [(Story) => <div style={{ "--app-shell-bubble-inset": "336px", width: 280 } as React.CSSProperties} className="flex h-[560px] flex-col">{Story()}</div>],
+  args: { header, children: transcript },
+  play: async ({ canvasElement }) => {
+    const { stage, composer } = await expectOneAxis(canvasElement);
+    await expect(Math.round(composer.width)).toBe(Math.round(stage.width / 2));
+    await expect(Math.round(composer.left)).toBe(Math.round(stage.left));
+  },
+};
+
+/**
+ * The tightest room the shell leaves beside a small card: a 400px main area,
+ * a 128px card (inset 144px), 256px beside it — exactly twice the card. The
+ * floor stays out of the way and the column clears the card.
+ */
+export const AtTheShellsLimit: Story = {
+  name: "At the shell's limit",
+  decorators: [(Story) => <div style={{ "--app-shell-bubble-inset": "144px", width: 400 } as React.CSSProperties} className="flex h-[560px] flex-col">{Story()}</div>],
+  args: { header, children: transcript },
+  play: async ({ canvasElement }) => {
+    const { stage, composer } = await expectOneAxis(canvasElement);
+    await expect(composer.right).toBeLessThanOrEqual(stage.right - 144 + 1);
   },
 };

@@ -64,7 +64,7 @@ describe("ChatStage", () => {
     expect(stage().className).toContain("[--chat-column-width:min(var(--chat-width-cap),var(--chat-room))]");
     expect(stage().className).not.toContain("cqw_+");
     // Beside the shell's card: exactly the room it leaves, no floor.
-    expect(stage().className).toContain("[--chat-room:calc(100cqw_-_var(--chat-clear))]");
+    expect(stage().className).toContain("[--chat-room:max(100cqw_-_var(--chat-clear),50cqw)]");
     rerender(<ChatStage width="wide"><p>x</p></ChatStage>);
     expect(stage().className).toContain("[--chat-width-cap:80rem]");
     rerender(<ChatStage width="full"><p>x</p></ChatStage>);
@@ -92,6 +92,15 @@ describe("ChatStage", () => {
     expect(stage().className).toContain("[--chat-box:min(42rem,var(--chat-column-width))]");
     expect(stage().className).not.toContain("[--chat-box:var(--chat-column-width)]");
     expect(slot("chat-stage-composer")).toHaveClass("px-4", "pt-8");
+  });
+
+  it("keeps the transcript's scrollbar gutters symmetric at every width", () => {
+    // A classic scrollbar on one side only would move the transcript off the
+    // composer's axis by half its width; below `md` as well (no override).
+    const { container } = render(<ChatStage composer="c"><p>x</p></ChatStage>);
+    const cls = container.querySelector("[data-slot=chat-stage]")!.className;
+    expect(cls).toContain("[&_[data-slot=message-scroller-viewport]]:[scrollbar-gutter:stable_both-edges]");
+    expect(cls).not.toMatch(/max-md:\S*scrollbar-gutter/);
   });
 
   it("pins the footer to the bottom of an empty chat without a composer", () => {

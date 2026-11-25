@@ -45,15 +45,21 @@ export interface ChatStageProps extends React.HTMLAttributes<HTMLDivElement> {
 export type ChatStageWidth = "comfortable" | "wide" | "full";
 
 // `--chat-room` is what the shell's open card leaves beside it
-// (`--app-shell-bubble-inset`); the shell only publishes the inset while that
-// is at least twice the card, so no floor is needed here.
+// (`--app-shell-bubble-inset`). The shell measures the inset against the whole
+// main area; a stage narrower than that (one column of several, a preview)
+// would otherwise subtract more than it has and end up with no room. The floor
+// keeps half the stage there. It never bites where the stage fills the main
+// area: the shell shows the card beside the page only while the room beside it
+// (main minus card minus 1rem) is at least twice the card, which is more than
+// half of main for any card wider than 1rem. The box never outgrows the stage,
+// so the axis shift below stays within the stage's own margin.
 const WIDTH_CLASS: Record<ChatStageWidth, string> = {
   comfortable: "[--chat-width-cap:60rem]",
   wide: "[--chat-width-cap:80rem]",
   full: "[--chat-width-cap:100cqw]",
 };
 const COLUMN_CLASS =
-  "@container [--chat-clear:var(--app-shell-bubble-inset,0px)] [--chat-room:calc(100cqw_-_var(--chat-clear))] [--chat-column-width:min(var(--chat-width-cap),var(--chat-room))] max-md:[--chat-clear:0px] max-md:[--chat-column-width:100cqw]";
+  "@container [--chat-clear:var(--app-shell-bubble-inset,0px)] [--chat-room:max(100cqw_-_var(--chat-clear),50cqw)] [--chat-column-width:min(var(--chat-width-cap),var(--chat-room))] max-md:[--chat-clear:0px] max-md:[--chat-column-width:100cqw]";
 
 // The box on the centre axis, and how far that axis moves to keep clear of
 // the card: centred while the box fits beside it, moved towards the start by
@@ -68,10 +74,10 @@ const START_BOX_CLASS = "[--chat-box:min(42rem,var(--chat-column-width))]";
 // A box on that axis: centred, at most `--chat-box` wide, moved by the shift.
 const ON_AXIS = "relative left-[calc(-1_*_var(--chat-axis-shift,0px))] mx-auto box-border w-full max-w-[var(--chat-box,100%)]";
 
-// The transcript scroller keeps symmetric gutters, so its column stays on the
-// same axis as the composer when the scrollbar takes space.
-const SCROLLER_CLASS =
-  "[&_[data-slot=message-scroller-viewport]]:[scrollbar-gutter:stable_both-edges] max-md:[&_[data-slot=message-scroller-viewport]]:[scrollbar-gutter:auto]";
+// The transcript scroller keeps symmetric gutters at every width, so its
+// column stays on the same axis as the composer when the scrollbar takes space
+// (an overlay scrollbar, as on phones, takes none, so this costs nothing there).
+const SCROLLER_CLASS = "[&_[data-slot=message-scroller-viewport]]:[scrollbar-gutter:stable_both-edges]";
 
 /**
  * The column of a full-page chat: messages (or an empty state), composer and

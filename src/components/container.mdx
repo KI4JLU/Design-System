@@ -7,8 +7,8 @@ import * as ContainerStories from "./container.stories";
 
 The centered page column: page margins from the spacing tokens (`px-gutter`
 on mobile, `px-margin-page` from `md` up) and **one named page width**. Every
-page sits in a `Container` — directly, or through a template (`FormLayout`,
-`TableLayout`, `DashboardLayout`, `SectionedGridLayout`, `AppShellLayout`)
+page sits in a `Container` — directly, or through a template
+(`TableLayout`, `DashboardLayout`, `SectionedGridLayout`, `AppShellLayout`)
 that renders one itself.
 
 ## Which width do I use?
@@ -20,7 +20,7 @@ decision, and it has exactly three answers:
 |---|---|---|---|---|---|
 | `page` (default) | `--max-width-container-max` | 1440px | 1360px | ~181 | The content uses the whole area: dashboards, wide tables, editor views, app chrome. |
 | `content` | `--max-width-container-content` | 1000px | 920px | ~121 | **The normal case for a page**: cards, grids, sections, overviews, detail pages. |
-| `reading` | `--max-width-container-reading` | 672px | 592px | ~74 | One column of running text or form fields. `FormLayout` uses exactly this. |
+| `reading` | `--max-width-container-reading` | 672px | 592px | ~74 | One column of running text or form fields. |
 
 \* Measure = width minus page margins (`box-sizing: border-box`, so 2 × 40px
 from `md` up). Characters per line measured in Chromium, Inter 16px, German
@@ -56,7 +56,7 @@ today:
 | JustRAG `Profile` (inline) | 800px |
 | JustRAG `.admin-container` (admin tabs) | `min(1600px, 95vw)` |
 | CampusAgents `EditorShell`, `AgentConfigPage`, `WidgetConfigPage` | `max-w-container-max` (1440px) |
-| CampusAgents `WidgetEmbedPage` (`FormLayout`), `StandaloneWidgetPage` | 672px |
+| CampusAgents `WidgetEmbedPage`, `StandaloneWidgetPage` | 672px |
 
 So between 672px and 1440px there are 800, 900 and twice 1000 — and 1000 is
 the width the next page to move over should align with (KI-750: JustRAG's
@@ -135,8 +135,7 @@ becomes `size="page"` (both break as type errors, not silently).
 
 - ✅ New page: start with `size="content"` and only switch to `page` when the
   content really needs the area (wide table, dashboard).
-- ✅ Legal texts, help pages, forms: `size="reading"` — or `FormLayout`
-  directly, which brings exactly this width.
+- ✅ Legal texts, help pages, forms: `size="reading"`.
 - ✅ Use `asChild` when the column should be a `<main>`/`<section>`, instead
   of nesting an extra `div`.
 - ✅ Vertical spacing at the call site (`py-gutter md:py-margin-page`) — it
