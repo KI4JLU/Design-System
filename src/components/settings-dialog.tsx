@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Maximize2, Minimize2, Search, X } from "lucide-react";
+import { keepOpenOnToast } from "../lib/toast-outside";
 import { cn } from "../lib/utils";
 import { useElementBox } from "../lib/use-element-box";
 import { useScrollFade } from "../lib/use-scroll-fade";
@@ -370,6 +371,7 @@ function SettingsDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-scrim/50 backdrop-blur-sm" />
         <DialogPrimitive.Content
+          onInteractOutside={keepOpenOnToast()}
           data-slot="settings-dialog"
           data-size={size}
           data-fitted={fit ? "" : undefined}

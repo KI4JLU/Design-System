@@ -1,9 +1,12 @@
+import * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { LayoutGrid, Menu } from "lucide-react";
 import { AppShellLayout } from "./app-shell-layout";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../components/alert";
 import { Button } from "../components/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/dialog";
+import { Toaster, toast } from "../components/sonner";
 import { Logo } from "../components/logo";
 import { SIDE_PANEL_RAIL_WIDTH } from "../components/side-panel-variants";
 import {
@@ -62,6 +65,16 @@ const meta = {
   title: "Templates/AppShellLayout",
   component: AppShellLayout,
   tags: ["!autodocs"],
+  // The app's one `Toaster`, as next to an app root: `statusPosition="top-end"`
+  // shows its card there. Mounted per story, so no toast outlives its story.
+  decorators: [
+    (Story) => (
+      <>
+        <Story />
+        <Toaster />
+      </>
+    ),
+  ],
   parameters: {
     layout: "fullscreen",
     // Every story renders the fixture, whose context owns the slots and the
@@ -410,6 +423,28 @@ async function expectOnOneAxis(main: HTMLElement, card: DOMRect | null) {
     await expect(Math.abs(centre(boxes[0]) - centre(area))).toBeLessThanOrEqual(1);
   }
 }
+
+/** The status message: portaled to `<body>`, so outside the story's canvas. */
+/**
+ * The floating status message. At `top-end` it is a toast: wait until it has
+ * slid into place before measuring it.
+ */
+const statusMessage = async (canvasElement: HTMLElement) => {
+  const message = await within(canvasElement.ownerDocument.body).findByRole("status");
+  const toastItem = message.closest<HTMLElement>("[data-sonner-toast]");
+  if (toastItem) await settled(toastItem);
+  return message;
+};
+/** Waits until a toast is mounted and its transitions have run. */
+const settled = async (toastItem: HTMLElement) => {
+  await waitFor(() => expect(toastItem).toHaveAttribute("data-mounted", "true"));
+  await Promise.all(toastItem.getAnimations().map((a) => a.finished.catch(() => {})));
+};
+/** The viewport's width without a scrollbar — what `fixed inset-x-0` spans. */
+const viewportWidth = (canvasElement: HTMLElement) => canvasElement.ownerDocument.documentElement.clientWidth;
+/** Whether `el` is what the pointer hits at the centre of `box`: nothing lies over it there. */
+const onTop = (el: Element, box: DOMRect) =>
+  el.contains(el.ownerDocument.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
 
 const openSourcesCard = async (canvas: ReturnType<typeof within>, user: { click: (el: Element) => Promise<void> }) => {
   const toggle = await canvas.findByRole("button", { name: /^Quellen (aus|ein)klappen$/ });
@@ -1003,8 +1038,10 @@ export const WithSystemNotice: Story = {
 
 /**
  * Reduced operation: a small `Alert layout="pill"` in the `status` slot,
- * floating at the top centre of the main area — over the page, which neither
- * moves nor reflows.
+ * floating at the top centre of the viewport, just under the bar — over the
+ * page, which neither moves nor reflows. The viewport's centre, not the main
+ * area's: with the navigation open the two differ, and the message holds the
+ * same place on every view.
  */
 export const WithSystemStatus: Story = {
   render: () => (
@@ -1022,15 +1059,17 @@ export const WithSystemStatus: Story = {
   ),
   play: async ({ canvas, canvasElement }) => {
     await expectBarHeight(canvasElement);
-    const pill = await canvas.findByRole("status");
+    const pill = await statusMessage(canvasElement);
     const box = pill.getBoundingClientRect();
     const main = canvas.getByRole("main").getBoundingClientRect();
     const header = bar(canvasElement).getBoundingClientRect();
+    const centre = viewportWidth(canvasElement) / 2;
 
-    // Top centre of the main area, just under the bar.
+    // Top centre of the viewport, just under the bar.
     await expect(box.top).toBeCloseTo(main.top + 12, 0);
     await expect(header.bottom).toBeCloseTo(main.top, 0);
-    await expect(box.left + box.width / 2).toBeCloseTo(main.left + main.width / 2, -1);
+    await expect(Math.abs(main.left + main.width / 2 - centre)).toBeGreaterThan(20);
+    await expect(box.left + box.width / 2).toBeCloseTo(centre, -1);
     // As wide as its text, not the column.
     await expect(box.width).toBeLessThan(main.width / 2);
     await expect(within(pill).getByRole("button", { name: "Schließen" })).toBeVisible();
@@ -1062,13 +1101,13 @@ export const WithSystemStatusBottomEnd: Story = {
   ),
   play: async ({ canvas, canvasElement }) => {
     await expectBarHeight(canvasElement);
-    const card = await canvas.findByRole("status");
+    const card = await statusMessage(canvasElement);
     const box = card.getBoundingClientRect();
     const main = canvas.getByRole("main").getBoundingClientRect();
 
-    // Bottom-right of the main area, 16px in from both edges.
+    // Bottom-right: 16px above the main area's bottom edge, 16px from the viewport's end.
     await expect(box.bottom).toBeCloseTo(main.bottom - 16, 0);
-    await expect(box.right).toBeCloseTo(main.right - 16, 0);
+    await expect(box.right).toBeCloseTo(viewportWidth(canvasElement) - 16, 0);
     await expect(box.left).toBeGreaterThanOrEqual(main.left);
     // 24rem at most.
     await expect(box.width).toBeLessThanOrEqual(384);
@@ -1104,13 +1143,13 @@ export const WithSystemStatusTopEnd: Story = {
   ),
   play: async ({ canvas, canvasElement }) => {
     await expectBarHeight(canvasElement);
-    const card = await canvas.findByRole("status");
+    const card = await statusMessage(canvasElement);
     const box = card.getBoundingClientRect();
     const main = canvas.getByRole("main").getBoundingClientRect();
 
-    // Top-right of the main area, 16px in from both edges.
+    // Top-right: 16px under the bar, 16px from the viewport's end.
     await expect(box.top).toBeCloseTo(main.top + 16, 0);
-    await expect(box.right).toBeCloseTo(main.right - 16, 0);
+    await expect(box.right).toBeCloseTo(viewportWidth(canvasElement) - 16, 0);
     await expect(box.left).toBeGreaterThanOrEqual(main.left);
     // 24rem at most.
     await expect(box.width).toBeLessThanOrEqual(384);
@@ -1144,7 +1183,7 @@ export const WithSystemStatusBottomEndTall: Story = {
     </AppShellFixture>
   ),
   play: async ({ canvas, canvasElement }) => {
-    const card = await canvas.findByRole("status");
+    const card = await statusMessage(canvasElement);
     const scroller = card.parentElement!;
     const main = canvas.getByRole("main").getBoundingClientRect();
     const header = bar(canvasElement).getBoundingClientRect();
@@ -1165,7 +1204,7 @@ export const WithSystemStatusBottomEndTall: Story = {
 /**
  * A status message where the open sources card lies over it — at the top
  * centre, in the top corner, and as a tall message in the bottom corner: the
- * message stays on top of the card (`z-25` over the card's `z-20`), so it can
+ * message stays on top of the card (`z-100` over the card's `z-20`), so it can
  * be read and closed.
  */
 const statusOverSources = (statusPosition: "top" | "top-end" | "bottom-end"): Story => ({
@@ -1191,9 +1230,9 @@ const statusOverSources = (statusPosition: "top" | "top-end" | "bottom-end"): St
       </AppShellFixture>
     </div>
   ),
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, canvasElement, userEvent }) => {
     const card = await openSourcesCard(canvas, userEvent);
-    const message = await canvas.findByRole("status");
+    const message = await statusMessage(canvasElement);
     const box = message.getBoundingClientRect();
     // The two overlap, or the check below proves nothing.
     const overlap = {
@@ -1213,6 +1252,220 @@ const statusOverSources = (statusPosition: "top" | "top-end" | "bottom-end"): St
 export const WithSystemStatusOverSources: Story = statusOverSources("top");
 export const WithSystemStatusTopEndOverSources: Story = statusOverSources("top-end");
 export const WithSystemStatusBottomEndOverSources: Story = statusOverSources("bottom-end");
+
+const UPDATE_CARD = (
+  <Alert tone="info" layout="toast" live="polite">
+    <AlertTitle>Neue Version verfügbar</AlertTitle>
+    <AlertDescription>Lade die Seite neu, um sie zu verwenden.</AlertDescription>
+    <AlertAction>
+      <Button variant="outline" size="sm">Neu laden</Button>
+    </AlertAction>
+  </Alert>
+);
+
+/**
+ * The top-right card beside an open side panel: it keeps the viewport's
+ * corner — over the panel — instead of moving in to the main area's narrower
+ * edge, so it holds the same place on every view.
+ */
+export const WithSystemStatusTopEndOverSidePanel: Story = {
+  tags: CHECK_ONLY,
+  render: () => (
+    <AppShellFixture context="topic" statusPosition="top-end" status={UPDATE_CARD}>
+      <ChatPage />
+      <SidePanelDemo />
+    </AppShellFixture>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const panel = await canvas.findByRole("complementary", { name: "Seitenbereich" });
+    const card = await statusMessage(canvasElement);
+    const box = card.getBoundingClientRect();
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    // The main area ends at the panel, well short of the viewport's end.
+    await expect(main.right).toBeLessThan(viewportWidth(canvasElement) - 100);
+    await expect(box.right).toBeCloseTo(viewportWidth(canvasElement) - 16, 0);
+    await expect(box.top).toBeCloseTo(main.top + 16, 0);
+    await expect(box.left).toBeLessThan(panel.getBoundingClientRect().right);
+    await expect(onTop(card, box)).toBe(true);
+  },
+};
+
+/** Raises the given toasts once, oldest first; none of them times out. */
+function RaiseToasts({ toasts }: { toasts: [type: "success" | "error", title: string][] }) {
+  React.useEffect(() => {
+    const ids = toasts.map(([type, title]) => toast[type](title, { duration: Infinity }));
+    return () => ids.forEach((id) => toast.dismiss(id));
+  }, [toasts]);
+  return null;
+}
+
+const TWO_TOASTS: [type: "success" | "error", title: string][] = [
+  ["success", "Quelle hinzugefügt"],
+  ["error", "Speichern fehlgeschlagen"],
+];
+
+/**
+ * One stack: the shell's top-right message (a waiting update) is a toast
+ * that does not time out, in the same `Toaster` as the app's toasts. Newest
+ * in front, the older ones peeking out below it — macOS style; hovering opens
+ * the pile into a list.
+ */
+export const WithSystemStatusAndToasts: Story = {
+  tags: CHECK_ONLY,
+  render: () => (
+    <>
+      <AppShellFixture context="topic" topic={TOPIC_NAME} statusPosition="top-end" status={UPDATE_CARD}>
+        <TopicConversation />
+      </AppShellFixture>
+      <RaiseToasts toasts={TWO_TOASTS} />
+    </>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    const li = async (text: string) => (await body.findByText(text)).closest<HTMLElement>("[data-sonner-toast]")!;
+    const newest = await li("Speichern fehlgeschlagen");
+    const older = await li("Quelle hinzugefügt");
+    const update = await li("Neue Version verfügbar");
+    const main = canvas.getByRole("main").getBoundingClientRect();
+    const right = viewportWidth(canvasElement) - 16;
+    const box = (el: Element) => el.getBoundingClientRect();
+
+    // A pile under the bar: the newest in front, the others behind it, their
+    // edges showing below.
+    await waitFor(() => expect(newest).toHaveAttribute("data-front", "true"));
+    await waitFor(() => expect(box(newest).top).toBeCloseTo(main.top + 16, 0));
+    for (const el of [older, update]) {
+      await expect(el).toHaveAttribute("data-expanded", "false");
+      await waitFor(() => expect(box(el).bottom).toBeGreaterThan(box(newest).bottom));
+    }
+
+    // Hovered, it opens into a list: newest first, the update card last, no
+    // overlap, one column.
+    await userEvent.hover(newest);
+    await waitFor(() => expect(older).toHaveAttribute("data-expanded", "true"));
+    await waitFor(() => expect(box(older).top).toBeGreaterThanOrEqual(box(newest).bottom));
+    await waitFor(() => expect(box(update).top).toBeGreaterThanOrEqual(box(older).bottom));
+    for (const el of [newest, older, update]) {
+      await waitFor(() => expect(box(el).right).toBeCloseTo(right, 0));
+      await waitFor(() => expect(box(el).width).toBeCloseTo(384, 0));
+    }
+
+    await userEvent.unhover(newest);
+    await waitFor(() => expect(older).toHaveAttribute("data-expanded", "false"));
+  },
+};
+
+/**
+ * A toast clicked while a dialog is open: the toast takes the click, the
+ * dialog stays open.
+ */
+export const ToastOverDialog: Story = {
+  tags: CHECK_ONLY,
+  render: () => (
+    <>
+      <AppShellFixture context="topic" topic={TOPIC_NAME}>
+        <TopicConversation />
+        <Dialog defaultOpen>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neues Thema</DialogTitle>
+              <DialogDescription>Gib deinem Thema einen Namen.</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </AppShellFixture>
+      <RaiseToasts toasts={TWO_TOASTS} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = await body.findByRole("dialog");
+    const newest = (await body.findByText("Speichern fehlgeschlagen")).closest<HTMLElement>("[data-sonner-toast]")!;
+    await settled(newest);
+    const b = newest.getBoundingClientRect();
+    // On top of the dialog and its scrim.
+    await waitFor(() => expect(onTop(newest, b)).toBe(true));
+    // Its close button works, and the dialog stays open.
+    await userEvent.click(within(newest).getByRole("button", { name: "Schließen" }));
+    await waitFor(() => expect(newest).not.toBeInTheDocument());
+    await expect(dialog).toBeInTheDocument();
+    await expect(body.getByRole("dialog")).toBeVisible();
+  },
+};
+
+/**
+ * The bottom-end status message closed while a dialog is open: its close
+ * button takes the click, the dialog stays open.
+ */
+export const StatusDismissOverDialog: Story = {
+  tags: CHECK_ONLY,
+  render: function Render() {
+    const [shown, setShown] = React.useState(true);
+    return (
+      <AppShellFixture
+        context="topic"
+        topic={TOPIC_NAME}
+        statusPosition="bottom-end"
+        status={
+          shown ? (
+            <Alert tone="warning" layout="toast" live="polite" onDismiss={() => setShown(false)}>
+              <AlertTitle>Wartung angekündigt</AlertTitle>
+              <AlertDescription>Am Freitag zwischen 18 und 20 Uhr ist der Dienst nicht erreichbar.</AlertDescription>
+            </Alert>
+          ) : undefined
+        }
+      >
+        <TopicConversation />
+        <Dialog defaultOpen>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neues Thema</DialogTitle>
+              <DialogDescription>Gib deinem Thema einen Namen.</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </AppShellFixture>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    await body.findByRole("dialog");
+    // The modal hides everything outside it from the accessibility tree, the
+    // message included: find it by text, its button with `hidden`.
+    const message = (await body.findByText("Wartung angekündigt")).closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    await userEvent.click(within(message).getByRole("button", { name: "Schließen", hidden: true }));
+    await waitFor(() => expect(body.queryByText("Wartung angekündigt")).toBeNull());
+    await expect(body.getByRole("dialog")).toBeVisible();
+  },
+};
+
+/**
+ * The top-right card while a dialog is open: it stays above the dialog and
+ * its scrim (`z-100` over `z-50`) — nothing in the app hides it.
+ */
+export const WithSystemStatusOverDialog: Story = {
+  tags: CHECK_ONLY,
+  render: () => (
+    <AppShellFixture context="topic" topic={TOPIC_NAME} statusPosition="top-end" status={UPDATE_CARD}>
+      <TopicConversation />
+      <Dialog defaultOpen>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Neues Thema</DialogTitle>
+            <DialogDescription>Gib deinem Thema einen Namen.</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </AppShellFixture>
+  ),
+  play: async ({ canvasElement }) => {
+    await within(canvasElement.ownerDocument.body).findByRole("dialog");
+    const card = await within(canvasElement.ownerDocument.body).findByText("Neue Version verfügbar");
+    const message = card.closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    const box = message.querySelector("[data-slot=app-shell-status-scroller]")!.getBoundingClientRect();
+    await expect(onTop(message, box)).toBe(true);
+  },
+};
 
 /**
  * `AppShellSidePanel`: the page declares a tabbed panel beside itself — a

@@ -5,18 +5,18 @@ import { logoVariants } from "./logo-variants";
 
 /**
  * Platform wordmark: prefix ("JLU") + product name in a brand badge —
- * „JLU [CampusAgents]", „JLU [API]", „JLU [RAG]". Formalizes the brand
+ * „JLU [RAG]", „JLU [API]". Formalizes the brand
  * template as a component on the brand tokens (`bg-brand`/`text-on-brand`
  * for the badge, `text-brand-wordmark` for the prefix), which follow the
  * primary colour — so the logo takes the user's accent colour and the dark
  * mode's light accent.
- * Renders real text — screen readers read „JLU CampusAgents" naturally,
+ * Renders real text — screen readers read „JLU RAG" naturally,
  * no aria needed.
  */
 export interface LogoProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof logoVariants> {
-  /** Product/platform name shown in the badge (e.g. "CampusAgents", "API", "RAG"). */
+  /** Product/platform name shown in the badge (e.g. "RAG", "API"). */
   product: string;
   /** Wordmark before the badge. */
   prefix?: string;

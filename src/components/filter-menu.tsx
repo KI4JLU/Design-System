@@ -10,8 +10,7 @@ import {
 /**
  * Labeled dropdown button for a single filter/sort dimension above a list —
  * shows the active option in its own label once it differs from the default
- * (e.g. "Filter (Aktiv)"). Extracted 1:1 from CampusAgents' toolbar dropdown;
- * pair with `ListToolbar`. Value/onChange stay plain `string` (like
+ * (e.g. "Filter (Aktiv)"). Pair with `ListToolbar`. Value/onChange stay plain `string` (like
  * `SegmentedControl`) — narrow at the call site with `as YourUnionType`.
  */
 export interface FilterMenuOption {

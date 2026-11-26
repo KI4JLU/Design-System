@@ -160,8 +160,8 @@ async function expectWidths(canvasElement: HTMLElement) {
     if (!el) throw new Error(`Container ${size} nicht gefunden`);
     return getComputedStyle(el).maxWidth;
   };
-  // 1440px: the published page maximum, unchanged since v0.9 — two apps
-  // depend on it (CampusAgents writes `max-w-container-max` itself).
+  // 1440px: the published page maximum, unchanged since v0.9 — a consumer
+  // may write `max-w-container-max` itself.
   await expect(read("page")).toBe("1440px");
   // 1000px: measured at the consumer, not chosen here —
   // `.home-view__grid--main` in JustRAG (web/src/components/HomeView.css:247).

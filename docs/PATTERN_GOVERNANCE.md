@@ -94,7 +94,7 @@ open.
 | Design | Draft record + do/don't stories; design the constrained API if the primitives cannot express the pattern | `dev/<topic>` branch or card, Storybook preview |
 | Decide | Owner sets `accepted` (or rejects with the reason on the card) | PR approval = decision log |
 | Enforce | Rule ships with its enforcement in a DS release; Changelog lists rule changes by ID | Release |
-| Migrate | Each consumer (CampusAgents, JLURAG, HAWKI extension) gets one card to comply | Product board cards |
+| Migrate | Each consumer (today JustRAG) gets one card to comply | Product board cards |
 | Audit | On demand, in an interactive session: scan a consumer for violations of accepted rules, findings become cards | Card per finding batch |
 
 Per CLAUDE.md, defects in style or layout are fixed **in the design system**, never worked around in
@@ -118,7 +118,7 @@ a consumer.
    footer) and `DLG-02` (header = eyebrow / title / description).
 2. A constrained dialog pattern that renders header and footer itself. Name and API are still open
    — `// TODO: not yet decided`.
-3. Migrate JLURAG `MembersModal`; check CampusAgents for the same pattern.
+3. Migrate JustRAG `MembersModal`.
 4. Move the existing guideline rules into records with IDs.
 
 Open question: whether a Figma library becomes the design stage, with Storybook as the enforcement

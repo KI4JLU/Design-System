@@ -1,10 +1,15 @@
 # Design System — Governance & Foundation
 
-Status: **v0.1.0 — extracted into its own package.** This document is the
-contract for how tokens and shared components are added, reviewed, and
-versioned. Built as Phases 0–4 inside CampusAgents; extracted here (Phase 5)
-so multiple JLU projects consume one design system as a dependency
-(`@ki4jlu/design-system`) instead of maintaining copies.
+This document is the contract for how tokens and shared components are added,
+reviewed, and versioned. The design system is one package
+(`@ki4jlu/design-system`), so JLU projects consume it as a dependency instead
+of maintaining copies. The current version is the top entry of the
+[Changelog](#changelog).
+
+**Consumer.** [JustRAG](https://github.com/KI4JLU/JustRAG) — the web app and
+its desktop host — is the primary and only active consumer. Its needs decide
+what the design system adds and keeps: a layout or component no JustRAG view
+uses is removed, not maintained.
 
 ---
 
@@ -238,7 +243,7 @@ consuming repo** — new exceptions get the same scrutiny there.
 | `CodeBlock` | `code-block.tsx` | fixed-dark code viewer (identical in both themes, `code-surface` tokens) with built-in copy button (clipboard write + Copy→Check confirmation for ~2 s) |
 | `Input` (+ shared `fieldVariants`) | `input.tsx` / `field-variants.ts` | honors `aria-invalid` styling; `variant`: default (framed) / inline (borderless in-flow field for in-row editing) / title (inline at heading size, an editable heading in a dialog header row). **0.46.0.** `shortcutHint`: a decorative trailing hint (e.g. `KbdGroup` with ⌘ K), shown dimmed only while hovered and unfocused — announce the shortcut with `aria-keyshortcuts`. `inline` and `title` have no border to colour, so `aria-invalid` turns their placeholder red instead |
 | `Label` | `label.tsx` | Radix Label |
-| `Logo` (+ `logoVariants`) | `logo.tsx` / `logo-variants.ts` | platform wordmark „JLU [Produkt]" (CampusAgents/API/RAG): prefix + badge on the brand tokens (`brand`/`on-brand` theme-invariant, `brand-wordmark` inverts in dark), sizes sm/default/lg/xl/xxl; real text (no aria needed) |
+| `Logo` (+ `logoVariants`) | `logo.tsx` / `logo-variants.ts` | platform wordmark „JLU [Produkt]" (the product is the app's own name — JustRAG sets it from its admin settings): prefix + badge on the brand tokens (`brand`/`on-brand` theme-invariant, `brand-wordmark` inverts in dark), sizes sm/default/lg/xl/xxl; real text (no aria needed) |
 | `AlertDialog` (+ `Trigger`/`Portal`/`Overlay`/`Content`/`Header`/`Footer`/`Title`/`Description`/`Media`/`Action`/`Cancel`) | `alert-dialog.tsx` | **0.75.0.** shadcn/ui's `alert-dialog`, imported with the shadcn CLI (`https://ui.shadcn.com/r/styles/new-york-v4/alert-dialog.json`): Radix AlertDialog (`@radix-ui/react-alert-dialog`), `role="alertdialog"`. The modal that interrupts and needs an answer: no close button, a click outside never closes it, Escape only when the app lets it (`onOpenChange`). Its description is the message, not a subtitle — body text 14/24 in the full text colour, paragraphs 12px apart (several `<p>` via `asChild`); title 16px above it, footer 24px below; scrolls when taller than the viewport. Same blurred scrim as `Dialog` |
 | `NoticeDialog` / `NoticeDialogLink` | `notice-dialog.tsx` | **0.75.0.** A notice the user has to answer before going on (AI-use notice, changed terms), on `AlertDialog`. `title`, paragraphs as children, optional `confirmLabel` checkbox (accept disabled until ticked; the tick resets on close), `acceptLabel`/`declineLabel`, `onAccept`/`onDecline`, `pending`. Focus starts on the title; text and links are the dialog's description. `NoticeDialogLink` links a document where the text names it — new tab, with an sr-only `newTabLabel` („öffnet in neuem Tab"); `links` lists documents the text does not name |
 | `Dialog` (+ parts) | `dialog.tsx` / `dialog-variants.ts` | Radix — focus trap, Esc-to-close, ARIA, scroll lock; built-in close button label overridable via `closeLabel` (default „Schließen"). **0.92.0:** `DialogEyebrow` (a status badge on the close button's line, top left), `DialogFooter layout="fill"` (two actions as equal halves, a lone one takes the right half; `dialogFooterVariants`), and the box is a stacking context (`isolate`), so a decorative `absolute inset-0 -z-10` layer stays behind the content |
@@ -248,7 +253,7 @@ consuming repo** — new exceptions get the same scrutiny there.
 | `MenuItem` (+ `menuItemVariants`) | `menu-item.tsx` / `menu-item-variants.ts` | dropdown/listbox/popover row: `selected`, `highlighted` (keyboard), `destructive`; ARIA roles stay at call sites |
 | `NavItem` (+ `navItemVariants`) | `nav-item.tsx` / `nav-item-variants.ts` | sidebar/menu row: `level` top/sub, `active` sets `aria-current="page"`; `asChild` for router links. `label` (a plain string mirroring the visible text) is what lets a row collapse: inside a collapsed `SidePanel` (the rail) it becomes the row's `aria-label` **and** a `Tooltip`, and the non-`<svg>` children are hidden. Without `label` a row does not collapse at all — the row cannot invent a name it was not told. The collapsed state comes from the `SidePanel` (context), never from a prop, so one column cannot end up half collapsed |
 | `SegmentedControl` | `segmented-control.tsx` | single-select segment row (e.g. Tag/Woche/Monat chart-range switch, or an icon-only card/list view toggle): controlled `value`/`onValueChange`, `role="group"`, active segment via `aria-pressed`. **`icon` per option (0.33.0)** makes that segment icon-only — the icon is shown, `label` goes `sr-only` and stays the accessible name. `label` is required either way, so an unnamed segment is not expressible; the segment also becomes square (`h-9 w-9`), since the text padding has no icon width to balance. **0.54.0:** `showLabel` per option keeps the label visible next to the icon (icon + text segment, `h-9`, text padding); the accessible name is the label either way **0.69.0:** `variant="tile"` — equal framed tiles, icon above a visible label that wraps rather than truncating |
-| `Alert` (+ `AlertTitle`/`AlertDescription`/`AlertAction`, `alertVariants`) | `alert.tsx` / `alert-variants.ts` | **0.62.0.** The one component for an inline box message in the page flow — a static hint as well as a status (the transient corner message is `Toast`). `tone` = neutral/info/success/warning/error on the `*-container`/`on-*-container` pairs; each status tone brings a lucide icon (WCAG 1.4.1), `icon` replaces it, `icon={null}` drops it; `neutral` has none; the icon slot is `aria-hidden`. Box radius (`--ui-radius-box`). `live` = `off` (default, no role) / `polite` (`role="status"`) / `assertive` (`role="alert"`). `onDismiss` + `dismissLabel` („Schließen") adds a close button; the call site unmounts the alert and moves focus. `AlertAction` is a row of DS Buttons under the text. `AlertTitle` is a `div` with `asChild` for a heading. **0.74.0:** `layout` = `box` (default) / `banner` (solid, full-width, centred — `AppShell` `notice`) / `pill` (floating, as wide as its text — `AppShell` `status`); in both, title · text · action flow inline **0.79.0:** `layout="toast"` — the pill's floating surface with the box's flow, for `AppShell` `status` at `statusPosition="bottom-end"`; a banner without a title no longer shows the title dot after its icon, and the banner's icon is centred on the first line |
+| `Alert` (+ `AlertTitle`/`AlertDescription`/`AlertAction`, `alertVariants`) | `alert.tsx` / `alert-variants.ts` | **0.62.0.** The one component for an inline box message in the page flow — a static hint as well as a status (the transient corner message is a toast: `toast()` / `Toaster`). `tone` = neutral/info/success/warning/error on the `*-container`/`on-*-container` pairs; each status tone brings a lucide icon (WCAG 1.4.1), `icon` replaces it, `icon={null}` drops it; `neutral` has none; the icon slot is `aria-hidden`. Box radius (`--ui-radius-box`). `live` = `off` (default, no role) / `polite` (`role="status"`) / `assertive` (`role="alert"`). `onDismiss` + `dismissLabel` („Schließen") adds a close button; the call site unmounts the alert and moves focus. `AlertAction` is a row of DS Buttons under the text. `AlertTitle` is a `div` with `asChild` for a heading. **0.74.0:** `layout` = `box` (default) / `banner` (solid, full-width, centred — `AppShell` `notice`) / `pill` (floating, as wide as its text — `AppShell` `status`); in both, title · text · action flow inline **0.79.0:** `layout="toast"` — the pill's floating surface with the box's flow, for `AppShell` `status` at `statusPosition="bottom-end"`; a banner without a title no longer shows the title dot after its icon, and the banner's icon is centred on the first line |
 | `Notice` | `notice.tsx` | **Deprecated — use `Alert` (0.62.0).** A thin wrapper over it (`tone` neutral/info/warning, `icon` default `null`, no live region). Removed in a later release; `noticeVariants` is already gone |
 | `FilterChips` | `filter-chips.tsx` / `filter-chips-variants.ts` | single-select filter strip above a list — a row of pill chips, exactly one active, plus an optional trailing icon-only action chip (`onAdd` + `addLabel`, the „+“). Controlled `value`/`onValueChange`; a `value` matching no option renders every chip inactive rather than throwing, which is the readable failure when a stored filter outlives its category. Same ARIA as `SegmentedControl` (`role="group"` + `aria-pressed`) and deliberately NOT `tablist` (no panels to switch) or `radiogroup` (roving focus would make Tab skip the strip). Scrolls horizontally in ONE row rather than wrapping — wrapping would change the chrome's height as categories are added and move the list under the reader. Distinct from `FilterMenu`, which hides its options in a dropdown, and from `SegmentedControl`, whose joined border suits a fixed axis rather than a set the user extends at runtime |
 | `ContextMenu` (+ `Trigger`/`Content`/`Item`/`CheckboxItem`/`RadioItem`/`RadioGroup`/`Label`/`Separator`/`Shortcut`/`Group`/`Portal`/`Sub`/`SubTrigger`/`SubContent`) | `context-menu.tsx` | **0.59.0.** shadcn/ui's `context-menu`, imported with the shadcn CLI (`https://ui.shadcn.com/r/styles/new-york-v4/context-menu.json`): Radix ContextMenu (`@radix-ui/react-context-menu`), opens on right-click / the context-menu key and on a touch long-press (~700 ms) — the mobile entry to a message's actions. A `role="menu"` popup on `surface-container-lowest` + `shadow-overlay`; `ContextMenuItem` `variant` `default` / `destructive`, `inset`; each part marked with a `data-slot` |
@@ -261,7 +266,7 @@ consuming repo** — new exceptions get the same scrutiny there.
 | `Textarea` (+ shared `fieldVariants`) | `textarea.tsx` / `field-variants.ts` | mirrors `Input` (tokens, focus ring, `aria-invalid`); `variant`: default / inline (composer in a Card); `min-h-24`/`resize-y` only in default; an invalid `inline` textarea shows a red placeholder (**0.46.0**) |
 | `Table` (+ Header/Body/Footer/Row/Head/Cell/Caption) | `table.tsx` | semantic `<table>` part set, **no Radix** (Radix ships no table primitive; shadcn's own source imports only React + `cn`). Brings its own horizontal scroll container — role-less and untabbable, so the `table`/`rowgroup`/`row`/`columnheader`/`cell` tree is untouched; reach it via `containerClassName` (bounded height = vertical scrolling). `TableHead` defaults to `scope="col"`; `TableCaption` is the table's accessible name. **0.54.0:** column groups (`TableHead group`, `divider` on head and cell), `wrap="words"` for no mid-word breaks, one rule under a multi-row header, `Table density="compact"` (text-xs, 32px header, `p-1.5` cells, via context), `muted` + `mutedEdge` + `mutedJoin` on head and cell (a tinted, rounded column band for a shown-but-fixed column; adjacent columns joinable into one band), and `TableHead section` / `section="band"` + `count` (row-group heading, `scope="rowgroup"`; its row takes no hover tint and no rule, `"band"` tints the whole row). Diverges from shadcn where the evidence did: cells **wrap** by default (`whitespace-nowrap` per cell at the call site), `wrap-anywhere` for hashes/URLs, and every divider carries `border-outline-variant` — a bare `border-b` would render in `currentColor`, since this repo has no global `border-border` reset. No sticky header yet (see MDX „Bewusst nicht enthalten") |
 | `Tabs` (+ List/Trigger/Content) | `tabs.tsx` | Radix — APG "Tabs": `tablist` / `tab` + `aria-selected` + `aria-controls` / `tabpanel` + `aria-labelledby`, one tab stop for the whole bar, arrow keys + Home/End, `orientation` horizontal/vertical, `activationMode` automatic (default) / manual. Scope: tabs name a content area (one panel per tab), `SegmentedControl` only sets a value (`role="group"` + `aria-pressed`), `BottomTabBar` is chrome navigation (`aria-current="page"`). Active = underline + `text-primary`, so tabs don't look like a SegmentedControl either. Two verified Radix quirks are in the MDX: inactive panels are **unmounted** (panel state doesn't survive the switch, `forceMount` is no substitute), and before the first focus the roving tabindex sits on the `tablist` container instead of the active tab. **0.47.0.** `TabsList variant="segmented"`: the triggers share one tinted track in equal widths, the active one a raised surface pill (e.g. invite one / many / by link in a dialog); same tablist semantics, horizontal only |
-| `Toast` (+ Provider/Viewport/Title/Description/Action/Close, `TOAST_DURATIONS`) | `toast.tsx` / `toast-variants.ts` | Radix (`@radix-ui/react-toast`) — a transient status message in the fixed screen corner; replaces JustRAG's `ToastContainer.tsx`/`Toast.css`. `variant` = neutral/success/error/warning/info drives surface and text color (the same pairs as `Alert`, `alertToneSurfaces`), icon (WCAG 1.4.1 — status not by color alone), default duration (`TOAST_DURATIONS`, JustRAG's values: success 4 s, error 6 s) **and** the urgency of the announcement: `error` → `assertive`, otherwise `polite`, overridable via `type`. No hand-written `role="alert"` — Radix announces through a hidden `role="status"` whose explicit `aria-live="assertive"`, together with the role's implicit `aria-atomic`, gives exactly what `role="alert"` defines; the visible toast is not a live region itself (exactly one announcement). No focus theft; WCAG 2.2.1 is met through Radix's pause on hover **and** focus (F8 into the viewport) plus `ToastClose`/`duration={Infinity}`, not through a switch of our own. No enter/exit animation, as with all floating surfaces, so `prefers-reduced-motion` is moot. **The queue stays in the app** (JustRAG's `MAX_TOASTS = 5`): the package provides presentation + timer, no `toast()` singleton. Deliberately decided against `sonner` (its own toast machine with its own state/markup/CSS — a break with the "thin Radix wrapper" pattern). `z-100` sits above `Dialog`/`BottomTabBar` (`z-50`); a `Toast` without a mounted `ToastViewport` silently renders nothing |
+| `Toaster` + `toast()` (+ `ToasterProps`, `ExternalToast`) | `sonner.tsx` | **0.98.0.** The shadcn `sonner` component (`npx shadcn add sonner`), normalised; replaces the Radix `Toast` family (0.98.0 reverses the earlier decision against Sonner: it brings the stacked pile, swipe and the queue that the thin Radix wrapper left to each app). Mount `Toaster` **once** next to the app root; raise toasts anywhere with `toast("…")`, `toast.success/info/warning/error("…")`, `toast.custom(…)` — no provider. **Placement:** top right, `--toast-stack-top` from `AppShell` (16px under its bar; 16px from the top without a shell), 24rem, full width on a phone, `z-100` above dialogs and the shell's floating card. **Pile:** newest in front, older ones peeking out below; hover or focus opens it into a list and pauses every timer; swipe to dismiss; at most 3 visible. **Look:** `unstyled` + `classNames` — the `Alert` box (`alertToneSurfaces` per type, box radius, `shadow-overlay`), lucide icons, an outline action button, a close button on every typed toast but `loading` (Sonner draws none on a custom toast); light and dark come from the tokens, not from Sonner's `theme`. Sonner joins class names without merging them, so a per-toast override needs `!` utilities. **Creation time:** the DS `toast` (Sonner's, wrapped) puts a `<time>` at the end of the title row of every toast raised through `toast()`, `toast.success/info/warning/error/message/loading` — `hh:mm` today, with the date once the toast is from another day (re-rendered at midnight), formatted for `<html lang>`. Not stamped: `toast.custom` (its own layout) and the toasts `toast.promise` raises itself. **Labels:** `containerAriaLabel` „Benachrichtigungen" (Sonner appends the hotkey, `alt+T`), `closeButtonAriaLabel` „Schließen". **Announcements:** Sonner's region is `aria-live="polite"` — every toast, errors included, waits until the screen reader is done. **Dialogs:** a toast stays clickable under a modal (`pointer-events-auto` on the toaster), and `Dialog` / `SettingsDialog` ignore presses on it and on `AppShell`'s status layer (`lib/toast-outside.ts`), so closing one keeps the dialog open. Pointer only: the dialog's focus trap keeps Tab inside, as with the Radix toasts before |
 | `Tooltip` (+ Trigger/Content/Provider) | `tooltip.tsx` | Radix — APG tooltip: `role="tooltip"` + `aria-describedby` on the trigger, opens on hover **and** focus, Escape dismisses, never focusable; replaces `title=` hints. Each `Tooltip` mounts its own provider (shadcn shape, no app setup); style is the re-pointed shadcn look (`bg-primary`/`text-on-primary`, `shadow-overlay`, no animation/arrow like all floating surfaces). **0.46.0.** `TooltipContent`'s `container` portals it elsewhere than `document.body` — pass the fullscreen element while one is active, or the tooltip is not painted |
 | `TitleTooltips` | `title-tooltips.tsx` | **0.64.0.** Catch-all mounted once at the app root: every native `title` shows the DS tooltip instead of the browser's (hover and keyboard focus; while shown the title is emptied and its text parked in `data-title`, then written back — a title the app changes is followed, one it clears or removes stays that way; it stays in the name computation as a temporary `aria-label` when it was the name, else as the description via `aria-describedby` unless it repeats the name). Hoverable content (150 ms grace), portalled into the fullscreen element when one is active. Plain text only; makes nothing focusable. Skips explicit `TooltipTrigger`s (`data-slot="tooltip-trigger"`) and `data-native-title` subtrees; inverse surface under `[data-tooltip-tone="inverse"]`, which `Message` sets |
 
@@ -280,7 +285,7 @@ Layout values come **only** from tokens (spacing `stack-*`/`gutter`/
 | `Grid` (+ `gridVariants`) | `grid.tsx` / `grid-variants.ts` | responsive grid. `cols` 1–4 is the **desktop** count and a BREAKPOINT ladder — the mobile collapse (→1) is built in, but the steps land where Tailwind's `md`/`xl` fall, so `cols={3}` renders two columns everywhere from 768 to 1279px. **`cols="auto"` (0.32.0) counts no columns at all**: `repeat(auto-fill, minmax(min(17.5rem,100%),1fr))` fills as many tracks as FIT, so the count follows the container and keeps following it inside a shell whose side columns collapse. That is the one a wall of cards wants. `auto-fill` not `auto-fit`, so a grid holding one card leaves it card-sized instead of stretching it across the row; the inner `min(…,100%)` keeps a 280px track from overflowing a narrower screen |
 | `Container` (+ `containerVariants`) | `container.tsx` / `container-variants.ts` | centered page column: `px-gutter md:px-margin-page`; `size` names the page's role — `page` (1440px, default), `content` (1000px), `reading` (672px), all three from `--max-width-container-*`. Never a `max-w-*` at the call site |
 | `PageHeader` | `page-header.tsx` | `<h1>` (headline tokens, mobile size below md) + description + right-aligned `actions`; `children` = toolbar row below |
-| `AppShell` | `app-shell.tsx` | **Internal since 0.93.0** — not exported; apps get this frame through `AppShellLayout` (Storybook `Internals/AppShell`). Responsive frame, **rebuilt in 0.30.0**: an optional `SidePanel` column on each side (`left`/`right`, both `AppShellPanel` — `content`, `header`, `footer`, `label`, `isOpen`, `onOpenChange`, `width` default 256 = `--width-sidebar`, `expandLabel`/`collapseLabel`, `collapsedPreview`) around a main column of `topBar` (the `h-16` chrome row) plus the page's one scrolling `<main>`. Collapsed **is** the 60px rail — there is no icon-column mode. Below `lg` one area at a time plus a `BottomTabBar`: the consumer declares `mobileTabs` (each tab names the area it shows), `activeMobileTab`, `onMobileTabChange`, `mobileTabBarLabel`; the arrangement is chosen in JS (`useIsDesktop`, in `lib/pane-layout.ts`), never with a `lg:` ladder. **No drawer, no dialog, no focus trap** — the non-overlay arrangement needs none — and therefore **no node mounted twice** (the `sidebar`/`menuLabel`/`drawerLabel` props are gone and `SidebarSurfaceContext` with them). `AppShellPanel.footer` is forwarded to `SidePanel.footer`, so a collapsed column keeps its sign-out route in the rail and a `SidebarUserMenu` there renders as its avatar alone. **Both columns are drag-resizable since 0.36.0**, opt-in through `AppShellPanel.resize` (`AppShellPanelResize`: `minWidth`, `maxWidth`, `onWidthChange`, `label` — one all-or-nothing object, so „handle without bounds" cannot be expressed). Given, the shell composes `SidePanel` + `ResizeHandle` per column — the library's one resize widget, no second mechanism — with `controls` pointing at the column root (`useId`, minted in `AppShell`, passed to `SidePanel` as `id`); the handle renders only while the column is **expanded** (the rail is a fixed 60px) and only from **`lg`** up (below it one area fills the screen). Omitted, there is no separator, no `id` on the `<aside>` and the 256 default — an untouched call site renders the DOM it rendered before. **The width itself stays the consumer's number** — the components are controlled and keep no width of their own; `usePersistedWidth` (below) is the opt-in piece that makes the user's size survive a reload. **0.57.0:** the content column (top bar plus `<main>`) carries `data-slot="app-shell-content"`, so a page-sized dialog can cover that region (`SettingsDialog` `fitTo`). **Two additive props in 0.37.0**: `mainLabel?: string` names the `<main>` landmark in both arrangements (omitted, `<main>` stays unnamed — no invented default), and `showRight?: boolean` (default `true`) keeps the right column out of the **desktop** arrangement *without* touching its `isOpen` and is **ignored below `lg`** — „hidden is not collapsed", moved to the frame that owns the arrangement. A screen with two side columns (JustRAG's topic view) is this frame too, through `AppShellLayout` + `rightPanel` (see „Page templates" below). **0.74.0:** `notice` (+ `noticeLabel`) is the frame's first row, full width above columns and bar (outage, maintenance; `Alert layout="banner"`); `status` floats at the top centre of `<main>` (reduced operation; `Alert layout="pill"`) **0.79.0:** `statusPosition` = `top` (default) / `bottom-end` — a card in the main area's bottom-right corner, up to 24rem, above the tab bar below `lg` (`Alert layout="toast"`); `AppShellLayout` passes it through **0.87.0:** `statusPosition="top-end"` — the same card in the main area's top-right corner, for a message that asks for an action **0.97.1:** the `status` layer floats above the open floating card in every position (`z-25`; the card is `z-20`) |
+| `AppShell` | `app-shell.tsx` | **Internal since 0.93.0** — not exported; apps get this frame through `AppShellLayout` (Storybook `Internals/AppShell`). Responsive frame, **rebuilt in 0.30.0**: an optional `SidePanel` column on each side (`left`/`right`, both `AppShellPanel` — `content`, `header`, `footer`, `label`, `isOpen`, `onOpenChange`, `width` default 256 = `--width-sidebar`, `expandLabel`/`collapseLabel`, `collapsedPreview`) around a main column of `topBar` (the `h-16` chrome row) plus the page's one scrolling `<main>`. Collapsed **is** the 60px rail — there is no icon-column mode. Below `lg` one area at a time plus a `BottomTabBar`: the consumer declares `mobileTabs` (each tab names the area it shows), `activeMobileTab`, `onMobileTabChange`, `mobileTabBarLabel`; the arrangement is chosen in JS (`useIsDesktop`, in `lib/pane-layout.ts`), never with a `lg:` ladder. **No drawer, no dialog, no focus trap** — the non-overlay arrangement needs none — and therefore **no node mounted twice** (the `sidebar`/`menuLabel`/`drawerLabel` props are gone and `SidebarSurfaceContext` with them). `AppShellPanel.footer` is forwarded to `SidePanel.footer`, so a collapsed column keeps its sign-out route in the rail and a `SidebarUserMenu` there renders as its avatar alone. **Both columns are drag-resizable since 0.36.0**, opt-in through `AppShellPanel.resize` (`AppShellPanelResize`: `minWidth`, `maxWidth`, `onWidthChange`, `label` — one all-or-nothing object, so „handle without bounds" cannot be expressed). Given, the shell composes `SidePanel` + `ResizeHandle` per column — the library's one resize widget, no second mechanism — with `controls` pointing at the column root (`useId`, minted in `AppShell`, passed to `SidePanel` as `id`); the handle renders only while the column is **expanded** (the rail is a fixed 60px) and only from **`lg`** up (below it one area fills the screen). Omitted, there is no separator, no `id` on the `<aside>` and the 256 default — an untouched call site renders the DOM it rendered before. **The width itself stays the consumer's number** — the components are controlled and keep no width of their own; `usePersistedWidth` (below) is the opt-in piece that makes the user's size survive a reload. **0.57.0:** the content column (top bar plus `<main>`) carries `data-slot="app-shell-content"`, so a page-sized dialog can cover that region (`SettingsDialog` `fitTo`). **Two additive props in 0.37.0**: `mainLabel?: string` names the `<main>` landmark in both arrangements (omitted, `<main>` stays unnamed — no invented default), and `showRight?: boolean` (default `true`) keeps the right column out of the **desktop** arrangement *without* touching its `isOpen` and is **ignored below `lg`** — „hidden is not collapsed", moved to the frame that owns the arrangement. A screen with two side columns (JustRAG's topic view) is this frame too, through `AppShellLayout` + `rightPanel` (see „Page templates" below). **0.74.0:** `notice` (+ `noticeLabel`) is the frame's first row, full width above columns and bar (outage, maintenance; `Alert layout="banner"`); `status` floats at the top centre of `<main>` (reduced operation; `Alert layout="pill"`) **0.79.0:** `statusPosition` = `top` (default) / `bottom-end` — a card in the main area's bottom-right corner, up to 24rem, above the tab bar below `lg` (`Alert layout="toast"`); `AppShellLayout` passes it through **0.87.0:** `statusPosition="top-end"` — the same card in the main area's top-right corner, for a message that asks for an action **0.98.0:** `status` is fixed to the viewport and portaled to `<body>` at `z-100` — above the floating card, the overlaid columns and dialogs, at the same place on every view; `top-end` is a toast that does not time out in the app's `Toaster`, and the shell publishes its bar's bottom edge as `--toast-stack-top` |
 | `SidebarUserMenu` | `sidebar-user-menu.tsx` | sidebar-footer user menu: initials avatar, name over role, chevron; the whole row is the dropdown trigger. In a collapsed `SidePanel` rail it shrinks to the avatar alone (round, icon-sized, no chevron) — kept rather than hidden, because it is the only route to sign-out. Name and role stay as `sr-only`, so the trigger's accessible name is the same string in both states |
 | `SidePanel` | `side-panel.tsx` / `side-panel-variants.ts` | controlled collapsible pane frame: `side` left/right, `isOpen`, `width`, collapsed rail (`SIDE_PANEL_RAIL_WIDTH` = 60px) with an `collapsedPreview` slot. The collapse/expand control belongs to the frame — it is the only control that exists while collapsed. Children stay mounted but leave the accessibility tree, so scroll position and half-typed input survive a collapse. The toggle shares an `h-16` row with the optional `header` slot (title/brand, expanded-only, `min-w-0` so a `truncate`d title clips instead of pushing the toggle out — `header` is *unmounted* while collapsed, unlike `children`), and it sits on the **content-facing** edge in both directions: `[header … toggle]` on a left pane, `[toggle … header]` on a right one, carried by DOM order rather than an `order-*` utility so reading and tab order match the visual one. `h-16` is the same chrome unit as `AppShellLayout`'s bar, so both pane headers and the main column's bar align; the collapsed rail's 60px **width** is unchanged. **`footer` (0.30.0)** pins a node under the body and, unlike `header`, survives collapsing — it moves to the bottom of the rail, because it is typically the only route to sign-out; it *moves* rather than being rendered twice, so it loses component state across a collapse while `children` do not. **Publishes its collapsed state on `SidebarCollapsedContext` (0.30.0)**, so `NavItem` / `SidebarUserMenu` inside it shrink to their icon form in the rail — before that only the legacy `Sidebar` (removed in KI-846) provided it, and a nav column moved onto this frame rendered full-width labels inside 60px. `collapsedPreview` is what a composing template moves a nav into (`AppShellLayout` does exactly that since 0.31.0). **The collapsed rail mirrors the expanded column's rows (0.35.0)** rather than building a rhythm of its own: an `h-16` chrome row holding the expand button alone (the same row the expanded `header`/toggle sit on), then the scrolling `collapsedPreview` slot with the `py-stack-md` a column body brings with it (`p-4` on `AppShellLayout`'s nav), then the pinned `footer` with **no** padding of the rail's own — the consumer's node carries it, exactly as the expanded footer wrapper does. So a control keeps its height on the page across a collapse; regression story `AppShellLayout` → `CollapsedRailKeepsVerticalPositions`. **Since 0.39.0 the `h-16` row is inset `px-4` (16px) and both toggles carry `p-1.5` (32px, overriding the `icon` variant's `p-2` through tailwind-merge)**, which puts a toggle's centre 32px from the pane edge — exactly where a 32px control at the trailing edge of a `p-4` body's first row sits, so chrome and body share one vertical line; `AppShellLayout`'s bar keeps `px-gutter` and is no longer a mirror of this row. **0.40.0/0.41.0: the collapse toggle is additionally pulled out (`-mr-2` / `-ml-2`, 8px)** so the chevron's *drawn* outer edge, which is what the eye reads on a ghost button, sits on the 16px inset line beside a filled body control's box edge (story `SidePanel` → `ToggleAlignsWithBodyControl`). No viewport awareness: which pane is rendered is the template's job |
 | `ResizeHandle` | `resize-handle.tsx` / `resize-handle-variants.ts` | accessible pane resizer: focusable `role="separator"` (WAI-ARIA APG „Window Splitter") with `aria-valuemin/max/now`, clamped, and `aria-orientation="vertical"` for the bar itself (not the role's default). Arrow keys move by `step` (default 10) **mirrored per side** — a left pane grows on `→`/`↑`, a right pane on `←`/`↓`; Home/End are min/max values and are deliberately *not* mirrored. Owns its pointer-drag loop and reports through one `onValueChange`. See „Entschieden: `separator` statt `slider`" in the MDX — role **and** vertical mirroring were one decision and are both settled (owner, 08/2026). `controls` (→ `aria-controls`, the pane root whose width `aria-valuenow` reports) completes the pattern: every *required* APG piece is present; of the *optional* keys, Home/End are in, `Enter` (collapse — `SidePanel`'s visible button) and F6 are deliberately out. In `AppShell` the id is minted by the frame and always wired; see „Entschieden: `aria-controls` zeigt auf die Leisten-Wurzel" in the MDX. **0.38.0 — the handle no longer occupies layout width; the grab zone is 8px straddling the pane border.** The host is `relative z-10 w-0 shrink-0 self-stretch`, so the pane border and the main column touch as if no handle were in the row; the grab target is an `::after` overlay (`absolute inset-y-0 -left-1 w-2`, 4px into each neighbour) carrying the hover tint, the `bg-primary` drag fill, the inset focus ring and the `col-resize` cursor. Purely visual/geometric — behaviour, ARIA and the drag loop are untouched, and no consumer prop changes. Pinned in Chromium by `AppShellLayout` → `HandleHasNoLayoutWidth` (box width 0, the column's right edge **is** `<main>`'s left edge, `elementFromPoint` ±3px on that line returns the handle and ±5px does not, and a drag begun at such a point still resizes) |
@@ -485,8 +490,8 @@ components (`AppShellLayout`, `AuthLayout`, `DashboardLayout`,
   When it lands, template stories must keep being snapshotted in the mode
   matrix that Chromatic covered — **light/dark × 1280 px/390 px** — so layout
   regressions are caught at the **composition** level, not only per component.
-  390 px is below the `lg` breakpoint, where the shell shows one area at a time
-  plus a `BottomTabBar` instead of its columns.
+  390 px is below `md`, where the shell keeps the page on screen: the left
+  column is a drawer, the right card a bottom sheet.
 
 ---
 
@@ -554,9 +559,10 @@ Minimum bar for every shared component:
 
 ## 7. Versioning & Changelog
 
-Semantic versioning, published to GitHub Packages via the release workflow
-(push a `v*` tag). Consumers pin a semver range. Record every token/component
-change here.
+Semantic versioning. A release is a `v*` tag on `main`; the release workflow
+also publishes it to GitHub Packages. Consumers pin the tag
+(`github:KI4JLU/Design-System#<tag>`, as JustRAG does) — see the README.
+Record every token/component change here.
 
 ### Distribution — open follow-up: publish to npmjs.com
 
@@ -574,9 +580,13 @@ consumer. Not done yet because it needs an account action nobody has taken:
 Until then the git path carries us; keep the README's git section first.
 
 ### Changelog
-- **0.97.1** — **The status message floats above the open sources card.**
-  - **`AppShell`: the `status` layers are `z-25`**, above the floating card (`z-20`). Both sat at `z-20` and the card comes later in the document, so an open card covered a status message at any position — it could be neither read nor closed. Drawers, sheets and dialogs still cover it.
-  - **Stories:** `AppShellLayout` `WithSystemStatusOverSources`, `WithSystemStatusTopEndOverSources` and `WithSystemStatusBottomEndOverSources` open the card over the message and check in the browser that the message and its close button are on top.
+- **0.98.0** — **Toasts are Sonner; the shell's floating messages sit above everything.**
+  - **⚠ Breaking: the Radix `Toast` family is gone** — `Toast`, `ToastProvider`, `ToastViewport`, `ToastTitle`, `ToastDescription`, `ToastAction`, `ToastClose`, `ToastProps`, `TOAST_DURATIONS`, `ToastVariant` — and with it `@radix-ui/react-toast`. In its place the shadcn `sonner` component, normalised: **`Toaster`** (mount once) and **`toast()`**. No consumer shipped the old family.
+  - **`Toaster`:** top right under the shell's bar, 24rem, full width on a phone, `z-100`. A macOS-style pile — newest in front, hover or focus opens it into a list and pauses the timers, swipe to dismiss. The `Alert` look per type, DS icons, German labels. **Every toast raised through the DS `toast` shows when it was raised** at the end of its title row — `14:32` today, `25.11., 14:32` once it is from another day (`<time>`, formatted for `<html lang>`); the DS `toast` stamps it, an update by `id` restamps it. Announcements are polite, errors too.
+  - **`AppShell` `status`: fixed to the viewport, at `z-100`.** Portaled to `<body>`, so it sits at the same place on every view and nothing in the app covers it — not the floating sources card (`z-20`, which covered it before), an overlaid column (`z-30`) or a dialog (`z-50`). `top` and `bottom-end` keep their own layer, measured against the main area's edges and rendered once the page has hydrated (the server renders none, so hydration matches). **`top-end` is a toast that does not time out** in the app's `Toaster` (it needs one mounted), updated in place while `status` changes. The shell publishes its bar's bottom edge as `--toast-stack-top` on `<html>`.
+  - **Visual: `Alert layout="toast"` loses its tinted border.** The frame (`border-<tone>/40`) set the shell's cards apart from the toasts they now pile with; the border stays transparent — the frame in forced-colours mode only. `layout="pill"` keeps its frame.
+  - **`Dialog`, `SettingsDialog`:** a press on a toast or on `AppShell`'s status layer no longer counts as outside the dialog — closing one keeps the dialog open (`lib/toast-outside.ts`).
+  - **Stories:** `AppShellLayout` `WithSystemStatus*` check the message's place in the viewport, over the sources card, a side panel and a dialog; `WithSystemStatusAndToasts` the pile and the open list; `ToastOverDialog` that a toast can be closed over a dialog without closing it.
 - **0.97.0** — **`ChatStage` holds its axis at the edges; `FormLayout` is removed.**
   - **⚠ Breaking: `FormLayout` (`FormLayoutProps`) is gone.** No consumer used it; the DS keeps only layouts JustRAG uses. A form page is `Container size="reading"` with a `PageHeader` and the DS fields.
   - **`ChatStage`: a floor under `--chat-room`** (half the stage). The shell measures the card's inset against the whole main area; a stage narrower than that (a pane, a preview) subtracted more than it had, its column collapsed to nothing and the composer left the stage. Where the stage fills the main area beside the card the floor never applies: the shell only places the card there while the room beside it is at least twice the card, which is more than half the main area for any card wider than 1rem.
@@ -787,7 +797,7 @@ Until then the git path carries us; keep the README's git section first.
   - **Deprecated: `Notice`, `noticeVariants`.** One component for every inline box message: `Notice` now renders an `Alert` (same tone, no icon unless given, no role), and `noticeVariants` is `alertVariants`. Visible change: the neutral Notice takes Alert's `surface-container-high` instead of `surface-container`, and a given icon is 20px instead of 16px. Stories `Components/Notice` removed; see `Components/Alert`.
   - **Visual: info is blue.** `--color-info` / `-container` / `on-info-container` move from teal to blue (light: `blue-700`, fill `blue-100` #d1e4ff, text `blue-800` #003366; dark: `blue-300` #7cb3ff on a 28 % `blue-600` tint). Teal read as a second green next to success. Repaints every info surface (Alert, Badge, Toast).
   - **Visual: `Toast` takes the `Alert` look.** The white panel with a 4px status edge is replaced by the tone's filled container pair, box radius and a transparent 1px border, plus `shadow-overlay`; title, description, icon and ✕ take the tone's text colour. Both read the one map `alertToneSurfaces` (`alert-variants.ts`), so a toast and an inline message in the same tone cannot drift apart. `toastIconVariants` keeps its `variant` for compatibility but no longer colours the icon.
-  - **For consumers raising their pin.** Replace `<Notice tone icon>` with `<Alert tone icon>` (`AlertDescription` around the text); JLUCampus has 11 call sites, JLURAG 3.
+  - **For consumers raising their pin.** Replace `<Notice tone icon>` with `<Alert tone icon>` (`AlertDescription` around the text); JLURAG has 3 call sites.
 
 - **0.61.2** — Sidebar rows (JustRAG source list).
 
@@ -955,7 +965,7 @@ Until then the git path carries us; keep the README's git section first.
     </TokenInput>
     ```
     Type renames: `ComboboxChipTone` → `TokenInputChipTone`, `ComboboxChipLabels` → `TokenInputChipLabels`, `ComboboxChipProps` → `TokenInputChipProps`, `ComboboxChipsInputProps` → `TokenInputProps` (now also carries the root props and `suggestions`). Stories: `Components/TokenInput` → `Chips` and `Invalid` (pill Style; error border, 8px panel, no growth under both palette variables); `Components/Combobox → Chips` is gone and `Components/Combobox → Invalid` covers only `ComboboxInput`. Tests moved from `combobox.test.tsx` to `token-input.test.tsx`, plus eight for the root props, the `suggestions` slot (no panel and a closed field without it; requests ignored without it, so suggestions given after a commit wait for the next keystroke; a list that lost its suggestions does not come back open after a commit) and the ref.
-  - **For consumers raising their pin.** JLURAG's `MembersModal` migrates to `TokenInput` (the change above; `ComboboxChipTone` → `TokenInputChipTone`). JLURAG's `GlobalSearch` drops `layout="panel"` (where it passes it), and its `ComboboxContent` width `className`/`align` have no effect; `MembersModal`'s chips field changes from the floating list to the panel and moves to `TokenInput` (below). In the shell header and the workspace bar (`AppChrome`, `WorkspaceSearch` — both in `AppShellLayout`'s search slot) the field becomes 24rem closed and 40rem open with no code change; `WorkspaceSearchField`'s `w-full` wrapper is unaffected (the variables inherit through it). `MembersModal`'s chips field never narrows or grows — `TokenInput` ignores the variables wherever it sits. A `ComboboxFooter` is opt-in. CampusAgents uses no `Combobox`.
+  - **For consumers raising their pin.** JLURAG's `MembersModal` migrates to `TokenInput` (the change above; `ComboboxChipTone` → `TokenInputChipTone`). JLURAG's `GlobalSearch` drops `layout="panel"` (where it passes it), and its `ComboboxContent` width `className`/`align` have no effect; `MembersModal`'s chips field changes from the floating list to the panel and moves to `TokenInput` (below). In the shell header and the workspace bar (`AppChrome`, `WorkspaceSearch` — both in `AppShellLayout`'s search slot) the field becomes 24rem closed and 40rem open with no code change; `WorkspaceSearchField`'s `w-full` wrapper is unaffected (the variables inherit through it). `MembersModal`'s chips field never narrows or grows — `TokenInput` ignores the variables wherever it sits. A `ComboboxFooter` is opt-in.
 
 - **0.55.0** — Additive; nothing removed or renamed, and existing attachment chips render as before. The 0.55.0 entries:
 
@@ -1048,8 +1058,7 @@ Until then the git path carries us; keep the README's git section first.
   - **For consumers raising their pin.** JLURAG's `SidebarNav` (a bare
     `SidebarPanel`) moves its expanded nav rows up 12px, onto the rail's
     line. JLURAG's `ThemeContext.test.tsx` imports `ThemeToggle` and has to
-    move onto `AppearanceSettings`. CampusAgents is unaffected (pinned
-    `^0.22.0`, and it uses none of the removed exports).
+    move onto `AppearanceSettings`.
 
 - **0.45.0** (KI-852) — **Fix: a head-less
   `SidebarPanel` no longer shifts its rows 12px on collapse.** A panel with no
@@ -1091,7 +1100,7 @@ Until then the git path carries us; keep the README's git section first.
   `SidebarSelectionBar`), `SidebarRail` / `SidebarRailItem`,
   `SidebarScrollArea`, `SidebarPanel`, `SidebarAction`, `useSidebarCollapsed`
   (`SidePanel` is now its only provider), `UiShapeProvider` / `useUiShape`,
-  `PaneId` / `MobilePaneTab`, `ChatLayout` (CampusAgents' widget uses it) and
+  `PaneId` / `MobilePaneTab`, `ChatLayout` and
   both width tokens. `--width-sidebar-collapsed` now has no consumer in this
   library; it is published contract, so removing it is a separate owner
   decision (TODO in `tokens.css`).
@@ -1150,8 +1159,7 @@ Until then the git path carries us; keep the README's git section first.
     column outside the shell any more.
 
   *Known consumers, audited 2026-09-30 (read-only, at that moment).*
-  **CampusAgents** (`src/`, pinned `^0.22.0`): no import of any removed
-  export. **JustRAG** (`web/src`, branch `ds/adoption`, pinned
+  **JustRAG** (`web/src`, branch `ds/adoption`, pinned
   `github:KI4JLU/JLU-Design-System#v0.44.1` *(later note: the repo is now
   `KI4JLU/Design-System`)*): no production import, but one
   **test** imports `ThemeToggle`: `web/src/contexts/ThemeContext.test.tsx:37`,
@@ -1818,8 +1826,7 @@ Until then the git path carries us; keep the README's git section first.
   **JustRAG** — one call site, `web/src/components/AppChrome.tsx:402`, pinned
   `github:KI4JLU/JLU-Design-System#v0.28.0`; it is the consumer that asked, and
   its KI-787 will drop the prop and put a live, debounced catalog search in the
-  slot. **CampusAgents** — one call site, `src/components/AppLayout.tsx:33`,
-  pinned `^0.22.0`, so seven minors behind and unaffected until the pin moves.
+  slot.
 
   *Version.* Purely additive (a required prop became optional; no removal, no
   renamed export, no changed default), so a minor. The `package.json` bump
@@ -1874,9 +1881,7 @@ Until then the git path carries us; keep the README's git section first.
   release commit); it is the consumer that asked for the toggle and is
   blocked on it, and it already passes `navLabel`/`menuLabel`/`drawerLabel`
   through its `t()` translations, so it will pass the two new labels the same
-  way. **CampusAgents** — one call site, `src/components/AppLayout.tsx:31`,
-  pinned `^0.22.0` and locked at 0.22.0, so six minors behind and unaffected
-  until someone raises the pin.
+  way.
 
   **The three facts from 0.27.0 are re-asserted through the template**, not
   trusted from the component suites — a prop that silently never arrives
@@ -1967,11 +1972,7 @@ Until then the git path carries us; keep the README's git section first.
   `web/src/components/HomeView.tsx:746`, pinned
   `github:KI4JLU/JLU-Design-System#v0.25.0` (adopted at its Stage 7b); it is
   the consumer that asked for this and will use the empty slot, moving the
-  toggle into its user menu. **CampusAgents** — one call site,
-  `src/components/AppLayout.tsx:31`, pinned `^0.22.0` and locked at 0.22.0, so
-  it is four minors behind and does not see this release at all until someone
-  raises the pin; when they do, the one-line migration above is the whole
-  change for them. No other consumer is known.
+  toggle into its user menu. No other consumer is known.
 
   *Why breaking rather than additive.* The additive form — keep rendering the
   toggle when no slot is passed — was on the table and was rejected by the
@@ -2031,12 +2032,11 @@ Until then the git path carries us; keep the README's git section first.
   advisory.
 
   *The new width is 1000px, measured rather than picked.* The content columns
-  the two consumers actually use today: JustRAG `.home-view__section` and
+  JustRAG used at the time: `.home-view__section` and
   `.home-view__grid--main` **1000px** (`web/src/components/HomeView.css:140`
   and `:247`), `GlobalKbSettings` 900px, `Profile` and `StudioWorkspace` 800px,
-  `.admin-container` `min(1600px, 95vw)`; CampusAgents `EditorShell`,
-  `AgentConfigPage` and `WidgetConfigPage` `max-w-container-max` (1440px),
-  `WidgetEmbedPage`/`StandaloneWidgetPage` 672px. Between 672 and 1440 there
+  `.admin-container` `min(1600px, 95vw)`. Between `reading` (672px) and
+  `page` (1440px) there
   are 800, 900 and 1000 twice — and 1000 is the column the next page to move
   (KI-750, JustRAG's legal pages) was asked to line up with. `max-w-5xl`
   (1024px) would have been the tidier number and would have missed that
@@ -2074,8 +2074,8 @@ Until then the git path carries us; keep the README's git section first.
   purpose: it is a *text* measure and should scale with the user's font size,
   while `page`/`content` bound device space (cards, grids, tables).
   `--max-width-container-max` keeps its name although its variant is called
-  `page`, because CampusAgents writes `max-w-container-max` in its own source
-  and a rename would fail there silently.
+  `page`, because it is published: a rename would silently break any
+  `max-w-container-max` a consumer writes itself.
 
   *Measured line lengths, so the next page picks the right width.* In Chromium,
   Inter 16px, German legal prose: `page` 1360px text measure → ~181
@@ -2283,7 +2283,7 @@ Until then the git path carries us; keep the README's git section first.
   layout shift). **`DashboardLayout`:** toolbar above the header, narrow-safe
   demo cards. **`AppShellLayout`:** new `pageLabel` bar with the `ThemeToggle`
   on the right. **New component `SidebarUserMenu`** (name, role, chevron).
-  **Storybook:** generic demo copy instead of CampusAgents branding.
+  **Storybook:** generic demo copy instead of product branding.
 - **0.21.0** — Consumer-integration round, from the JustRAG token migration.
   **Install without a token:** added `prepare` to `package.json`, so
   `npm install github:KI4JLU/JLU-Design-System#v0.21.0` builds `dist/` on
@@ -2318,9 +2318,8 @@ Until then the git path carries us; keep the README's git section first.
   search + filter/sort row, `src/components/list-toolbar.tsx`).
   `DashboardLayout` gained a `toolbar` slot (rendered through `PageHeader`'s
   existing children slot — the same contract `TableLayout.toolbar` already
-  had). Replaces CampusAgents' hand-rolled `SearchToolbar`/`ToolbarDropdown`
-  composition (Connector dashboard) with one documented pattern now shared by
-  the Connector and Agent dashboards.
+  had). Replaces a hand-rolled search toolbar and dropdown composition with
+  one documented pattern.
 - **0.19.0** — Layout layer: primitives `Stack`, `Grid`, `Container`,
   `PageHeader`, `Sidebar`, `AppShell` (token-only layout values, responsive
   behavior built in — sidebar collapses into a Radix-Dialog drawer below lg)
@@ -2331,7 +2330,7 @@ Until then the git path carries us; keep the README's git section first.
   matrix (light/dark × desktop/mobile); template contribution process in §6.
   `cn()` classGroups extended with the named spacing tokens (`gap-stack-md` vs
   `gap-gutter` now merge correctly). New `Logo` component formalizes the
-  platform wordmark („JLU [CampusAgents]" / „JLU [API]" / „JLU [RAG]") — used
+  platform wordmark („JLU [API]" / „JLU [RAG]") — used
   in the AppShell/Auth logo slots. New **brand tokens** carry the brand
   template's exact values: primitives `--p-blue-700` (#0056b3) /
   `--p-blue-800` (#003366); semantic `--color-brand` + `--color-on-brand`
@@ -2363,7 +2362,7 @@ Until then the git path carries us; keep the README's git section first.
 - **0.6.0** — Added `Badge`: the status chip. `tone` speaks the semantic
   status vocabulary, `appearance` covers both recurring shapes — filled
   container pill (status labels, KPI deltas) and inline tone-colored
-  icon+text (health checks). Replaces hand-rolled chips in CampusAgents.
+  icon+text (health checks). Replaces hand-rolled chips.
 - **0.5.1** — Default `--radius-action` changed from `full` to `lg`: stock
   buttons keep their familiar rounding and the sidebar NavItems adopt it —
   the first real use of the one-dial radius token.
@@ -2375,11 +2374,11 @@ Until then the git path carries us; keep the README's git section first.
 - **0.4.0** — Added `MenuItem`: the standard row for dropdown menus,
   comboboxes, and popover menus (`selected`, keyboard `highlighted`,
   `destructive`, `asChild`). Replaces four almost-identical hand-rolled row
-  styles in CampusAgents (filter/sort dropdowns, model combobox, sidebar user
-  menu) with one documented look.
+  styles (filter/sort dropdowns, model combobox, sidebar user menu) with one
+  documented look.
 - **0.3.0** — Added `NavItem` (sidebar/menu navigation row): levels top/sub,
   active state with `aria-current="page"`, `asChild` for router links.
-  Formalizes the CampusAgents sidebar pattern so apps carry no skin classes
+  Formalizes the sidebar pattern so apps carry no skin classes
   and Storybook matches the apps 1:1. New rule documented in
   COMPONENT_GUIDELINES: `className` on shared components is layout-only.
 - **0.2.1** — Fix: `cn()` now uses `extendTailwindMerge` configured with our
@@ -2393,16 +2392,17 @@ Until then the git path carries us; keep the README's git section first.
   (light + dark; new primitive `--p-blue-300`) so SVG charts in consumers can
   drop hardcoded hex and become theme-aware.
 - **0.1.0** — Extraction (Phase 5): moved tokens, the 7 components, theme
-  runtime, and the ESLint plugin out of CampusAgents into this package.
+  runtime, and the ESLint plugin out of the app they were built in into this
+  package.
   Replaced Ladle with Storybook (autodocs, a11y addon, MDX docs, theme
   toolbar). Added unit tests (Button, Form a11y wiring) and CI + publish
   workflows. No component/token changes — value-exact move.
-- **Phase 4** (in CampusAgents) — Enforcement layer: ESLint plugin
+- **Phase 4** — Enforcement layer: ESLint plugin
   (`no-hardcoded-colors` = error, `no-raw-ui-elements` = warn) wired into CI
   lint; Ladle workbench; CODEOWNERS review gate.
 - **Phase 3** — Theme switching (light/dark/system via `ThemeProvider` +
   `ThemeToggle`, `data-theme` on `<html>`, no-flash script). Migrated all
-  CampusAgents screens to shared components + semantic tokens. Wrote
+  screens of the app to shared components + semantic tokens. Wrote
   [COMPONENT_GUIDELINES.md](./COMPONENT_GUIDELINES.md).
 - **Phase 2** — Shared UI components on shadcn/ui patterns (Button, Card,
   Input, Label, Dialog, Form field primitives), styled with semantic tokens;
@@ -2420,6 +2420,6 @@ Until then the git path carries us; keep the README's git section first.
 
 | Phase | Scope |
 |-------|-------|
-| **0–4** *(done, in CampusAgents)* | Token layering, core components, full app migration, theming, governance + enforcement tooling. |
+| **0–4** *(done, before the extraction)* | Token layering, core components, full app migration, theming, governance + enforcement tooling. |
 | **5 — Extraction** *(done: v0.1.0, this repo)* | Tokens + component lib + eslint plugin extracted to `@ki4jlu/design-system`, published via GitHub Packages, documented with Storybook. |
-| 6 — Growth | Missing primitives (Switch, Textarea, Select and Combobox shipped), chart-series tokens, consumer migrations (CampusAgents raw controls, widget.js token alignment). Style Dictionary only if non-Tailwind targets appear. |
+| 6 — Growth *(ongoing)* | Components and layouts as JustRAG needs them; the design system keeps only what JustRAG uses. Open: automated visual regression (§4) and publishing to npmjs.com (§7). Style Dictionary only if non-Tailwind targets appear. |

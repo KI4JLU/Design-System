@@ -46,8 +46,8 @@ container.
 
 ## Why `content` is 1000px
 
-Measured, not chosen. The content columns the two consumers actually use
-today:
+Measured, not chosen. The content columns JustRAG used when the size was
+added:
 
 | Where | Width |
 |---|---|
@@ -55,10 +55,8 @@ today:
 | JustRAG `GlobalKbSettings` (inline) | 900px |
 | JustRAG `Profile` (inline) | 800px |
 | JustRAG `.admin-container` (admin tabs) | `min(1600px, 95vw)` |
-| CampusAgents `EditorShell`, `AgentConfigPage`, `WidgetConfigPage` | `max-w-container-max` (1440px) |
-| CampusAgents `WidgetEmbedPage`, `StandaloneWidgetPage` | 672px |
 
-So between 672px and 1440px there are 800, 900 and twice 1000 — and 1000 is
+So between `reading` (672px) and `page` (1440px) there are 800, 900 and twice 1000 — and 1000 is
 the width the next page to move over should align with (KI-750: JustRAG's
 legal pages should match the KB overview). The Tailwind step `max-w-5xl`
 (1024px) would have been the more convenient number, but would have missed

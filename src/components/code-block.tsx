@@ -9,7 +9,6 @@ import { Button } from "./button";
  * fold toggle) — a hairline, then the code. Deliberately fixed-dark: the
  * `code-surface` tokens do NOT switch in dark mode (see tokens.css), so the
  * block looks identical in both themes — like an editor window.
- * Formalizes the former CampusAgents call-site exception (embed snippets).
  * The copy button writes `code` to the clipboard and confirms by swapping its
  * icon and name (Copy → Check) for ~2 s. No syntax highlighting: the code is
  * shown as written.

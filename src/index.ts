@@ -525,19 +525,11 @@ export {
   type AppearanceSettingsLabels,
 } from "./components/appearance-settings";
 export {
-  Toast,
-  ToastAction,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-  type ToastProps,
-} from "./components/toast";
-export {
-  TOAST_DURATIONS,
-  type ToastVariant,
-} from "./components/toast-variants";
+  Toaster,
+  toast,
+  type ExternalToast,
+  type ToasterProps,
+} from "./components/sonner";
 export {
   Tooltip,
   TooltipTrigger,
