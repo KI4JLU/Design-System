@@ -1473,12 +1473,18 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       itself takes them; a long message wraps at 48rem instead of spanning a
       wide column. Keeping the slot in front of `children` — null or not —
       never remounts the page.
+
+      All three status layers are `z-25`: above the floating card (`z-20`),
+      which hangs over the main area's end — a message under it could be
+      neither read nor closed — and below the desktop's overlaid left column
+      and the narrow side panel (`z-30`). Drawers, sheets and dialogs are
+      portaled at `z-50`.
     */
     const statusLayer = status && statusPosition === "top" ? (
       <div
         data-slot="app-shell-status"
         data-position="top"
-        className="pointer-events-none sticky top-3 z-20 flex h-0 shrink-0 justify-center overflow-visible px-4"
+        className="pointer-events-none sticky top-3 z-25 flex h-0 shrink-0 justify-center overflow-visible px-4"
       >
         <div className="pointer-events-auto h-fit max-w-[min(100%,48rem)]">{status}</div>
       </div>
@@ -1510,7 +1516,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       <div
         data-slot="app-shell-status"
         data-position="top-end"
-        className="pointer-events-none sticky top-4 z-20 flex h-0 shrink-0 justify-end overflow-visible px-4"
+        className="pointer-events-none sticky top-4 z-25 flex h-0 shrink-0 justify-end overflow-visible px-4"
       >
         <div
           data-slot="app-shell-status-scroller"
@@ -1526,7 +1532,7 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
       <div
         data-slot="app-shell-status"
         data-position="bottom-end"
-        className="pointer-events-none relative z-20 h-0 shrink-0"
+        className="pointer-events-none relative z-25 h-0 shrink-0"
       >
         <div className="absolute inset-x-0 bottom-full flex justify-end p-4">
           <div

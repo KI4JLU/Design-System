@@ -1163,6 +1163,58 @@ export const WithSystemStatusBottomEndTall: Story = {
 };
 
 /**
+ * A status message where the open sources card lies over it — at the top
+ * centre, in the top corner, and as a tall message in the bottom corner: the
+ * message stays on top of the card (`z-25` over the card's `z-20`), so it can
+ * be read and closed.
+ */
+const statusOverSources = (statusPosition: "top" | "top-end" | "bottom-end"): Story => ({
+  tags: CHECK_ONLY,
+  render: () => (
+    <div style={{ width: 1000 }}>
+      <AppShellFixture
+        context="topic" topic={TOPIC_NAME}
+        statusPosition={statusPosition}
+        status={
+          <Alert tone="info" layout={statusPosition === "top" ? "pill" : "toast"} live="polite" onDismiss={() => {}}>
+            <AlertTitle>Hinweis</AlertTitle>
+            <AlertDescription>
+              {statusPosition === "bottom-end"
+                // Tall enough to reach up beside the card.
+                ? Array.from({ length: 40 }, (_, i) => <p key={i}>Zeile {i + 1} eines sehr langen Hinweises.</p>)
+                : "Am Freitag zwischen 18 und 20 Uhr ist der Dienst nicht erreichbar."}
+            </AlertDescription>
+          </Alert>
+        }
+      >
+        <TopicConversation />
+      </AppShellFixture>
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const card = await openSourcesCard(canvas, userEvent);
+    const message = await canvas.findByRole("status");
+    const box = message.getBoundingClientRect();
+    // The two overlap, or the check below proves nothing.
+    const overlap = {
+      left: Math.max(box.left, card.left), right: Math.min(box.right, card.right),
+      top: Math.max(box.top, card.top), bottom: Math.min(box.bottom, card.bottom),
+    };
+    await expect(overlap.right - overlap.left).toBeGreaterThan(0);
+    await expect(overlap.bottom - overlap.top).toBeGreaterThan(0);
+    const hit = (x: number, y: number) => message.ownerDocument.elementFromPoint(x, y);
+    await expect(message.contains(hit((overlap.left + overlap.right) / 2, (overlap.top + overlap.bottom) / 2))).toBe(true);
+    const close = within(message).getByRole("button", { name: "Schließen" });
+    const c = close.getBoundingClientRect();
+    await expect(close.contains(hit(c.left + c.width / 2, c.top + c.height / 2))).toBe(true);
+  },
+});
+
+export const WithSystemStatusOverSources: Story = statusOverSources("top");
+export const WithSystemStatusTopEndOverSources: Story = statusOverSources("top-end");
+export const WithSystemStatusBottomEndOverSources: Story = statusOverSources("bottom-end");
+
+/**
  * `AppShellSidePanel`: the page declares a tabbed panel beside itself — a
  * cited source next to the answer. It takes width from the main area; the
  * floating sources card stays over the main area, beside the panel. The
