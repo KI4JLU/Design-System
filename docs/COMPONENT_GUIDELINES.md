@@ -508,7 +508,9 @@ focusing the pile opens it and pauses every timer, and every typed toast but
 `duration: Infinity`. A toast with an `action` gets `duration: Infinity` — an
 action that clears itself away after four seconds is unusable. Announcements
 are polite (Sonner's region), errors too. Nothing essential only in a toast — it
-disappears and can't be found afterwards.
+disappears and can't be found afterwards. A shell card that piles with the
+toasts (`AppShell` `status` at `top-end`) shows its creation time the same way:
+`<AlertTitle time={raisedAt}>`.
 
 ## Layout & Templates
 

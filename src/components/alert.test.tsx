@@ -204,6 +204,48 @@ describe("Alert", () => {
     expect(screen.getByText("Text")).toHaveClass("m-0");
   });
 
+  it("shows the creation time at the end of the title row", () => {
+    const at = new Date();
+    at.setHours(9, 5, 0, 0);
+    render(
+      <Alert tone="info" layout="toast">
+        <AlertTitle time={at}>Neue Version</AlertTitle>
+        <AlertDescription>Text</AlertDescription>
+      </Alert>,
+    );
+    const time = screen.getByText("09:05").closest("time")!;
+    expect(time).toHaveAttribute("dateTime", at.toISOString());
+    const row = time.closest("[data-slot=alert-title-row]");
+    expect(row).toContainElement(screen.getByText("Neue Version"));
+    expect(row?.lastElementChild).toBe(time);
+  });
+
+  it("dates a time from another day", () => {
+    const at = new Date();
+    at.setDate(at.getDate() - 2);
+    at.setHours(14, 32, 0, 0);
+    render(
+      <Alert>
+        <AlertTitle time={at}>Wartung</AlertTitle>
+      </Alert>,
+    );
+    const dd = String(at.getDate()).padStart(2, "0");
+    const mm = String(at.getMonth() + 1).padStart(2, "0");
+    expect(screen.getByText(`${dd}.${mm}., 14:32`)).toBeInTheDocument();
+    // Read out with the year, the same before and after midnight.
+    expect(screen.getByText(`${dd}.${mm}.${at.getFullYear()}, 14:32`)).toHaveClass("sr-only");
+  });
+
+  it("renders no title row without a time", () => {
+    const { container } = render(
+      <Alert>
+        <AlertTitle>Titel</AlertTitle>
+      </Alert>,
+    );
+    expect(container.querySelector("[data-slot=alert-title-row]")).toBeNull();
+    expect(container.querySelector("time")).toBeNull();
+  });
+
   it("passes className through and forwards the ref", () => {
     const ref = { current: null as HTMLDivElement | null };
     render(

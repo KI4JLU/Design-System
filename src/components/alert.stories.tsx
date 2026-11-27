@@ -163,6 +163,54 @@ export const Dismissible: Story = {
 };
 
 /**
+ * `AlertTitle time`: when the message was raised, at the end of the title
+ * row, as the toasts show theirs — the time today, date and time before.
+ */
+export const WithTime: Story = {
+  render: () => {
+    const today = new Date();
+    today.setHours(9, 5, 0, 0);
+    const earlier = new Date(today);
+    earlier.setDate(earlier.getDate() - 1);
+    earlier.setHours(14, 32);
+    return (
+      <div className="flex max-w-sm flex-col gap-3">
+        <Alert tone="info" layout="toast">
+          <AlertTitle time={today}>Neue Version verfügbar</AlertTitle>
+          <AlertDescription>Laden Sie neu, um sie zu verwenden.</AlertDescription>
+          <AlertAction>
+            <Button variant="outline" size="sm">
+              Neu laden
+            </Button>
+          </AlertAction>
+        </Alert>
+        <Alert tone="warning" layout="toast" onDismiss={() => {}}>
+          <AlertTitle time={earlier}>Wartung</AlertTitle>
+          <AlertDescription>Heute ab 18 Uhr ist der Dienst kurz nicht erreichbar.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    // Formatted for <html lang>: compare against the same formatter.
+    const lang = document.documentElement.lang || "de";
+    const [today, earlier] = Array.from(canvasElement.querySelectorAll("time"));
+    const at = (el: Element) => new Date(el.getAttribute("dateTime") ?? "");
+    await expect(today).toHaveTextContent(
+      new Intl.DateTimeFormat(lang, { hour: "2-digit", minute: "2-digit" }).format(at(today)),
+    );
+    await expect(earlier).toHaveTextContent(
+      new Intl.DateTimeFormat(lang, {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(at(earlier)),
+    );
+  },
+};
+
+/**
  * In a card: the alert brings its tinted surface and needs no card of its own
  * (replaces the card + badge composition of the transcription view).
  */

@@ -1,10 +1,11 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from "lucide-react";
+import { CreatedTime } from "../lib/created-time";
 import { cn } from "../lib/utils";
 import { alertVariants, type AlertLayout, type AlertTone } from "./alert-variants";
 
-/** No default icon for `neutral` — like `Toast`, there is no status to signal. */
+/** No default icon for `neutral` — like a plain toast, there is no status to signal. */
 const TONE_ICONS: Record<
   AlertTone,
   React.ComponentType<React.SVGProps<SVGSVGElement>> | null
@@ -53,7 +54,7 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Inline, persistent status message in the page flow — a failed load, a form
  * that did not save, a notice about the service. The transient corner message
- * is `Toast`. Compose it from `AlertTitle` / `AlertDescription` (+ optional
+ * is a toast (`toast()`, `Toaster`). Compose it from `AlertTitle` / `AlertDescription` (+ optional
  * `AlertAction`); a one-liner is just an `AlertDescription`.
  *
  * **Icon.** Each status tone brings a lucide icon, so the status is not told
@@ -172,25 +173,43 @@ Alert.displayName = "Alert";
 export interface AlertTitleProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Render the single child element instead of a `div` (e.g. an `<h3>`). */
   asChild?: boolean;
+  /**
+   * When the message was raised. Shown at the end of the title row as the
+   * toasts show theirs — `14:32` today, `25.11., 14:32` before — formatted
+   * for `<html lang>`. In a banner or pill it follows the title on its line.
+   */
+  time?: Date;
 }
 
 /**
  * The short headline. A `div` by default — an alert is not a section of the
  * outline; `asChild` gives it a heading level where it is one. `m-0` covers
- * that path (a heading's user-agent margin).
+ * that path (a heading's user-agent margin). `time` adds the creation time
+ * at the end of its row.
  */
 const AlertTitle = React.forwardRef<HTMLDivElement, AlertTitleProps>(
-  ({ className, asChild = false, ...props }, ref) => {
+  ({ className, asChild = false, time, ...props }, ref) => {
     const Comp = asChild ? Slot : "div";
-    return (
+    const title = (
       <Comp
         ref={ref}
         className={cn(
           "m-0 font-semibold wrap-anywhere [[data-flow=inline]_&]:inline",
+          time && "min-w-0",
           className,
         )}
         {...props}
       />
+    );
+    if (!time) return title;
+    return (
+      <div
+        data-slot="alert-title-row"
+        className="flex items-baseline justify-between gap-3 [[data-flow=inline]_&]:inline"
+      >
+        {title}
+        <CreatedTime at={time} className="[[data-flow=inline]_&]:ml-2" />
+      </div>
     );
   },
 );

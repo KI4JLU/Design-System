@@ -1128,7 +1128,7 @@ export const WithSystemStatusTopEnd: Story = {
       statusPosition="top-end"
       status={
         <Alert tone="info" layout="toast" live="polite">
-          <AlertTitle>Neue Version verfügbar</AlertTitle>
+          <AlertTitle time={new Date()}>Neue Version verfügbar</AlertTitle>
           <AlertDescription>Lade die Seite neu, um sie zu verwenden.</AlertDescription>
           <AlertAction>
             <Button variant="outline" size="sm">
@@ -1255,7 +1255,7 @@ export const WithSystemStatusBottomEndOverSources: Story = statusOverSources("bo
 
 const UPDATE_CARD = (
   <Alert tone="info" layout="toast" live="polite">
-    <AlertTitle>Neue Version verfügbar</AlertTitle>
+    <AlertTitle time={new Date()}>Neue Version verfügbar</AlertTitle>
     <AlertDescription>Lade die Seite neu, um sie zu verwenden.</AlertDescription>
     <AlertAction>
       <Button variant="outline" size="sm">Neu laden</Button>

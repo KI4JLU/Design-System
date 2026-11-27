@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CircleCheck, CircleX, Info, Loader2, TriangleAlert, X } from "lucide-react";
 import { Toaster as Sonner, toast as sonnerToast, type ExternalToast, type ToasterProps } from "sonner";
+import { CreatedTime } from "../lib/created-time";
 import { cn } from "../lib/utils";
 import { alertToneSurfaces } from "./alert-variants";
 import { buttonVariants } from "./button-variants";
@@ -41,8 +42,9 @@ import { buttonVariants } from "./button-variants";
  * `toast.success` / `info` / `warning` / `error` / `message` / `loading` shows
  * when it was raised, at the end of its title row — `14:32` today, `25.11.,
  * 14:32` before. An update of a toast by its `id` restamps it. Formatted for
- * `<html lang>` (German without one). Not stamped: `toast.custom` (its own
- * layout) and the toasts `toast.promise` raises itself.
+ * `<html lang>` (German without one), read out as the full date and time.
+ * Not stamped: `toast.custom` (its own layout) and the toasts `toast.promise`
+ * raises itself.
  *
  * **Close button** on every typed toast except `loading`; Sonner draws none
  * on a custom toast.
@@ -125,37 +127,12 @@ Toaster.displayName = "Toaster";
 
 type ToastTitle = Parameters<typeof sonnerToast>[0];
 
-/** When a toast was raised: `14:32` today, `25.11., 14:32` on another day. */
-function formatToastTime(at: Date, now = new Date()) {
-  const lang = (typeof document !== "undefined" && document.documentElement.lang) || "de";
-  const sameDay = at.toDateString() === now.toDateString();
-  return new Intl.DateTimeFormat(lang, {
-    ...(sameDay ? {} : { day: "2-digit", month: "2-digit" }),
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(at);
-}
-
 /** The title row: the message, then the time it was raised. */
 function TimedTitle({ title, at }: { title: ToastTitle; at: Date }) {
-  // At midnight a toast raised today turns into one from yesterday and gains
-  // its date: render again then.
-  const [, dayChanged] = React.useReducer((n: number) => n + 1, 0);
-  React.useEffect(() => {
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    const timer = setTimeout(dayChanged, midnight.getTime() - Date.now() + 1);
-    return () => clearTimeout(timer);
-  });
   return (
     <span data-slot="toast-title-row" className="flex items-baseline justify-between gap-3">
       <span className="min-w-0">{typeof title === "function" ? title() : title}</span>
-      <time
-        dateTime={at.toISOString()}
-        className="shrink-0 text-xs font-normal tabular-nums opacity-70"
-      >
-        {formatToastTime(at)}
-      </time>
+      <CreatedTime at={at} />
     </span>
   );
 }
