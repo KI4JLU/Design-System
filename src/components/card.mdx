@@ -74,6 +74,16 @@ line of facts (`CardMeta`):
 
 <Canvas of={CardStories.HairlineCatalog} />
 
+**Facts as items.** A card's facts — „Genutzt vor 2 Stunden", „von Test
+User", the caller's role — are `CardMetaItem`s: a 16px icon, a muted
+`CardMetaLabel` and a semibold `CardMetaValue`. Stacked in a `CardMetaList`
+they make the card's meta block; in a `CardMeta` they sit side by side. A
+value too long for the card ends in an ellipsis, the label keeps its width.
+`tone="primary"` sets one fact apart — icon and value in the primary colour,
+the label stays muted (the role line).
+
+<Canvas of={CardStories.HairlineMetaItems} />
+
 ## Accent edge and rows
 
 `accent` draws a 4px edge on the left in `accentColor` (primary without one):

@@ -232,6 +232,80 @@ const CardMeta = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
 CardMeta.displayName = "CardMeta";
 
 /**
+ * The card's facts stacked one per line — „Genutzt vor 2 Stunden", „von Test
+ * User" — each a `CardMetaItem`. A `CardMeta` holds the same items side by
+ * side instead.
+ */
+const CardMetaList = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} data-slot="card-meta-list" className={cn("flex min-w-0 flex-col gap-1", className)} {...props} />
+  ),
+);
+CardMetaList.displayName = "CardMetaList";
+
+/**
+ * One fact: an icon, a muted label and the value in the text colour —
+ * `<CardMetaItem><Clock aria-hidden="true" /><CardMetaLabel>Genutzt</CardMetaLabel>
+ * <CardMetaValue>vor 2 Stunden</CardMetaValue></CardMetaItem>`. The icon (a
+ * direct `svg` child) takes 16px; the value is one line and ends in an
+ * ellipsis when the card is too narrow, the label keeps its width. Composed
+ * like shadcn's `Item` (media, title, description as parts), sized for a
+ * card's meta block.
+ *
+ * `tone="primary"` sets the fact apart — icon and value in the primary
+ * colour, the label stays muted (the caller's role on a topic card).
+ */
+export interface CardMetaItemProps extends React.ComponentProps<"div"> {
+  /** `primary`: icon and value in the primary colour. Default `neutral`. */
+  tone?: "neutral" | "primary";
+}
+
+const CardMetaItem = React.forwardRef<HTMLDivElement, CardMetaItemProps>(
+  ({ className, tone = "neutral", ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="card-meta-item"
+      data-tone={tone}
+      className={cn(
+        "group/card-meta-item flex min-w-0 items-center gap-1 font-label-sm text-label-sm text-on-surface-variant",
+        "[&>svg]:mr-1 [&>svg]:size-4 [&>svg]:shrink-0",
+        "data-[tone=primary]:[&>svg]:text-primary",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+CardMetaItem.displayName = "CardMetaItem";
+
+/** The fact's name, muted: „Genutzt", „von". */
+const CardMetaLabel = React.forwardRef<HTMLSpanElement, React.ComponentProps<"span">>(
+  ({ className, ...props }, ref) => (
+    <span ref={ref} data-slot="card-meta-label" className={cn("shrink-0", className)} {...props} />
+  ),
+);
+CardMetaLabel.displayName = "CardMetaLabel";
+
+/**
+ * The fact itself, in the text colour and semibold — the primary colour in a
+ * `tone="primary"` item; one line, cut with an ellipsis.
+ */
+const CardMetaValue = React.forwardRef<HTMLSpanElement, React.ComponentProps<"span">>(
+  ({ className, ...props }, ref) => (
+    <span
+      ref={ref}
+      data-slot="card-meta-value"
+      className={cn(
+        "min-w-0 truncate font-semibold text-on-surface group-data-[tone=primary]/card-meta-item:text-primary",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+CardMetaValue.displayName = "CardMetaValue";
+
+/**
  * The card's body. In a hairline card (one with a `CardBand`) it takes the
  * band's side inset (20px) and grows, so the `CardFooter` sits at the bottom.
  */
@@ -267,4 +341,18 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardBand, CardHairline, CardHeader, CardMeta, CardTitle, CardDescription, CardContent, CardFooter };
+export {
+  Card,
+  CardBand,
+  CardHairline,
+  CardHeader,
+  CardMeta,
+  CardMetaList,
+  CardMetaItem,
+  CardMetaLabel,
+  CardMetaValue,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+};
