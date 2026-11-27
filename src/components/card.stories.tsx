@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
-import { FileText, MessageSquare, RefreshCw, Clock, Star, User } from "lucide-react";
+import { FileText, MessageSquare, RefreshCw, Clock, Shield, Star, User } from "lucide-react";
 import {
   Card,
   CardBand,
   CardHairline,
   CardMeta,
+  CardMetaList,
+  CardMetaItem,
+  CardMetaLabel,
+  CardMetaValue,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -130,9 +134,11 @@ export const Hairline: Story = {
             <ActionMenu label={`Aktionen: ${topic.name}`} actions={[{ label: "Umbenennen…", onSelect: () => {} }]} variant="ghost" />
           </CardBand>
           <CardHairline>{topic.category && <CategoryPill name={topic.category} />}</CardHairline>
-          <CardContent className="flex flex-col gap-1 text-sm text-on-surface-variant">
-            <span className="flex items-center gap-2"><Clock aria-hidden="true" className="size-4" /> Genutzt <b className="text-on-surface">vorgestern</b></span>
-            <span className="flex items-center gap-2"><RefreshCw aria-hidden="true" className="size-4" /> Aktualisiert <b className="text-on-surface">vor 19 Stunden</b></span>
+          <CardContent>
+            <CardMetaList>
+              <CardMetaItem><Clock aria-hidden="true" /><CardMetaLabel>Genutzt</CardMetaLabel><CardMetaValue>vorgestern</CardMetaValue></CardMetaItem>
+              <CardMetaItem><RefreshCw aria-hidden="true" /><CardMetaLabel>Aktualisiert</CardMetaLabel><CardMetaValue>vor 19 Stunden</CardMetaValue></CardMetaItem>
+            </CardMetaList>
           </CardContent>
           <CardFooter>
             <Badge><FileText aria-hidden="true" className="size-3" /> {topic.files}</Badge>
@@ -475,6 +481,79 @@ export const HairlineCatalog: Story = {
  * colour in from that edge. Without a category the bar is grey and there is no
  * tint (`cardNeutralAccent` as `accentColor`, `tint` off).
  */
+/**
+ * The card's facts as `CardMetaItem`s: an icon, a muted label, the value. In a
+ * `CardMetaList` one per line; the role line (JustRAG „Geteiltes Wissen")
+ * is `tone="primary"`: icon and value in the primary colour. A value too long for the card ends in an
+ * ellipsis while its label keeps its width. In a `CardMeta` the same items
+ * sit side by side.
+ */
+export const HairlineMetaItems: Story = {
+  render: () => (
+    <div className="grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">
+      <Card interactive>
+        <CardBand>
+          <CardTitle>Test Verwalten</CardTitle>
+          <ActionMenu label="Aktionen: Test Verwalten" actions={[{ label: "Umbenennen…", onSelect: () => {} }]} variant="ghost" />
+        </CardBand>
+        <CardHairline />
+        <CardContent>
+          <CardMetaList>
+            <CardMetaItem tone="primary" data-testid="role">
+              <Shield aria-hidden="true" />
+              <CardMetaLabel>Du bist</CardMetaLabel>
+              <CardMetaValue>Admin</CardMetaValue>
+            </CardMetaItem>
+            <CardMetaItem><Clock aria-hidden="true" /><CardMetaLabel>Genutzt</CardMetaLabel><CardMetaValue>vor 2 Stunden</CardMetaValue></CardMetaItem>
+            <CardMetaItem data-testid="long-owner">
+              <User aria-hidden="true" />
+              <CardMetaLabel>von</CardMetaLabel>
+              <CardMetaValue>Maximiliane Mustermann-Schönberg-Wittelsbach</CardMetaValue>
+            </CardMetaItem>
+          </CardMetaList>
+        </CardContent>
+        <CardFooter>
+          <Badge className="ml-auto"><User aria-hidden="true" className="size-3" /> Geteilt (2)</Badge>
+        </CardFooter>
+      </Card>
+      <Card>
+        <CardBand><CardTitle>Facts in a row</CardTitle></CardBand>
+        <CardHairline />
+        <CardContent>
+          <CardMeta>
+            <CardMetaItem><FileText aria-hidden="true" /><CardMetaValue>12</CardMetaValue><CardMetaLabel>Quellen</CardMetaLabel></CardMetaItem>
+            <CardMetaItem><MessageSquare aria-hidden="true" /><CardMetaValue>4</CardMetaValue><CardMetaLabel>Chats</CardMetaLabel></CardMetaItem>
+          </CardMeta>
+        </CardContent>
+      </Card>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The icon is 16px and the label keeps its width; the long value is cut
+    // to the card's width (oracle: the browser's own scroll metrics).
+    const item = canvas.getByTestId("long-owner");
+    const icon = item.querySelector("svg")!;
+    await expect(icon.getBoundingClientRect().width).toBe(16);
+    const value = item.querySelector<HTMLElement>("[data-slot=card-meta-value]")!;
+    await expect(value.scrollWidth).toBeGreaterThan(value.clientWidth);
+    const label = item.querySelector<HTMLElement>("[data-slot=card-meta-label]")!;
+    await expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+    await expect(item.getBoundingClientRect().right).toBeLessThanOrEqual(item.closest("[data-slot=card]")!.getBoundingClientRect().right);
+    // tone="primary" colours icon and value alike and leaves the label muted
+    // (oracle: the primary token, resolved through a probe).
+    const probe = document.createElement("span");
+    probe.style.color = "var(--color-primary)";
+    canvasElement.appendChild(probe);
+    const primary = getComputedStyle(probe).color;
+    probe.remove();
+    const role = canvas.getByTestId("role");
+    await expect(getComputedStyle(role.querySelector("svg")!).color).toBe(primary);
+    await expect(getComputedStyle(role.querySelector("[data-slot=card-meta-value]")!).color).toBe(primary);
+    await expect(getComputedStyle(role.querySelector("[data-slot=card-meta-label]")!).color).not.toBe(primary);
+  },
+};
+
 export const Row: Story = {
   render: () => (
     <div className="flex max-w-4xl flex-col gap-2">

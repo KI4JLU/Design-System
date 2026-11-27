@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Card, CardBand, CardContent, CardFooter, CardHairline, CardTitle } from "./card";
+import { Card, CardBand, CardContent, CardFooter, CardHairline, CardMetaItem, CardMetaLabel, CardMetaList, CardMetaValue, CardTitle } from "./card";
 import { legibleColor, onColor } from "../lib/legible-color";
 import { cardGlowColor } from "./card-variants";
 
@@ -142,5 +142,48 @@ describe("CardTitle — heading semantics are opt-in", () => {
     expect(heading).toHaveAccessibleName("Widget A");
     // The type tokens come from CardTitle, not from a copy at the call site.
     expect(heading).toHaveClass("font-headline-md", "text-headline-md");
+  });
+});
+
+/**
+ * Oracle: the JustRAG topic card's meta block (KI-848; the role line,
+ * 27.11.2026) — icon, muted label, semibold value, one fact per line. jsdom
+ * applies no Tailwind, so this pins the slots and the classes that carry the
+ * contract; the sizes and the ellipsis are checked in the browser by the
+ * HairlineMetaItems story.
+ */
+describe("CardMetaItem", () => {
+  it("stacks items in a list and gives each part its slot", () => {
+    render(
+      <CardMetaList data-testid="list">
+        <CardMetaItem data-testid="item">
+          <svg data-testid="icon" aria-hidden="true" />
+          <CardMetaLabel>Genutzt</CardMetaLabel>
+          <CardMetaValue>vor 2 Stunden</CardMetaValue>
+        </CardMetaItem>
+      </CardMetaList>,
+    );
+    expect(screen.getByTestId("list")).toHaveAttribute("data-slot", "card-meta-list");
+    expect(screen.getByTestId("list")).toHaveClass("flex-col");
+    expect(screen.getByTestId("item")).toHaveAttribute("data-slot", "card-meta-item");
+    expect(screen.getByTestId("item")).toHaveClass("text-on-surface-variant", "[&>svg]:size-4", "[&>svg]:shrink-0");
+    expect(screen.getByText("Genutzt")).toHaveAttribute("data-slot", "card-meta-label");
+    expect(screen.getByText("Genutzt")).toHaveClass("shrink-0");
+    expect(screen.getByText("vor 2 Stunden")).toHaveAttribute("data-slot", "card-meta-value");
+    expect(screen.getByText("vor 2 Stunden")).toHaveClass("truncate", "font-semibold", "text-on-surface");
+  });
+
+  it("marks the tone on the item, neutral by default, and colours a primary item's icon and value", () => {
+    render(
+      <>
+        <CardMetaItem data-testid="plain"><CardMetaValue>vor 2 Stunden</CardMetaValue></CardMetaItem>
+        <CardMetaItem tone="primary" data-testid="role"><CardMetaLabel>Du bist</CardMetaLabel><CardMetaValue>Admin</CardMetaValue></CardMetaItem>
+      </>,
+    );
+    expect(screen.getByTestId("plain")).toHaveAttribute("data-tone", "neutral");
+    expect(screen.getByTestId("role")).toHaveAttribute("data-tone", "primary");
+    expect(screen.getByTestId("role")).toHaveClass("data-[tone=primary]:[&>svg]:text-primary");
+    expect(screen.getByText("Admin")).toHaveClass("group-data-[tone=primary]/card-meta-item:text-primary");
+    expect(screen.getByText("Du bist").className).not.toContain("text-primary");
   });
 });
