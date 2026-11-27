@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { FolderOpen, Home, MessageSquare } from "lucide-react";
 import {
   AppShell,
@@ -12,6 +13,7 @@ import {
   type AppShellPanelResize,
 } from "./app-shell";
 import { NavItem } from "./nav-item";
+import { Toaster } from "./sonner";
 import { SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
 import type { MobilePaneTab } from "../lib/pane-layout";
 
@@ -713,45 +715,71 @@ describe("AppShell — notice", () => {
 });
 
 /**
- * `status` + `statusPosition`. Oracles: document order (the corner layer is
- * after `<main>`, not inside the scrolling page; the top layer is main's first
- * child), the tab bar's `navigation` landmark, and `data-position`.
+ * `status` + `statusPosition`. Oracles: where the layer is in the document
+ * (portaled to `<body>`, outside the shell's own root and every landmark of
+ * it), `data-position`, and the layer's `fixed` / `z-100` classes. Its place
+ * in the viewport is checked in the browser (`AppShellLayout` stories).
  */
 describe("AppShell — status position", () => {
-  it("floats at the top of the main area by default", () => {
+  const layerOf = (text: string) => screen.getByText(text).closest<HTMLElement>("[data-slot=app-shell-status]")!;
+
+  it("floats at the top by default, fixed to the viewport outside the shell", () => {
     stubViewport(true);
-    renderShell({ status: <p>Hohe Auslastung</p> });
-    const layer = screen.getByText("Hohe Auslastung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    const { container } = renderShell({ status: <p>Hohe Auslastung</p> });
+    const layer = layerOf("Hohe Auslastung");
     expect(layer).toHaveAttribute("data-position", "top");
-    expect(screen.getByRole("main").firstElementChild).toBe(layer);
+    expect(layer.parentElement).toBe(document.body);
+    expect(container).not.toContainElement(layer);
+    expect(layer).toHaveClass("fixed", "z-100");
   });
 
-  it("floats in the main area's top corner at top-end, in the status layer's place", () => {
+  it("is a toast that does not time out at top-end, in the app's Toaster", async () => {
     stubViewport(true);
-    renderShell({ status: <p>Neue Version</p>, statusPosition: "top-end" });
-    const layer = screen.getByText("Neue Version").closest<HTMLElement>("[data-slot=app-shell-status]")!;
-    expect(layer).toHaveAttribute("data-position", "top-end");
-    expect(screen.getByRole("main").firstElementChild).toBe(layer);
-    expect(screen.getAllByText("Neue Version")).toHaveLength(1);
+    const toaster = render(<Toaster />);
+    const view = renderShell({ status: <p>Neue Version</p>, statusPosition: "top-end" });
+    const item = (await screen.findByText("Neue Version")).closest<HTMLElement>("[data-sonner-toast]");
+    expect(item).not.toBeNull();
+    expect(toaster.container).toContainElement(item);
+    expect(view.container).not.toContainElement(item);
+    expect(within(item!).getByText("Neue Version").closest("[data-slot=app-shell-status]"))
+      .toHaveAttribute("data-position", "top-end");
+    // No close button and no swipe: it stays until the app removes it.
+    expect(within(item!).queryByRole("button")).toBeNull();
+    expect(item).toHaveAttribute("data-dismissible", "false");
+
+    // Updated in place, not raised a second time.
+    view.rerender(shellElement({ status: <p>Neue Version bereit</p>, statusPosition: "top-end" }));
+    await screen.findByText("Neue Version bereit");
+    expect(document.querySelectorAll("[data-sonner-toast]")).toHaveLength(1);
+
+    // Gone with the message.
+    view.rerender(shellElement({ status: undefined, statusPosition: "top-end" }));
+    await waitFor(() => expect(screen.queryByText("Neue Version bereit")).toBeNull());
+    toaster.unmount();
   });
 
-  it("sits under the main area at bottom-end, outside the scrolling page and the side columns", () => {
+  it("sits in the bottom corner at bottom-end, outside the page and the side columns", () => {
     stubViewport(true);
     renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });
-    const layer = screen.getByText("Wartung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
+    const layer = layerOf("Wartung");
     expect(layer).toHaveAttribute("data-position", "bottom-end");
     expect(screen.getByRole("main")).not.toContainElement(layer);
-    expect(precedes(screen.getByRole("main"), layer)).toBe(true);
     for (const column of screen.getAllByRole("complementary")) {
       expect(column).not.toContainElement(layer);
     }
   });
 
+  it("leaves no layer behind once the message is gone", () => {
+    stubViewport(true);
+    const view = renderShell({ status: <p>Wartung</p> });
+    view.rerender(shellElement({ status: undefined }));
+    expect(document.querySelector("[data-slot=app-shell-status]")).toBeNull();
+  });
+
   it("sits under the page below lg, whatever is open over it", () => {
     stubViewport(false);
     const { rerender } = renderShell({ status: <p>Wartung</p>, statusPosition: "bottom-end" });
-    const layer = screen.getByText("Wartung").closest<HTMLElement>("[data-slot=app-shell-status]")!;
-    expect(precedes(screen.getByRole("main"), layer)).toBe(true);
+    expect(screen.getByText("Wartung").closest("[data-slot=app-shell-status]")!.parentElement).toBe(document.body);
 
     rerender(
       <AppShell
@@ -930,6 +958,29 @@ describe("AppShell — viewport switch", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Quellen" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveTextContent("Inhalt");
+  });
+
+  it("hydrates a server-rendered status without a mismatch, then shows it", async () => {
+    // Oracle: React reports a hydration mismatch through `onRecoverableError`.
+    // The status layer is a portal to <body>, which the server cannot render;
+    // the first client render must match the server's (no layer), the layer
+    // follows after hydration.
+    stubViewport(true);
+    const shell = shellElement({ status: <p>Hohe Auslastung</p> });
+    const html = renderToString(shell);
+    expect(html).not.toContain("Hohe Auslastung");
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.append(container);
+    const onRecoverableError = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    await act(async () => {
+      root = hydrateRoot(container, shell, { onRecoverableError });
+    });
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    expect(await screen.findByText("Hohe Auslastung")).toBeInTheDocument();
+    act(() => root!.unmount());
+    container.remove();
   });
 
   it("renders the desktop arrangement on a server, without touching the DOM", () => {

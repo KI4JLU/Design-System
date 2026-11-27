@@ -28,7 +28,7 @@ import { Alert, AlertTitle, AlertDescription, AlertAction } from "@ki4jlu/design
 |---|---|
 | A state the user has to know about while they stay on the page (load failed, read-only, maintenance) | `Alert` |
 | A short static hint in a form or a settings section | `Alert` without a title (`AlertDescription` only), `tone="neutral"` |
-| A confirmation that fades after a few seconds („Gespeichert") | `Toast` |
+| A confirmation that fades after a few seconds („Gespeichert") | `toast()` (`Toaster`) |
 | A message for the whole app (outage) | `Alert layout="banner"` in `AppShellLayout`'s `notice` |
 | A question the user must answer before going on | `AlertDialog` |
 | A single field's error | the field's own `aria-invalid` and message (`Form`) |
@@ -77,6 +77,21 @@ After a failed save in a form dialog it stands above the fields.
 `layout="box"` (default) is the block in the page. `banner`, `pill` and `toast`
 are for `AppShellLayout`'s `notice` and `status` slots — see
 `Templates/AppShellLayout → WithSystemNotice` and `WithSystemStatus`.
+
+## Creation time
+
+`AlertTitle time={date}` shows when the message was raised at the end of the
+title row — `14:32` today, `25.11., 14:32` before, formatted for `<html lang>`
+— as every toast does. Give it to the shell's floating cards (the update card,
+a system notice), which sit in the toast pile. The time lives in the title
+row: a message without an `AlertTitle` shows none.
+
+Screen readers hear the full date and time (with the year), which stays the
+same when the visible text gains its date at midnight — so a live alert is not
+announced again. The text is filled in after hydration and follows changes of
+`<html lang>`.
+
+<Canvas of={AlertStories.WithTime} />
 
 ## Accessibility
 

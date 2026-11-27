@@ -141,14 +141,12 @@ line under the row).
   table contents (links, buttons) are already reachable by keyboard.
 - **Cells wrap by default** — unlike the current shadcn template, which puts
   `whitespace-nowrap` on every cell. The reason is the existing code: none of
-  the eight tables found in JustRAG and CampusAgents sets `nowrap` across the
-  board; the JustRAG dashboard sets it per column, and both Markdown tables
-  wrap on purpose. `whitespace-nowrap` therefore belongs on the individual
+  the tables found in JustRAG sets `nowrap` across the board; its dashboard
+  sets it per column, and its Markdown tables wrap on purpose. `whitespace-nowrap` therefore belongs on the individual
   cell (date, number), not in the template.
 - **`wrap-anywhere` on header and data cells.** Long unbroken strings (hashes,
   API keys, URLs) break inside the cell instead of making the table wider than
-  its container. Matches the `overflow-wrap: anywhere` the CampusAgents
-  Markdown table sets by hand today.
+  its container.
 - **Every divider carries a color (`border-outline-variant`).** Tailwind's
   Preflight sets `border: 0 solid` without a color, so `border-b` alone renders
   in `currentColor` — this repo (unlike shadcn) has no global `border-border`

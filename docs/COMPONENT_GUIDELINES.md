@@ -487,34 +487,30 @@ turns the strip and swaps the arrow keys.
 ## Toast
 
 ```tsx
-import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastAction, ToastClose } from "@ki4jlu/design-system";
+import { Toaster, toast } from "@ki4jlu/design-system";
 
-<ToastProvider>
+<>
   <App />
-  {toasts.map((t) => (                      {/* the list belongs to the app */}
-    <Toast key={t.id} variant={t.variant} onOpenChange={(o) => !o && remove(t.id)}>
-      <ToastTitle>{t.message}</ToastTitle>
-      <ToastClose />
-    </Toast>
-  ))}
-  <ToastViewport />                          {/* exactly one, at the app root */}
-</ToastProvider>
+  <Toaster />                               {/* exactly one, at the app root */}
+</>
+
+toast.success("Gespeichert");               // anywhere, no provider or hook
+toast.error("Speichern fehlgeschlagen", { description: "Der Dienst antwortet nicht." });
 ```
-Replaces hand-built message stacks (JustRAG's `ToastContainer.tsx` + `Toast.css`).
-**Three parts must be in place** — the provider, *one* viewport, one `Toast` per
-message; without a mounted viewport a `Toast` silently renders nothing. `variant`
-(`neutral` · `success` · `error` · `warning` · `info`) drives surface and text
-color, icon, default duration **and** the urgency of the screen reader
-announcement (`error` assertive, otherwise polite; `type` overrides). The toast
-**doesn't steal focus**; the timer pauses on hover and on focus (F8 jumps into the
-viewport) — that is the answer to WCAG 2.2.1, together with `ToastClose` and
-`duration={Infinity}`. `duration={0}` does **not** turn auto-dismiss off (Radix
-treats `0` as "not set"). A toast with a `ToastAction` always gets
-`duration={Infinity}` — an action that clears itself away after four seconds is
-unusable; `altText` on the action is required and replaces the label in the
-announcement. Queue, limit and de-duplication stay in the app; the package ships
-no `toast()` singleton. Nothing essential only in a toast — it disappears and
-can't be found afterwards.
+The shadcn `sonner` component, normalised: Sonner owns the queue, the timers,
+the pile and the motion. **Mount one `Toaster`**; without it `toast()` shows
+nothing. `toast` · `toast.success` · `info` · `warning` · `error` pick the
+surface and icon (the `Alert` tones) and stamp the creation time in the title
+row. Pass an `id` to update a toast in place instead of stacking a second one
+(how an app de-duplicates). The toast **doesn't steal focus**; hovering or
+focusing the pile opens it and pauses every timer, and every typed toast but
+`loading` has a close button — that is the answer to WCAG 2.2.1, together with
+`duration: Infinity`. A toast with an `action` gets `duration: Infinity` — an
+action that clears itself away after four seconds is unusable. Announcements
+are polite (Sonner's region), errors too. Nothing essential only in a toast — it
+disappears and can't be found afterwards. A shell card that piles with the
+toasts (`AppShell` `status` at `top-end`) shows its creation time the same way:
+`<AlertTitle time={raisedAt}>`.
 
 ## Layout & Templates
 

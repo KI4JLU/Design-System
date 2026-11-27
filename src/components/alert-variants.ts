@@ -19,10 +19,10 @@ export type AlertTone = "neutral" | "info" | "success" | "warning" | "error";
  * border and the overlay shadow, as wide as its text; title · text inline.
  *
  * `toast`: a floating card for `AppShell`'s `status` slot at
- * `statusPosition="bottom-end"` — a standing message that looks like a
- * `Toast` but stays until it is closed. The pill's surface (container fill,
- * tinted border, overlay shadow) with the box's flow: title over text,
- * actions on their own row, as wide as the slot.
+ * `statusPosition="bottom-end"` / `"top-end"` — a standing message that looks
+ * like a toast (`Toaster`) but stays until it is closed. The container fill
+ * and the overlay shadow with no visible frame, like every toast, and the
+ * box's flow: title over text, actions on their own row, as wide as the slot.
  */
 export type AlertLayout = "box" | "banner" | "pill" | "toast";
 
@@ -75,12 +75,6 @@ export const alertVariants = cva(
       { layout: "pill", tone: "success", class: "border-success/40" },
       { layout: "pill", tone: "warning", class: "border-warning/40" },
       { layout: "pill", tone: "error", class: "border-error/40" },
-      // Toast: framed like the pill, so the two floating layouts match.
-      { layout: "toast", tone: "neutral", class: "border-outline-variant" },
-      { layout: "toast", tone: "info", class: "border-info/40" },
-      { layout: "toast", tone: "success", class: "border-success/40" },
-      { layout: "toast", tone: "warning", class: "border-warning/40" },
-      { layout: "toast", tone: "error", class: "border-error/40" },
     ],
     defaultVariants: {
       tone: "neutral",

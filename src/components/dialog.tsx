@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { keepOpenOnToast } from "../lib/toast-outside";
 import { cn } from "../lib/utils";
 import { buttonVariants } from "./button-variants";
 import { dialogFooterVariants } from "./dialog-variants";
@@ -55,11 +56,12 @@ export interface DialogContentProps
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, closeLabel = "Schließen", showClose = true, ...props }, ref) => (
+>(({ className, children, closeLabel = "Schließen", showClose = true, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onInteractOutside={keepOpenOnToast(onInteractOutside)}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 isolate grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
         "rounded-[var(--ui-radius-box)] border border-outline-variant bg-surface-container-lowest p-6 text-on-surface shadow-modal",

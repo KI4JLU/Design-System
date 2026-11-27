@@ -235,9 +235,9 @@ export interface AppShellLayoutProps
   /** Accessible name of the region around `notice`. Default „Systemmeldung". */
   noticeLabel?: AppShellProps["noticeLabel"];
   /**
-   * A floating status message over the main area (reduced operation), at the
-   * top centre or — `statusPosition="bottom-end"` — in the bottom-right
-   * corner. See `AppShellProps.status`.
+   * A floating status message (reduced operation, a waiting update), fixed
+   * to the viewport above everything: at the top centre or — `statusPosition`
+   * — in the top- or bottom-right corner. See `AppShellProps.status`.
    */
   status?: AppShellProps["status"];
   /** Where `status` floats. Default `top`. See `AppShellProps.statusPosition`. */

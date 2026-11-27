@@ -17,7 +17,6 @@ import {
 import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "../components/form";
 import { Input } from "../components/input";
 import { PageHeader } from "../components/page-header";
-import { Toast, ToastProvider, ToastTitle, ToastViewport } from "../components/toast";
 import { AppShellLayout } from "../templates/app-shell-layout";
 import {
   SectionedGridLayout,
@@ -172,13 +171,6 @@ export const NothingMoves: Story = {
           </AppShellLayout>
         </div>
 
-        <ToastProvider>
-          <Toast open>
-            <ToastTitle>Gespeichert</ToastTitle>
-          </Toast>
-          <ToastViewport data-testid="toast-viewport" />
-        </ToastProvider>
-
         <Dialog defaultOpen>
           <DialogContent data-testid="dialog">
             <DialogHeader>
@@ -232,12 +224,6 @@ export const NothingMoves: Story = {
 
     // AppShellLayout's `pageLabel` — a <p>, deliberately not a heading.
     await expect(margins(query(probe, '[data-testid="app-shell"] p'))).toBe("0px 0px 0px 0px");
-
-    // Toast viewport: Radix renders an <ol>. It is `fixed bottom-0`; a
-    // user-agent margin would lift the bar 16px off the edge.
-    await expect(margins(query(document, '[data-testid="toast-viewport"]'))).toBe(
-      "0px 0px 0px 0px",
-    );
 
     // Dialog: Radix renders Title as an <h2> and Description as a <p>, and
     // both sit in a portal outside the canvas.

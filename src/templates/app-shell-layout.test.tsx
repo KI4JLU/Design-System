@@ -40,9 +40,8 @@ import type { MobilePaneTab } from "../lib/pane-layout";
  *    and **React's controlled-component contract**: the column re-renders only
  *    from the `leftOpen` it is given, so the round trip below goes through
  *    consumer state.
- * 5. **The two shipped call sites** (JustRAG `AppChrome.tsx`, CampusAgents
- *    `AppLayout.tsx`, both read 2026-09-17), which is why the labelled bar is
- *    re-asserted next to the new behaviour.
+ * 5. **The shipped call site** (JustRAG `AppChrome.tsx`, read 2026-09-17),
+ *    which is why the labelled bar is re-asserted next to the new behaviour.
  *
  * jsdom implements neither `matchMedia` (which `useIsDesktop` and
  * `ThemeProvider` both ask) nor layout, so the viewport is stubbed per test.

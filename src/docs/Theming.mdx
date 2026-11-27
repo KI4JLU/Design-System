@@ -85,7 +85,7 @@ The `ThemeProvider` runs in two modes:
 **Uncontrolled (default, unchanged).** Without a `theme` prop the provider
 owns the state: it reads the choice from `localStorage` (key via
 `storageKey`, default `"theme"`), persists every change there and writes
-`data-theme` on `<html>`. Existing consumers (CampusAgents) need no changes.
+`data-theme` on `<html>`. Existing consumers need no changes.
 
 ```tsx
 <ThemeProvider>{/* as before */}</ThemeProvider>

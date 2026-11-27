@@ -306,9 +306,9 @@
    * (`max-w-2xl`), den diese Breite vorher direkt benutzt hat.
    *
    * Der Name `container-max` (nicht `container-page`) bleibt, obwohl die
-   * Variante `page` heißt: dieses Token ist veröffentlicht und wird in
-   * CampusAgents direkt als `max-w-container-max` geschrieben — eine Umbenennung
-   * wäre dort ein stiller Ausfall (Klasse kompiliert zu nichts). */
+   * Variante `page` heißt: dieses Token ist veröffentlicht, und eine
+   * Umbenennung wäre für jeden Aufruf von `max-w-container-max` ein stiller
+   * Ausfall (die Klasse kompiliert zu nichts). */
   --max-width-container-max: 1440px;
   --max-width-container-content: 1000px;
   --max-width-container-reading: 42rem;
@@ -465,7 +465,7 @@
   --color-on-info-container: var(--p-blue-800);
 
   /* --------------------------------------------------------------------------
-   * BRAND — Plattform-Wortmarke (Logo: „JLU [CampusAgents]").
+   * BRAND — Plattform-Wortmarke (Logo: „JLU [RAG]").
    * Werte aus der Brand-Vorlage: Badge #0056b3, Prefix-Navy #003366.
    * Das Brand-Blau (--p-blue-700) ist zugleich die Basis von
    * --color-primary — Marke und Primäraktion teilen EINE Farbe.

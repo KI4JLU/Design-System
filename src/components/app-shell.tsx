@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { Lock, Maximize2, Minimize2, PanelLeftClose, PanelRightClose, PanelRightOpen, Plus, SquareMenu, TextAlignStart, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { PANE_FILL, useIsDesktop, type MobilePaneTab, type PaneId } from "../lib/pane-layout";
@@ -15,6 +16,9 @@ import { SidePanel } from "./side-panel";
 import { SidebarCollapsedContext } from "./sidebar-context";
 import { PANE_TOGGLE_CLASS, SIDE_PANEL_RAIL_WIDTH } from "./side-panel-variants";
 import { CARD_START, DEFAULT_COLUMN_WIDTH, TITLEBAR_LEFT_MIN_WIDTH, cardStep, frameLayout, type CardEvent } from "./app-shell-frame";
+
+/** `useSyncExternalStore` subscription for a value that never changes. */
+const subscribeNothing = () => () => {};
 
 // The frame's widths and its shrinking rules live in `app-shell-frame.ts`.
 const DEFAULT_PANEL_WIDTH = DEFAULT_COLUMN_WIDTH;
@@ -303,24 +307,26 @@ export interface AppShellProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * A small status message about reduced operation — high load, a degraded
    * service (typically an `Alert` with `layout="pill"`). It **floats** at the
-   * top centre of the main area, over the page and without moving it, and
-   * stays there while the page scrolls. Less prominent than `notice`, which is
-   * for an outage or maintenance; the app picks one by severity.
+   * top centre of the viewport, just under the bar, over the page and without
+   * moving it. It is fixed to the viewport and portaled to `<body>` at
+   * `z-100`, so it holds the same place on every view and lies above the
+   * frame, its floating card and dialogs. Less prominent than `notice`, which
+   * is for an outage or maintenance; the app picks one by severity.
    *
    * The message brings its own live-region role (`Alert live="polite"`), so
    * the slot adds no landmark. Omitted (or falsy), nothing renders.
    *
-   * `statusPosition` moves it to a corner of the main area.
+   * `statusPosition` moves it to a corner.
    */
   status?: React.ReactNode;
   /**
-   * Where `status` floats. `top` (default): centred at the top of the main
-   * area (`Alert layout="pill"`). `bottom-end`: a card in the bottom-right
-   * corner of the main area, up to 24rem wide — full width on a narrow
-   * screen (`Alert layout="toast"`). `top-end`: the same card in the
-   * top-right corner, for a message that asks for an action. Either way it
-   * covers the page without moving it; a corner never reaches over a side
-   * column.
+   * Where `status` floats, in the viewport. `top` (default): centred just
+   * under the bar (`Alert layout="pill"`). `bottom-end`: a card in the
+   * bottom-right corner, up to 24rem wide — full width on a narrow screen
+   * (`Alert layout="toast"`). `top-end`: the same card in the top-right
+   * corner under the bar, for a message that asks for an action. Either way
+   * it covers whatever is there — page, side column, card, dialog — without
+   * moving it.
    */
   statusPosition?: "top" | "top-end" | "bottom-end";
   /**
@@ -980,25 +986,68 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
         : leftProp;
 
     /*
-      The main area's height, for the corner card's cap (see `cornerLayer`).
-      Measured only while a corner card is shown; without ResizeObserver
-      (jsdom) the card keeps its viewport-based fallback cap.
+      Where the main area sits in the viewport — its top and bottom edge, and
+      its height — for the status layer (see `statusLayer`) and the toasts
+      (`Toaster`, `sonner.tsx`). Both are fixed to the viewport, not to the
+      page, so they hold still whichever view is open; these edges only keep
+      them off the bar and the frame's notice row, which are the same on
+      every view. Measured while the shell is mounted, again when the main
+      area or the window changes size (a banner that appears or wraps
+      resizes main). Without ResizeObserver (jsdom) they keep their fallback
+      offsets.
     */
     const mainRef = React.useRef<HTMLElement>(null);
-    const [mainHeight, setMainHeight] = React.useState<number | null>(null);
-    const measureMain = Boolean(status) && statusPosition !== "top";
+    const [mainBox, setMainBox] = React.useState<{ top: number; bottom: number; height: number } | null>(null);
     React.useLayoutEffect(() => {
       const el = mainRef.current;
-      if (!measureMain || !el || typeof ResizeObserver === "undefined") {
-        setMainHeight(null);
+      if (!el || typeof ResizeObserver === "undefined") {
+        setMainBox(null);
         return;
       }
-      const observer = new ResizeObserver(() => setMainHeight(el.clientHeight));
+      const measure = () => {
+        const rect = el.getBoundingClientRect();
+        const next = {
+          top: Math.round(rect.top),
+          bottom: Math.round(el.ownerDocument.documentElement.clientHeight - rect.bottom),
+          height: Math.round(rect.height),
+        };
+        setMainBox((prev) =>
+          prev && prev.top === next.top && prev.bottom === next.bottom && prev.height === next.height ? prev : next,
+        );
+      };
+      const observer = new ResizeObserver(measure);
       observer.observe(el);
-      setMainHeight(el.clientHeight);
-      return () => observer.disconnect();
+      window.addEventListener("resize", measure);
+      measure();
+      return () => {
+        observer.disconnect();
+        window.removeEventListener("resize", measure);
+      };
       // A narrow screen mounts a new <main> when its tab comes back.
-    }, [measureMain, isDesktop, activeMobileTab]);
+    }, [isDesktop, activeMobileTab]);
+
+    // False on the server and during hydration, true after: the status layer
+    // is a portal to <body>, which the server cannot render, so the first
+    // client render must leave it out too or hydration would not match.
+    const hydrated = React.useSyncExternalStore(
+      subscribeNothing,
+      () => true,
+      () => false,
+    );
+
+    // The toasts hang 16px under the bar: `Toaster` reads this edge.
+    React.useLayoutEffect(() => {
+      if (!mainBox) return;
+      const root = document.documentElement;
+      const value = `${mainBox.top + 16}px`;
+      root.style.setProperty("--toast-stack-top", value);
+      return () => {
+        // Only our own value: another shell that set it since keeps its own.
+        if (root.style.getPropertyValue("--toast-stack-top") === value) {
+          root.style.removeProperty("--toast-stack-top");
+        }
+      };
+    }, [mainBox]);
 
     /*
       Ids for the two columns, so a handle's `aria-controls` can name the
@@ -1466,79 +1515,109 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
     ) : null;
 
     /*
-      The floating status layer, the first child of `<main>`: `sticky` keeps it
-      at the top of the main area while the page scrolls, `h-0` lets it take
-      no room (the message overflows it downwards), so the page under it
-      neither moves nor reflows. The layer lets clicks through; the message
-      itself takes them; a long message wraps at 48rem instead of spanning a
-      wide column. Keeping the slot in front of `children` — null or not —
-      never remounts the page.
-    */
-    const statusLayer = status && statusPosition === "top" ? (
-      <div
-        data-slot="app-shell-status"
-        data-position="top"
-        className="pointer-events-none sticky top-3 z-20 flex h-0 shrink-0 justify-center overflow-visible px-4"
-      >
-        <div className="pointer-events-auto h-fit max-w-[min(100%,48rem)]">{status}</div>
-      </div>
-    ) : null;
+      The floating status message. **Fixed to the viewport and portaled out
+      of the frame**, so it sits at the same place on every view — it does
+      not move with the main area's width, its scrollbar, a side column or a
+      side panel — and nothing in the frame can cover it: `z-100`, the
+      toasts' layer, above the floating card (`z-20`), the overlaid columns
+      (`z-30`) and dialogs, drawers and sheets (`z-50`). Only a full-screen
+      loading screen, which replaces the app, hides it.
 
-    /*
-      The corner layer, a row of no height right under `<main>`: the card hangs
-      from its top edge upwards (`bottom-full`), so it sits on the main area's
-      bottom edge whatever is below — the frame's edge on a desktop, the tab
-      bar on a narrow screen — and needs no knowledge of either's height. Not
-      inside `<main>`, which scrolls: there an absolute box would scroll away
-      with the page. The layer lets clicks through to the page; only the card
-      takes them.
+      - `top-end` is **a toast that does not time out**: a Sonner custom
+        toast (`toast.custom`, no swipe, no close button of its own) in the
+        app's `Toaster` — the same corner, width, pile and motion as every
+        other toast, so the two never land on each other. It needs a mounted
+        `Toaster`; it is rendered there, under the `Toaster`'s providers. It
+        is updated in place while `status` changes and dismissed when it goes.
+      - `top` is a pill of its own, centred in the viewport 12px under the
+        bar; a long one wraps at 48rem.
+      - `bottom-end` is a card of its own, 16px above the main area's bottom
+        edge and 16px from the viewport's end.
 
-      The card's holder is capped at the main area's own height (measured, so
-      a banner that wraps or a zoomed bar shrink it too) less the 16px insets,
-      and scrolls beyond that, so its title and close button stay reachable on
-      a short screen. The holder is the scroller, so it takes the card's
-      radius and overlay shadow itself: the card's own shadow is clipped by
-      the scroller, the holder's is not.
+      A card is capped at the main area's height less the 16px insets and
+      scrolls beyond that, so its title and close button stay reachable on a
+      short screen. The holder is the scroller, so it takes the card's radius
+      and overlay shadow itself: the card's own shadow is clipped by the
+      scroller, the holder's is not. The layers let clicks through; only the
+      message takes them. Without a measured main area (jsdom) the offsets
+      assume the 56px bar.
     */
-    /*
-      The top corner: the same card and holder as the bottom corner (below),
-      in the status layer's place — main's first child, sticky and of no
-      height — so it stays in the main area's top-right corner while the page
-      scrolls and never reaches over a side column.
-    */
-    const topCornerLayer = status && statusPosition === "top-end" ? (
-      <div
-        data-slot="app-shell-status"
-        data-position="top-end"
-        className="pointer-events-none sticky top-4 z-20 flex h-0 shrink-0 justify-end overflow-visible px-4"
-      >
+    const statusCard = statusPosition !== "top";
+    const statusBox = status ? (
+      statusCard ? (
         <div
           data-slot="app-shell-status-scroller"
-          className="pointer-events-auto h-fit max-h-[calc(100dvh-9.25rem)] w-full overflow-y-auto rounded-[var(--ui-radius-box)] shadow-overlay sm:max-w-sm"
-          style={mainHeight != null ? { maxHeight: Math.max(mainHeight - 32, 0) } : undefined}
+          className="pointer-events-auto h-fit max-h-[calc(100dvh-9.25rem)] w-full overflow-y-auto rounded-[var(--ui-radius-box)] shadow-overlay"
+          style={mainBox ? { maxHeight: Math.max(mainBox.height - 32, 0) } : undefined}
         >
           {status}
         </div>
-      </div>
+      ) : (
+        <div className="pointer-events-auto h-fit max-w-[min(100%,48rem)]">{status}</div>
+      )
     ) : null;
-
-    const cornerLayer = status && statusPosition === "bottom-end" ? (
-      <div
-        data-slot="app-shell-status"
-        data-position="bottom-end"
-        className="pointer-events-none relative z-20 h-0 shrink-0"
-      >
-        <div className="absolute inset-x-0 bottom-full flex justify-end p-4">
-          <div
-            data-slot="app-shell-status-scroller"
-            className="pointer-events-auto max-h-[calc(100dvh-9.25rem)] w-full overflow-y-auto rounded-[var(--ui-radius-box)] shadow-overlay sm:max-w-sm"
-            style={mainHeight != null ? { maxHeight: Math.max(mainHeight - 32, 0) } : undefined}
-          >
-            {status}
-          </div>
-        </div>
+    const pinnedStatus = Boolean(status) && statusPosition === "top-end";
+    const statusToastBase = `app-shell-status-${React.useId()}`;
+    // The live toast's id. Fresh for every raise: Sonner keeps a dismissed id
+    // on its way out, so raising it again at once (StrictMode's second mount,
+    // a message that goes and comes back) would be swallowed.
+    const statusToastId = React.useRef<string | null>(null);
+    const statusToastCount = React.useRef(0);
+    const statusToast = () => (
+      <div data-slot="app-shell-status" data-position="top-end" className="flex">
+        {statusBox}
       </div>
-    ) : null;
+    );
+    const statusToastOptions = (id: string) => ({
+      id,
+      duration: Infinity,
+      dismissible: false,
+      // The card is its own box: drop the toast surface around it.
+      // Important: Sonner joins class names without merging them, so a
+      // plain `p-0` would lose to the `Toaster`'s `px-4` in CSS order.
+      classNames: {
+        toast: "block! rounded-none! border-0! bg-transparent! p-0! shadow-none!",
+      },
+    });
+    React.useEffect(() => {
+      if (!pinnedStatus) return;
+      const id = `${statusToastBase}-${++statusToastCount.current}`;
+      statusToastId.current = id;
+      return () => {
+        statusToastId.current = null;
+        toast.dismiss(id);
+      };
+    }, [pinnedStatus, statusToastBase]);
+    // Raised, then updated in place on every render while it is shown.
+    React.useEffect(() => {
+      const id = statusToastId.current;
+      if (id) toast.custom(statusToast, statusToastOptions(id));
+    });
+    const statusLayer = !status || pinnedStatus || !hydrated
+      ? null
+        : typeof document !== "undefined"
+          ? createPortal(
+              <div
+                data-slot="app-shell-status"
+                data-position={statusPosition}
+                className={cn(
+                  "pointer-events-none fixed inset-x-0 z-100 flex px-4",
+                  statusPosition === "top" && "top-[4.25rem] justify-center",
+                  statusPosition === "bottom-end" && "bottom-4 justify-end",
+                )}
+                style={
+                  mainBox
+                    ? statusPosition === "bottom-end"
+                      ? { bottom: mainBox.bottom + 16 }
+                      : { top: mainBox.top + 12 }
+                    : undefined
+                }
+              >
+                {statusPosition === "bottom-end" ? <div className="w-full sm:max-w-sm">{statusBox}</div> : statusBox}
+              </div>,
+              document.body,
+            )
+          : null;
 
     /*
       A column, as the desktop arrangement renders it. `content` scrolls and
@@ -1634,11 +1713,9 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           >
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
-              {statusLayer}
-              {topCornerLayer}
               {children}
             </main>
-            {cornerLayer}
+            {statusLayer}
           </div>
           {/* The slot a shown `AppShellSidePanel` fills: here it lies over
               the whole frame, one area on screen. */}
@@ -1785,11 +1862,9 @@ const AppShell = React.forwardRef<HTMLDivElement, AppShellProps>(
           >
             {bar}
             <main ref={mainRef} aria-label={mainLabel} className={PANE_FILL}>
-              {statusLayer}
-              {topCornerLayer}
               {children}
             </main>
-            {cornerLayer}
+            {statusLayer}
             {rightBubble}
           </div>
           {/* The end column an `AppShellSidePanel` fills. After the main
