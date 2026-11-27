@@ -25,8 +25,9 @@ describe("CreatedTime", () => {
     expect(shown(container)).toBe("14:32");
     await act(async () => {
       document.documentElement.lang = "en";
-      // MutationObserver callbacks run as a microtask.
-      await Promise.resolve();
+      // MutationObserver callbacks run as a microtask; let them and the
+      // render they schedule finish inside act.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(shown(container)).toBe(
       new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(at),
@@ -49,10 +50,12 @@ describe("CreatedTime", () => {
 
   it("leaves the text out of the server render, so hydration matches", async () => {
     const at = new Date(2026, 10, 25, 14, 32);
-    const html = renderToString(<CreatedTime at={at} />);
-    expect(html).not.toContain("14:32");
     const host = document.createElement("div");
-    host.innerHTML = html;
+    host.innerHTML = renderToString(<CreatedTime at={at} />);
+    // The element and its dateTime, but no text (`dateTime` is UTC and may
+    // itself contain the digits, so the text is what is checked).
+    expect(host.querySelector("time")).toHaveAttribute("dateTime", at.toISOString());
+    expect(host.querySelector("time")).toBeEmptyDOMElement();
     document.body.appendChild(host);
     const errors: unknown[] = [];
     await act(async () => {
