@@ -247,10 +247,15 @@ CardMetaList.displayName = "CardMetaList";
  * One fact: an icon, a muted label and the value in the text colour —
  * `<CardMetaItem><Clock aria-hidden="true" /><CardMetaLabel>Genutzt</CardMetaLabel>
  * <CardMetaValue>vor 2 Stunden</CardMetaValue></CardMetaItem>`. The icon (a
- * direct `svg` child) takes 16px; the value is one line and ends in an
- * ellipsis when the card is too narrow, the label keeps its width. Composed
- * like shadcn's `Item` (media, title, description as parts), sized for a
- * card's meta block.
+ * direct `svg` child) takes 16px; the line ends in an ellipsis when the card
+ * is too narrow, so the label at its start stays whole. Composed like
+ * shadcn's `Item` (media, title, description as parts), sized for a card's
+ * meta block.
+ *
+ * The line is text, not a flex row: label and value are inline and each part
+ * brings a real space before it (the browser drops the one at the line's
+ * start), so copying the line or reading it aloud gives „Genutzt vor 2
+ * Stunden" — in either order, wrapped in fragments or other components alike.
  *
  * `tone="primary"` sets the fact apart — icon and value in the primary
  * colour, the label stays muted (the caller's role on a topic card).
@@ -267,8 +272,10 @@ const CardMetaItem = React.forwardRef<HTMLDivElement, CardMetaItemProps>(
       data-slot="card-meta-item"
       data-tone={tone}
       className={cn(
-        "group/card-meta-item flex min-w-0 items-center gap-1 font-label-sm text-label-sm text-on-surface-variant",
-        "[&>svg]:mr-1 [&>svg]:size-4 [&>svg]:shrink-0",
+        // One 16px text line, the icon's height; truncate cuts the whole line.
+        "group/card-meta-item block min-w-0 truncate font-label-sm text-label-sm leading-4 text-on-surface-variant",
+        // The icon floats, so the first part's space starts the text line.
+        "[&>svg]:float-start [&>svg]:me-2 [&>svg]:size-4",
         "data-[tone=primary]:[&>svg]:text-primary",
         className,
       )}
@@ -281,26 +288,29 @@ CardMetaItem.displayName = "CardMetaItem";
 /** The fact's name, muted: „Genutzt", „von". */
 const CardMetaLabel = React.forwardRef<HTMLSpanElement, React.ComponentProps<"span">>(
   ({ className, ...props }, ref) => (
-    <span ref={ref} data-slot="card-meta-label" className={cn("shrink-0", className)} {...props} />
+    <>
+      {" "}
+      <span ref={ref} data-slot="card-meta-label" className={className} {...props} />
+    </>
   ),
 );
 CardMetaLabel.displayName = "CardMetaLabel";
 
 /**
  * The fact itself, in the text colour and semibold — the primary colour in a
- * `tone="primary"` item; one line, cut with an ellipsis.
+ * `tone="primary"` item.
  */
 const CardMetaValue = React.forwardRef<HTMLSpanElement, React.ComponentProps<"span">>(
   ({ className, ...props }, ref) => (
-    <span
-      ref={ref}
-      data-slot="card-meta-value"
-      className={cn(
-        "min-w-0 truncate font-semibold text-on-surface group-data-[tone=primary]/card-meta-item:text-primary",
-        className,
-      )}
-      {...props}
-    />
+    <>
+      {" "}
+      <span
+        ref={ref}
+        data-slot="card-meta-value"
+        className={cn("font-semibold text-on-surface group-data-[tone=primary]/card-meta-item:text-primary", className)}
+        {...props}
+      />
+    </>
   ),
 );
 CardMetaValue.displayName = "CardMetaValue";

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Card, CardBand, CardContent, CardFooter, CardHairline, CardMetaItem, CardMetaLabel, CardMetaList, CardMetaValue, CardTitle } from "./card";
@@ -166,11 +167,28 @@ describe("CardMetaItem", () => {
     expect(screen.getByTestId("list")).toHaveAttribute("data-slot", "card-meta-list");
     expect(screen.getByTestId("list")).toHaveClass("flex-col");
     expect(screen.getByTestId("item")).toHaveAttribute("data-slot", "card-meta-item");
-    expect(screen.getByTestId("item")).toHaveClass("text-on-surface-variant", "[&>svg]:size-4", "[&>svg]:shrink-0");
+    expect(screen.getByTestId("item")).toHaveClass("block", "truncate", "text-on-surface-variant", "[&>svg]:size-4", "[&>svg]:float-start");
     expect(screen.getByText("Genutzt")).toHaveAttribute("data-slot", "card-meta-label");
-    expect(screen.getByText("Genutzt")).toHaveClass("shrink-0");
     expect(screen.getByText("vor 2 Stunden")).toHaveAttribute("data-slot", "card-meta-value");
-    expect(screen.getByText("vor 2 Stunden")).toHaveClass("truncate", "font-semibold", "text-on-surface");
+    expect(screen.getByText("vor 2 Stunden")).toHaveClass("font-semibold", "text-on-surface");
+  });
+
+  it("gives each part a real space before it, however the parts are composed", () => {
+    const Wrapped = React.memo(() => <CardMetaValue>gestern</CardMetaValue>);
+    render(
+      <>
+        <CardMetaItem data-testid="label-first"><svg aria-hidden="true" /><CardMetaLabel>Genutzt</CardMetaLabel><CardMetaValue>vor 2 Stunden</CardMetaValue></CardMetaItem>
+        <CardMetaItem data-testid="value-first"><CardMetaValue>12</CardMetaValue><CardMetaLabel>Quellen</CardMetaLabel></CardMetaItem>
+        <CardMetaItem data-testid="fragment"><><CardMetaLabel>Genutzt</CardMetaLabel><Wrapped /></></CardMetaItem>
+        <CardMetaItem data-testid="html" dangerouslySetInnerHTML={{ __html: "<span>Genutzt</span> gestern" }} />
+      </>,
+    );
+    // jsdom does no layout, so the space at the line's start is still there;
+    // the browser drops it (checked in the HairlineMetaItems story).
+    expect(screen.getByTestId("label-first").textContent).toBe(" Genutzt vor 2 Stunden");
+    expect(screen.getByTestId("value-first").textContent).toBe(" 12 Quellen");
+    expect(screen.getByTestId("fragment").textContent).toBe(" Genutzt gestern");
+    expect(screen.getByTestId("html").textContent).toBe("Genutzt gestern");
   });
 
   it("marks the tone on the item, neutral by default, and colours a primary item's icon and value", () => {

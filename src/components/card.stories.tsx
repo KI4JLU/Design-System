@@ -530,16 +530,31 @@ export const HairlineMetaItems: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // The icon is 16px and the label keeps its width; the long value is cut
-    // to the card's width (oracle: the browser's own scroll metrics).
+    // The icon is 16px and the label stays whole; the long line is cut to
+    // the card's width (oracle: the browser's own scroll metrics and boxes).
     const item = canvas.getByTestId("long-owner");
     const icon = item.querySelector("svg")!;
     await expect(icon.getBoundingClientRect().width).toBe(16);
-    const value = item.querySelector<HTMLElement>("[data-slot=card-meta-value]")!;
-    await expect(value.scrollWidth).toBeGreaterThan(value.clientWidth);
+    await expect(item.scrollWidth).toBeGreaterThan(item.clientWidth);
     const label = item.querySelector<HTMLElement>("[data-slot=card-meta-label]")!;
-    await expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+    await expect(label.getBoundingClientRect().right).toBeLessThanOrEqual(item.getBoundingClientRect().right);
     await expect(item.getBoundingClientRect().right).toBeLessThanOrEqual(item.closest("[data-slot=card]")!.getBoundingClientRect().right);
+    // Icon and text share one 16px line, the text centred on the icon.
+    const text = label.getBoundingClientRect();
+    const iconBox = icon.getBoundingClientRect();
+    await expect(item.getBoundingClientRect().height).toBe(16);
+    await expect(Math.abs(text.top + text.height / 2 - (iconBox.top + iconBox.height / 2))).toBeLessThanOrEqual(1);
+    // Copying a line gives one line of text with a space between label and
+    // value, in either order (oracle: the browser's own selection).
+    const copied = (node: Element) => {
+      const selection = window.getSelection()!;
+      selection.selectAllChildren(node);
+      const result = selection.toString();
+      selection.removeAllRanges();
+      return result;
+    };
+    await expect(copied(canvas.getByText("vor 2 Stunden").parentElement!)).toBe("Genutzt vor 2 Stunden");
+    await expect(copied(canvas.getByText("Quellen").parentElement!)).toBe("12 Quellen");
     // tone="primary" colours icon and value alike and leaves the label muted
     // (oracle: the primary token, resolved through a probe).
     const probe = document.createElement("span");
