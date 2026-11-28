@@ -78,7 +78,10 @@ line of facts (`CardMeta`):
 User", the caller's role — are `CardMetaItem`s: a 16px icon, a muted
 `CardMetaLabel` and a semibold `CardMetaValue`. Stacked in a `CardMetaList`
 they make the card's meta block; in a `CardMeta` they sit side by side. A
-value too long for the card ends in an ellipsis, the label keeps its width.
+line too long for the card ends in an ellipsis; the label at its start stays
+whole. A fact is one line of text, not a flex row: label and value each bring
+a real space before them, so copying it or reading it aloud gives „Genutzt vor
+2 Stunden".
 `tone="primary"` sets one fact apart — icon and value in the primary colour,
 the label stays muted (the role line).
 
